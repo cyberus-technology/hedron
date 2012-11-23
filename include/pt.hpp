@@ -30,6 +30,10 @@ class Pt : public Kobject
     private:
         static Slab_cache cache;
 
+        static void free (Rcu_elem * a) {
+            delete static_cast<Pt *>(a);
+        }
+
     public:
         Refptr<Ec> const ec;
         Mtd        const mtd;
