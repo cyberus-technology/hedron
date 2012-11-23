@@ -43,7 +43,7 @@ class Kobject : public Mdb
             INVALID,
         };
 
-        explicit Kobject (Type t, Space *s, mword b = 0, mword a = 0) : Mdb (s, reinterpret_cast<mword>(this), b, a, free), objtype (t) {}
+        explicit Kobject (Type t, Space *s, mword b = 0, mword a = 0, void (*f)(Rcu_elem *) = free) : Mdb (s, reinterpret_cast<mword>(this), b, a, f), objtype (t) {}
 
     public:
         ALWAYS_INLINE
