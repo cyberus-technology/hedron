@@ -30,8 +30,22 @@ class Sm : public Kobject, public Queue<Ec>
 
         static Slab_cache cache;
 
+        static void free (Rcu_elem * a) {
+            Sm * sm = static_cast <Sm *>(a);
+
+            while (!sm->counter)
+                sm->up (Ec::sys_finish<Sys_regs::BAD_CAP, true>);
+
+            delete sm;
+        }
+
     public:
         Sm (Pd *, mword, mword = 0);
+        ~Sm ()
+        {
+            while (!counter)
+                up (Ec::sys_finish<Sys_regs::BAD_CAP, true>);
+        }
 
         ALWAYS_INLINE
         inline void dn (bool zero, uint64 t)
@@ -45,6 +59,11 @@ class Sm : public Kobject, public Queue<Ec>
                     return;
                 }
 
+                if (!ec->add_ref()) {
+                    Sc::schedule (true);
+                    return;
+                }
+
                 enqueue (ec);
             }
 
@@ -54,7 +73,7 @@ class Sm : public Kobject, public Queue<Ec>
         }
 
         ALWAYS_INLINE
-        inline void up()
+        inline void up(void (*c)() = Ec::sys_finish<Sys_regs::SUCCESS, true>)
         {
             Ec *ec;
 
@@ -66,7 +85,7 @@ class Sm : public Kobject, public Queue<Ec>
                 }
             }
 
-            ec->release (Ec::sys_finish<Sys_regs::SUCCESS, true>);
+            ec->release (c);
         }
 
         ALWAYS_INLINE
