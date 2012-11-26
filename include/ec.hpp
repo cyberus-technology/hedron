@@ -210,6 +210,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 if (!blocked())
                     return;
 
+                bool ok = Sc::current->add_ref();
+                assert (ok);
+
                 enqueue (Sc::current);
             }
 
@@ -223,7 +226,14 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
             Lock_guard <Spinlock> guard (lock);
 
-            for (Sc *s; dequeue (s = head()); s->remote_enqueue()) ;
+            for (Sc *s; dequeue (s = head()); ) {
+                if (EXPECT_TRUE(!s->last_ref()) || s->ec->partner) {
+                    s->remote_enqueue(false);
+                    continue;
+                }
+
+                Rcu::call(s);
+            }
         }
 
         HOT NORETURN

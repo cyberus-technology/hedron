@@ -176,7 +176,15 @@ void Ec::reply (void (*c)())
 
     Ec *ec = current->rcap;
 
-    if (EXPECT_FALSE (!ec || !ec->clr_partner()))
+    if (EXPECT_FALSE (!ec))
+        Sc::current->ec->activate();
+
+    bool clr = ec->clr_partner();
+
+    if (Sc::current->ec == ec && Sc::current->last_ref())
+        Sc::schedule (true);
+
+    if (!clr)
         Sc::current->ec->activate();
 
     ec->make_current();

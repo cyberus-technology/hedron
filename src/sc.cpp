@@ -39,20 +39,27 @@ Sc *Sc::list[Sc::priorities];
 
 unsigned Sc::prio_top;
 
-Sc::Sc (Pd *own, mword sel, Ec *e) : Kobject (SC, static_cast<Space_obj *>(own), sel, 0x1), ec (e), cpu (static_cast<unsigned>(sel)), prio (0), budget (Lapic::freq_tsc * 1000), left (0), prev (nullptr), next (nullptr)
+Sc::Sc (Pd *own, mword sel, Ec *e) : Kobject (SC, static_cast<Space_obj *>(own), sel, 0x1, free), ec (e), cpu (static_cast<unsigned>(sel)), prio (0), budget (Lapic::freq_tsc * 1000), left (0), prev (nullptr), next (nullptr)
 {
     trace (TRACE_SYSCALL, "SC:%p created (PD:%p Kernel)", this, own);
 }
 
-Sc::Sc (Pd *own, mword sel, Ec *e, unsigned c, unsigned p, unsigned q) : Kobject (SC, static_cast<Space_obj *>(own), sel, 0x1), ec (e), cpu (c), prio (p), budget (Lapic::freq_tsc / 1000 * q), left (0), prev (nullptr), next (nullptr)
+Sc::Sc (Pd *own, mword sel, Ec *e, unsigned c, unsigned p, unsigned q) : Kobject (SC, static_cast<Space_obj *>(own), sel, 0x1, free), ec (e), cpu (c), prio (p), budget (Lapic::freq_tsc / 1000 * q), left (0), prev (nullptr), next (nullptr)
 {
     trace (TRACE_SYSCALL, "SC:%p created (EC:%p CPU:%#x P:%#x Q:%#x)", this, e, c, p, q);
 }
 
-void Sc::ready_enqueue (uint64 t)
+void Sc::ready_enqueue (uint64 t, bool inc_ref)
 {
     assert (prio < priorities);
     assert (cpu == Cpu::id);
+
+    if (inc_ref) {
+        bool ok = add_ref();
+        assert (ok);
+        if (!ok)
+            return;
+    }
 
     if (prio > prio_top)
         prio_top = prio;
@@ -117,7 +124,10 @@ void Sc::schedule (bool suspend)
     Cpu::hazard &= ~HZD_SCHED;
 
     if (EXPECT_TRUE (!suspend))
-        current->ready_enqueue (t);
+        current->ready_enqueue (t, false);
+    else
+        if (current->del_rcu())
+            Rcu::call (current);
 
     Sc *sc = list[prio_top];
     assert (sc);
@@ -131,12 +141,19 @@ void Sc::schedule (bool suspend)
     sc->ec->activate();
 }
 
-void Sc::remote_enqueue()
+void Sc::remote_enqueue(bool inc_ref)
 {
     if (Cpu::id == cpu)
-        ready_enqueue (rdtsc());
+        ready_enqueue (rdtsc(), inc_ref);
 
     else {
+        if (inc_ref) {
+            bool ok = add_ref();
+            assert (ok);
+            if (!ok)
+                return;
+        }
+
         Sc::Rq *r = remote (cpu);
 
         Lock_guard <Spinlock> guard (r->lock);
@@ -167,7 +184,7 @@ void Sc::rrq_handler()
 
         ptr = ptr->next == ptr ? nullptr : ptr->next;
 
-        sc->ready_enqueue (t);
+        sc->ready_enqueue (t, false);
     }
 
     rq.queue = nullptr;
