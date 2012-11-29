@@ -76,6 +76,9 @@ class Pte
         static inline void operator delete (void *ptr) { Buddy::allocator.free (reinterpret_cast<mword>(ptr)); }
 
     public:
+
+        Pte() : val(0) {}
+
         enum
         {
             ERR_P   = 1UL << 0,

@@ -47,6 +47,9 @@ class Space_pio : public Space
         void update (bool, mword, mword);
 
     public:
+
+        Space_pio() : hbmp(0), gbmp(0) {}
+
         Paddr walk (bool = false, mword = 0);
 
         void update (Mdb *, mword = 0);
