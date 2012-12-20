@@ -77,6 +77,6 @@ unsigned const trace_mask =
 //                            TRACE_RCU       |
 //                            TRACE_FPU       |
 //                            TRACE_SYSCALL   |
-                            TRACE_ERROR     |
 #endif
+                            TRACE_ERROR     |
                             0;
