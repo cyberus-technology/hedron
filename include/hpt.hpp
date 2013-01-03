@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -86,6 +87,20 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
         Paddr replace (mword, mword);
 
         static void *remap (Paddr);
+
+        static bool dest_hpt (Paddr p, mword, unsigned) { return (p != reinterpret_cast<Paddr>(&FRAME_0) && p != reinterpret_cast<Paddr>(&FRAME_1)); }
+        static bool iter_hpt_lev(unsigned l, mword v)
+        {
+#ifdef __x86_64__
+            if (sizeof(v) > 4 && (v & (1ULL << 47)))
+                v |= ~((1ULL << 48) - 1);
+#endif
+
+            return l >= 2 || (l == 1 && v >= SPC_LOCAL_OBJ);
+        }
+
+        static bool dest_loc (Paddr, mword v, unsigned l) { return v >= USER_ADDR && l >= 3; }
+        static bool iter_loc_lev(unsigned l, mword) { return l > 3; }
 };
 
 class Hptp : public Hpt

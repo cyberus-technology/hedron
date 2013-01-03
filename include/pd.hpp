@@ -65,6 +65,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
         INIT
         Pd (Pd *);
+        ~Pd();
 
         Pd (Pd *own, mword sel, mword a) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free) {}
 

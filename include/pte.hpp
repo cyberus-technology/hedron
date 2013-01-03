@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -75,6 +76,8 @@ class Pte
         ALWAYS_INLINE
         static inline void operator delete (void *ptr) { Buddy::allocator.free (reinterpret_cast<mword>(ptr)); }
 
+        void free_up (unsigned l, P *, mword, bool (*) (Paddr, mword, unsigned), bool (*) (unsigned, mword));
+
     public:
 
         Pte() : val(0) {}
@@ -105,4 +108,6 @@ class Pte
         size_t lookup (E, Paddr &, mword &);
 
         void update (E, mword, E, mword, Type = TYPE_UP);
+
+        void clear (bool (*) (Paddr, mword, unsigned) = nullptr, bool (*) (unsigned, mword) = nullptr);
 };

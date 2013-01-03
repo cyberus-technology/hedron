@@ -21,6 +21,7 @@
 #include "mtrr.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
+#include "hip.hpp"
 
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
@@ -263,3 +264,18 @@ void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long 
             *d-- = Xfer (crd, s->flags());
     }
 }
+
+Pd::~Pd()
+{
+    pre_free(this);
+
+    Space_mem::hpt.clear(Space_mem::hpt.dest_hpt, Space_mem::hpt.iter_hpt_lev);
+    Space_mem::dpt.clear();
+    Space_mem::npt.clear();
+    for (unsigned cpu = 0; cpu < NUM_CPU; cpu++)
+        if (Hip::cpu_online (cpu))
+            Space_mem::loc[cpu].clear(Space_mem::hpt.dest_loc, Space_mem::hpt.iter_loc_lev);
+}
+
+extern "C" int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }
+void * __dso_handle = nullptr;

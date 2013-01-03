@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -98,6 +99,40 @@ void Pte<P,E,L,B,F>::update (E v, mword o, E p, mword a, Type t)
 
     if (F)
         flush (e, n * sizeof (E));
+}
+
+template <typename P, typename E, unsigned L, unsigned B, bool F>
+void Pte<P,E,L,B,F>::clear (bool (*d) (Paddr, mword, unsigned), bool (*il) (unsigned, mword))
+{
+    if (!val)
+        return;
+
+    P * e = static_cast<P *>(Buddy::phys_to_ptr (this->addr()));
+
+    e->free_up(L - 1, e, 0, d, il);
+
+    delete e;
+}
+
+template <typename P, typename E, unsigned L, unsigned B, bool F>
+void Pte<P,E,L,B,F>::free_up (unsigned l, P * e, mword v, bool (*d)(Paddr, mword, unsigned), bool (*il) (unsigned, mword))
+{
+    if (!e)
+        return;
+
+    for (unsigned long i = 0; i < (1 << B); i++) {
+        if (!e[i].val || e[i].super())
+            continue;
+
+        P *p = static_cast<P *>(Buddy::phys_to_ptr (e[i].addr()));
+        mword virt = v + (i << (l * B + PAGE_BITS));
+
+        if (il ? il(l, virt) : l > 1)
+            p->free_up(l - 1, p, virt, d, il);
+
+        if (!d || d(e[i].addr(), virt, l))
+                delete p;
+    }
 }
 
 template class Pte<Dpt, uint64, 4, 9, true>;
