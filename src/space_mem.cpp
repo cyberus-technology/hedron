@@ -133,12 +133,12 @@ void Space_mem::insert_root (uint64 s, uint64 e, mword a)
     }
 }
 
-bool Space_mem::insert_utcb (mword b)
+bool Space_mem::insert_utcb (mword b, mword phys)
 {
     if (!b)
         return true;
 
-    Mdb *mdb = new Mdb (this, 0, b >> PAGE_BITS, 0);
+    Mdb *mdb = new Mdb (this, phys, b >> PAGE_BITS, 0, 0x3);
 
     if (tree_insert (mdb))
         return true;
