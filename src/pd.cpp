@@ -167,6 +167,20 @@ void Pd::xlt_crd (Pd *pd, Crd xlt, Crd &crd)
                 if ((ro = clamp (node->node_base, rb, node->node_order, ro)) != ~0UL)
                     break;
 
+        if (!node) {
+            /* Special handling on Genode:
+             * If a translate of an item inside the same PD (receiver/sender in same PD)
+             * are of no success, then return the very same item.
+             */
+            Mdb *first = snd->tree_lookup (crd.base());
+            if (first && first->space == rcv && first == mdb) {
+                rb = xlt.base();
+                ro = xlt.order();
+                if ((ro = clamp (first->node_base, rb, first->node_order, ro)) != ~0UL)
+                    node = first;
+           }
+        }
+
         if (node) {
 
             so = clamp (mdb->node_base, sb, mdb->node_order, so);
