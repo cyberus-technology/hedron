@@ -268,6 +268,8 @@ void Ec::sys_create_ec()
 
     if (!Space_obj::insert_root (ec)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
+        if (!pd->remove_utcb(r->utcb()))
+        	trace (TRACE_ERROR, "%s: Cannot remove UTCB", __func__);
         delete ec;
         sys_finish<Sys_regs::BAD_CAP>();
     }

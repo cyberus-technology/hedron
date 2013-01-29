@@ -147,3 +147,17 @@ bool Space_mem::insert_utcb (mword b)
 
     return false;
 }
+
+bool Space_mem::remove_utcb (mword b)
+{
+    if (!b)
+        return false;
+
+    Mdb *mdb = tree_lookup(b >> PAGE_BITS, false);
+    if (!tree_remove (mdb))
+        return false;
+
+    delete mdb;
+
+    return true;
+}

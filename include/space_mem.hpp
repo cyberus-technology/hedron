@@ -74,6 +74,8 @@ class Space_mem : public Space
 
         bool insert_utcb (mword);
 
+        bool remove_utcb (mword);
+
         void update (Mdb *, mword = 0);
 
         static void shootdown();
