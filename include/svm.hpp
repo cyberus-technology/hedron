@@ -117,7 +117,14 @@ class Vmcb
             return Buddy::allocator.alloc (0, Buddy::FILL_0);
         }
 
+        ALWAYS_INLINE
+        static inline void operator delete (void *ptr)
+        {
+            Buddy::allocator.free (reinterpret_cast<mword>(ptr));
+        }
+
         Vmcb (mword, mword);
+        ~Vmcb();
 
         ALWAYS_INLINE
         inline Vmcb()

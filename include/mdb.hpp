@@ -62,7 +62,7 @@ class Mdb : public Avl, public Rcu_elem
         inline bool equal  (Mdb *x) const { return (node_base ^ x->node_base) >> max (node_order, x->node_order) == 0; }
 
         NOINLINE
-        explicit Mdb (Space *s, mword p, mword b, mword a, void (*f)(Rcu_elem *)) : Rcu_elem (f), dpth (0), prev (this), next (this), prnt (nullptr), space (s), node_phys (p), node_base (b), node_order (0), node_attr (a), node_type (0), node_sub (0) {}
+        explicit Mdb (Space *s, mword p, mword b, mword a, void (*f)(Rcu_elem *), void (*pf)(Rcu_elem *) = nullptr) : Rcu_elem (f, pf), dpth (0), prev (this), next (this), prnt (nullptr), space (s), node_phys (p), node_base (b), node_order (0), node_attr (a), node_type (0), node_sub (0) {}
 
         NOINLINE
         explicit Mdb (Space *s, mword p, mword b, mword o = 0, mword a = 0, mword t = 0, mword sub = 0) : Rcu_elem (free), dpth (0), prev (this), next (this), prnt (nullptr), space (s), node_phys (p), node_base (b), node_order (o), node_attr (a), node_type (t), node_sub (sub) {}

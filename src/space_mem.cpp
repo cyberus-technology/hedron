@@ -154,10 +154,15 @@ bool Space_mem::remove_utcb (mword b)
         return false;
 
     Mdb *mdb = tree_lookup(b >> PAGE_BITS, false);
-    if (!tree_remove (mdb))
+    if (!mdb)
         return false;
 
-    delete mdb;
+    mdb->demote_node(0x3);
 
-    return true;
+    if (mdb->remove_node() && tree_remove(mdb)) {
+        Rcu::call (mdb);
+        return true;
+    }
+
+    return false;
 }

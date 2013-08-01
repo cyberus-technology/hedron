@@ -88,4 +88,7 @@ class Vtlb : public Pte<Vtlb, uint64, 3,  9, false>
 
         ALWAYS_INLINE
         static inline void *operator new (size_t) { return Buddy::allocator.alloc (0, Buddy::NOFILL); }
+
+        ALWAYS_INLINE
+        static inline void operator delete (void *ptr) { Buddy::allocator.free (reinterpret_cast<mword>(ptr)); }
 };

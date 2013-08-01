@@ -60,7 +60,15 @@ void Ec::transfer_fpu (Ec *ec)
         }
     }
 
+    if (fpowner && fpowner->del_rcu()) {
+        Ec * last = fpowner;
+        fpowner = nullptr;
+        Rcu::call (last);
+    }
+
     fpowner = ec;
+    bool ok = fpowner->add_ref();
+    assert (ok);
 }
 
 void Ec::handle_exc_nm()
@@ -70,10 +78,20 @@ void Ec::handle_exc_nm()
     if (current == fpowner)
         return;
 
-    fpowner->save_fpu();
+    if (fpowner)
+        fpowner->save_fpu();
+
     current->load_fpu();
 
+    if (fpowner && fpowner->del_rcu()) {
+        Ec * last = fpowner;
+        fpowner = nullptr;
+        Rcu::call (last);
+    }
+
     fpowner = current;
+    bool ok = fpowner->add_ref();
+    assert (ok);
 }
 
 bool Ec::handle_exc_ts (Exc_regs *r)

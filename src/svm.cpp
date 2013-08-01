@@ -36,6 +36,11 @@ Vmcb::Vmcb (mword bmp, mword nptp) : base_io (bmp), asid (++asid_ctr), int_contr
     base_msr = Buddy::ptr_to_phys (Buddy::allocator.alloc (1, Buddy::FILL_1));
 }
 
+Vmcb::~Vmcb()
+{
+    Buddy::allocator.free (reinterpret_cast<mword>(Buddy::phys_to_ptr(static_cast<Paddr>(base_msr))));
+}
+
 void Vmcb::init()
 {
     if (!Cpu::feature (Cpu::FEAT_SVM)) {

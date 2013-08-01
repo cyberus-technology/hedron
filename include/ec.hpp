@@ -31,6 +31,8 @@
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 
+#include "stdio.hpp"
+
 class Utcb;
 
 class Ec : public Kobject, public Refcount, public Queue<Sc>
@@ -56,6 +58,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         };
         unsigned const evt;
         Timeout_hypercall timeout;
+        mword          user_utcb;
 
         static Slab_cache cache;
 
@@ -104,6 +107,47 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NOINLINE
         static void handle_hazard (mword, void (*)());
 
+        static void pre_free (Rcu_elem * a)
+        {
+            Ec * e = static_cast<Ec *>(a);
+
+            assert(e);
+
+            // remove mapping in page table
+            if (e->user_utcb) {
+                e->pd->remove_utcb(e->user_utcb);
+                e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
+                e->user_utcb = 0;
+            }
+
+            // XXX If e is on another CPU and there the fpowner - this check will fail.
+            // XXX For now the destruction is delayed until somebody else grabs the FPU.
+            if (fpowner == e) {
+                assert (Sc::current->cpu == e->cpu);
+
+                bool zero = fpowner->del_ref();
+                assert (!zero);
+
+                fpowner      = nullptr;
+                Cpu::hazard |= HZD_FPU;
+            }
+        }
+
+        static void free (Rcu_elem * a)
+        {
+            Ec * e = static_cast<Ec *>(a);
+
+            if (!e->utcb) {
+                trace(0, "leaking memory - vCPU EC memory re-usage not supported");
+                return;
+            }
+
+            if (e->del_ref()) {
+                assert(e != Ec::current);
+                delete e;
+            }
+        }
+
         ALWAYS_INLINE
         inline Sys_regs *sys_regs() { return &regs; }
 
@@ -114,7 +158,11 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         inline void set_partner (Ec *p)
         {
             partner = p;
+            bool ok = partner->add_ref();
+            assert (ok);
             partner->rcap = this;
+            ok = partner->rcap->add_ref();
+            assert (ok);
             Sc::ctr_link++;
         }
 
@@ -122,7 +170,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         inline unsigned clr_partner()
         {
             assert (partner == current);
-            partner->rcap = nullptr;
+            if (partner->rcap) {
+                bool last = partner->rcap->del_ref();
+                assert (!last);
+                partner->rcap = nullptr;
+            }
+            bool last = partner->del_ref();
+            assert (!last);
             partner = nullptr;
             return Sc::ctr_link--;
         }
@@ -145,6 +199,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         Ec (Pd *, void (*)(), unsigned);
         Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword);
+        ~Ec();
 
         ALWAYS_INLINE
         inline void add_tsc_offset (uint64 tsc)
@@ -172,7 +227,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         ALWAYS_INLINE NORETURN
         inline void make_current()
         {
+            if (EXPECT_FALSE (current->del_rcu()))
+                Rcu::call (current);
+
             current = this;
+
+            bool ok = current->add_ref();
+            assert (ok);
 
             Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
 

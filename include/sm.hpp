@@ -75,17 +75,24 @@ class Sm : public Kobject, public Queue<Ec>
         ALWAYS_INLINE
         inline void up(void (*c)() = Ec::sys_finish<Sys_regs::SUCCESS, true>)
         {
-            Ec *ec;
+            Ec *ec = nullptr;
 
-            {   Lock_guard <Spinlock> guard (lock);
+            do {
+                if (ec)
+                    Rcu::call (ec);
 
-                if (!dequeue (ec = head())) {
-                    counter++;
-                    return;
+                {   Lock_guard <Spinlock> guard (lock);
+
+                    if (!Queue<Ec>::dequeue (ec = Queue<Ec>::head())) {
+                        counter++;
+                        return;
+                    }
+
                 }
-            }
 
-            ec->release (c);
+                ec->release (c);
+
+            } while (EXPECT_FALSE(ec->del_rcu()));
         }
 
         ALWAYS_INLINE

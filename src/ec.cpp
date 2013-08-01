@@ -35,15 +35,23 @@ Slab_cache Ec::cache (sizeof (Ec), 32);
 Ec *Ec::current, *Ec::fpowner;
 
 // Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), prev (nullptr), next (nullptr), cpu (static_cast<uint16>(c)), glb (true), evt (0), timeout (this)
+Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (true), evt (0), timeout (this), user_utcb (0)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
+
+    regs.vtlb = nullptr;
+    regs.vmcs = nullptr;
+    regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd), cont (f), pd (p), prev (nullptr), next (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
+
+    regs.vtlb = nullptr;
+    regs.vmcs = nullptr;
+    regs.vmcb = nullptr;
 
     if (u) {
 
@@ -66,6 +74,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
     } else {
+
+        utcb = nullptr;
 
         regs.dst_portal = NUM_VMI - 2;
         regs.vtlb = new Vtlb;
@@ -91,6 +101,28 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p VTLB:%p)", this, p, regs.vmcb, regs.vtlb);
         }
     }
+}
+
+//De-constructor
+Ec::~Ec()
+{
+    pre_free(this);
+
+    if (fpu)
+        delete fpu;
+
+    if (utcb) {
+        delete utcb;
+        return;
+    }
+
+    /* vCPU cleanup */
+    delete regs.vtlb;
+
+    if (Hip::feature() & Hip::FEAT_VMX)
+        delete regs.vmcs;
+    else if (Hip::feature() & Hip::FEAT_SVM)
+        delete regs.vmcb;
 }
 
 void Ec::handle_hazard (mword hzd, void (*func)())

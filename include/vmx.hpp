@@ -356,6 +356,12 @@ class Vmcs
             return Buddy::allocator.alloc (0, Buddy::NOFILL);
         }
 
+        ALWAYS_INLINE
+        static inline void operator delete (void *ptr)
+        {
+            Buddy::allocator.free (reinterpret_cast<mword>(ptr));
+        }
+
         Vmcs (mword, mword, mword, uint64);
 
         ALWAYS_INLINE

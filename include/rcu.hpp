@@ -26,9 +26,10 @@ class Rcu_elem
     public:
         Rcu_elem *next;
         void (*func)(Rcu_elem *);
+        void (*pre_func)(Rcu_elem *);
 
         ALWAYS_INLINE
-        explicit Rcu_elem (void (*f)(Rcu_elem *)) : next (nullptr), func (f) {}
+        explicit Rcu_elem (void (*f)(Rcu_elem *), void (*pf) (Rcu_elem *) = nullptr) : next (nullptr), func (f), pre_func(pf) {}
 };
 
 class Rcu_list
@@ -90,7 +91,12 @@ class Rcu
 
     public:
         ALWAYS_INLINE
-        static inline void call (Rcu_elem *e) { next.enqueue (e); }
+        static inline void call (Rcu_elem *e) {
+            if (e->pre_func)
+                e->pre_func(e);
+
+            next.enqueue (e);
+        }
 
         static void quiet();
         static void update();
