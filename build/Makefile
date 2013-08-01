@@ -89,7 +89,7 @@ LFLAGS		:= --defsym=GIT_VER=0x$(call gitrv) --gc-sections --warn-common -static 
 # Rules
 %-$(ARCH).o:	%.ld $(MAKEFILE_LIST)
 		$(call message,PRE,$@)
-		$(CC) $(SFLAGS) -xc -E -P -MT $@ $< -o $@
+		$(CC) $(SFLAGS) -xc -E -P -MT $@ $< -o $@ -DCONFIG_KERNEL_MEMORY=32M
 
 %-$(ARCH).o:	%.S $(MAKEFILE_LIST)
 		$(call message,ASM,$@)
