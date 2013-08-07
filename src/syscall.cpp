@@ -502,8 +502,10 @@ void Ec::sys_assign_pci()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
+    Pd * pd = static_cast<Pd *>(obj);
+
     Paddr phys; unsigned rid;
-    if (EXPECT_FALSE (!Pd::current->Space_mem::lookup (r->dev(), phys) || (rid = Pci::phys_to_rid (phys)) == ~0U)) {
+    if (EXPECT_FALSE (!pd->Space_mem::lookup (r->dev(), phys) || (rid = Pci::phys_to_rid (phys)) == ~0U)) {
         trace (TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
         sys_finish<Sys_regs::BAD_DEV>();
     }
