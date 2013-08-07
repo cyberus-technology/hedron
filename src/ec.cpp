@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2013-2014 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -28,6 +29,7 @@
 #include "svm.hpp"
 #include "vmx.hpp"
 #include "vtlb.hpp"
+#include "sm.hpp"
 
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
@@ -35,7 +37,7 @@ Slab_cache Ec::cache (sizeof (Ec), 32);
 Ec *Ec::current, *Ec::fpowner;
 
 // Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (true), evt (0), timeout (this), user_utcb (0)
+Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (true), evt (0), timeout (this), user_utcb (0), xcpu_sm (nullptr)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -44,7 +46,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u), xcpu_sm (nullptr)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
@@ -105,9 +107,24 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     }
 }
 
+Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, static_cast<Space_obj *>(own), 0, 0xd, free, pre_free), cont (f), regs (clone->regs), rcap (clone), utcb (clone->utcb), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (clone->fpu), cpu (static_cast<uint16>(c)), glb (!!f), evt (clone->evt), timeout (this), user_utcb (0), xcpu_sm (clone->xcpu_sm)
+{
+    // Make sure we have a PTAB for this CPU in the PD
+    pd->Space_mem::init (c);
+
+    regs.vtlb = nullptr;
+    regs.vmcs = nullptr;
+    regs.vmcb = nullptr;
+}
+
 //De-constructor
 Ec::~Ec()
 {
+    if (xcpu_sm) {
+        delete xcpu_sm;
+        xcpu_sm = nullptr;
+    }
+
     pre_free(this);
 
     if (fpu)
@@ -117,6 +134,10 @@ Ec::~Ec()
         delete utcb;
         return;
     }
+
+    /* skip xCPU EC */
+    if (!regs.vtlb)
+        return;
 
     /* vCPU cleanup */
     delete regs.vtlb;
@@ -364,4 +385,26 @@ void Ec::die (char const *reason, Exc_regs *r)
         ec->cont = ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
 
     reply (dead);
+}
+
+void Ec::xcpu_return()
+{
+    assert (current->xcpu_sm);
+    assert (current->rcap);
+    assert (current->utcb);
+    assert (Sc::current->ec == current);
+
+    current->rcap->regs =  current->regs;
+
+    current->xcpu_sm->up (ret_xcpu_reply);
+
+    current->rcap    = nullptr;
+    current->utcb    = nullptr;
+    current->fpu     = nullptr;
+    current->xcpu_sm = nullptr;
+
+    Rcu::call(current);
+    Rcu::call(Sc::current);
+
+    Sc::schedule(true);
 }
