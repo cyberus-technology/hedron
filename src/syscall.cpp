@@ -309,7 +309,7 @@ void Ec::sys_create_sc()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    if (EXPECT_FALSE (!r->qpd().prio() || !r->qpd().quantum())) {
+    if (EXPECT_FALSE (!r->qpd().prio() || !r->qpd().quantum() | (r->qpd().prio() >= Sc::priorities))) {
         trace (TRACE_ERROR, "%s: Invalid QPD", __func__);
         sys_finish<Sys_regs::BAD_PAR>();
     }
