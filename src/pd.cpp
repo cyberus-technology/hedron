@@ -48,7 +48,7 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
 }
 
 template <typename S>
-void Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub)
+void Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub, char const * deltype)
 {
     Mdb *mdb;
     for (mword addr = snd_base; (mdb = snd->S::tree_lookup (addr, true)); addr = mdb->node_base + (1UL << mdb->node_order)) {
@@ -61,12 +61,18 @@ void Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword co
 
         if (!S::tree_insert (node)) {
             delete node;
+
+            Mdb * x = S::tree_lookup(b - snd_base + rcv_base);
+            if (!x || x->prnt != mdb || x->node_attr != attr)
+                trace (0, "overmap attempt %s - tree - PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", deltype, snd, this, snd_base, rcv_base, ord, attr);
+
             continue;
         }
 
         if (!node->insert_node (mdb, attr)) {
             S::tree_remove (node);
             delete node;
+            trace (0, "overmap attempt %s - node - PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", deltype, snd, this, snd_base, rcv_base, ord, attr);
             continue;
         }
 
@@ -217,19 +223,19 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
         case Crd::MEM:
             o = clamp (sb, rb, so, ro, hot);
             trace (TRACE_DEL, "DEL MEM PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-            delegate<Space_mem>(pd, sb, rb, o, a, sub);
+            delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
             break;
 
         case Crd::PIO:
             o = clamp (sb, rb, so, ro);
             trace (TRACE_DEL, "DEL I/O PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, rb, rb, o, a);
-            delegate<Space_pio>(pd, rb, rb, o, a, sub);
+            delegate<Space_pio>(pd, rb, rb, o, a, sub, "PIO");
             break;
 
         case Crd::OBJ:
             o = clamp (sb, rb, so, ro, hot);
             trace (TRACE_DEL, "DEL OBJ PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-            delegate<Space_obj>(pd, sb, rb, o, a);
+            delegate<Space_obj>(pd, sb, rb, o, a, 0, "OBJ");
             break;
     }
 
