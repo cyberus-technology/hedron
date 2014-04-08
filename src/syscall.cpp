@@ -439,6 +439,32 @@ void Ec::sys_ec_ctrl()
             Sc::schedule (false, false);
             break;
 
+        case 2: /* helping */
+        {
+            Kobject *obj = Space_obj::lookup (r->ec()).obj();
+
+            if (EXPECT_FALSE (obj->type() != Kobject::EC))
+                sys_finish<Sys_regs::BAD_CAP>();
+
+            Ec *ec = static_cast<Ec *>(obj);
+
+            if (EXPECT_FALSE(ec->cpu != current->cpu))
+                sys_finish<Sys_regs::BAD_CPU>();
+
+            if (EXPECT_FALSE(!ec->utcb || ec->blocked() || ec->partner || ec->pd != Ec::current->pd || (r->cnt() != ec->utcb->tls)))
+                sys_finish<Sys_regs::BAD_PAR>();
+
+            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            ec->make_current();
+
+            break;
+        }
+
+        case 3: /* re-schedule */
+            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            Sc::schedule (false, true);
+            break;
+
         default:
             sys_finish<Sys_regs::BAD_PAR>();
     }
