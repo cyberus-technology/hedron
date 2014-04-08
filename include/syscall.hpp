@@ -139,6 +139,9 @@ class Sys_ec_ctrl : public Sys_regs
     public:
         ALWAYS_INLINE
         inline unsigned long ec() const { return ARG_1 >> 8; }
+
+        ALWAYS_INLINE
+        inline unsigned op() const { return flags() & 0x3; }
 };
 
 class Sys_sc_ctrl : public Sys_regs

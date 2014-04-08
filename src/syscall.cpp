@@ -412,6 +412,9 @@ void Ec::sys_ec_ctrl()
 {
     Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current->sys_regs());
 
+    switch (r->op()) {
+        case 0:
+{
     Capability cap = Space_obj::lookup (r->ec());
     if (EXPECT_FALSE (cap.obj()->type() != Kobject::EC || !(cap.prm() & 1UL << 0))) {
         trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
@@ -426,6 +429,18 @@ void Ec::sys_ec_ctrl()
 
         if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
+
+    }
+}
+            break;
+
+        case 1: /* yield */
+            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            Sc::schedule (false, false);
+            break;
+
+        default:
+            sys_finish<Sys_regs::BAD_PAR>();
     }
 
     sys_finish<Sys_regs::SUCCESS>();
