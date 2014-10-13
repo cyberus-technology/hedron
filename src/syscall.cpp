@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2013-2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -385,7 +386,27 @@ void Ec::sys_create_sm()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Sm *sm = new Sm (Pd::current, r->sel(), r->cnt());
+    Sm * sm;
+
+    if (r->sm()) {
+        /* check for valid SM to be chained with */
+        Capability cap_si = Space_obj::lookup (r->sm());
+        if (EXPECT_FALSE (cap_si.obj()->type() != Kobject::SM)) {
+            trace (TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        Sm * si = static_cast<Sm *>(cap_si.obj());
+        if (si->is_signal()) {
+            /* limit chaining to solely one level */
+            trace (TRACE_ERROR, "%s: SM CAP (%#lx) is signal", __func__, r->sm());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        sm = new Sm (Pd::current, r->sel(), 0, si, r->cnt());
+    } else
+        sm = new Sm (Pd::current, r->sel(), r->cnt());
+
     if (!Space_obj::insert_root (sm)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete sm;
@@ -523,6 +544,7 @@ void Ec::sys_sm_ctrl()
     Sys_sm_ctrl *r = static_cast<Sys_sm_ctrl *>(current->sys_regs());
 
     Capability cap = Space_obj::lookup (r->sm());
+
     if (EXPECT_FALSE (cap.obj()->type() != Kobject::SM || !(cap.prm() & 1UL << r->op()))) {
 //        trace (TRACE_ERROR, "%s: Bad SM CAP (%#lx)", __func__, r->sm());
         sys_finish<Sys_regs::BAD_CAP>();
@@ -533,12 +555,16 @@ void Ec::sys_sm_ctrl()
     switch (r->op()) {
 
         case 0:
-            sm->up();
+            sm->submit();
             break;
 
         case 1:
             if (sm->space == static_cast<Space_obj *>(&Pd::kern))
                 Gsi::unmask (static_cast<unsigned>(sm->node_base - NUM_CPU));
+
+            if (sm->is_signal())
+                sys_finish<Sys_regs::BAD_CAP>();
+
             current->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
             sm->dn (r->zc(), r->time());
             break;

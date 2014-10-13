@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2013-2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -30,6 +31,7 @@
 #include "sc.hpp"
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
+#include "si.hpp"
 
 #include "stdio.hpp"
 
@@ -222,6 +224,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         {
             if (EXPECT_FALSE (timeout.active()))
                 timeout.dequeue();
+        }
+
+        ALWAYS_INLINE
+        inline void set_si_regs(mword sig, mword cnt)
+        {
+            regs.ARG_2 = sig;
+            regs.ARG_3 = cnt;
         }
 
         ALWAYS_INLINE NORETURN

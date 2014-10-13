@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2014-2015 Alexander Boettcher, Genode Labs GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -118,6 +119,9 @@ class Sys_create_sm : public Sys_regs
 
         ALWAYS_INLINE
         inline mword cnt() const { return ARG_3; }
+
+        ALWAYS_INLINE
+        inline unsigned long sm() const { return ARG_4; }
 };
 
 class Sys_revoke : public Sys_regs
