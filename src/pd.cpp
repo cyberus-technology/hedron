@@ -109,8 +109,12 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
 
         for (Mdb *ptr;; node = ptr) {
 
+            Cpu::preempt_disable();
+
             if (node->remove_node() && static_cast<S *>(node->space)->tree_remove (node))
                 Rcu::call (node);
+
+            Cpu::preempt_enable();
 
             ptr = ACCESS_ONCE (node->prev);
 
