@@ -73,8 +73,6 @@ void Ec::delegate()
                          src->utcb->xfer(),
                          user ? dst->utcb->xfer() : nullptr,
                          src->utcb->ti());
-
-    C ? ret_user_sysexit() : reply();
 }
 
 template <void (*C)()>
@@ -167,7 +165,7 @@ void Ec::recv_user()
     ret_user_sysexit();
 }
 
-void Ec::reply (void (*c)())
+void Ec::reply (void (*c)(), Sm * sm)
 {
     current->cont = c;
 
@@ -184,6 +182,9 @@ void Ec::reply (void (*c)())
     if (Sc::current->ec == ec && Sc::current->last_ref())
         Sc::schedule (true);
 
+    if (sm)
+        sm->dn (false, 0, ec, clr);
+
     if (!clr)
         Sc::current->ec->activate();
 
@@ -193,10 +194,25 @@ void Ec::reply (void (*c)())
 void Ec::sys_reply()
 {
     Ec *ec = current->rcap;
+    Sm *sm = nullptr;
 
     if (EXPECT_TRUE (ec)) {
 
+        Sys_reply *r = static_cast<Sys_reply *>(current->sys_regs());
+        if (EXPECT_FALSE (r->sm())) {
+            Capability cap = Space_obj::lookup (r->sm());
+            if (EXPECT_TRUE (cap.obj()->type() == Kobject::SM && (cap.prm() & 2))) {
+                sm = static_cast<Sm *>(cap.obj());
+
+                if (ec->cont == ret_user_sysexit)
+                    ec->cont = sys_call;
+            }
+        }
+
         Utcb *src = current->utcb;
+
+        if (EXPECT_FALSE (src->tcnt()))
+            delegate<false>();
 
         bool fpu = false;
 
@@ -211,12 +227,9 @@ void Ec::sys_reply()
 
         if (EXPECT_FALSE (fpu))
             current->transfer_fpu (ec);
-
-        if (EXPECT_FALSE (src->tcnt()))
-            delegate<false>();
     }
 
-    reply();
+    reply(nullptr, sm);
 }
 
 void Ec::sys_create_pd()
@@ -526,6 +539,7 @@ void Ec::sys_sm_ctrl()
         case 1:
             if (sm->space == static_cast<Space_obj *>(&Pd::kern))
                 Gsi::unmask (static_cast<unsigned>(sm->node_base - NUM_CPU));
+            current->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
             sm->dn (r->zc(), r->time());
             break;
     }

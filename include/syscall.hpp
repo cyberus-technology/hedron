@@ -134,6 +134,13 @@ class Sys_lookup : public Sys_regs
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };
 
+class Sys_reply : public Sys_regs
+{
+    public:
+        ALWAYS_INLINE
+        inline unsigned long sm() const { return ARG_1 >> 8; }
+};
+
 class Sys_ec_ctrl : public Sys_regs
 {
     public:

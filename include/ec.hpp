@@ -283,7 +283,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         ALWAYS_INLINE
         inline void release (void (*c)())
         {
-            cont = c;
+            if (c)
+                cont = c;
 
             Lock_guard <Spinlock> guard (lock);
 
@@ -327,7 +328,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void recv_user();
 
         HOT NORETURN
-        static void reply (void (*)() = nullptr);
+        static void reply (void (*)() = nullptr, Sm * = nullptr);
 
         HOT NORETURN
         static void sys_call();
@@ -381,7 +382,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void root_invoke();
 
         template <bool>
-        NORETURN
         static void delegate();
 
         NORETURN

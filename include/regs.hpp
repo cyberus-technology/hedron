@@ -73,7 +73,16 @@ class Sys_regs
         inline unsigned flags() const { return ARG_1 >> 4 & 0xf; }
 
         ALWAYS_INLINE
-        inline void set_status (Status status) { ARG_1 = status; }
+        inline uint8 status() { return ARG_1 & 0xffu; }
+
+        ALWAYS_INLINE
+        inline void set_status (Status s, bool c = true)
+        {
+            if (c)
+                ARG_1 = s;
+            else
+                ARG_1 = (ARG_1 & ~0xfful) | s;
+        }
 
         ALWAYS_INLINE
         inline void set_pt (mword pt) { ARG_1 = pt; }
