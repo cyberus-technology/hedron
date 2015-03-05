@@ -50,6 +50,10 @@ void Ec::save_fpu()
 
 void Ec::transfer_fpu (Ec *ec)
 {
+    if ((!utcb && !regs.fpu_on) ||
+        (!ec->utcb && !ec->regs.fpu_on))
+      return;
+
     if (!(Cpu::hazard & HZD_FPU)) {
 
         Fpu::enable();
