@@ -26,6 +26,9 @@
 #include "initprio.hpp"
 #include "rcu.hpp"
 #include "stdio.hpp"
+#include "hip.hpp"
+#include "lapic.hpp"
+#include "vectors.hpp"
 
 mword   Rcu::state = RCU_CMP;
 mword   Rcu::count;
@@ -89,6 +92,15 @@ void Rcu::update()
 
         start_batch (RCU_PND);
     }
+
+    if ((curr.head && next.head && next.count > 2000) || (curr.count > 2000))
+        for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
+
+            if (!Hip::cpu_online (cpu) || Cpu::id == cpu)
+                continue;
+
+            Lapic::send_ipi (cpu, VEC_IPI_IDL);
+        }
 
     if (done.head)
         invoke_batch();

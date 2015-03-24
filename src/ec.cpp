@@ -408,3 +408,9 @@ void Ec::xcpu_return()
 
     Sc::schedule(true);
 }
+
+void Ec::idl_handler()
+{
+    if (Ec::current->cont == Ec::idle)
+        Rcu::update();
+}

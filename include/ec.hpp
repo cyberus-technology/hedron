@@ -414,6 +414,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NORETURN
         static void die (char const *, Exc_regs * = &current->regs);
 
+        static void idl_handler();
+
         ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 

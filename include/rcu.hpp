@@ -37,24 +37,27 @@ class Rcu_list
     public:
         Rcu_elem *  head;
         Rcu_elem ** tail;
+        mword       count;
 
         ALWAYS_INLINE
         explicit Rcu_list() { clear(); }
 
         ALWAYS_INLINE
-        inline void clear() { head = nullptr; tail = &head; }
+        inline void clear() { head = nullptr; tail = &head; count = 0;}
 
         ALWAYS_INLINE
         inline void append (Rcu_list *l)
         {
-           *tail = l->head;
-            tail = l->tail;
+           *tail   = l->head;
+            tail   = l->tail;
+            count += l->count;
             l->clear();
         }
 
         ALWAYS_INLINE
         inline void enqueue (Rcu_elem *e)
         {
+            count ++;
             e->next = nullptr;
            *tail = e;
             tail = &e->next;

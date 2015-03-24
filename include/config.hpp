@@ -30,7 +30,7 @@
 #define NUM_GSI         128
 #define NUM_LVT         6
 #define NUM_MSI         1
-#define NUM_IPI         2
+#define NUM_IPI         3
 
 #define SPN_SCH         0
 #define SPN_HLP         1

@@ -145,6 +145,7 @@ void Lapic::ipi_vector (unsigned vector)
     switch (vector) {
         case VEC_IPI_RRQ: Sc::rrq_handler(); break;
         case VEC_IPI_RKE: Sc::rke_handler(); break;
+        case VEC_IPI_IDL: Ec::idl_handler(); break;
     }
 
     eoi();
