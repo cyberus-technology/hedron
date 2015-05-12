@@ -39,4 +39,4 @@
 #define SPN_VFL         5
 #define SPN_LVT         7
 #define SPN_IPI         (SPN_LVT + NUM_LVT)
-#define SPN_GSI         (SPN_IPI + NUM_IPI + 1)
+#define SPN_GSI         (SPN_IPI + NUM_IPI)
