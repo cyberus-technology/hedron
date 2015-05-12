@@ -224,6 +224,9 @@ class Sys_assign_gsi : public Sys_regs
         inline unsigned cpu() const { return static_cast<unsigned>(ARG_3); }
 
         ALWAYS_INLINE
+        inline mword si() const { return ARG_4; }
+
+        ALWAYS_INLINE
         inline void set_msi (uint64 val)
         {
             ARG_2 = static_cast<mword>(val >> 32);

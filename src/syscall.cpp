@@ -567,8 +567,11 @@ void Ec::sys_sm_ctrl()
             break;
 
         case 1:
-            if (sm->space == static_cast<Space_obj *>(&Pd::kern))
+            if (sm->space == static_cast<Space_obj *>(&Pd::kern)) {
                 Gsi::unmask (static_cast<unsigned>(sm->node_base - NUM_CPU));
+                if (sm->is_signal())
+                    break;
+            }
 
             if (sm->is_signal())
                 sys_finish<Sys_regs::BAD_CAP>();
@@ -630,6 +633,28 @@ void Ec::sys_assign_gsi()
     if (EXPECT_FALSE (sm->space != static_cast<Space_obj *>(&Pd::kern))) {
         trace (TRACE_ERROR, "%s: Non-GSI SM (%#lx)", __func__, r->sm());
         sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (r->si() != ~0UL) {
+        Kobject *obj_si = Space_obj::lookup (r->si()).obj();
+        if (EXPECT_FALSE (obj_si->type() != Kobject::SM)) {
+            trace (TRACE_ERROR, "%s: Non-SI CAP (%#lx)", __func__, r->si());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        Sm *si = static_cast<Sm *>(obj_si);
+
+        if (si == sm) {
+            sm->chain(nullptr);
+            sys_finish<Sys_regs::SUCCESS>();
+        }
+
+        if (EXPECT_FALSE (si->space == static_cast<Space_obj *>(&Pd::kern))) {
+            trace (TRACE_ERROR, "%s: Invalid-SM CAP (%#lx)", __func__, r->si());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        sm->chain(si);
     }
 
     Paddr phys; unsigned rid = 0, gsi = static_cast<unsigned>(sm->node_base - NUM_CPU);
