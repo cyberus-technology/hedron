@@ -139,10 +139,10 @@ void Slab_cache::free (void *ptr)
 
     } else if (EXPECT_FALSE (slab->empty())) {
 
-        // There are partial slabs in front of us and we're empty; requeue
-        if (slab->prev && !slab->prev->empty()) {
+        // There are slabs in front of us and we're empty; requeue
+        if (slab->prev) {
 
-            // Make partial slab in front of us current if we were current
+            // Make slab in front of us current if we were current
             if (slab == curr)
                 curr = slab->prev;
 
@@ -151,10 +151,17 @@ void Slab_cache::free (void *ptr)
             if (slab->next)
                 slab->next->prev = slab->prev;
 
-            // Enqueue as head
-            slab->prev = nullptr;
-            slab->next = head;
-            head = head->prev = slab;
+            if (slab->prev->empty() || (head && head->empty())) {
+                // There are already empty slabs - delete current slab
+                assert(head != slab);
+                delete slab;
+            } else {
+                // There are partial slabs in front of us - requeue empty one
+                // Enqueue as head
+                slab->prev = nullptr;
+                slab->next = head;
+                head = head->prev = slab;
+            }
         }
     }
 }
