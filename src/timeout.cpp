@@ -67,9 +67,20 @@ uint64 Timeout::dequeue()
 
 void Timeout::check()
 {
+    Timeout *prev_list = list;
+
     while (list && list->time <= rdtsc()) {
         Timeout *t = list;
         t->dequeue();
         t->trigger();
+    }
+
+    if (list && (list == prev_list)) {
+        /*
+         * No timeout was dequeued, which can happen if the TSC stops in CPU
+         * sleep states (non-invariant TSC). In that case, we program the
+         * LAPIC again for the next timeout.
+         */
+         Lapic::set_timer(list->time);
     }
 }
