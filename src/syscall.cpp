@@ -430,7 +430,32 @@ void Ec::sys_revoke()
 
     trace (TRACE_SYSCALL, "EC:%p SYS_REVOKE", current);
 
-    Pd::current->rev_crd (r->crd(), r->flags());
+    Pd * pd = Pd::current;
+
+    if (r->remote()) {
+        Capability cap = Space_obj::lookup (r->pd());
+        if (EXPECT_FALSE (cap.obj()->type() != Kobject::PD)) {
+            trace (TRACE_ERROR, "%s: Bad PD CAP (%#lx)", __func__, r->pd());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+        pd = static_cast<Pd *>(cap.obj());
+        pd->add_ref();
+    }
+
+    pd->rev_crd (r->crd(), r->self());
+
+    current->cont = sys_finish<Sys_regs::SUCCESS>;
+
+    if (r->remote() && pd->del_rcu())
+        Rcu::call(pd);
+
+    if (EXPECT_FALSE (r->sm())) {
+        Capability cap_sm = Space_obj::lookup (r->sm());
+        if (EXPECT_FALSE (cap_sm.obj()->type() == Kobject::SM && (cap_sm.prm() & 1))) {
+            Sm *sm = static_cast<Sm *>(cap_sm.obj());
+            sm->add_to_rcu();
+        }
+    }
 
     sys_finish<Sys_regs::SUCCESS>();
 }

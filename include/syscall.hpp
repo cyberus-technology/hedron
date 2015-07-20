@@ -129,6 +129,18 @@ class Sys_revoke : public Sys_regs
     public:
         ALWAYS_INLINE
         inline Crd crd() const { return Crd (ARG_2); }
+
+        ALWAYS_INLINE
+        inline bool self() const { return flags() & 0x1; }
+
+        ALWAYS_INLINE
+        inline bool remote() const { return flags() & 0x2; }
+
+        ALWAYS_INLINE
+        inline mword pd() const { return ARG_3; }
+
+        ALWAYS_INLINE
+        inline mword sm() const { return ARG_1 >> 8; }
 };
 
 class Sys_lookup : public Sys_regs

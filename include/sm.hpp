@@ -35,11 +35,11 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
         static void free (Rcu_elem * a) {
             Sm * sm = static_cast <Sm *>(a);
 
-            while (!sm->counter)
-                sm->up (Ec::sys_finish<Sys_regs::BAD_CAP, true>);
-
             if (sm->del_ref())
                 delete sm;
+            else {
+                sm->up();
+            }
         }
 
     public:
@@ -131,6 +131,18 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
             }
 
             ec->release (Ec::sys_finish<Sys_regs::COM_TIM>);
+        }
+
+        ALWAYS_INLINE
+        inline void add_to_rcu()
+        {
+            if (!add_ref())
+                return;
+
+            if (!Rcu::call (this))
+                /* enqueued ? - drop our ref and add to rcu if necessary */
+                if (del_rcu())
+                    Rcu::call (this);
         }
 
         ALWAYS_INLINE
