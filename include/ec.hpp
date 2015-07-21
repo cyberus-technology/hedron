@@ -318,6 +318,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         HOT NORETURN
         static void ret_user_iret() asm ("ret_user_iret");
 
+        HOT
+        static void chk_kern_preempt() asm ("chk_kern_preempt");
+
         NORETURN
         static void ret_user_vmresume();
 

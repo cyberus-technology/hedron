@@ -124,7 +124,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
         void xlt_crd (Pd *, Crd, Crd &);
         void del_crd (Pd *, Crd, Crd &, mword = 0, mword = 0);
-        void rev_crd (Crd, bool);
+        void rev_crd (Crd, bool, bool = true);
 
         ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }

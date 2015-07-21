@@ -432,19 +432,27 @@ void Ec::sys_revoke()
 
     Pd * pd = Pd::current;
 
-    if (r->remote()) {
-        Capability cap = Space_obj::lookup (r->pd());
-        if (EXPECT_FALSE (cap.obj()->type() != Kobject::PD)) {
-            trace (TRACE_ERROR, "%s: Bad PD CAP (%#lx)", __func__, r->pd());
-            sys_finish<Sys_regs::BAD_CAP>();
+    if (current->cont != sys_revoke) {
+        if (r->remote()) {
+            Capability cap = Space_obj::lookup (r->pd());
+            if (EXPECT_FALSE (cap.obj()->type() != Kobject::PD)) {
+                trace (TRACE_ERROR, "%s: Bad PD CAP (%#lx)", __func__, r->pd());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
+            pd = static_cast<Pd *>(cap.obj());
+            if (!pd->add_ref())
+                sys_finish<Sys_regs::BAD_CAP>();
         }
-        pd = static_cast<Pd *>(cap.obj());
-        pd->add_ref();
-    }
+        current->cont = sys_revoke;
+
+        r->rem(pd);
+    } else
+        pd = reinterpret_cast<Pd *>(r->pd());
 
     pd->rev_crd (r->crd(), r->self());
 
     current->cont = sys_finish<Sys_regs::SUCCESS>;
+    r->rem(nullptr);
 
     if (r->remote() && pd->del_rcu())
         Rcu::call(pd);

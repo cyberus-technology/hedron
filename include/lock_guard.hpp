@@ -4,6 +4,8 @@
  * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -19,17 +21,22 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "cpu.hpp"
 
 template <typename T>
 class Lock_guard
 {
     private:
         T &_lock;
+        uint8 pre;
 
     public:
         ALWAYS_INLINE
-        inline Lock_guard (T &l) : _lock (l)
+        inline Lock_guard (T &l) : _lock (l), pre(Cpu::preempt_status())
         {
+            if (pre)
+                Cpu::preempt_disable();
+
             _lock.lock();
         }
 
@@ -37,5 +44,8 @@ class Lock_guard
         inline ~Lock_guard()
         {
             _lock.unlock();
+
+            if (pre)
+                Cpu::preempt_enable();
         }
 };

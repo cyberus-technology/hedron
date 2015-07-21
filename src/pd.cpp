@@ -113,14 +113,18 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
         Mdb *x = ACCESS_ONCE (node->next);
         assert (x->dpth <= d || (x->dpth == node->dpth + 1 && !(x->node_attr & attr)));
 
+        bool preempt = Cpu::preemption;
+
         for (Mdb *ptr;; node = ptr) {
 
-            Cpu::preempt_disable();
+            if (preempt)
+                Cpu::preempt_disable();
 
             if (node->remove_node() && static_cast<S *>(node->space)->tree_remove (node))
                 Rcu::call (node);
 
-            Cpu::preempt_enable();
+            if (preempt)
+                Cpu::preempt_enable();
 
             ptr = ACCESS_ONCE (node->prev);
 
@@ -242,9 +246,10 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
     crd = Crd (rt, rb, o, a);
 }
 
-void Pd::rev_crd (Crd crd, bool self)
+void Pd::rev_crd (Crd crd, bool self, bool preempt)
 {
-    Cpu::preempt_enable();
+    if (preempt)
+        Cpu::preempt_enable();
 
     switch (crd.type()) {
 
@@ -265,7 +270,8 @@ void Pd::rev_crd (Crd crd, bool self)
             break;
     }
 
-    Cpu::preempt_disable();
+    if (preempt)
+        Cpu::preempt_disable();
 }
 
 void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long ti)

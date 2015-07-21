@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -66,6 +67,7 @@ unsigned    Cpu::row;
 uint32      Cpu::name[12];
 uint32      Cpu::features[6];
 bool        Cpu::bsp;
+bool        Cpu::preemption;
 
 void Cpu::check_features()
 {

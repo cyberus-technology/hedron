@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -186,6 +187,7 @@ entry_ipi:              push    $0
  */
 ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
                         jnz     ret_user_iret
+                        call    chk_kern_preempt
                         LOAD_GPR
                         add     $(6 * SIZE), %REG(sp)
                         RET_USER_EXC

@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -24,6 +25,7 @@
 #include "compiler.hpp"
 #include "config.hpp"
 #include "types.hpp"
+#include "assert.hpp"
 
 class Cpu
 {
@@ -159,6 +161,7 @@ class Cpu
         static uint32 name[12]              CPULOCAL;
         static uint32 features[6]           CPULOCAL;
         static bool bsp                     CPULOCAL;
+        static bool preemption              CPULOCAL;
 
         static void init();
 
@@ -177,13 +180,27 @@ class Cpu
         ALWAYS_INLINE
         static inline void preempt_disable()
         {
+            assert (preemption);
+
             asm volatile ("cli" : : : "memory");
+            preemption = false;
         }
 
         ALWAYS_INLINE
         static inline void preempt_enable()
         {
+            assert (!preemption);
+
+            preemption = true;
             asm volatile ("sti" : : : "memory");
+        }
+
+        ALWAYS_INLINE
+        static inline bool preempt_status()
+        {
+            mword flags = 0;
+            asm volatile ("pushf; pop %0" : "=r" (flags));
+            return flags & 0x200;
         }
 
         ALWAYS_INLINE
