@@ -200,6 +200,13 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         efer = Vmcs::read (Vmcs::GUEST_EFER);
 #endif
 
+    if (m & Mtd::PDPTE) {
+        pdpte[0] = Vmcs::read (Vmcs::GUEST_PDPTE0);
+        pdpte[1] = Vmcs::read (Vmcs::GUEST_PDPTE1);
+        pdpte[2] = Vmcs::read (Vmcs::GUEST_PDPTE2);
+        pdpte[3] = Vmcs::read (Vmcs::GUEST_PDPTE3);
+    }
+
     barrier();
     mtd = m;
     items = sizeof (Utcb_data) / sizeof (mword);
@@ -345,6 +352,13 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     if (mtd & Mtd::EFER)
         regs->write_efer<Vmcs> (efer);
 #endif
+
+    if (mtd & Mtd::PDPTE) {
+        Vmcs::write (Vmcs::GUEST_PDPTE0, pdpte[0]);
+        Vmcs::write (Vmcs::GUEST_PDPTE1, pdpte[1]);
+        Vmcs::write (Vmcs::GUEST_PDPTE2, pdpte[2]);
+        Vmcs::write (Vmcs::GUEST_PDPTE3, pdpte[3]);
+    }
 
     return mtd & Mtd::FPU;
 }

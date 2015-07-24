@@ -50,6 +50,7 @@ class Mtd
             STA             = 1UL << 18,
             TSC             = 1UL << 19,
             EFER            = 1UL << 20,
+            PDPTE           = 1UL << 21,
             FPU             = 1UL << 31,
         };
 
