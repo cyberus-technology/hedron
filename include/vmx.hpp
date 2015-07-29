@@ -356,7 +356,7 @@ class Vmcs
         ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
-            return Buddy::allocator.alloc (0, Buddy::NOFILL);
+            return Buddy::allocator.alloc (0, Buddy::FILL_0);
         }
 
         ALWAYS_INLINE
