@@ -93,6 +93,9 @@ void Pte<P,E,L,B,F>::update (E v, mword o, E p, mword a, Type t)
         if (!e[i].val)
             continue;
 
+        if (t == TYPE_DF)
+            continue;
+
         if (l && !e[i].super())
             delete static_cast<P *>(Buddy::phys_to_ptr (e[i].addr()));
     }
