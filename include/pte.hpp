@@ -107,7 +107,7 @@ class Pte
 
         size_t lookup (E, Paddr &, mword &);
 
-        void update (E, mword, E, mword, Type = TYPE_UP);
+        bool update (E, mword, E, mword, Type = TYPE_UP);
 
         void clear (bool (*) (Paddr, mword, unsigned) = nullptr, bool (*) (unsigned, mword) = nullptr);
 };

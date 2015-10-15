@@ -34,6 +34,7 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
             asm volatile ("mov %%cr3, %0; mov %0, %%cr3" : "=&r" (cr3));
         }
 
+    public:
         ALWAYS_INLINE
         static inline void flush (mword addr)
         {

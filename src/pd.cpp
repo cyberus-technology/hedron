@@ -48,8 +48,10 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
 }
 
 template <typename S>
-void Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub, char const * deltype)
+bool Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub, char const * deltype)
 {
+    bool s = false;
+
     Mdb *mdb;
     for (mword addr = snd_base; (mdb = snd->S::tree_lookup (addr, true)); addr = mdb->node_base + (1UL << mdb->node_order)) {
 
@@ -76,8 +78,10 @@ void Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword co
             continue;
         }
 
-        S::update (node);
+        s |= S::update (node);
     }
+
+    return s;
 }
 
 template <typename S>
@@ -218,6 +222,7 @@ void Pd::xlt_crd (Pd *pd, Crd xlt, Crd &crd)
 void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
 {
     Crd::Type st = crd.type(), rt = del.type();
+    bool s = false;
 
     mword a = crd.attr() & del.attr(), sb = crd.base(), so = crd.order(), rb = del.base(), ro = del.order(), o = 0;
 
@@ -231,7 +236,7 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
         case Crd::MEM:
             o = clamp (sb, rb, so, ro, hot);
             trace (TRACE_DEL, "DEL MEM PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-            delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
+            s = delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
             break;
 
         case Crd::PIO:
@@ -248,6 +253,9 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
     }
 
     crd = Crd (rt, rb, o, a);
+
+    if (s)
+        shootdown();
 }
 
 void Pd::rev_crd (Crd crd, bool self, bool preempt)
@@ -260,7 +268,6 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
         case Crd::MEM:
             trace (TRACE_REV, "REV MEM PD:%p B:%#010lx O:%#04x A:%#04x %s", this, crd.base(), crd.order(), crd.attr(), self ? "+" : "-");
             revoke<Space_mem>(crd.base(), crd.order(), crd.attr(), self);
-            shootdown();
             break;
 
         case Crd::PIO:
@@ -276,6 +283,9 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
 
     if (preempt)
         Cpu::preempt_disable();
+
+    if (crd.type() == Crd::MEM)
+        shootdown();
 }
 
 void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long ti)

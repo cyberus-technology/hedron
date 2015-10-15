@@ -38,7 +38,7 @@ void Space_mem::init (unsigned cpu)
     }
 }
 
-void Space_mem::update (Mdb *mdb, mword r)
+bool Space_mem::update (Mdb *mdb, mword r)
 {
     assert (this == mdb->space && this != &Pd::kern);
 
@@ -71,20 +71,28 @@ void Space_mem::update (Mdb *mdb, mword r)
     }
 
     if (mdb->node_base + (1UL << o) > USER_ADDR >> PAGE_BITS)
-        return;
+        return false;
 
     mword ord = min (o, Hpt::ord);
+    bool f = false;
+
     for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-        hpt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), r ? Hpt::TYPE_DN : Hpt::TYPE_UP);
+        f |= hpt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), r ? Hpt::TYPE_DN : Hpt::TYPE_UP);
 
-    if (r) {
+    if (r || f) {
 
-        for (unsigned i = 0; i < sizeof (loc) / sizeof (*loc); i++)
-            if (loc[i].addr())
-                loc[i].update (b, o, p, Hpt::hw_attr (a), Hpt::TYPE_DF);
+        for (unsigned j = 0; j < sizeof (loc) / sizeof (*loc); j++) {
+            if (!loc[j].addr())
+                continue;
+
+            for (unsigned long i = 0; i < 1UL << (o - ord); i++)
+                loc[j].update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), Hpt::TYPE_DF);
+        }
 
         htlb.merge (cpus);
     }
+
+    return (r || f);
 }
 
 void Space_mem::shootdown()
