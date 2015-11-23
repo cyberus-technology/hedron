@@ -44,6 +44,19 @@ bool Utcb::load_exc (Cpu_regs *regs)
         rdi = regs->REG(di);
     }
 
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
+
     if (m & Mtd::RSP)
         rsp = regs->REG(sp);
 
@@ -80,6 +93,19 @@ bool Utcb::save_exc (Cpu_regs *regs)
         regs->REG(di) = rdi;
     }
 
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
+
     if (mtd & Mtd::RSP)
         regs->REG(sp) = rsp;
 
@@ -108,6 +134,19 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         rsi = regs->REG(si);
         rdi = regs->REG(di);
     }
+
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
 
     regs->vmcs->make_current();
 
@@ -228,6 +267,19 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         regs->REG(si) = rsi;
         regs->REG(di) = rdi;
     }
+
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
 
     regs->vmcs->make_current();
 
@@ -382,6 +434,19 @@ bool Utcb::load_svm (Cpu_regs *regs)
         rdi = regs->REG(di);
     }
 
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
+
     if (m & Mtd::RSP)
         rsp = static_cast<mword>(vmcb->rsp);
 
@@ -489,6 +554,19 @@ bool Utcb::save_svm (Cpu_regs *regs)
         regs->REG(si) = rsi;
         regs->REG(di) = rdi;
     }
+
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
 
     if (mtd & Mtd::RSP)
         vmcb->rsp = rsp;
