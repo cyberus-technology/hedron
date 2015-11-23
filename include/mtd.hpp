@@ -51,6 +51,7 @@ class Mtd
             TSC             = 1UL << 19,
             EFER            = 1UL << 20,
             PDPTE           = 1UL << 21,
+            GPR_R8_R15      = 1UL << 22,
             FPU             = 1UL << 31,
         };
 
