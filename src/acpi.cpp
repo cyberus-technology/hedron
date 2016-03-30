@@ -36,6 +36,7 @@
 
 Paddr       Acpi::dmar, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas    Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt, Acpi::pm2_cnt, Acpi::pm_tmr, Acpi::reset_reg;
+Acpi_gas    Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32      Acpi::tmr_ovf, Acpi::feature;
 uint8       Acpi::reset_val;
 unsigned    Acpi::irq, Acpi::gsi;
@@ -96,6 +97,9 @@ void Acpi::setup()
 
     write (PM1_ENA, PM1_ENA_PWRBTN | PM1_ENA_GBL | PM1_ENA_TMR);
 
+    clear (GPE0_ENA, 0);
+    clear (GPE1_ENA, 0);
+
     for (; tmr_ovf = read (PM_TMR) >> tmr_msb(), read (PM1_STS) & PM1_STS_TMR; write (PM1_STS, PM1_STS_TMR)) ;
 
     trace (TRACE_ACPI, "ACPI: GSI:%#x TMR:%lu", gsi, tmr_msb() + 1);
@@ -116,9 +120,27 @@ unsigned Acpi::read (Register reg)
             return hw_read (&pm_tmr);
         case RESET:
             break;
+        default:
+            Console::panic ("Unimplemented register Acpi::read");
+            break;
     }
 
     return 0;
+}
+
+void Acpi::clear (Register reg, unsigned val)
+{
+    switch (reg) {
+        case GPE0_ENA:
+            hw_write (&gpe0_ena, val, true);
+            break;
+        case GPE1_ENA:
+            hw_write (&gpe1_ena, val, true);
+            break;
+        default:
+            Console::panic ("Unimplemented register Acpi::clear");
+            break;
+    }
 }
 
 void Acpi::write (Register reg, unsigned val)
@@ -146,6 +168,9 @@ void Acpi::write (Register reg, unsigned val)
         case RESET:
             hw_write (&reset_reg, val);
             break;
+        default:
+            Console::panic ("Unimplemented register Acpi::write");
+            break;
     }
 }
 
@@ -165,10 +190,10 @@ unsigned Acpi::hw_read (Acpi_gas *gas)
         }
     }
 
-    Console::panic ("Unimplemented ASID %d", gas->asid);
+    Console::panic ("Unimplemented ASID %d bits=%d", gas->asid, gas->bits);
 }
 
-void Acpi::hw_write (Acpi_gas *gas, unsigned val)
+void Acpi::hw_write (Acpi_gas *gas, unsigned val, bool prm)
 {
     if (!gas->bits)     // Register not implemented
         return;
@@ -184,10 +209,18 @@ void Acpi::hw_write (Acpi_gas *gas, unsigned val)
             case 32:
                 Io::out (static_cast<unsigned>(gas->addr), static_cast<uint32>(val));
                 return;
+            case 64:
+            case 128:
+               if (!prm)
+                   break;
+
+               for (unsigned i = 0; i < gas->bits / 32; i++)
+                   Io::out (static_cast<unsigned>(gas->addr) + i * 4, static_cast<uint32>(val));
+               return;
         }
     }
 
-    Console::panic ("Unimplemented ASID %d", gas->asid);
+    Console::panic ("Unimplemented ASID %d bits=%d prm=%u", gas->asid, gas->bits, prm);
 }
 
 void Acpi::interrupt()

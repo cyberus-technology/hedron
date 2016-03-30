@@ -49,6 +49,16 @@ void Acpi_table_fadt::parse() const
     if (pm_tmr_blk)
         Acpi::pm_tmr.init (Acpi_gas::IO, pm_tmr_len, pm_tmr_blk);
 
+    if (gpe0_blk) {
+        Acpi::gpe0_sts.init (Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk);
+        Acpi::gpe0_ena.init (Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk + (gpe0_blk_len >> 1));
+    }
+
+    if (gpe1_blk) {
+        Acpi::gpe1_sts.init (Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk);
+        Acpi::gpe1_ena.init (Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk + (gpe1_blk_len >> 1));
+    }
+
     if (length >= 129) {
         Acpi::reset_reg = reset_reg;
         Acpi::reset_val = reset_value;

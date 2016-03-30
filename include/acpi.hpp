@@ -35,6 +35,10 @@ class Acpi
             PM1_ENA,
             PM1_CNT,
             PM2_CNT,
+            GPE0_STS,
+            GPE0_ENA,
+            GPE1_STS,
+            GPE1_ENA,
             PM_TMR,
             RESET
         };
@@ -82,6 +86,10 @@ class Acpi
         static Acpi_gas pm1b_cnt;
         static Acpi_gas pm2_cnt;
         static Acpi_gas pm_tmr;
+        static Acpi_gas gpe0_sts;
+        static Acpi_gas gpe1_sts;
+        static Acpi_gas gpe0_ena;
+        static Acpi_gas gpe1_ena;
         static Acpi_gas reset_reg;
 
         static uint32   tmr_ovf;
@@ -91,8 +99,9 @@ class Acpi
         static unsigned hw_read (Acpi_gas *);
         static unsigned read (Register);
 
-        static void hw_write (Acpi_gas *, unsigned);
+        static void hw_write (Acpi_gas *, unsigned, bool = false);
         static void write (Register, unsigned);
+        static void clear (Register, unsigned);
 
         ALWAYS_INLINE
         static inline mword tmr_msb() { return feature & 0x100 ? 31 : 23; }
