@@ -37,7 +37,7 @@ class Space_obj : public Space
         ALWAYS_INLINE
         inline Space_mem *space_mem();
 
-        void update (mword, Capability);
+        bool update (mword, Capability);
 
     public:
         static unsigned const caps = (END_SPACE_LIM - SPC_LOCAL_OBJ) / sizeof (Capability);
@@ -50,7 +50,7 @@ class Space_obj : public Space
 
         size_t lookup (mword, Capability &);
 
-        Paddr walk (mword = 0);
+        Paddr walk (mword, bool &);
 
         bool update (Mdb *, mword = 0);
 

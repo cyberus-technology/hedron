@@ -25,11 +25,13 @@ Space_mem *Space_obj::space_mem()
     return static_cast<Pd *>(this);
 }
 
-Paddr Space_obj::walk (mword idx)
+Paddr Space_obj::walk (mword idx, bool &shootdown)
 {
     mword virt = idx_to_virt (idx); Paddr phys; void *ptr;
 
     if (!space_mem()->lookup (virt, phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0)) {
+
+        shootdown = (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0);
 
         Paddr p = Buddy::ptr_to_phys (ptr = Buddy::allocator.alloc (0, Buddy::FILL_0));
 
@@ -42,9 +44,11 @@ Paddr Space_obj::walk (mword idx)
     return phys;
 }
 
-void Space_obj::update (mword idx, Capability cap)
+bool Space_obj::update (mword idx, Capability cap)
 {
-    *static_cast<Capability *>(Buddy::phys_to_ptr (walk (idx))) = cap;
+    bool shootdown = false;
+    *static_cast<Capability *>(Buddy::phys_to_ptr (walk (idx, shootdown))) = cap;
+    return shootdown;
 }
 
 size_t Space_obj::lookup (mword idx, Capability &cap)
@@ -62,9 +66,7 @@ bool Space_obj::update (Mdb *mdb, mword r)
 {
     assert (this == mdb->space && this != &Pd::kern);
     Lock_guard <Spinlock> guard (mdb->node_lock);
-    update (mdb->node_base, Capability (reinterpret_cast<Kobject *>(mdb->node_phys), mdb->node_attr & ~r));
-
-    return false;
+    return update (mdb->node_base, Capability (reinterpret_cast<Kobject *>(mdb->node_phys), mdb->node_attr & ~r));
 }
 
 bool Space_obj::insert_root (Kobject *obj)
