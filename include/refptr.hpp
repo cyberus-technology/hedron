@@ -46,6 +46,26 @@ class Refcount
         {
             return Atomic::sub (ref, 1U) == 0;
         }
+
+        ALWAYS_INLINE
+        inline bool last_ref()
+        {
+            return ACCESS_ONCE(ref) == 1;
+        }
+
+        ALWAYS_INLINE
+        inline bool del_rcu()
+        {
+            if (last_ref())
+                return true;
+
+            if (del_ref()) {
+                ref = 1;
+                return true;
+            }
+
+            return false;
+        }
 };
 
 template <typename T>
@@ -64,7 +84,10 @@ class Refptr
         ALWAYS_INLINE
         inline ~Refptr()
         {
-            if (ptr->del_ref())
-                delete ptr;
+            if (!ptr)
+                return;
+
+            if (ptr->del_rcu())
+                Rcu::call (ptr);
         }
 };
