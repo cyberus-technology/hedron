@@ -237,6 +237,15 @@ bool Utcb::load_vmx (Cpu_regs *regs)
 #ifdef __x86_64__
     if (m & Mtd::EFER)
         efer = Vmcs::read (Vmcs::GUEST_EFER);
+
+    if (m & Mtd::SYSCALL_SWAPGS) {
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        star = guest_msr_area->ia32_star.msr_data;
+        lstar = guest_msr_area->ia32_lstar.msr_data;
+        fmask = guest_msr_area->ia32_fmask.msr_data;
+        kernel_gs_base = guest_msr_area->ia32_kernel_gs_base.msr_data;
+    }
 #endif
 
     if (m & Mtd::PDPTE) {
@@ -403,6 +412,22 @@ bool Utcb::save_vmx (Cpu_regs *regs)
 #ifdef __x86_64__
     if (mtd & Mtd::EFER)
         regs->write_efer<Vmcs> (efer);
+
+    mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
+    Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
+    host_msr_area->ia32_star.msr_data = Msr::read<uint64>(Msr::IA32_STAR);
+    host_msr_area->ia32_lstar.msr_data = Msr::read<uint64>(Msr::IA32_LSTAR);
+    host_msr_area->ia32_fmask.msr_data = Msr::read<uint64>(Msr::IA32_FMASK);
+    host_msr_area->ia32_kernel_gs_base.msr_data = Msr::read<uint64>(Msr::IA32_KERNEL_GS_BASE);
+
+    if (mtd & Mtd::SYSCALL_SWAPGS) {
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        guest_msr_area->ia32_star.msr_data = star;
+        guest_msr_area->ia32_lstar.msr_data = lstar;
+        guest_msr_area->ia32_fmask.msr_data = fmask;
+        guest_msr_area->ia32_kernel_gs_base.msr_data = kernel_gs_base;
+    }
 #endif
 
     if (mtd & Mtd::PDPTE) {
