@@ -21,6 +21,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "msr.hpp"
 
 class Vmcs
 {
@@ -441,4 +442,38 @@ class Vmcs
         static bool has_vnmi()      { return ctrl_pin.clr & PIN_VIRT_NMI; }
 
         static void init();
+};
+
+
+struct PACKED Msr_entry
+{
+    uint32 msr_index;
+    uint32 reserved;
+    uint64 msr_data;
+
+    Msr_entry(uint32 index)
+    : msr_index(index), reserved(0), msr_data(0) { }
+};
+
+struct Msr_area
+{
+    enum { MSR_COUNT = 4 };
+
+    Msr_entry ia32_star           { Msr::IA32_STAR };
+    Msr_entry ia32_lstar          { Msr::IA32_LSTAR };
+    Msr_entry ia32_fmask          { Msr::IA32_FMASK };
+    Msr_entry ia32_kernel_gs_base { Msr::IA32_KERNEL_GS_BASE };
+
+    ALWAYS_INLINE
+    static inline void *operator new (size_t)
+    {
+        /* allocate one page */
+        return Buddy::allocator.alloc (0, Buddy::FILL_0);
+    }
+
+    ALWAYS_INLINE
+    static inline void destroy(Msr_area *obj)
+    {
+        Buddy::allocator.free (reinterpret_cast<mword>(obj));
+    }
 };

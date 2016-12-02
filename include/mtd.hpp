@@ -52,6 +52,7 @@ class Mtd
             EFER            = 1UL << 20,
             PDPTE           = 1UL << 21,
             GPR_R8_R15      = 1UL << 22,
+            SYSCALL_SWAPGS  = 1UL << 23,
             FPU             = 1UL << 31,
         };
 

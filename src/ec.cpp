@@ -92,6 +92,19 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                                   pd->ept.root());
 
             regs.nst_ctrl<Vmcs>();
+
+            /* allocate and register the host MSR area */
+            mword host_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
+            Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, host_msr_area_phys);
+            Vmcs::write(Vmcs::EXI_MSR_LD_CNT, Msr_area::MSR_COUNT);
+
+            /* allocate and register the guest MSR area */
+            mword guest_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
+            Vmcs::write(Vmcs::ENT_MSR_LD_ADDR, guest_msr_area_phys);
+            Vmcs::write(Vmcs::ENT_MSR_LD_CNT, Msr_area::MSR_COUNT);
+            Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
+            Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
+
             regs.vmcs->clear();
             cont = send_msg<ret_user_vmresume>;
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
