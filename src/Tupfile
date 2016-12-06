@@ -1,0 +1,40 @@
+# Mostly taken from Makefile
+
+# Preprocessor options
+PFLAGS  = -I../include
+
+# Optimization options
+DFLAGS  = -pipe
+OFLAGS  = -Os
+AFLAGS  = -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=kernel -mno-red-zone
+
+# Language options
+FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer -freg-struct-return -freorder-blocks -funit-at-a-time
+FFLAGS += -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti
+FFLAGS += -fno-stack-protector
+FFLAGS += -fvisibility-inlines-hidden
+FFLAGS += -fdiagnostics-color=auto
+FFLAGS += -std=gnu++11
+
+# Warning options
+WFLAGS  = -Wall -Wextra -Waggregate-return -Wcast-align -Wcast-qual -Wconversion -Wdisabled-optimization -Wformat=2 -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
+WFLAGS += -Wabi -Wctor-dtor-privacy -Wno-non-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wsign-promo
+WFLAGS += -Wframe-larger-than=64
+WFLAGS += -Wlogical-op
+WFLAGS += -Wstrict-null-sentinel
+WFLAGS += -Wstrict-overflow=5
+WFLAGS += -Wvolatile-register-var
+WFLAGS += -Wzero-as-null-pointer-constant
+
+# Compiler flags
+SFLAGS  = $(PFLAGS) $(DFLAGS) $(AFLAGS)
+CFLAGS  = $(PFLAGS) $(DFLAGS) $(AFLAGS) $(OFLAGS) $(FFLAGS) $(WFLAGS)
+
+# Linker flags
+GITVER  = \$((git rev-parse HEAD 2>/dev/null || echo 0) | cut -c1-7)
+LFLAGS  = --defsym=GIT_VER=0x$(GITVER) --gc-sections --warn-common -static -n --defsym=CONFIG_KERNEL_MEMORY=64M
+
+: foreach *.S |> gcc $(SFLAGS) -c %f -o %o |> %B.o
+: foreach *.cpp |> gcc $(CFLAGS) -c %f -o %o |> %B.o
+: hypervisor.ld |> gcc $(SFLAGS) -xc -E -P %f -o %o |> hypervisor-x86_64.ld
+: *.o | hypervisor-x86_64.ld |> ld $(LFLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
