@@ -111,7 +111,11 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
         }
 
         Mdb *x = ACCESS_ONCE (node->next);
-        assert (x->dpth <= d || (x->dpth == node->dpth + 1 && !(x->node_attr & attr)));
+
+        assert ((x->dpth <= d) ||
+                (self && !(x->node_attr & attr)) ||
+                (!self && ((mdb == node) || (d + 1 == x->dpth) || !(x->node_attr & attr))));
+        assert (x->dpth > node->dpth ? (x->dpth == node->dpth + 1) : true);
 
         bool preempt = Cpu::preemption;
 
