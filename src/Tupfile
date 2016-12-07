@@ -1,5 +1,7 @@
 # Mostly taken from Makefile
 
+ifeq (@(BUILD_NOVA),y)
+
 # Preprocessor options
 PFLAGS  = -I../include
 
@@ -38,3 +40,5 @@ LFLAGS  = --defsym=GIT_VER=0x$(GITVER) --gc-sections --warn-common -static -n --
 : foreach *.cpp |> gcc $(CFLAGS) -c %f -o %o |> %B.o
 : hypervisor.ld |> gcc $(SFLAGS) -xc -E -P %f -o %o |> hypervisor-x86_64.ld
 : *.o | hypervisor-x86_64.ld |> ld $(LFLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
+
+endif
