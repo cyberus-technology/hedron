@@ -113,8 +113,49 @@ void Ec::vmx_cr()
 
     switch (acc) {
         case 0:     // MOV to CR
+        {
+            mword old_cr0 = current->regs.read_cr<Vmcs>(0);
+            mword old_cr4 = current->regs.read_cr<Vmcs>(4);
+
             current->regs.write_cr<Vmcs> (cr, current->regs.vmx_read_gpr (gpr));
+
+            /*
+             * Let the VMM update the PDPTE registers if necessary.
+             *
+             * Intel manual sections 4.4.1 of Vol. 3A and 26.3.2.4 of Vol. 3C
+             * indicate the conditions when this is the case.
+             */
+
+            /* no update needed if nested paging is not enabled */
+            if (!current->regs.nst_on)
+                break;
+
+            mword cr0 = current->regs.read_cr<Vmcs>(0);
+            mword cr4 = current->regs.read_cr<Vmcs>(4);
+
+            /* no update needed if not in protected mode with paging and PAE enabled */
+            if (!((cr0 & Cpu::CR0_PE) &&
+                  (cr0 & Cpu::CR0_PG) &&
+                  (cr4 & Cpu::CR4_PAE)))
+                break;
+
+            /* no update needed if no relevant bits of CR0 or CR4 have changed */
+            if ((cr != 3) &&
+                ((cr0 & Cpu::CR0_CD) == (old_cr0 & Cpu::CR0_CD)) &&
+                ((cr0 & Cpu::CR0_NW) == (old_cr0 & Cpu::CR0_NW)) &&
+                ((cr0 & Cpu::CR0_PG) == (old_cr0 & Cpu::CR0_PG)) &&
+                ((cr4 & Cpu::CR4_PAE) == (old_cr4 & Cpu::CR4_PAE)) &&
+                ((cr4 & Cpu::CR4_PGE) == (old_cr4 & Cpu::CR4_PGE)) &&
+                ((cr4 & Cpu::CR4_PSE) == (old_cr4 & Cpu::CR4_PSE)) &&
+                ((cr4 & Cpu::CR4_SMEP) == (old_cr4 & Cpu::CR4_SMEP)))
+               break;
+
+            /* PDPTE register update necessary */
+            current->regs.dst_portal = Vmcs::VMX_CR;
+            send_msg<ret_user_vmresume>();
+
             break;
+        }
         case 1:     // MOV from CR
             assert (cr != 0 && cr != 4);
             current->regs.vmx_write_gpr (gpr, current->regs.read_cr<Vmcs> (cr));
