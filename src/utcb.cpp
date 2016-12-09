@@ -44,6 +44,19 @@ bool Utcb::load_exc (Cpu_regs *regs)
         rdi = regs->REG(di);
     }
 
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
+
     if (m & Mtd::RSP)
         rsp = regs->REG(sp);
 
@@ -80,6 +93,19 @@ bool Utcb::save_exc (Cpu_regs *regs)
         regs->REG(di) = rdi;
     }
 
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
+
     if (mtd & Mtd::RSP)
         regs->REG(sp) = rsp;
 
@@ -108,6 +134,19 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         rsi = regs->REG(si);
         rdi = regs->REG(di);
     }
+
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
 
     regs->vmcs->make_current();
 
@@ -198,7 +237,23 @@ bool Utcb::load_vmx (Cpu_regs *regs)
 #ifdef __x86_64__
     if (m & Mtd::EFER)
         efer = Vmcs::read (Vmcs::GUEST_EFER);
+
+    if (m & Mtd::SYSCALL_SWAPGS) {
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        star = guest_msr_area->ia32_star.msr_data;
+        lstar = guest_msr_area->ia32_lstar.msr_data;
+        fmask = guest_msr_area->ia32_fmask.msr_data;
+        kernel_gs_base = guest_msr_area->ia32_kernel_gs_base.msr_data;
+    }
 #endif
+
+    if (m & Mtd::PDPTE) {
+        pdpte[0] = Vmcs::read (Vmcs::GUEST_PDPTE0);
+        pdpte[1] = Vmcs::read (Vmcs::GUEST_PDPTE1);
+        pdpte[2] = Vmcs::read (Vmcs::GUEST_PDPTE2);
+        pdpte[3] = Vmcs::read (Vmcs::GUEST_PDPTE3);
+    }
 
     barrier();
     mtd = m;
@@ -221,6 +276,19 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         regs->REG(si) = rsi;
         regs->REG(di) = rdi;
     }
+
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
 
     regs->vmcs->make_current();
 
@@ -344,7 +412,30 @@ bool Utcb::save_vmx (Cpu_regs *regs)
 #ifdef __x86_64__
     if (mtd & Mtd::EFER)
         regs->write_efer<Vmcs> (efer);
+
+    mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
+    Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
+    host_msr_area->ia32_star.msr_data = Msr::read<uint64>(Msr::IA32_STAR);
+    host_msr_area->ia32_lstar.msr_data = Msr::read<uint64>(Msr::IA32_LSTAR);
+    host_msr_area->ia32_fmask.msr_data = Msr::read<uint64>(Msr::IA32_FMASK);
+    host_msr_area->ia32_kernel_gs_base.msr_data = Msr::read<uint64>(Msr::IA32_KERNEL_GS_BASE);
+
+    if (mtd & Mtd::SYSCALL_SWAPGS) {
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        guest_msr_area->ia32_star.msr_data = star;
+        guest_msr_area->ia32_lstar.msr_data = lstar;
+        guest_msr_area->ia32_fmask.msr_data = fmask;
+        guest_msr_area->ia32_kernel_gs_base.msr_data = kernel_gs_base;
+    }
 #endif
+
+    if (mtd & Mtd::PDPTE) {
+        Vmcs::write (Vmcs::GUEST_PDPTE0, pdpte[0]);
+        Vmcs::write (Vmcs::GUEST_PDPTE1, pdpte[1]);
+        Vmcs::write (Vmcs::GUEST_PDPTE2, pdpte[2]);
+        Vmcs::write (Vmcs::GUEST_PDPTE3, pdpte[3]);
+    }
 
     return mtd & Mtd::FPU;
 }
@@ -367,6 +458,19 @@ bool Utcb::load_svm (Cpu_regs *regs)
         rsi = regs->REG(si);
         rdi = regs->REG(di);
     }
+
+#ifdef __x86_64__
+    if (m & Mtd::GPR_R8_R15) {
+        r8  = regs->r8;
+        r9  = regs->r9;
+        r10 = regs->r10;
+        r11 = regs->r11;
+        r12 = regs->r12;
+        r13 = regs->r13;
+        r14 = regs->r14;
+        r15 = regs->r15;
+    }
+#endif
 
     if (m & Mtd::RSP)
         rsp = static_cast<mword>(vmcb->rsp);
@@ -475,6 +579,19 @@ bool Utcb::save_svm (Cpu_regs *regs)
         regs->REG(si) = rsi;
         regs->REG(di) = rdi;
     }
+
+#ifdef __x86_64__
+    if (mtd & Mtd::GPR_R8_R15) {
+        regs->r8      = r8;
+        regs->r9      = r9;
+        regs->r10     = r10;
+        regs->r11     = r11;
+        regs->r12     = r12;
+        regs->r13     = r13;
+        regs->r14     = r14;
+        regs->r15     = r15;
+    }
+#endif
 
     if (mtd & Mtd::RSP)
         vmcb->rsp = rsp;
