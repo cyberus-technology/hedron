@@ -1,0 +1,24 @@
+before_script:
+   - gcc --version
+
+stages:
+   - build
+
+build_x86_32:
+  image: supernova-gcc
+  stage: build
+  script:
+  - cd build && make ARCH=x86_32
+  artifacts:
+    paths:
+      - build/hypervisor-x86_32
+
+build_x86_64:
+  image: supernova-gcc
+  stage: build
+  script:
+  - cd build && make ARCH=x86_64
+  artifacts:
+    paths:
+      - build/hypervisor-x86_64
+
