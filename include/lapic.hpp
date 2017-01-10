@@ -105,6 +105,7 @@ class Lapic
     public:
         static unsigned freq_tsc;
         static unsigned freq_bus;
+        static bool     use_tsc_timer;
 
         ALWAYS_INLINE
         static inline unsigned id()
