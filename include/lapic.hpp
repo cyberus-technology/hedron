@@ -134,7 +134,7 @@ class Lapic
         ALWAYS_INLINE
         static inline void set_timer (uint64 tsc)
         {
-            if (freq_bus) {
+            if (not use_tsc_timer) {
                 uint64 now = rdtsc();
                 uint32 icr;
                 write (LAPIC_TMR_ICR, tsc > now && (icr = static_cast<uint32>(tsc - now) / (freq_tsc / freq_bus)) > 0 ? icr : 1);
