@@ -37,7 +37,7 @@
 mword Hip::root_addr;
 mword Hip::root_size;
 
-void Hip::build (mword addr)
+void Hip::build (mword magic, mword addr)
 {
     Hip *h = hip();
 
@@ -64,6 +64,9 @@ void Hip::build (mword addr)
     if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
         Console::panic("Could not add all I/O APICs to Hip!");
     }
+
+    if (magic != Multiboot::MAGIC)
+        return;
 
     Multiboot *mbi = static_cast<Multiboot *>(Hpt::remap (addr));
 

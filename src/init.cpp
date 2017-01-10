@@ -32,8 +32,8 @@
 #include "multiboot.hpp"
 #include "tss.hpp"
 
-extern "C" INIT REGPARM (1)
-void init (mword mbi)
+extern "C" INIT REGPARM (2)
+void init (mword magic, mword mbi)
 {
     // Setup 0-page and 1-page
     memset (PAGE_0,  0,  PAGE_SIZE);
@@ -61,7 +61,7 @@ void init (mword mbi)
     Acpi::setup();
     Tss::setup();
     Lapic::setup();
-    Hip::build (mbi);
+    Hip::build (magic, mbi);
 
     Console_vga::con.setup();
 }
