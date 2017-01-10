@@ -131,6 +131,7 @@ void Hip::add_check()
     Hip *h = hip();
 
     h->freq_tsc = Lapic::freq_tsc;
+    h->freq_bus = Lapic::freq_bus;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);
