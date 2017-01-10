@@ -31,6 +31,7 @@
 
 unsigned    Lapic::freq_tsc;
 unsigned    Lapic::freq_bus;
+bool        Lapic::use_tsc_timer {false};
 
 void Lapic::init()
 {
@@ -45,7 +46,7 @@ void Lapic::init()
     if (!(svr & 0x100))
         write (LAPIC_SVR, svr | 0x100);
 
-    bool dl = Cpu::feature (Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
+    use_tsc_timer = Cpu::feature (Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
 
     switch (lvt_max()) {
         default:
@@ -59,7 +60,7 @@ void Lapic::init()
         case 1:
             set_lvt (LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
         case 0:
-            set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, dl ? 2U << 17 : 0);
+            set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
     }
 
     write (LAPIC_TPR, 0x10);
@@ -89,6 +90,8 @@ void Lapic::init()
         send_ipi (0, 1, DLV_SIPI, DSH_EXC_SELF);
     }
 
+    set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, use_tsc_timer ? 2U << 17 : 0);
+
     write (LAPIC_TMR_ICR, 0);
 
     trace (TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x (%s Mode)", apic_base & ~PAGE_MASK, id(), version(), lvt_max(), freq_bus ? "OS" : "DL");
@@ -115,7 +118,7 @@ void Lapic::error_handler()
 
 void Lapic::timer_handler()
 {
-    bool expired = (freq_bus ? read (LAPIC_TMR_CCR) : Msr::read<uint64>(Msr::IA32_TSC_DEADLINE)) == 0;
+    bool expired = (use_tsc_timer ? Msr::read<uint64>(Msr::IA32_TSC_DEADLINE) : read (LAPIC_TMR_CCR)) == 0;
     if (expired)
         Timeout::check();
 
