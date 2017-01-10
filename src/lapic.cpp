@@ -118,7 +118,7 @@ void Lapic::error_handler()
 
 void Lapic::timer_handler()
 {
-    bool expired = (use_tsc_timer ? read (LAPIC_TMR_CCR) : Msr::read<uint64>(Msr::IA32_TSC_DEADLINE)) == 0;
+    bool expired = (use_tsc_timer ? Msr::read<uint64>(Msr::IA32_TSC_DEADLINE) : read (LAPIC_TMR_CCR)) == 0;
     if (expired)
         Timeout::check();
 
