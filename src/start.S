@@ -157,10 +157,16 @@ __start_all:            INIT_STATE
                         je      1b
 
 3:                      call    kern_ptab_setup
-                        jmp     1f
+
+#ifdef __x86_64__
+                        movabs  $(start), %REG(bx)
+                        jmp     *%REG(bx)
+#else
+                        jmp     start
+#endif
 
 .text
 
-1:                      mov     %REG(ax), %cr3
+start:                  mov     %REG(ax), %cr3
                         mov     $(CPU_LOCAL_STCK + PAGE_SIZE), %REG(sp)
                         jmp     bootstrap
