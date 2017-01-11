@@ -44,10 +44,12 @@ inline void *memset (void *d, int c, size_t n)
 }
 
 extern "C" NONNULL
-inline int strcmp (char const *s1, char const *s2)
+inline bool strmatch (char const *s1, char const *s2, size_t n)
 {
-    while (*s1 && *s1 == *s2)
-        s1++, s2++;
+    if (!n) return false;
 
-    return *s1 - *s2;
+    while (*s1 && *s1 == *s2 && n)
+        s1++, s2++, n--;
+
+    return n == 0;
 }

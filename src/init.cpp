@@ -43,7 +43,7 @@ void init (mword mbi)
 
     Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
     if (mbi_->flags & Multiboot::CMDLINE)
-        Cmdline::init (mbi_->cmdline);
+        Cmdline::init (reinterpret_cast<char const*>(mbi_->cmdline));
 
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 

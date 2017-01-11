@@ -20,7 +20,6 @@
  */
 
 #include "cmdline.hpp"
-#include "hpt.hpp"
 #include "string.hpp"
 
 bool Cmdline::iommu;
@@ -44,30 +43,34 @@ struct Cmdline::param_map Cmdline::map[] INITDATA =
     { "noxsave",    &Cmdline::noxsave   },
 };
 
-char *Cmdline::get_arg (char **line)
+char const *Cmdline::get_arg (char const **line, unsigned &len)
 {
+    len = 0;
+
     for (; **line == ' '; ++*line) ;
 
     if (!**line)
         return nullptr;
 
-    char *arg = *line;
+    char const *arg = *line;
 
-    for (; **line != ' '; ++*line)
+    for (; **line != ' '; ++*line) {
         if (!**line)
             return arg;
-
-    *(*line)++ = 0;
+        len ++;
+    }
 
     return arg;
 }
 
-void Cmdline::init (mword addr)
+void Cmdline::init (char const * line)
 {
-    char *arg, *line = static_cast<char *>(Hpt::remap (addr));
+    char const *arg;
+    unsigned len;
 
-    while ((arg = get_arg (&line)))
-        for (unsigned i = 0; i < sizeof map / sizeof *map; i++)
-            if (!strcmp (map[i].arg, arg))
+    while ((arg = get_arg (&line, len)))
+        for (size_t i = 0; i < sizeof map / sizeof *map; i++) {
+            if (strmatch (map[i].arg, arg, len))
                 *map[i].ptr = true;
+        }
 }
