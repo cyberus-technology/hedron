@@ -62,7 +62,8 @@ void Acpi::reset()
 
 void Acpi::setup()
 {
-    Acpi_rsdp::parse();
+    if (!xsdt && !rsdt)
+        Acpi_rsdp::parse();
 
     if (xsdt)
         static_cast<Acpi_table_rsdt *>(Hpt::remap (xsdt))->parse (xsdt, sizeof (uint64));

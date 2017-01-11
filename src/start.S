@@ -34,11 +34,24 @@
 .globl                  __start_bsp
 
 /*
- * Multiboot Header
+ * Multiboot v1 Header
  */
-__boot_header:          .long   0x1badb002
+__boot_header_mbi1:     .long   0x1badb002
                         .long   0x0
                         .long  -0x1badb002
+/*
+ * Multiboot v2 Header
+ */
+                        .long   0x0            /* align to 8 byte for mbi2 */
+__boot_header_mbi2_s:   .long   0xe85250d6
+                        .long   0x0
+                        .long   (__boot_header_mbi2_e - __boot_header_mbi2_s)
+                        .long  -(0xe85250d6 + (__boot_header_mbi2_e - __boot_header_mbi2_s))
+                        /* end tag */
+                        .word   0x0 /* type */
+                        .word   0x0 /* flags */
+                        .long   0x8 /* size */
+__boot_header_mbi2_e:
 
 /*
  * Global Descriptor Table (GDT)

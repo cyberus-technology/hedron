@@ -30,7 +30,17 @@
 #include "idt.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
+#include "multiboot2.hpp"
 #include "tss.hpp"
+
+char const * get_boot_type(mword magic)
+{
+    switch (magic) {
+        case Multiboot::MAGIC: return "MB1";
+        case Multiboot2::MAGIC: return "MB2";
+        default: return "UNKNOWN";
+    }
+}
 
 extern "C" INIT REGPARM (2)
 void init (mword magic, mword mbi)
@@ -43,7 +53,7 @@ void init (mword magic, mword mbi)
 
     Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
     if (mbi_->flags & Multiboot::CMDLINE)
-        Cmdline::init (reinterpret_cast<char const*>(mbi_->cmdline));
+        Cmdline::init (static_cast<char const *>(Hpt::remap (mbi_->cmdline)));
 
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 
@@ -54,7 +64,7 @@ void init (mword magic, mword mbi)
 #else
                      "DEBUG"
 #endif
-                     " " ARCH "): " COMPILER_STRING "\n", reinterpret_cast<mword>(&GIT_VER));
+                     " " ARCH "): " COMPILER_STRING " [%s] \n", reinterpret_cast<mword>(&GIT_VER), get_boot_type(magic));
 
     Idt::build();
     Gsi::setup();

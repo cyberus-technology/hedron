@@ -63,7 +63,7 @@ char const *Cmdline::get_arg (char const **line, unsigned &len)
     return arg;
 }
 
-void Cmdline::init (char const * line)
+void Cmdline::init (char const *line)
 {
     char const *arg;
     unsigned len;
