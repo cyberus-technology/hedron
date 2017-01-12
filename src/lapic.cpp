@@ -42,6 +42,12 @@ void Lapic::init()
 
     Msr::write (Msr::IA32_APIC_BASE, apic_base | 0x800);
 
+    Cpu::id = Cpu::find_by_apic_id (id());
+
+    Cpu::lapic_info[Cpu::id].id      = read(LAPIC_IDR);
+    Cpu::lapic_info[Cpu::id].version = read(LAPIC_LVR);
+    Cpu::lapic_info[Cpu::id].svr     = read(LAPIC_SVR);
+
     uint32 svr = read (LAPIC_SVR);
     if (!(svr & 0x100))
         write (LAPIC_SVR, svr | 0x100);
@@ -50,23 +56,27 @@ void Lapic::init()
 
     switch (lvt_max()) {
         default:
+            Cpu::lapic_info[Cpu::id].lvt_therm = read (LAPIC_LVT_THERM);
             set_lvt (LAPIC_LVT_THERM, DLV_FIXED, VEC_LVT_THERM);
         case 4:
+            Cpu::lapic_info[Cpu::id].lvt_perfm = read (LAPIC_LVT_PERFM);
             set_lvt (LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
         case 3:
+            Cpu::lapic_info[Cpu::id].lvt_error = read (LAPIC_LVT_ERROR);
             set_lvt (LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
         case 2:
+            Cpu::lapic_info[Cpu::id].lvt_lint1 = read (LAPIC_LVT_LINT1);
             set_lvt (LAPIC_LVT_LINT1, DLV_NMI, 0);
         case 1:
+            Cpu::lapic_info[Cpu::id].lvt_lint0 = read (LAPIC_LVT_LINT0);
             set_lvt (LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
         case 0:
+            Cpu::lapic_info[Cpu::id].lvt_timer = read (LAPIC_LVT_TIMER);
             set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
     }
 
     write (LAPIC_TPR, 0x10);
     write (LAPIC_TMR_DCR, 0xb);
-
-    Cpu::id = Cpu::find_by_apic_id (id());
 
     if ((Cpu::bsp = apic_base & 0x100)) {
 

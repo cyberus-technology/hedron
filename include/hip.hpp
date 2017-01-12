@@ -22,6 +22,7 @@
 #pragma once
 
 #include "atomic.hpp"
+#include "cpu.hpp"
 #include "config.hpp"
 #include "extern.hpp"
 
@@ -34,6 +35,7 @@ class Hip_cpu
         uint8   package;
         uint8   acpi_id;
         uint8   reserved[3];
+        Cpu::lapic_info_t lapic_info;
 };
 
 class Hip_mem
