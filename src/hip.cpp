@@ -131,6 +131,7 @@ void Hip::add_cpu()
     cpu->core    = static_cast<uint8>(Cpu::core);
     cpu->thread  = static_cast<uint8>(Cpu::thread);
     cpu->flags   = 1;
+    cpu->lapic_info = Cpu::lapic_info[Cpu::id];
 }
 
 void Hip::add_check()
