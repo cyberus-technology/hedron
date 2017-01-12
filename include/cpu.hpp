@@ -141,6 +141,17 @@ class Cpu
         static uint8    acpi_id[NUM_CPU];
         static uint8    apic_id[NUM_CPU];
 
+        struct lapic_info_t {
+            uint32 id, version, svr, reserved;
+            uint32 lvt_timer;
+            uint32 lvt_lint0;
+            uint32 lvt_lint1;
+            uint32 lvt_error;
+            uint32 lvt_perfm;
+            uint32 lvt_therm;
+        };
+        static lapic_info_t lapic_info[NUM_CPU];
+
         static unsigned id                  CPULOCAL_HOT;
         static unsigned hazard              CPULOCAL_HOT;
         static unsigned package             CPULOCAL;
