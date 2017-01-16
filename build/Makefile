@@ -56,7 +56,7 @@ OFLAGS		:= -Os
 ifeq ($(ARCH),x86_32)
 AFLAGS		:= -m32 -march=i686 -mpreferred-stack-boundary=2 -mregparm=3
 else ifeq ($(ARCH),x86_64)
-AFLAGS		:= -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=kernel -mno-red-zone
+AFLAGS		:= -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=large -mno-red-zone -fPIC
 else
 $(error $(ARCH) is not a valid architecture)
 endif
