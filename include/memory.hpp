@@ -24,7 +24,7 @@
 #define PAGE_SIZE       (1 << PAGE_BITS)
 #define PAGE_MASK       (PAGE_SIZE - 1)
 
-#define LOAD_ADDR       0x200000
+#define LOAD_ADDR       0x4000000
 
 #if     defined(__i386__)
 #define USER_ADDR       0xc0000000
