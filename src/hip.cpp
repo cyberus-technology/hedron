@@ -20,9 +20,11 @@
  */
 
 #include "cmdline.hpp"
+#include "console.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
+#include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
 #include "space_obj.hpp"
@@ -34,31 +36,35 @@ void Hip::build (mword addr)
 {
     Hip *h = hip();
 
-    h->signature  = 0x41564f4e;
-    h->cpu_offs   = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
-    h->cpu_size   = static_cast<uint16>(sizeof (Hip_cpu));
-    h->mem_offs   = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
-    h->mem_size   = static_cast<uint16>(sizeof (Hip_mem));
-    h->api_flg    = FEAT_VMX | FEAT_SVM;
-    h->api_ver    = CFG_VER;
-    h->sel_num    = Space_obj::caps;
-    h->sel_gsi    = NUM_GSI;
-    h->sel_exc    = NUM_EXC;
-    h->sel_vmi    = NUM_VMI;
-    h->cfg_page   = PAGE_SIZE;
-    h->cfg_utcb   = PAGE_SIZE;
+    h->signature   = 0x41564f4e;
+    h->cpu_offs    = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
+    h->cpu_size    = static_cast<uint16>(sizeof (Hip_cpu));
+    h->ioapic_offs = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
+    h->ioapic_size = static_cast<uint16>(sizeof (Hip_ioapic));
+    h->mem_offs    = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
+    h->mem_size    = static_cast<uint16>(sizeof (Hip_mem));
+    h->api_flg     = FEAT_VMX | FEAT_SVM;
+    h->api_ver     = CFG_VER;
+    h->sel_num     = Space_obj::caps;
+    h->sel_gsi     = NUM_GSI;
+    h->sel_exc     = NUM_EXC;
+    h->sel_vmi     = NUM_VMI;
+    h->cfg_page    = PAGE_SIZE;
+    h->cfg_utcb    = PAGE_SIZE;
+
+    Hip_ioapic *ioapic = h->ioapic_desc;
+    Ioapic::add_to_hip(ioapic);
+    if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
+        Console::panic("Could not add all I/O APICs to Hip!");
+    }
 
     Multiboot *mbi = static_cast<Multiboot *>(Hpt::remap (addr));
 
     uint32 flags       = mbi->flags;
-    uint32 cmdline     = mbi->cmdline;
     uint32 mmap_addr   = mbi->mmap_addr;
     uint32 mmap_len    = mbi->mmap_len;
     uint32 mods_addr   = mbi->mods_addr;
     uint32 mods_count  = mbi->mods_count;
-
-    if (flags & Multiboot::CMDLINE)
-        Cmdline::init (cmdline);
 
     Hip_mem *mem = h->mem_desc;
 

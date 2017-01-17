@@ -20,13 +20,16 @@
 
 #pragma once
 
+#include "hip.hpp"
 #include "list.hpp"
 #include "lock_guard.hpp"
 #include "slab.hpp"
+#include "stdio.hpp"
 
 class Ioapic : public List<Ioapic>
 {
     private:
+        uint32   const      paddr;
         mword    const      reg_base;
         unsigned const      gsi_base;
         unsigned const      id;
@@ -93,6 +96,25 @@ class Ioapic : public List<Ioapic>
 
             return false;
         }
+
+        ALWAYS_INLINE
+        static inline void add_to_hip (Hip_ioapic *&entry)
+        {
+            for (Ioapic *ioapic = list; ioapic; ioapic = ioapic->next) {
+                entry->id = ioapic->read_id_reg();
+                entry->version = ioapic->read_version_reg();
+                entry->gsi_base = ioapic->get_gsi();
+                entry->base = ioapic->get_paddr();
+                entry++;
+            }
+        }
+
+        ALWAYS_INLINE
+        inline uint32 read_id_reg()      { return read (IOAPIC_ID); }
+        ALWAYS_INLINE
+        inline uint32 read_version_reg() { return read (IOAPIC_VER); }
+        ALWAYS_INLINE
+        inline uint32 get_paddr()        { return paddr; }
 
         ALWAYS_INLINE
         inline uint16 get_rid() const { return rid; }

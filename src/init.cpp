@@ -19,6 +19,7 @@
  */
 
 #include "acpi.hpp"
+#include "cmdline.hpp"
 #include "compiler.hpp"
 #include "console_serial.hpp"
 #include "console_vga.hpp"
@@ -27,6 +28,7 @@
 #include "hpt.hpp"
 #include "idt.hpp"
 #include "keyb.hpp"
+#include "multiboot.hpp"
 
 extern "C" INIT
 mword kern_ptab_setup()
@@ -58,7 +60,9 @@ void init (mword mbi)
 
     for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
 
-    Hip::build (mbi);
+    Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
+    if (mbi_->flags & Multiboot::CMDLINE)
+        Cmdline::init (mbi_->cmdline);
 
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 
@@ -68,6 +72,8 @@ void init (mword mbi)
     Idt::build();
     Gsi::setup();
     Acpi::setup();
+
+    Hip::build (mbi);
 
     Console_vga::con.setup();
 
