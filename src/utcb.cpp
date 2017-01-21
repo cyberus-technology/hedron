@@ -231,7 +231,7 @@ bool Utcb::load_vmx (Cpu_regs *regs)
 
     if (m & Mtd::TSC) {
         tsc_val = rdtsc();
-        tsc_off = regs->tsc_offset;
+        tsc_off = Vmcs::read (Vmcs::TSC_OFFSET);
     }
 
 #ifdef __x86_64__
@@ -407,7 +407,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     }
 
     if (mtd & Mtd::TSC)
-        regs->add_tsc_offset (tsc_off);
+        Vmcs::write (Vmcs::TSC_OFFSET, tsc_off);
 
 #ifdef __x86_64__
     if (mtd & Mtd::EFER)
