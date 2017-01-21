@@ -218,6 +218,5 @@ class Cpu_regs : public Exc_regs
         inline void add_tsc_offset (uint64 tsc)
         {
             tsc_offset += tsc;
-            set_hazard (HZD_TSC);
         }
 };
