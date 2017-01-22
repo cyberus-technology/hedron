@@ -50,28 +50,49 @@ class Hip_mem
         uint32  aux;
 };
 
+class Hip_ioapic
+{
+    public:
+        uint32 id;
+        uint32 version;
+        uint32 gsi_base;
+        uint32 base;
+};
+
 class Hip
 {
     private:
-        uint32  signature;              // 0x0
-        uint16  checksum;               // 0x4
-        uint16  length;                 // 0x6
-        uint16  cpu_offs;               // 0x8
-        uint16  cpu_size;               // 0xa
-        uint16  mem_offs;               // 0xc
-        uint16  mem_size;               // 0xe
-        uint32  api_flg;                // 0x10
-        uint32  api_ver;                // 0x14
-        uint32  sel_num;                // 0x18
-        uint32  sel_exc;                // 0x1c
-        uint32  sel_vmi;                // 0x20
-        uint32  sel_gsi;                // 0x24
-        uint32  cfg_page;               // 0x28
-        uint32  cfg_utcb;               // 0x2c
-        uint32  freq_tsc;               // 0x30
-        uint32  freq_bus;               // 0x34
-        Hip_cpu cpu_desc[NUM_CPU];
-        Hip_mem mem_desc[];
+        uint32     signature;              // 0x0
+        uint16     checksum;               // 0x4
+        uint16     length;                 // 0x6
+
+        uint16     cpu_offs;               // 0x8
+        uint16     cpu_size;               // 0xa
+        uint16     ioapic_offs;            // 0xc
+        uint16     ioapic_size;            // 0xe
+
+        uint16     mem_offs;               // 0x10
+        uint16     mem_size;               // 0x12
+        uint32     api_flg;                // 0x14
+
+        uint32     api_ver;                // 0x18
+        uint32     sel_num;                // 0x1c
+
+        uint32     sel_exc;                // 0x20
+        uint32     sel_vmi;                // 0x24
+
+        uint32     sel_gsi;                // 0x28
+        uint32     cfg_page;               // 0x2c
+
+        uint32     cfg_utcb;               // 0x30
+        uint32     freq_tsc;               // 0x34
+
+        uint32     freq_bus;               // 0x38
+        uint32     reserved;               // 0x3c
+
+        Hip_cpu    cpu_desc[NUM_CPU];
+        Hip_ioapic ioapic_desc[NUM_IOAPIC];
+        Hip_mem    mem_desc[];
 
     public:
         enum Feature {
