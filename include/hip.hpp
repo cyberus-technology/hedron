@@ -88,7 +88,10 @@ class Hip
         uint32     freq_tsc;               // 0x34
 
         uint32     freq_bus;               // 0x38
-        uint32     reserved;               // 0x3c
+        uint32     pci_bus_start;          // 0x3c
+
+        uint64     mcfg_base;              // 0x40
+        uint64     mcfg_size;              // 0x48
 
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
