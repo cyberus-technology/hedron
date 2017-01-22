@@ -27,6 +27,7 @@
 #include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
+#include "pci.hpp"
 #include "space_obj.hpp"
 
 mword Hip::root_addr;
@@ -138,6 +139,10 @@ void Hip::add_check()
 
     h->freq_tsc = Lapic::freq_tsc;
     h->freq_bus = Lapic::freq_bus;
+
+    h->pci_bus_start = Pci::bus_base;
+    h->mcfg_base     = Pci::cfg_base;
+    h->mcfg_size     = Pci::cfg_size;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);

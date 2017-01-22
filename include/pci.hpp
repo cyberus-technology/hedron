@@ -29,6 +29,7 @@ class Dmar;
 class Pci : public List<Pci>
 {
     friend class Acpi_table_mcfg;
+    friend class Hip;
 
     private:
         mword  const        reg_base;
