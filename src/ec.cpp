@@ -146,17 +146,6 @@ void Ec::handle_hazard (mword hzd, void (*func)())
         send_msg<ret_user_iret>();
     }
 
-    if (hzd & HZD_TSC) {
-        current->regs.clr_hazard (HZD_TSC);
-
-        if (func == ret_user_vmresume) {
-            current->regs.vmcs->make_current();
-            Vmcs::write (Vmcs::TSC_OFFSET,    static_cast<mword>(current->regs.tsc_offset));
-            Vmcs::write (Vmcs::TSC_OFFSET_HI, static_cast<mword>(current->regs.tsc_offset >> 32));
-        } else
-            current->regs.vmcb->tsc_offset = current->regs.tsc_offset;
-    }
-
     if (hzd & HZD_DS_ES) {
         Cpu::hazard &= ~HZD_DS_ES;
         asm volatile ("mov %0, %%ds; mov %0, %%es" : : "r" (SEL_USER_DATA));
