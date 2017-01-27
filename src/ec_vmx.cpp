@@ -114,6 +114,12 @@ void Ec::vmx_cr()
     switch (acc) {
         case 0:     // MOV to CR
         {
+            if (cr == 8) {
+                /* Let the VMM handle CR8 */
+                current->regs.dst_portal = Vmcs::VMX_CR;
+                send_msg<ret_user_vmresume>();
+            }
+
             mword old_cr0 = current->regs.read_cr<Vmcs>(0);
             mword old_cr4 = current->regs.read_cr<Vmcs>(4);
 
@@ -157,6 +163,13 @@ void Ec::vmx_cr()
             break;
         }
         case 1:     // MOV from CR
+
+            if (cr == 8) {
+                /* Let the VMM handle CR8 */
+                current->regs.dst_portal = Vmcs::VMX_CR;
+                send_msg<ret_user_vmresume>();
+            }
+
             assert (cr != 0 && cr != 4);
             current->regs.vmx_write_gpr (gpr, current->regs.read_cr<Vmcs> (cr));
             break;
