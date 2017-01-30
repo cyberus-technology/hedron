@@ -44,28 +44,29 @@ char const * const Cpu::vendor_string[] =
 mword       Cpu::boot_lock;
 
 // Order of these matters
-unsigned    Cpu::online;
-uint8       Cpu::acpi_id[NUM_CPU];
-uint8       Cpu::apic_id[NUM_CPU];
+unsigned          Cpu::online;
+uint8             Cpu::acpi_id[NUM_CPU];
+uint8             Cpu::apic_id[NUM_CPU];
+Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-unsigned    Cpu::id;
-unsigned    Cpu::hazard;
-unsigned    Cpu::package;
-unsigned    Cpu::core;
-unsigned    Cpu::thread;
+unsigned          Cpu::id;
+unsigned          Cpu::hazard;
+unsigned          Cpu::package;
+unsigned          Cpu::core;
+unsigned          Cpu::thread;
 
-Cpu::Vendor Cpu::vendor;
-unsigned    Cpu::platform;
-unsigned    Cpu::family;
-unsigned    Cpu::model;
-unsigned    Cpu::stepping;
-unsigned    Cpu::brand;
-unsigned    Cpu::patch;
-unsigned    Cpu::row;
+Cpu::Vendor       Cpu::vendor;
+unsigned          Cpu::platform;
+unsigned          Cpu::family;
+unsigned          Cpu::model;
+unsigned          Cpu::stepping;
+unsigned          Cpu::brand;
+unsigned          Cpu::patch;
+unsigned          Cpu::row;
 
-uint32      Cpu::name[12];
-uint32      Cpu::features[6];
-bool        Cpu::bsp;
+uint32            Cpu::name[12];
+uint32            Cpu::features[6];
+bool              Cpu::bsp;
 
 void Cpu::check_features()
 {
