@@ -95,6 +95,8 @@ class Hip
         uint64     mcfg_base;              // 0x40
         uint64     mcfg_size;              // 0x48
 
+        uint64     dmar_table;             // 0x50
+
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
         Hip_mem    mem_desc[];

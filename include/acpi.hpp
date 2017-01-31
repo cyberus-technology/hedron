@@ -27,6 +27,7 @@ class Acpi
     friend class Acpi_table_fadt;
     friend class Acpi_table_rsdt;
     friend class Acpi_rsdp;
+    friend class Hip;
 
     private:
         enum Register
