@@ -19,6 +19,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "acpi.hpp"
 #include "cmdline.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
@@ -144,6 +145,8 @@ void Hip::add_check()
     h->pci_bus_start = Pci::bus_base;
     h->mcfg_base     = Pci::cfg_base;
     h->mcfg_size     = Pci::cfg_size;
+
+    h->dmar_table    = Acpi::dmar;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);
