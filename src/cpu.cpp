@@ -213,6 +213,12 @@ void Cpu::init()
     if (EXPECT_TRUE (feature (FEAT_SMEP)))
         set_cr4 (get_cr4() | Cpu::CR4_SMEP);
 
+    // Some BIOSes don't enable VMX and lock the feature control MSR
+    auto feature_ctrl = Msr::read<uint32>(Msr::IA32_FEATURE_CONTROL);
+    if (!(feature_ctrl & Msr::FEATURE_LOCKED)) {
+        Msr::write<uint32>(Msr::IA32_FEATURE_CONTROL, feature_ctrl | Msr::FEATURE_VMX_O_SMX | Msr::FEATURE_LOCKED);
+    }
+
     Vmcs::init();
     Vmcb::init();
 
