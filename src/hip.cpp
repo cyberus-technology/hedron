@@ -24,6 +24,7 @@
 #include "console.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
+#include "hpet.hpp"
 #include "hpt.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
@@ -147,6 +148,7 @@ void Hip::add_check()
     h->mcfg_size     = Pci::cfg_size;
 
     h->dmar_table    = Acpi::dmar;
+    h->hpet_base     = Hpet::list->phys;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);
