@@ -158,8 +158,12 @@ __start_all:            INIT_STATE
 
 3:                      call    kern_ptab_setup
 
+#ifdef __x86_64__
                         movabs  $(start), %REG(bx)
                         jmp     *%REG(bx)
+#else
+                        jmp     start
+#endif
 
 .text
 
