@@ -22,6 +22,8 @@
 
 class Hpet : public List<Hpet>
 {
+    friend class Hip;
+
     private:
         Paddr    const      phys;
         unsigned const      id;
