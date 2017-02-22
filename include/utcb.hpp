@@ -66,6 +66,7 @@ class Utcb_data
                     };
                     uint64      inj;
                 };
+                uint32          vect_info, vect_error;
 
                 mword           rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi;
 #ifdef __x86_64__
@@ -83,6 +84,7 @@ class Utcb_data
                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
                 uint64          tsc_val, tsc_off;
+                uint32          exc_bitmap;
             };
 
             mword mr[];
