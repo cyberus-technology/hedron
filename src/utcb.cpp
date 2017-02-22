@@ -219,8 +219,10 @@ bool Utcb::load_vmx (Cpu_regs *regs)
             intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_INFO));
             intr_error = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_ERROR));
         } else {
-            intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
-            intr_error = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_ERROR));
+            intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::EXI_INTR_INFO));
+            intr_error = static_cast<uint32>(Vmcs::read (Vmcs::EXI_INTR_ERROR));
+            vect_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
+            vect_error = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_ERROR));
         }
     }
 
