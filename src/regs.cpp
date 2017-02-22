@@ -208,6 +208,8 @@ void Exc_regs::set_exc() const
     if (!fpu_on)
         msk |= 1UL << Cpu::EXC_NM;
 
+    msk |= exc_bitmap;
+
     set_e_bmp<T> (msk);
 }
 
