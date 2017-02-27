@@ -148,7 +148,7 @@ void Hip::add_check()
     h->mcfg_size     = Pci::cfg_size;
 
     h->dmar_table    = Acpi::dmar;
-    h->hpet_base     = Hpet::list->phys;
+    h->hpet_base     = Hpet::list == nullptr ? 0 : Hpet::list->phys;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);
