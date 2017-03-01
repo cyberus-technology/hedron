@@ -104,9 +104,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NORETURN
         static inline void vmx_invlpg();
 
-        NORETURN
-        static inline void vmx_cr();
-
         static bool fixup (mword &);
 
         NOINLINE
