@@ -382,35 +382,22 @@ mword Exc_regs::read_cr (unsigned cr) const
 template <typename T>
 void Exc_regs::write_cr (unsigned cr, mword val)
 {
-    mword toggled;
-
     switch (cr) {
+
+        case 0:
+            set_cr0<T> (val);
+            break;
 
         case 2:
             set_g_cr2<T> (val);
             break;
 
         case 3:
-            if (!nst_on)
-                tlb_flush<T> (false);
-
             set_cr3<T> (val);
-
-            break;
-
-        case 0:
-            set_cr0<T> (val);
             break;
 
         case 4:
-            toggled = get_cr4<T>() ^ val;
-
-            if (!nst_on)
-                if (toggled & (Cpu::CR4_PGE | Cpu::CR4_PAE | Cpu::CR4_PSE))
-                    tlb_flush<T> (true);
-
             set_cr4<T> (val);
-
             break;
 
         default:
