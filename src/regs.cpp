@@ -60,18 +60,14 @@ template <> void Exc_regs::set_e_bmp<Vmcs> (uint32 v)   const { Vmcs::write (Vmc
 template <> void Exc_regs::set_s_cr0<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR0_READ_SHADOW, cr0_shadow = v); }
 template <> void Exc_regs::set_s_cr4<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR4_READ_SHADOW, cr4_shadow = v); }
 
-template <> void Exc_regs::tlb_flush<Vmcb>(bool full) const
+template <> void Exc_regs::tlb_flush<Vmcb>(bool) const
 {
-    vtlb->flush (full);
-
     if (vmcb->asid)
         vmcb->tlb_control = 1;
 }
 
 template <> void Exc_regs::tlb_flush<Vmcs>(bool full) const
 {
-    vtlb->flush (full);
-
     mword vpid = Vmcs::vpid();
 
     if (vpid)
