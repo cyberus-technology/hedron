@@ -231,13 +231,6 @@ void Exc_regs::svm_set_cpu_ctrl1 (mword val)
 
 void Exc_regs::vmx_set_cpu_ctrl0 (mword val)
 {
-    unsigned const msk = Vmcs::CPU_INVLPG | Vmcs::CPU_CR3_LOAD | Vmcs::CPU_CR3_STORE;
-
-    if (nst_on)
-        val &= ~msk;
-    else
-        val |= msk;
-
     val |= Vmcs::ctrl_cpu[0].set;
     val &= Vmcs::ctrl_cpu[0].clr;
 
