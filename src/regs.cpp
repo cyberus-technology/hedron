@@ -399,28 +399,7 @@ void Exc_regs::write_cr (unsigned cr, mword val)
             break;
 
         case 0:
-            toggled = get_cr0<T>() ^ val;
-
-            if (!nst_on)
-                if (toggled & (Cpu::CR0_PG | Cpu::CR0_WP | Cpu::CR0_PE))
-                    tlb_flush<T> (true);
-
             set_cr0<T> (val);
-
-            if (toggled & Cpu::CR0_PG) {
-
-                if (!T::has_urg())
-                    nst_ctrl<T> (val & Cpu::CR0_PG);
-
-#ifdef __x86_64__
-                mword efer = get_g_efer<T>();
-                if ((val & Cpu::CR0_PG) && (efer & Cpu::EFER_LME))
-                    write_efer<T> (efer |  Cpu::EFER_LMA);
-                else
-                    write_efer<T> (efer & ~Cpu::EFER_LMA);
-#endif
-            }
-
             break;
 
         case 4:
