@@ -53,6 +53,7 @@ class Mtd
             PDPTE           = 1UL << 21,
             GPR_R8_R15      = 1UL << 22,
             SYSCALL_SWAPGS  = 1UL << 23,
+            TLB             = 1UL << 30,
             FPU             = 1UL << 31,
         };
 

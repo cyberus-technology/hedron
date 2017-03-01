@@ -437,6 +437,10 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         Vmcs::write (Vmcs::GUEST_PDPTE3, pdpte[3]);
     }
 
+    if (mtd & Mtd::TLB) {
+        regs->tlb_flush<Vmcs>(true);
+    }
+
     return mtd & Mtd::FPU;
 }
 
@@ -673,6 +677,10 @@ bool Utcb::save_svm (Cpu_regs *regs)
     if (mtd & Mtd::EFER)
         regs->write_efer<Vmcb> (efer);
 #endif
+
+    if (mtd & Mtd::TLB) {
+        regs->tlb_flush<Vmcb>(true);
+    }
 
     return mtd & Mtd::FPU;
 }
