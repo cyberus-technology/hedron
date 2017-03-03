@@ -60,18 +60,14 @@ template <> void Exc_regs::set_e_bmp<Vmcs> (uint32 v)   const { Vmcs::write (Vmc
 template <> void Exc_regs::set_s_cr0<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR0_READ_SHADOW, cr0_shadow = v); }
 template <> void Exc_regs::set_s_cr4<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR4_READ_SHADOW, cr4_shadow = v); }
 
-template <> void Exc_regs::tlb_flush<Vmcb>(bool full) const
+template <> void Exc_regs::tlb_flush<Vmcb>(bool) const
 {
-    vtlb->flush (full);
-
     if (vmcb->asid)
         vmcb->tlb_control = 1;
 }
 
 template <> void Exc_regs::tlb_flush<Vmcs>(bool full) const
 {
-    vtlb->flush (full);
-
     mword vpid = Vmcs::vpid();
 
     if (vpid)
@@ -231,13 +227,6 @@ void Exc_regs::svm_set_cpu_ctrl1 (mword val)
 
 void Exc_regs::vmx_set_cpu_ctrl0 (mword val)
 {
-    unsigned const msk = Vmcs::CPU_INVLPG | Vmcs::CPU_CR3_LOAD | Vmcs::CPU_CR3_STORE;
-
-    if (nst_on)
-        val &= ~msk;
-    else
-        val |= msk;
-
     val |= Vmcs::ctrl_cpu[0].set;
     val &= Vmcs::ctrl_cpu[0].clr;
 
@@ -382,56 +371,22 @@ mword Exc_regs::read_cr (unsigned cr) const
 template <typename T>
 void Exc_regs::write_cr (unsigned cr, mword val)
 {
-    mword toggled;
-
     switch (cr) {
+
+        case 0:
+            set_cr0<T> (val);
+            break;
 
         case 2:
             set_g_cr2<T> (val);
             break;
 
         case 3:
-            if (!nst_on)
-                tlb_flush<T> (false);
-
             set_cr3<T> (val);
-
-            break;
-
-        case 0:
-            toggled = get_cr0<T>() ^ val;
-
-            if (!nst_on)
-                if (toggled & (Cpu::CR0_PG | Cpu::CR0_WP | Cpu::CR0_PE))
-                    tlb_flush<T> (true);
-
-            set_cr0<T> (val);
-
-            if (toggled & Cpu::CR0_PG) {
-
-                if (!T::has_urg())
-                    nst_ctrl<T> (val & Cpu::CR0_PG);
-
-#ifdef __x86_64__
-                mword efer = get_g_efer<T>();
-                if ((val & Cpu::CR0_PG) && (efer & Cpu::EFER_LME))
-                    write_efer<T> (efer |  Cpu::EFER_LMA);
-                else
-                    write_efer<T> (efer & ~Cpu::EFER_LMA);
-#endif
-            }
-
             break;
 
         case 4:
-            toggled = get_cr4<T>() ^ val;
-
-            if (!nst_on)
-                if (toggled & (Cpu::CR4_PGE | Cpu::CR4_PAE | Cpu::CR4_PSE))
-                    tlb_flush<T> (true);
-
             set_cr4<T> (val);
-
             break;
 
         default:
