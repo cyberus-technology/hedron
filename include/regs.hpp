@@ -116,6 +116,7 @@ class Exc_regs : public Sys_regs
                 mword   nst_error;
                 uint8   nst_on;
                 uint8   fpu_on;
+                uint32  exc_bitmap;
             };
         };
 
@@ -162,9 +163,9 @@ class Exc_regs : public Sys_regs
         template <typename T> ALWAYS_INLINE inline void set_cr3 (mword);
         template <typename T> ALWAYS_INLINE inline void set_cr4 (mword);
 
-        template <typename T> ALWAYS_INLINE inline void set_exc() const;
-
     public:
+        template <typename T> void set_exc() const;
+
         ALWAYS_INLINE
         inline bool user() const { return cs & 3; }
 
