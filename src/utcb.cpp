@@ -219,8 +219,10 @@ bool Utcb::load_vmx (Cpu_regs *regs)
             intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_INFO));
             intr_error = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_ERROR));
         } else {
-            intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
-            intr_error = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_ERROR));
+            intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::EXI_INTR_INFO));
+            intr_error = static_cast<uint32>(Vmcs::read (Vmcs::EXI_INTR_ERROR));
+            vect_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
+            vect_error = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_ERROR));
         }
     }
 
@@ -379,6 +381,8 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     if (mtd & Mtd::CTRL) {
         regs->vmx_set_cpu_ctrl0 (ctrl[0]);
         regs->vmx_set_cpu_ctrl1 (ctrl[1]);
+        regs->exc_bitmap = exc_bitmap;
+        regs->set_exc<Vmcs>();
     }
 
     if (mtd & Mtd::INJ) {
@@ -652,6 +656,8 @@ bool Utcb::save_svm (Cpu_regs *regs)
     if (mtd & Mtd::CTRL) {
         regs->svm_set_cpu_ctrl0 (ctrl[0]);
         regs->svm_set_cpu_ctrl1 (ctrl[1]);
+        regs->exc_bitmap = exc_bitmap;
+        regs->set_exc<Vmcb>();
     }
 
     if (mtd & Mtd::INJ) {
