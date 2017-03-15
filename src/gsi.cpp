@@ -57,7 +57,7 @@ uint64 Gsi::set (unsigned gsi, unsigned cpu, unsigned rid)
     Ioapic *ioapic = gsi_table[gsi].ioapic;
 
     if (ioapic) {
-        ioapic->set_cpu (gsi, Dmar::ire() ? 0 : aid);
+        ioapic->set_cpu (gsi, aid, Dmar::ire());
         ioapic->set_irt (gsi, gsi_table[gsi].irt);
         rid = ioapic->get_rid();
     } else {

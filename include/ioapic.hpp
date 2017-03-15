@@ -117,9 +117,9 @@ class Ioapic : public List<Ioapic>
         }
 
         ALWAYS_INLINE
-        inline void set_cpu (unsigned gsi, unsigned cpu)
+        inline void set_cpu (unsigned gsi, unsigned cpu, bool ire)
         {
             unsigned pin = gsi - gsi_base;
-            write (Register (IOAPIC_IRT + 2 * pin + 1), cpu << 24 | gsi << 17 | 1ul << 16);
+            write (Register (IOAPIC_IRT + 2 * pin + 1), ire ? (gsi << 17 | 1ul << 16) : (cpu << 24));
         }
 };
