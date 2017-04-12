@@ -53,7 +53,7 @@ class Sys_regs
                 mword   REG(cx);
                 mword   REG(ax);
             };
-            mword gpr[];
+            mword gpr[(sizeof(mword) * 8 == 32) ? 8 : 16];
         };
 
         enum Status

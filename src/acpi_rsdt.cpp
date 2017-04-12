@@ -40,7 +40,7 @@ void Acpi_table_rsdt::parse (Paddr addr, size_t size) const
 
     Paddr table[count];
     for (unsigned i = 0; i < count; i++)
-        table[i] = static_cast<Paddr>(size == sizeof (*xsdt) ? xsdt[i] : rsdt[i]);
+        table[i] = static_cast<Paddr>(size == 8 ? xsdt(i) : rsdt(i));
 
     for (unsigned i = 0; i < count; i++) {
 

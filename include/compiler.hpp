@@ -67,6 +67,7 @@
         #define PACKED              __attribute__((packed))
         #define REGPARM(X)          __attribute__((regparm(X)))
         #define WARN_UNUSED_RESULT  __attribute__((warn_unused_result))
+        #define NULL_CHECK          __attribute__((optimize("-fno-delete-null-pointer-checks")))
 
         #define EXPECT_FALSE(X)     __builtin_expect(!!(X), 0)
         #define EXPECT_TRUE(X)      __builtin_expect(!!(X), 1)
