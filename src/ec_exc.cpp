@@ -36,9 +36,6 @@ void Ec::load_fpu()
 
 void Ec::save_fpu()
 {
-    if (EXPECT_FALSE (!this))
-        return;
-
     if (!utcb)
         regs.fpu_ctrl (false);
 
@@ -59,7 +56,8 @@ void Ec::transfer_fpu (Ec *ec)
         Fpu::enable();
 
         if (fpowner != this) {
-            fpowner->save_fpu();
+            if (fpowner)
+                fpowner->save_fpu();
             load_fpu();
         }
     }
