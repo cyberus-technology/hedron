@@ -88,6 +88,8 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
             ec->set_timeout (t, this);
 
             ec->block_sc();
+
+            ec->clr_timeout();
         }
 
         ALWAYS_INLINE

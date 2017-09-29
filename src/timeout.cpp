@@ -18,11 +18,16 @@
 #include "lapic.hpp"
 #include "timeout.hpp"
 #include "x86.hpp"
+#include "assert.hpp"
 
 Timeout *Timeout::list;
 
 void Timeout::enqueue (uint64 t)
 {
+
+    assert(prev == nullptr);
+    assert(next == nullptr);
+
     time = t;
 
     Timeout *p = nullptr;
