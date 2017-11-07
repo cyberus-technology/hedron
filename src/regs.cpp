@@ -24,7 +24,6 @@
 #include "svm.hpp"
 #include "vmx.hpp"
 #include "vpid.hpp"
-#include "vtlb.hpp"
 
 template <> mword Exc_regs::get_g_cs_dl<Vmcb>()         const { return static_cast<mword>(vmcb->cs.ar) >> 9 & 0x3; }
 template <> mword Exc_regs::get_g_flags<Vmcb>()         const { return static_cast<mword>(vmcb->rflags); }
@@ -76,8 +75,6 @@ template <> void Exc_regs::tlb_flush<Vmcs>(bool full) const
 
 template <> void Exc_regs::tlb_flush<Vmcs>(mword addr) const
 {
-    vtlb->flush (addr);
-
     mword vpid = Vmcs::vpid();
 
     if (vpid)
@@ -109,8 +106,6 @@ mword Exc_regs::cr0_set() const
 {
     mword set = 0;
 
-    if (!nst_on)
-        set |= Cpu::CR0_PG | Cpu::CR0_WP | Cpu::CR0_PE;
     if (!fpu_on)
         set |= Cpu::CR0_TS;
 
@@ -126,27 +121,13 @@ mword Exc_regs::cr0_msk() const
 template <typename T>
 mword Exc_regs::cr4_set() const
 {
-    mword set = nst_on ? 0 :
-#ifdef __i386__
-                Cpu::CR4_PSE;
-#else
-                Cpu::CR4_PSE | Cpu::CR4_PAE;
-#endif
-
-    return T::fix_cr4_set | set;
+    return T::fix_cr4_set;
 }
 
 template <typename T>
 mword Exc_regs::cr4_msk() const
 {
-    mword clr = nst_on ? 0 :
-#ifdef __i386__
-                Cpu::CR4_PGE | Cpu::CR4_PAE;
-#else
-                Cpu::CR4_PGE;
-#endif
-
-    return T::fix_cr4_clr | clr | cr4_set<T>();
+    return T::fix_cr4_clr | cr4_set<T>();
 }
 
 template <typename T>
@@ -160,7 +141,7 @@ mword Exc_regs::get_cr0() const
 template <typename T>
 mword Exc_regs::get_cr3() const
 {
-    return nst_on ? get_g_cr3<T>() : cr3_shadow;
+    return get_g_cr3<T>();
 }
 
 template <typename T>
@@ -181,10 +162,7 @@ void Exc_regs::set_cr0 (mword v)
 template <typename T>
 void Exc_regs::set_cr3 (mword v)
 {
-    if (nst_on)
-        set_g_cr3<T> (v);
-    else
-        cr3_shadow = v;
+    set_g_cr3<T> (v);
 }
 
 template <typename T>
@@ -199,8 +177,6 @@ void Exc_regs::set_exc() const
 {
     unsigned msk = 1UL << Cpu::EXC_AC;
 
-    if (!nst_on)
-        msk |= 1UL << Cpu::EXC_PF;
     if (!fpu_on)
         msk |= 1UL << Cpu::EXC_NM;
 
@@ -209,15 +185,12 @@ void Exc_regs::set_exc() const
 
 void Exc_regs::svm_set_cpu_ctrl0 (mword val)
 {
-    unsigned const msk = !!cr0_msk<Vmcb>() << 0 | !nst_on << 3 | !!cr4_msk<Vmcb>() << 4;
+    unsigned const msk = !!cr0_msk<Vmcb>() << 0 | !!cr4_msk<Vmcb>() << 4;
 
-    vmcb->npt_control  = nst_on;
+    vmcb->npt_control  = 1;
     vmcb->intercept_cr = (msk << 16) | msk;
 
-    if (nst_on)
-        vmcb->intercept_cpu[0] = static_cast<uint32>((val & ~Vmcb::CPU_INVLPG) | Vmcb::force_ctrl0);
-    else
-        vmcb->intercept_cpu[0] = static_cast<uint32>((val |  Vmcb::CPU_INVLPG) | Vmcb::force_ctrl0);
+    vmcb->intercept_cpu[0] = static_cast<uint32>((val & ~Vmcb::CPU_INVLPG) | Vmcb::force_ctrl0);
 }
 
 void Exc_regs::svm_set_cpu_ctrl1 (mword val)
@@ -237,10 +210,7 @@ void Exc_regs::vmx_set_cpu_ctrl1 (mword val)
 {
     unsigned const msk = Vmcs::CPU_EPT;
 
-    if (nst_on)
-        val |= msk;
-    else
-        val &= ~msk;
+    val |= msk;
 
     val |= Vmcs::ctrl_cpu[1].set;
     val &= Vmcs::ctrl_cpu[1].clr;
@@ -248,12 +218,11 @@ void Exc_regs::vmx_set_cpu_ctrl1 (mword val)
     Vmcs::write (Vmcs::CPU_EXEC_CTRL1, val);
 }
 
-template <> void Exc_regs::nst_ctrl<Vmcb>(bool on)
+template <> void Exc_regs::nst_ctrl<Vmcb>()
 {
     mword cr0 = get_cr0<Vmcb>();
     mword cr3 = get_cr3<Vmcb>();
     mword cr4 = get_cr4<Vmcb>();
-    nst_on = Vmcb::has_npt() && on;
     set_cr0<Vmcb> (cr0);
     set_cr3<Vmcb> (cr3);
     set_cr4<Vmcb> (cr4);
@@ -261,19 +230,15 @@ template <> void Exc_regs::nst_ctrl<Vmcb>(bool on)
     svm_set_cpu_ctrl0 (vmcb->intercept_cpu[0]);
     svm_set_cpu_ctrl1 (vmcb->intercept_cpu[1]);
     set_exc<Vmcb>();
-
-    if (!nst_on)
-        set_g_cr3<Vmcb> (Buddy::ptr_to_phys (vtlb));
 }
 
-template <> void Exc_regs::nst_ctrl<Vmcs>(bool on)
+template <> void Exc_regs::nst_ctrl<Vmcs>()
 {
     assert (Vmcs::current == vmcs);
 
     mword cr0 = get_cr0<Vmcs>();
     mword cr3 = get_cr3<Vmcs>();
     mword cr4 = get_cr4<Vmcs>();
-    nst_on = Vmcs::has_ept() && on;
     set_cr0<Vmcs> (cr0);
     set_cr3<Vmcs> (cr3);
     set_cr4<Vmcs> (cr4);
@@ -284,9 +249,6 @@ template <> void Exc_regs::nst_ctrl<Vmcs>(bool on)
 
     Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>());
     Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>());
-
-    if (!nst_on)
-        set_g_cr3<Vmcs> (Buddy::ptr_to_phys (vtlb));
 }
 
 void Exc_regs::fpu_ctrl (bool on)
@@ -415,3 +377,5 @@ template mword Exc_regs::read_cr<Vmcb> (unsigned) const;
 template mword Exc_regs::read_cr<Vmcs> (unsigned) const;
 template void Exc_regs::write_cr<Vmcb> (unsigned, mword);
 template void Exc_regs::write_cr<Vmcs> (unsigned, mword);
+template void Exc_regs::set_exc<Vmcb>() const;
+template void Exc_regs::set_exc<Vmcs>() const;

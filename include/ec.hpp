@@ -84,8 +84,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static bool handle_exc_gp (Exc_regs *);
         static bool handle_exc_pf (Exc_regs *);
 
-        static inline uint8 ifetch (mword);
-
         NORETURN
         static inline void svm_exception (mword);
 
@@ -138,11 +136,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void free (Rcu_elem * a)
         {
             Ec * e = static_cast<Ec *>(a);
-
-            if (e->regs.vtlb) {
-                trace(0, "leaking memory - vCPU EC memory re-usage not supported");
-                return;
-            }
 
             if (e->del_ref()) {
                 assert(e != Ec::current);

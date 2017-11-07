@@ -28,7 +28,6 @@
 #include "stdio.hpp"
 #include "svm.hpp"
 #include "vmx.hpp"
-#include "vtlb.hpp"
 #include "sm.hpp"
 
 INIT_PRIORITY (PRIO_SLAB)
@@ -41,7 +40,6 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
-    regs.vtlb = nullptr;
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 }
@@ -51,7 +49,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
 
-    regs.vtlb = nullptr;
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 
@@ -82,7 +79,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         utcb = nullptr;
 
         regs.dst_portal = NUM_VMI - 2;
-        regs.vtlb = new Vtlb;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
 
@@ -107,7 +103,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.vmcs->clear();
             cont = send_msg<ret_user_vmresume>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
+            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p)", this, p, regs.vmcs);
 
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
@@ -115,7 +111,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.nst_ctrl<Vmcb>();
             cont = send_msg<ret_user_vmrun>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p VTLB:%p)", this, p, regs.vmcb, regs.vtlb);
+            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
 }
@@ -125,7 +121,6 @@ Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, stati
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
 
-    regs.vtlb = nullptr;
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 }
@@ -147,13 +142,6 @@ Ec::~Ec()
         delete utcb;
         return;
     }
-
-    /* skip xCPU EC */
-    if (!regs.vtlb)
-        return;
-
-    /* vCPU cleanup */
-    delete regs.vtlb;
 
     if (Hip::feature() & Hip::FEAT_VMX)
         delete regs.vmcs;
@@ -266,10 +254,7 @@ void Ec::ret_user_vmresume()
 
     if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
         Pd::current->gtlb.clr (Cpu::id);
-        if (current->regs.nst_on)
-            Pd::current->ept.flush();
-        else
-            current->regs.vtlb->flush (true);
+        Pd::current->ept.flush();
     }
 
     if (EXPECT_FALSE (get_cr2() != current->regs.cr2))
@@ -294,10 +279,7 @@ void Ec::ret_user_vmrun()
 
     if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
         Pd::current->gtlb.clr (Cpu::id);
-        if (current->regs.nst_on)
-            current->regs.vmcb->tlb_control = 1;
-        else
-            current->regs.vtlb->flush (true);
+        current->regs.vmcb->tlb_control = 1;
     }
 
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
