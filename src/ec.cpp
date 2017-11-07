@@ -27,7 +27,6 @@
 #include "stdio.hpp"
 #include "svm.hpp"
 #include "vmx.hpp"
-#include "vtlb.hpp"
 
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
@@ -68,7 +67,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     } else {
 
         regs.dst_portal = NUM_VMI - 2;
-        regs.vtlb = new Vtlb;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
 
@@ -93,7 +91,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.vmcs->clear();
             cont = send_msg<ret_user_vmresume>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
+            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p)", this, p, regs.vmcs);
 
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
@@ -101,7 +99,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.nst_ctrl<Vmcb>();
             cont = send_msg<ret_user_vmrun>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p VTLB:%p)", this, p, regs.vmcb, regs.vtlb);
+            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
 }
@@ -189,10 +187,7 @@ void Ec::ret_user_vmresume()
 
     if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
         Pd::current->gtlb.clr (Cpu::id);
-        if (current->regs.nst_on)
-            Pd::current->ept.flush();
-        else
-            current->regs.vtlb->flush (true);
+        Pd::current->ept.flush();
     }
 
     if (EXPECT_FALSE (get_cr2() != current->regs.cr2))
@@ -217,10 +212,7 @@ void Ec::ret_user_vmrun()
 
     if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
         Pd::current->gtlb.clr (Cpu::id);
-        if (current->regs.nst_on)
-            current->regs.vmcb->tlb_control = 1;
-        else
-            current->regs.vtlb->flush (true);
+        current->regs.vmcb->tlb_control = 1;
     }
 
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)

@@ -128,7 +128,8 @@ void Vmcs::init()
     ctrl_cpu[0].set |= CPU_HLT | CPU_IO | CPU_IO_BITMAP | CPU_SECONDARY;
     ctrl_cpu[1].set |= CPU_VPID | CPU_URG;
 
-    if (Cmdline::vtlb || !ept_vpid.invept)
+    //XXX
+    if (!ept_vpid.invept)
         ctrl_cpu[1].clr &= ~(CPU_EPT | CPU_URG);
     if (Cmdline::novpid || !ept_vpid.invvpid)
         ctrl_cpu[1].clr &= ~CPU_VPID;
