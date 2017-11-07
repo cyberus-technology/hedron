@@ -27,7 +27,6 @@
 
 class Vmcb;
 class Vmcs;
-class Vtlb;
 
 class Sys_regs
 {
@@ -107,14 +106,12 @@ class Exc_regs : public Sys_regs
                     Vmcs *  vmcs;
                     Vmcb *  vmcb;
                 };
-                Vtlb *  vtlb;
                 mword   cr0_shadow;
                 mword   cr3_shadow;
                 mword   cr4_shadow;
                 mword   dst_portal;
                 mword   nst_fault;
                 mword   nst_error;
-                uint8   nst_on;
                 uint8   fpu_on;
                 uint32  exc_bitmap;
             };
@@ -184,7 +181,7 @@ class Exc_regs : public Sys_regs
         void svm_write_gpr (unsigned, mword);
         void vmx_write_gpr (unsigned, mword);
 
-        template <typename T> void nst_ctrl (bool = T::has_urg());
+        template <typename T> void nst_ctrl ();
 
         template <typename T> void tlb_flush (bool) const;
         template <typename T> void tlb_flush (mword) const;
