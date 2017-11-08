@@ -26,7 +26,7 @@ class Timeout_hypercall : public Timeout
 {
     private:
         Ec * const ec;
-        Sm *sm;
+        Sm *       sm { nullptr };
 
         void trigger();
 
@@ -34,6 +34,7 @@ class Timeout_hypercall : public Timeout
         ALWAYS_INLINE
         inline Timeout_hypercall (Ec *e) : ec (e) {}
 
-        ALWAYS_INLINE
-        inline void enqueue (uint64 t, Sm *s) { sm = s; Timeout::enqueue (t); }
+        ~Timeout_hypercall();
+
+        void enqueue (uint64 t, Sm *s);
 };

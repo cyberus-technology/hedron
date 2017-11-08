@@ -18,7 +18,27 @@
 #include "sm.hpp"
 #include "timeout_hypercall.hpp"
 
+void Timeout_hypercall::enqueue(uint64 t, Sm *s)
+{
+    if (sm && sm->del_rcu())
+        Rcu::call (sm);
+
+    if (!s->add_ref()) {
+        sm = nullptr;
+        return;
+    }
+
+    sm = s;
+    Timeout::enqueue (t);
+}
+
+Timeout_hypercall::~Timeout_hypercall()
+{
+    if (sm && sm->del_rcu())
+        Rcu::call (sm);
+}
+
 void Timeout_hypercall::trigger()
 {
-    sm->timeout (ec);
+    if (sm) sm->timeout (ec);
 }
