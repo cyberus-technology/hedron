@@ -100,7 +100,7 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
 
 void Vmcs::init()
 {
-    if (!Cpu::feature (Cpu::FEAT_VMX) || (Msr::read<uint32>(Msr::IA32_FEATURE_CONTROL) & 0x5) != 0x5) {
+    if (not Cpu::feature (Cpu::FEAT_VMX) or (Msr::read<uint32>(Msr::IA32_FEATURE_CONTROL) & 0x5) != 0x5) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
@@ -116,23 +116,30 @@ void Vmcs::init()
     ctrl_pin.val    = Msr::read<uint64>(basic.ctrl ? Msr::IA32_VMX_TRUE_PIN   : Msr::IA32_VMX_CTRL_PIN);
     ctrl_cpu[0].val = Msr::read<uint64>(basic.ctrl ? Msr::IA32_VMX_TRUE_CPU0  : Msr::IA32_VMX_CTRL_CPU0);
 
-    if (has_secondary())
+    if (has_secondary()) {
         ctrl_cpu[1].val = Msr::read<uint64>(Msr::IA32_VMX_CTRL_CPU1);
-    if (has_ept() || has_vpid())
-        ept_vpid.val = Msr::read<uint64>(Msr::IA32_VMX_EPT_VPID);
-    if (has_ept())
-        Ept::ord = min (Ept::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(ept_vpid.super)) + 2) * Ept::bpl() - 1);
-    if (has_urg())
-        fix_cr0_set &= ~(Cpu::CR0_PG | Cpu::CR0_PE);
+    }
+
+    if (not has_ept() or not has_urg()) {
+        Hip::clr_feature (Hip::FEAT_VMX);
+        return;
+    }
+
+    ept_vpid.val = Msr::read<uint64>(Msr::IA32_VMX_EPT_VPID);
+    Ept::ord = min (Ept::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(ept_vpid.super)) + 2) * Ept::bpl() - 1);
+    fix_cr0_set &= ~(Cpu::CR0_PG | Cpu::CR0_PE);
 
     ctrl_cpu[0].set |= CPU_HLT | CPU_IO | CPU_IO_BITMAP | CPU_SECONDARY;
     ctrl_cpu[1].set |= CPU_VPID | CPU_URG;
 
-    //XXX
-    if (!ept_vpid.invept)
-        ctrl_cpu[1].clr &= ~(CPU_EPT | CPU_URG);
-    if (Cmdline::novpid || !ept_vpid.invvpid)
+    if (not ept_vpid.invept) {
+        Hip::clr_feature (Hip::FEAT_VMX);
+        return;
+    }
+
+    if (Cmdline::novpid or not ept_vpid.invvpid) {
         ctrl_cpu[1].clr &= ~CPU_VPID;
+    }
 
     set_cr0 ((get_cr0() & ~fix_cr0_clr) | fix_cr0_set);
     set_cr4 ((get_cr4() & ~fix_cr4_clr) | fix_cr4_set);
