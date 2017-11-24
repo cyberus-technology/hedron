@@ -41,7 +41,6 @@ class Cmdline
         static bool keyb;
         static bool serial;
         static bool spinner;
-        static bool vtlb;
         static bool nodl;
         static bool nopcid;
         static bool novga;
