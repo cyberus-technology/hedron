@@ -76,8 +76,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static bool handle_exc_gp (Exc_regs *);
         static bool handle_exc_pf (Exc_regs *);
 
-        static inline uint8 ifetch (mword);
-
         NORETURN
         static inline void svm_exception (mword);
 

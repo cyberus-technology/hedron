@@ -24,7 +24,6 @@
 #include "lapic.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
-#include "vtlb.hpp"
 
 void Ec::vmx_exception()
 {
@@ -56,25 +55,6 @@ void Ec::vmx_exception()
         case 0x307:         // #NM
             handle_exc_nm();
             ret_user_vmresume();
-
-        case 0x30e:         // #PF
-            mword err = Vmcs::read (Vmcs::EXI_INTR_ERROR);
-            mword cr2 = Vmcs::read (Vmcs::EXI_QUALIFICATION);
-
-            switch (Vtlb::miss (&current->regs, cr2, err)) {
-
-                case Vtlb::GPA_HPA:
-                    current->regs.dst_portal = Vmcs::VMX_EPT_VIOLATION;
-                    break;
-
-                case Vtlb::GLA_GPA:
-                    current->regs.cr2 = cr2;
-                    Vmcs::write (Vmcs::ENT_INTR_INFO,  intr_info & ~0x1000);
-                    Vmcs::write (Vmcs::ENT_INTR_ERROR, err);
-
-                case Vtlb::SUCCESS:
-                    ret_user_vmresume();
-            }
     }
 
     send_msg<ret_user_vmresume>();
@@ -96,13 +76,6 @@ void Ec::vmx_extint()
     ret_user_vmresume();
 }
 
-void Ec::vmx_invlpg()
-{
-    current->regs.tlb_flush<Vmcs>(Vmcs::read (Vmcs::EXI_QUALIFICATION));
-    Vmcs::adjust_rip();
-    ret_user_vmresume();
-}
-
 void Ec::handle_vmx()
 {
     Cpu::hazard = (Cpu::hazard | HZD_DS_ES | HZD_TR) & ~HZD_FPU;
@@ -114,7 +87,6 @@ void Ec::handle_vmx()
     switch (reason) {
         case Vmcs::VMX_EXC_NMI:     vmx_exception();
         case Vmcs::VMX_EXTINT:      vmx_extint();
-        case Vmcs::VMX_INVLPG:      vmx_invlpg();
         case Vmcs::VMX_EPT_VIOLATION:
             current->regs.nst_error = Vmcs::read (Vmcs::EXI_QUALIFICATION);
             current->regs.nst_fault = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
