@@ -1,26 +1,52 @@
 before_script:
-   - gcc --version
+  - gcc --version
 
 stages:
-   - build
+  - build
+  - deploy
 
 image: $CI_REGISTRY/ci-images/cyberus-developer:latest
 
-build_x86_32:
+.build_template: &build_options
   stage: build
   script:
-  - cd build && make ARCH=x86_32
+  - cd build && make ARCH=$ARCH
+  artifacts:
+    paths:
+      - build/hypervisor-$ARCH
+
+.release_only_template: &release_only
+  only:
+    - master
+
+build:x86_32:
+  variables:
+    ARCH: x86_32
   artifacts:
     expire_in: 1 week
-    paths:
-      - build/hypervisor-x86_32
+  <<: *build_options
 
-build_x86_64:
-  stage: build
+build:x86_64:
+  variables:
+    ARCH: x86_64
+  artifacts:
+    expire_in: 1 week
+  <<: *build_options
+
+build:release:
+  variables:
+    ARCH: x86_64
+  <<: *build_options
+  <<: *release_only
+
+pages:
+  stage: deploy
+  dependencies:
+    - build:release
   script:
-  - cd build && make ARCH=x86_64
+    - mkdir -p public/
+    - cp build/hypervisor-x86_64 public/.
   artifacts:
-    expire_in: 1 week
     paths:
-      - build/hypervisor-x86_64
-
+      - public
+  <<: *release_only
