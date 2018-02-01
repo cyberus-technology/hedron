@@ -46,7 +46,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u), xcpu_sm (nullptr)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
@@ -54,8 +54,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 
-    if (u) {
-
+    if (not vcpu) {
         if (glb) {
             regs.cs  = SEL_USER_CODE;
             regs.ds  = SEL_USER_DATA;
@@ -103,10 +102,18 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
             Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
 
+            if (u) {
+                /* allocate+register the virtual LAPIC page and map it into user space */
+                void *vlapic_page_v = Buddy::allocator.alloc(0, Buddy::FILL_0);
+                mword vlapic_page   = Buddy::ptr_to_phys(vlapic_page_v);
+                Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page);
+                pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page);
+            }
+
             regs.vmcs->clear();
             cont = send_msg<ret_user_vmresume>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p)", this, p, regs.vmcs);
 
+            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
             regs.REG(ax) = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));

@@ -134,7 +134,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 Cpu::hazard |= HZD_FPU;
             }
         }
-
         static void free (Rcu_elem * a)
         {
             Ec * e = static_cast<Ec *>(a);
@@ -197,7 +196,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static Ec *fpowner CPULOCAL;
 
         Ec (Pd *, void (*)(), unsigned);
-        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword);
+        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool);
         Ec (Pd *, Pd *, void (*f)(), unsigned, Ec *);
 
         ~Ec();
