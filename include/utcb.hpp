@@ -78,7 +78,7 @@ class Utcb_data
                 uint64          reserved;
                 mword           cr0, cr2, cr3, cr4;
                 mword           pdpte[4];
-                mword           cr8, efer;
+                mword           cr8, efer, pat;
                 uint64          star, lstar, fmask, kernel_gs_base;
                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
