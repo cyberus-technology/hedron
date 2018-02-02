@@ -42,7 +42,7 @@ class Ept : public Pte<Ept, uint64, 4, 9, false>
         };
 
         ALWAYS_INLINE
-        static inline mword hw_attr (mword a, mword t) { return a ? t << 3 | a | EPT_I | EPT_R : 0; }
+        static inline mword hw_attr (mword a, mword t) { return a ? t << 3 | a | EPT_R : 0; }
 
         ALWAYS_INLINE
         inline mword order() const { return PAGE_BITS + (static_cast<mword>(val) >> 8 & 0xf); }

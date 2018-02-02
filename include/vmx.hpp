@@ -141,6 +141,7 @@ class Vmcs
             VMCS_LINK_PTR_HI        = 0x2801ul,
             GUEST_DEBUGCTL          = 0x2802ul,
             GUEST_DEBUGCTL_HI       = 0x2803ul,
+            GUEST_PAT               = 0x2804ul,
             GUEST_EFER              = 0x2806ul,
             GUEST_PERF_GLOBAL_CTRL  = 0x2808ul,
             GUEST_PDPTE0            = 0x280aul,
@@ -149,6 +150,7 @@ class Vmcs
             GUEST_PDPTE3            = 0x2810ul,
 
             // 64-Bit Host State
+            HOST_PAT                = 0x2c00ul,
             HOST_EFER               = 0x2c02ul,
             HOST_PERF_GLOBAL_CTRL   = 0x2c04ul,
 
@@ -266,6 +268,8 @@ class Vmcs
         {
             EXI_HOST_64             = 1UL << 9,
             EXI_INTA                = 1UL << 15,
+            EXI_SAVE_PAT            = 1UL << 18,
+            EXI_LOAD_PAT            = 1UL << 19,
             EXI_SAVE_EFER           = 1UL << 20,
             EXI_LOAD_EFER           = 1UL << 21,
         };
@@ -273,6 +277,7 @@ class Vmcs
         enum Ctrl_ent
         {
             ENT_GUEST_64            = 1UL << 9,
+            ENT_LOAD_PAT            = 1UL << 14,
             ENT_LOAD_EFER           = 1UL << 15,
         };
 
