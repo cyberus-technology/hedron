@@ -18,7 +18,7 @@
 # GNU General Public License version 2 for more details.
 #
 
-ARCH		?= x86_32
+ARCH		?= x86_64
 CC		:= gcc
 ECHO		:= echo
 INSTALL		:= install
@@ -53,9 +53,8 @@ PFLAGS		:= $(addprefix -D, $(DEFINES)) $(addprefix -I, $(INC_DIR))
 # Optimization options
 DFLAGS		:= -MP -MMD -pipe
 OFLAGS		:= -Os
-ifeq ($(ARCH),x86_32)
-AFLAGS		:= -m32 -march=i686 -mpreferred-stack-boundary=2 -mregparm=3
-else ifeq ($(ARCH),x86_64)
+
+ifeq ($(ARCH),x86_64)
 AFLAGS		:= -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=large -mno-red-zone -fPIC
 else
 $(error $(ARCH) is not a valid architecture)

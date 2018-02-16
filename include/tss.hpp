@@ -55,13 +55,11 @@ class Tss
         uint16  ldt;  uint16 : 16;      // 0x60
 #endif
 
-#ifdef __x86_64__
         uint64  sp0     PACKED;         // 0x4
         uint64  sp1     PACKED;         // 0xc
         uint64  sp2     PACKED;         // 0x14
         uint64  ist[8]  PACKED;         // 0x1c
         uint64  : 64    PACKED;
-#endif
 
         uint16  trap;                   // 0x64
         uint16  iobm;                   // 0x66
