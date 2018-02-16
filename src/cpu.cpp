@@ -168,9 +168,7 @@ void Cpu::setup_sysenter()
 
 void Cpu::setup_pcid()
 {
-#ifdef __x86_64__
     if (EXPECT_FALSE (Cmdline::nopcid))
-#endif
         defeature (FEAT_PCID);
 
     if (EXPECT_FALSE (!feature (FEAT_PCID)))
