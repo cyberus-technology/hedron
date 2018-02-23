@@ -393,6 +393,9 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         regs->vmx_set_cpu_ctrl0 (ctrl[0]);
         regs->vmx_set_cpu_ctrl1 (ctrl[1]);
         regs->exc_bitmap = exc_bitmap;
+
+        Vmcs::fix_cr0_mon = cr0_mon;
+        Vmcs::fix_cr4_mon = cr4_mon;
         regs->set_exc<Vmcs>();
     }
 

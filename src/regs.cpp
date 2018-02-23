@@ -116,9 +116,9 @@ mword Exc_regs::cr0_set() const
 }
 
 template <typename T>
-mword Exc_regs::cr0_msk() const
+mword Exc_regs::cr0_msk(bool include_mon) const
 {
-    return T::fix_cr0_clr | cr0_set<T>();
+    return T::fix_cr0_clr | cr0_set<T>() | T::fix_cr0_mon * include_mon;
 }
 
 template <typename T>
@@ -128,9 +128,9 @@ mword Exc_regs::cr4_set() const
 }
 
 template <typename T>
-mword Exc_regs::cr4_msk() const
+mword Exc_regs::cr4_msk(bool include_mon) const
 {
-    return T::fix_cr4_clr | cr4_set<T>();
+    return T::fix_cr4_clr | cr4_set<T>() | T::fix_cr4_mon * include_mon;
 }
 
 template <typename T>
@@ -186,6 +186,9 @@ void Exc_regs::set_exc() const
     msk |= exc_bitmap;
 
     set_e_bmp<T> (msk);
+
+    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>(true));
+    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>(true));
 }
 
 void Exc_regs::svm_set_cpu_ctrl0 (mword val)
