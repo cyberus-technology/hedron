@@ -7,6 +7,8 @@
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  *
+ * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
