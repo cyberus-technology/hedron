@@ -5,7 +5,7 @@ stages:
   - build
   - deploy
 
-image: $CI_REGISTRY/ci-images/cyberus-developer:latest
+image: gcc:5
 
 .build_template: &build_options
   stage: build
