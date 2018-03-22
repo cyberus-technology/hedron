@@ -258,6 +258,13 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         tpr_threshold = static_cast<uint32>(Vmcs::read (Vmcs::TPR_THRESHOLD));
     }
 
+    if (m & Mtd::EOI) {
+        eoi_bitmap[0] = Vmcs::read (Vmcs::EOI_EXIT_BITMAP_0);
+        eoi_bitmap[1] = Vmcs::read (Vmcs::EOI_EXIT_BITMAP_1);
+        eoi_bitmap[2] = Vmcs::read (Vmcs::EOI_EXIT_BITMAP_2);
+        eoi_bitmap[3] = Vmcs::read (Vmcs::EOI_EXIT_BITMAP_3);
+    }
+
     if (m & Mtd::VINTR) {
         vintr_status = static_cast<uint16>(Vmcs::read (Vmcs::GUEST_INTR_STS));
     }
@@ -450,6 +457,13 @@ bool Utcb::save_vmx (Cpu_regs *regs)
 
     if (mtd & Mtd::TPR) {
         Vmcs::write (Vmcs::TPR_THRESHOLD, tpr_threshold);
+    }
+
+    if (mtd & Mtd::EOI) {
+        Vmcs::write (Vmcs::EOI_EXIT_BITMAP_0, eoi_bitmap[0]);
+        Vmcs::write (Vmcs::EOI_EXIT_BITMAP_1, eoi_bitmap[1]);
+        Vmcs::write (Vmcs::EOI_EXIT_BITMAP_2, eoi_bitmap[2]);
+        Vmcs::write (Vmcs::EOI_EXIT_BITMAP_3, eoi_bitmap[3]);
     }
 
     if (mtd & Mtd::VINTR) {

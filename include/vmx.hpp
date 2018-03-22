@@ -135,6 +135,11 @@ class Vmcs
             EPTP                    = 0x201aul,
             EPTP_HI                 = 0x201bul,
 
+            EOI_EXIT_BITMAP_0       = 0x201cul,
+            EOI_EXIT_BITMAP_1       = 0x201eul,
+            EOI_EXIT_BITMAP_2       = 0x2020ul,
+            EOI_EXIT_BITMAP_3       = 0x2022ul,
+
             INFO_PHYS_ADDR          = 0x2400ul,
 
             // 64-Bit Guest State

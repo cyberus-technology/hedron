@@ -58,7 +58,7 @@ class Mtd
             SYSCALL_SWAPGS  = 1UL << 23,
 
             VINTR           = 1UL << 26,
-
+            EOI             = 1UL << 27,
             TPR             = 1UL << 28,
 
             TLB             = 1UL << 30,

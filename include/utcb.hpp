@@ -88,6 +88,8 @@ class Utcb_data
                 uint32          exc_bitmap;
                 uint32          tpr_threshold;
 
+                uint64          eoi_bitmap[4];
+
                 uint16          vintr_status;
                 uint16          reserved_array[3];
             };
