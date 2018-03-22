@@ -109,6 +109,7 @@ class Vmcs
             GUEST_SEL_GS            = 0x080aul,
             GUEST_SEL_LDTR          = 0x080cul,
             GUEST_SEL_TR            = 0x080eul,
+            GUEST_INTR_STS          = 0x0810ul,
 
             // 16-Bit Host State Fields
             HOST_SEL_ES             = 0x0c00ul,

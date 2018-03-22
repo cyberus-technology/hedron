@@ -84,8 +84,12 @@ class Utcb_data
                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
                 uint64          tsc_val, tsc_off;
+
                 uint32          exc_bitmap;
                 uint32          tpr_threshold;
+
+                uint16          vintr_status;
+                uint16          reserved_array[3];
             };
 
             mword data_begin;

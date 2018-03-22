@@ -57,6 +57,8 @@ class Mtd
             GPR_R8_R15      = 1UL << 22,
             SYSCALL_SWAPGS  = 1UL << 23,
 
+            VINTR           = 1UL << 26,
+
             TPR             = 1UL << 28,
 
             TLB             = 1UL << 30,
