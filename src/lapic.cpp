@@ -9,6 +9,7 @@
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -61,21 +62,27 @@ void Lapic::init()
         default:
             Cpu::lapic_info[Cpu::id].lvt_therm = read (LAPIC_LVT_THERM);
             set_lvt (LAPIC_LVT_THERM, DLV_FIXED, VEC_LVT_THERM);
+            FALL_THROUGH;
         case 4:
             Cpu::lapic_info[Cpu::id].lvt_perfm = read (LAPIC_LVT_PERFM);
             set_lvt (LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
+            FALL_THROUGH;
         case 3:
             Cpu::lapic_info[Cpu::id].lvt_error = read (LAPIC_LVT_ERROR);
             set_lvt (LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
+            FALL_THROUGH;
         case 2:
             Cpu::lapic_info[Cpu::id].lvt_lint1 = read (LAPIC_LVT_LINT1);
             set_lvt (LAPIC_LVT_LINT1, DLV_NMI, 0);
+            FALL_THROUGH;
         case 1:
             Cpu::lapic_info[Cpu::id].lvt_lint0 = read (LAPIC_LVT_LINT0);
             set_lvt (LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
+            FALL_THROUGH;
         case 0:
             Cpu::lapic_info[Cpu::id].lvt_timer = read (LAPIC_LVT_TIMER);
             set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
+            FALL_THROUGH;
     }
 
     write (LAPIC_TPR, 0x10);

@@ -53,6 +53,12 @@
         #define nullptr             0
     #endif
 
+    #if (COMPILER_VERSION < 700)
+        #define FALL_THROUGH
+    #else
+        #define FALL_THROUGH        __attribute__((fallthrough))
+    #endif
+
         #define ALIGNED(X)          __attribute__((aligned(X)))
         #define ALWAYS_INLINE       __attribute__((always_inline))
         #define CPULOCAL            __attribute__((section (".cpulocal,\"w\",@nobits#")))
