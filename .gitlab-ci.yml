@@ -17,7 +17,8 @@ image: gcc:5
 
 .release_only_template: &release_only
   only:
-    - master
+    - tags
+    - /^[\d-]+-release
 
 build:x86_32:
   variables:
@@ -44,8 +45,8 @@ pages:
   dependencies:
     - build:release
   script:
-    - mkdir -p public/
-    - cp build/hypervisor-x86_64 public/.
+    - mkdir -p public/$CI_COMMIT_REF_SLUG
+    - cp build/hypervisor-x86_64 public/$CI_COMMIT_REF_SLUG/nova
   artifacts:
     paths:
       - public
