@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -106,6 +108,7 @@ void Console::vprintf (char const *format, va_list args)
                                 break;
                             }
                             mode = MODE_WIDTH;
+                            FALL_THROUGH;
                         case MODE_WIDTH: width = width * 10 + *format - '0'; break;
                         case MODE_PRECS: precs = precs * 10 + *format - '0'; break;
                     }
@@ -157,6 +160,7 @@ void Console::vprintf (char const *format, va_list args)
 
                 case 0:
                     format--;
+                    FALL_THROUGH;
 
                 default:
                     putc (*format);
