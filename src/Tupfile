@@ -19,6 +19,9 @@ FFLAGS += -fno-stack-protector
 FFLAGS += -fvisibility-inlines-hidden
 FFLAGS += -fdiagnostics-color=auto
 FFLAGS += -std=gnu++11
+FFLAGS += -mno-sse
+FFLAGS += -mno-mmx
+FFLAGS += -mno-3dnow
 
 # Warning options
 WFLAGS  = -Wall -Wextra -Waggregate-return -Wcast-align -Wcast-qual -Wconversion -Wdisabled-optimization -Wformat=2 -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
