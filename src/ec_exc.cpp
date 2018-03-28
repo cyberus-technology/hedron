@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -68,7 +70,9 @@ void Ec::handle_exc_nm()
     if (current == fpowner)
         return;
 
-    fpowner->save_fpu();
+    if (fpowner)
+        fpowner->save_fpu();
+
     current->load_fpu();
 
     fpowner = current;
