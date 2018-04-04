@@ -39,11 +39,11 @@ CFLAGS  = $(PFLAGS) $(DFLAGS) $(AFLAGS) $(OFLAGS) $(FFLAGS) $(WFLAGS)
 
 # Linker flags
 GITVER  = `(git rev-parse HEAD 2>/dev/null || echo 0) | cut -c1-7`
-LFLAGS  = --defsym=GIT_VER=0x$(GITVER) --gc-sections --warn-common -static -n
+LFLAGS  = -static -nostdlib -Wl,--gc-sections,--warn-common,-n,--defsym=GIT_VER=0x$(GITVER),--build-id=none
 
 : foreach *.S |> $(CC) $(SFLAGS) -c %f -o %o |> %B.o
-: foreach *.cpp |> $(CXX) $(CFLAGS) -c %f -o %o |> %B.o
+: foreach *.cpp |> $(CXX) $(CFLAGS) $(LTO_FLAGS) -c %f -o %o |> %B.o
 : hypervisor.ld |> $(CC) $(SFLAGS) -xc -E -P %f -o %o |> hypervisor-x86_64.ld
-: *.o | hypervisor-x86_64.ld |> $(LD) $(LFLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
+: *.o | hypervisor-x86_64.ld |> $(CXX) $(LFLAGS) $(LTO_FLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
 
 endif

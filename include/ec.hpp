@@ -7,6 +7,8 @@
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  *
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -66,7 +68,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void handle_vmx() asm ("vmx_handler");
 
         NORETURN
-        static void handle_svm() asm ("svm_handler");
+        static void USED handle_svm() asm ("svm_handler");
 
         NORETURN
         static void handle_tss() asm ("tss_handler");
