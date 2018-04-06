@@ -47,7 +47,7 @@ class Kobject : public Mdb
         explicit Kobject (Type t, Space *s, mword b = 0, mword a = 0, void (*f)(Rcu_elem *) = free, void (*pref)(Rcu_elem *) = nullptr ) : Mdb (s, reinterpret_cast<mword>(this), b, a, f, pref), objtype (t) {}
 
     public:
-        ALWAYS_INLINE NULL_CHECK
+        ALWAYS_INLINE
         inline Type type() const
         {
             return Type (objtype);
