@@ -136,6 +136,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         void transfer_fpu (Ec *);
 
+        static inline bool sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask = 0);
+
     public:
         static Ec *current CPULOCAL_HOT;
         static Ec *fpowner CPULOCAL;
