@@ -7,6 +7,7 @@
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *

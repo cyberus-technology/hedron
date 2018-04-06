@@ -11,6 +11,7 @@
  * This file is part of the NOVA microhypervisor.
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  *
  * NOVA is free software: you can redistribute it and/or modify it

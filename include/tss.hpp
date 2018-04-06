@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
