@@ -438,6 +438,7 @@ class Vmcs
         }
 
         static bool has_secondary() { return ctrl_cpu[0].clr & CPU_SECONDARY; }
+        static bool has_guest_pat() { return ctrl_exi.clr & (EXI_SAVE_PAT | EXI_LOAD_PAT); }
         static bool has_ept()       { return ctrl_cpu[1].clr & CPU_EPT; }
         static bool has_vpid()      { return ctrl_cpu[1].clr & CPU_VPID; }
         static bool has_urg()       { return ctrl_cpu[1].clr & CPU_URG; }

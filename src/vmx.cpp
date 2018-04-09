@@ -123,7 +123,7 @@ void Vmcs::init()
         ctrl_cpu[1].val = Msr::read<uint64>(Msr::IA32_VMX_CTRL_CPU1);
     }
 
-    if (not has_ept() or not has_urg()) {
+    if (not has_ept() or not has_urg() or not has_guest_pat()) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
