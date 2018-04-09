@@ -233,7 +233,7 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         tsc_off = Vmcs::read (Vmcs::TSC_OFFSET);
     }
 
-    if (m & Mtd::EFER)
+    if (m & Mtd::EFER_PAT)
         efer = Vmcs::read (Vmcs::GUEST_EFER);
 
     if (m & Mtd::SYSCALL_SWAPGS) {
@@ -406,7 +406,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     if (mtd & Mtd::TSC)
         Vmcs::write (Vmcs::TSC_OFFSET, tsc_off);
 
-    if (mtd & Mtd::EFER)
+    if (mtd & Mtd::EFER_PAT)
         regs->write_efer<Vmcs> (efer);
 
     mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
@@ -548,7 +548,7 @@ bool Utcb::load_svm (Cpu_regs *regs)
         tsc_off = regs->tsc_offset;
     }
 
-    if (m & Mtd::EFER)
+    if (m & Mtd::EFER_PAT)
         efer = vmcb->efer;
 
     barrier();
@@ -664,7 +664,7 @@ bool Utcb::save_svm (Cpu_regs *regs)
     if (mtd & Mtd::TSC)
         regs->add_tsc_offset (tsc_off);
 
-    if (mtd & Mtd::EFER)
+    if (mtd & Mtd::EFER_PAT)
         regs->write_efer<Vmcb> (efer);
 
     if (mtd & Mtd::TLB) {
