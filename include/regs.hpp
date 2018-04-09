@@ -36,7 +36,6 @@ class Sys_regs
     public:
         union {
             struct {
-#ifdef __x86_64__
                 mword   r15;
                 mword   r14;
                 mword   r13;
@@ -45,7 +44,6 @@ class Sys_regs
                 mword   r10;
                 mword   r9;
                 mword   r8;
-#endif
                 mword   REG(di);
                 mword   REG(si);
                 mword   REG(bp);

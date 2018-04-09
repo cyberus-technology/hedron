@@ -20,13 +20,6 @@ image: gcc:5
     - tags
     - /^[\d-]+-release
 
-build:x86_32:
-  variables:
-    ARCH: x86_32
-  artifacts:
-    expire_in: 1 week
-  <<: *build_options
-
 build:x86_64:
   variables:
     ARCH: x86_64

@@ -47,13 +47,8 @@ You need the following tools to compile the source code:
   available from http://www.kernel.org/pub/linux/devel/binutils/
 
 - gcc, available from http://gcc.gnu.org/
-  - for x86_32: gcc 4.2 or higher
-  - for x86_64: gcc 4.5 or higher
+  - for x86_64: gcc 5.4.0 or higher
 
-
-You can build a 32-bit microhypervisor binary as follows:
-
-    cd build; make ARCH=x86_32
 
 You can build a 64-bit microhypervisor binary as follows:
 
