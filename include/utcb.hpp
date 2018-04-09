@@ -8,6 +8,7 @@
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -59,6 +60,8 @@ class Utcb_head
 class Utcb_data
 {
     protected:
+        union {
+            struct {
                 mword           mtd, inst_len, rip, rflags;
                 uint32          intr_state, actv_state;
                 union {
@@ -82,6 +85,10 @@ class Utcb_data
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
                 uint64          tsc_val, tsc_off;
                 uint32          exc_bitmap;
+            };
+
+            mword data_begin;
+        };
 };
 
 class Utcb : public Utcb_head, private Utcb_data
@@ -103,14 +110,17 @@ class Utcb : public Utcb_head, private Utcb_data
         inline mword ui() const { return min (words / 1, ucnt()); }
         inline mword ti() const { return min (words / 2, tcnt()); }
 
+        inline mword &mr(mword i) { return reinterpret_cast<mword *>(&data_begin)[i]; }
+
         ALWAYS_INLINE NONNULL
         inline void save (Utcb *dst)
         {
             register mword n = ui();
 
             dst->items = items;
-            for (mword i = 0; i < n; i++)
-                reinterpret_cast<mword *>(&dst->mtd)[i] = reinterpret_cast<mword *>(&mtd)[i];
+            for (mword i = 0; i < n; i++) {
+                dst->mr(i) = mr(i);
+            }
         }
 
         ALWAYS_INLINE
