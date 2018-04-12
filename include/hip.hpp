@@ -101,6 +101,8 @@ class Hip
         uint64     dmar_table;             // 0x50
         uint64     hpet_base;              // 0x58
 
+        uint64     initial_pat;            // 0x60
+
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
         Hip_mem    mem_desc[];

@@ -74,9 +74,12 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
     write (HOST_SEL_ES, SEL_KERN_DATA);
     write (HOST_SEL_TR, SEL_TSS_RUN);
 
+    write (HOST_PAT,  Msr::read<uint64>(Msr::IA32_CR_PAT));
     write (HOST_EFER, Msr::read<uint64>(Msr::IA32_EFER));
     exi |= EXI_SAVE_EFER | EXI_LOAD_EFER | EXI_HOST_64;
+    exi |= EXI_SAVE_PAT  | EXI_LOAD_PAT;
     ent |= ENT_LOAD_EFER;
+    ent |= ENT_LOAD_PAT;
 
     write (PIN_CONTROLS, (pin | ctrl_pin.set) & ctrl_pin.clr);
     write (EXI_CONTROLS, (exi | ctrl_exi.set) & ctrl_exi.clr);
@@ -120,7 +123,7 @@ void Vmcs::init()
         ctrl_cpu[1].val = Msr::read<uint64>(Msr::IA32_VMX_CTRL_CPU1);
     }
 
-    if (not has_ept() or not has_urg()) {
+    if (not has_ept() or not has_urg() or not has_guest_pat()) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
