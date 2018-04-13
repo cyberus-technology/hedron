@@ -54,8 +54,9 @@ void Ec::transfer_fpu (Ec *ec)
         Fpu::enable();
 
         if (fpowner != this) {
-            if (fpowner)
+            if (fpowner) {
                 fpowner->save_fpu();
+            }
             load_fpu();
         }
     }
@@ -70,8 +71,9 @@ void Ec::handle_exc_nm()
     if (current == fpowner)
         return;
 
-    if (fpowner)
+    if (fpowner) {
         fpowner->save_fpu();
+    }
 
     current->load_fpu();
 
