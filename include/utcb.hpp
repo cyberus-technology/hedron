@@ -110,7 +110,7 @@ class Utcb : public Utcb_head, private Utcb_data
         inline mword ui() const { return min (words / 1, ucnt()); }
         inline mword ti() const { return min (words / 2, tcnt()); }
 
-        inline mword &mr(mword i) { return reinterpret_cast<mword *>(&data_begin)[i]; }
+        inline mword &mr(mword i) { return (&data_begin)[i]; }
 
         ALWAYS_INLINE NONNULL
         inline void save (Utcb *dst)
