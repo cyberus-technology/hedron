@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -40,7 +42,6 @@ class Kobject : public Mdb
             SC,
             PT,
             SM,
-            INVALID,
         };
 
         explicit Kobject (Type t, Space *s, mword b = 0, mword a = 0) : Mdb (s, reinterpret_cast<mword>(this), b, a, free), objtype (t) {}
@@ -49,6 +50,6 @@ class Kobject : public Mdb
         ALWAYS_INLINE
         inline Type type() const
         {
-            return EXPECT_TRUE (this) ? Type (objtype) : INVALID;
+            return Type (objtype);
         }
 };

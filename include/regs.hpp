@@ -34,6 +34,8 @@ class Vmcs;
 class Sys_regs
 {
     public:
+        static constexpr mword NUM_GPR = 16;
+
         union {
             struct {
                 mword   r15;
@@ -53,7 +55,7 @@ class Sys_regs
                 mword   REG(cx);
                 mword   REG(ax);
             };
-            mword gpr[];
+            mword gpr[NUM_GPR];
         };
 
         enum Status

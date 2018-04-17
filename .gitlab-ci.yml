@@ -5,7 +5,7 @@ stages:
   - build
   - deploy
 
-image: gcc:5
+image: gcc:7
 
 .build_template: &build_options
   stage: build

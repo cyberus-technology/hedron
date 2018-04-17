@@ -39,12 +39,16 @@ class Acpi_table_rsdt : public Acpi_table
             return (length - sizeof (Acpi_table)) / size;
         }
 
-    public:
         union
         {
-            uint32  rsdt[];
-            uint64  xsdt[];
+            uint32 rsdt_;
+            uint64 xsdt_;
         };
+
+    public:
+
+        uint32 rsdt(unsigned i) const { return *(&rsdt_ + i); }
+        uint64 xsdt(unsigned i) const { return *(&xsdt_ + i); }
 
         INIT
         void parse (Paddr, size_t) const;

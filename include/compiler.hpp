@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -53,6 +55,12 @@
         #define nullptr             0
     #endif
 
+    #if (COMPILER_VERSION < 700)
+        #define FALL_THROUGH
+    #else
+        #define FALL_THROUGH        __attribute__((fallthrough))
+    #endif
+
         #define ALIGNED(X)          __attribute__((aligned(X)))
         #define ALWAYS_INLINE       __attribute__((always_inline))
         #define CPULOCAL            __attribute__((section (".cpulocal,\"w\",@nobits#")))
@@ -67,6 +75,7 @@
         #define PACKED              __attribute__((packed))
         #define REGPARM(X)          __attribute__((regparm(X)))
         #define WARN_UNUSED_RESULT  __attribute__((warn_unused_result))
+        #define USED                __attribute__((used))
 
         #define EXPECT_FALSE(X)     __builtin_expect(!!(X), 0)
         #define EXPECT_TRUE(X)      __builtin_expect(!!(X), 1)

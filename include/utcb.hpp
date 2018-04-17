@@ -8,6 +8,7 @@
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
+ * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -86,7 +87,7 @@ class Utcb_data
                 uint32          exc_bitmap;
             };
 
-            mword mr[];
+            mword data_begin;
         };
 };
 
@@ -109,19 +110,17 @@ class Utcb : public Utcb_head, private Utcb_data
         inline mword ui() const { return min (words / 1, ucnt()); }
         inline mword ti() const { return min (words / 2, tcnt()); }
 
+        inline mword &mr(mword i) { return (&data_begin)[i]; }
+
         ALWAYS_INLINE NONNULL
         inline void save (Utcb *dst)
         {
             register mword n = ui();
 
             dst->items = items;
-#if 0
-            mword *d = dst->mr, *s = mr;
-            asm volatile ("rep; movsl" : "+D" (d), "+S" (s), "+c" (n) : : "memory");
-#else
-            for (unsigned long i = 0; i < n; i++)
-                dst->mr[i] = mr[i];
-#endif
+            for (mword i = 0; i < n; i++) {
+                dst->mr(i) = mr(i);
+            }
         }
 
         ALWAYS_INLINE
