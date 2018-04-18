@@ -109,6 +109,7 @@ class Exc_regs : public Sys_regs
                     Vmcs *  vmcs;
                     Vmcb *  vmcb;
                 };
+                mword   reserved;
                 mword   cr0_shadow;
                 mword   cr3_shadow;
                 mword   cr4_shadow;
