@@ -254,6 +254,10 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         pdpte[3] = Vmcs::read (Vmcs::GUEST_PDPTE3);
     }
 
+    if (m & Mtd::TPR) {
+        tpr_threshold = static_cast<uint32>(Vmcs::read (Vmcs::TPR_THRESHOLD));
+    }
+
     barrier();
     mtd = m;
     items = sizeof (Utcb_data) / sizeof (mword);
@@ -438,6 +442,10 @@ bool Utcb::save_vmx (Cpu_regs *regs)
 
     if (mtd & Mtd::TLB) {
         regs->tlb_flush<Vmcs>(true);
+    }
+
+    if (mtd & Mtd::TPR) {
+        Vmcs::write (Vmcs::TPR_THRESHOLD, tpr_threshold);
     }
 
     return mtd & Mtd::FPU;

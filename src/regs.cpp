@@ -208,6 +208,12 @@ void Exc_regs::vmx_set_cpu_ctrl0 (mword val)
     val |= Vmcs::ctrl_cpu[0].set;
     val &= Vmcs::ctrl_cpu[0].clr;
 
+    bool tpr_shadow_active = val & Vmcs::Ctrl0::CPU_TPR_SHADOW;
+
+    if (not tpr_shadow_active) {
+        val |= Vmcs::Ctrl0::CPU_CR8_LOAD | Vmcs::Ctrl0::CPU_CR8_STORE;
+    }
+
     Vmcs::write (Vmcs::CPU_EXEC_CTRL0, val);
 }
 

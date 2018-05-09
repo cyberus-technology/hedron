@@ -63,7 +63,13 @@ class Sys_create_ec : public Sys_regs
         inline unsigned cpu() const { return ARG_3 & 0xfff; }
 
         ALWAYS_INLINE
-        inline mword utcb() const { return ARG_3 & ~0xfff; }
+        inline bool is_vcpu() const { return flags() & 0x2; }
+
+        ALWAYS_INLINE
+        inline mword utcb() const { return is_vcpu() ? 0 : ARG_3 & ~0xfff; }
+
+        ALWAYS_INLINE
+        inline mword vlapic_page() const { return is_vcpu() ? ARG_3 & ~0xfff : 0; }
 
         ALWAYS_INLINE
         inline mword esp() const { return ARG_4; }
