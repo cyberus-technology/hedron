@@ -568,7 +568,7 @@ void Ec::sys_pt_ctrl()
     Sys_pt_ctrl *r = static_cast<Sys_pt_ctrl *>(current->sys_regs());
 
     Capability cap = Space_obj::lookup (r->pt());
-    if (EXPECT_FALSE (cap.obj()->type() != Kobject::PT || !(cap.prm() & 1UL << 0))) {
+    if (EXPECT_FALSE (cap.obj()->type() != Kobject::PT || !(cap.prm() & Pt::PERM_CTRL))) {
         trace (TRACE_ERROR, "%s: Bad PT CAP (%#lx)", __func__, r->pt());
         sys_finish<Sys_regs::BAD_CAP>();
     }
@@ -705,16 +705,16 @@ void Ec::sys_xcpu_call()
 {
     Sys_call *s = static_cast<Sys_call *>(current->sys_regs());
 
-    Kobject *obj = Space_obj::lookup (s->pt()).obj();
-    if (EXPECT_FALSE (obj->type() != Kobject::PT)) {
+    Capability cap = Space_obj::lookup (s->pt());
+    if (EXPECT_FALSE (cap.obj()->type() != Kobject::PT)) {
         trace (TRACE_ERROR, "%s: Bad PT CAP (%#lx)", __func__, s->pt());
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Pt *pt = static_cast<Pt *>(obj);
+    Pt *pt = static_cast<Pt *>(cap.obj());
     Ec *ec = pt->ec;
 
-    if (EXPECT_FALSE (current->cpu == ec->cpu)) {
+    if (EXPECT_FALSE (current->cpu == ec->cpu || !(cap.prm() & Pt::PERM_XCPU))) {
         trace (TRACE_ERROR, "%s: Bad CPU", __func__);
         sys_finish<Sys_regs::BAD_CPU>();
     }

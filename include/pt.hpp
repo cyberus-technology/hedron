@@ -35,6 +35,9 @@ class Pt : public Kobject
         }
 
     public:
+
+        enum { PERM_CTRL = 1, PERM_CALL = 2, PERM_XCPU = 16 };
+
         Refptr<Ec> const ec;
         Mtd        const mtd;
         mword      const ip;
