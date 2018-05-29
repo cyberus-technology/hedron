@@ -146,6 +146,10 @@ void Vmcs::init()
         ctrl_cpu[1].clr &= ~CPU_VPID;
     }
 
+    if (has_secondary()) {
+        Hip::set_secondary_vmx_caps(ctrl_cpu[1].val);
+    }
+
     set_cr0 ((get_cr0() & ~fix_cr0_clr) | fix_cr0_set);
     set_cr4 ((get_cr4() & ~fix_cr4_clr) | fix_cr4_set);
 

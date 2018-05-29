@@ -103,6 +103,8 @@ class Hip
 
         uint64     initial_pat;            // 0x60
 
+        uint64     cap_vmx_sec_exec;       // 0x68
+
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
         Hip_mem    mem_desc[];
@@ -141,6 +143,11 @@ class Hip
         static bool cpu_online (unsigned long cpu)
         {
             return cpu < NUM_CPU && hip()->cpu_desc[cpu].flags & 1;
+        }
+
+        static void set_secondary_vmx_caps(uint64 caps)
+        {
+            Atomic::store(hip()->cap_vmx_sec_exec, caps);
         }
 
         INIT
