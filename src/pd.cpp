@@ -45,6 +45,9 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
 
     // I/O Ports
     Space_pio::addreg (0, 1UL << 16, 7);
+
+    // VLAPIC Access Page
+    vlapic_access_page = Buddy::allocator.alloc(0, Buddy::FILL_0);
 }
 
 template <typename S>
@@ -297,7 +300,7 @@ void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long 
     mword set_as_del;
 
     for (Crd crd; ti--; s--) {
-			
+
         crd = *s;
         set_as_del = 0;
 
@@ -338,6 +341,8 @@ Pd::~Pd()
     for (unsigned cpu = 0; cpu < NUM_CPU; cpu++)
         if (Hip::cpu_online (cpu))
             Space_mem::loc[cpu].clear(Space_mem::hpt.dest_loc, Space_mem::hpt.iter_loc_lev);
+
+    Buddy::allocator.free(reinterpret_cast<mword>(vlapic_access_page));
 }
 
 extern "C" int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }

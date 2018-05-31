@@ -63,6 +63,8 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         static Pd *current CPULOCAL_HOT;
         static Pd kern, root;
 
+        void *vlapic_access_page {nullptr};
+
         INIT
         Pd (Pd *);
         ~Pd();
