@@ -63,13 +63,13 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         static Pd *current CPULOCAL_HOT;
         static Pd kern, root;
 
-        void *vlapic_access_page {nullptr};
+        void *apic_access_page {nullptr};
 
         INIT
         Pd (Pd *);
         ~Pd();
 
-        Pd (Pd *own, mword sel, mword a) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free) {}
+        Pd (Pd *own, mword sel, mword a);
 
         ALWAYS_INLINE HOT
         inline void make_current()

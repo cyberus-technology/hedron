@@ -196,7 +196,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static Ec *fpowner CPULOCAL;
 
         Ec (Pd *, void (*)(), unsigned);
-        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool);
+        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
         Ec (Pd *, Pd *, void (*f)(), unsigned, Ec *);
 
         ~Ec();

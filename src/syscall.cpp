@@ -304,7 +304,8 @@ void Ec::sys_create_ec()
                      r->evt(),
                      r->is_vcpu() ? r->vlapic_page() : r->utcb(),
                      r->esp(),
-                     r->is_vcpu());
+                     r->is_vcpu(),
+                     r->use_apic_access_page());
 
     if (!Space_obj::insert_root (ec)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
