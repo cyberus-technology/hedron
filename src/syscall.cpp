@@ -268,12 +268,8 @@ void Ec::sys_create_pd()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-void Ec::sys_create_ec()
+Pd *Ec::sanitize_syscall_params(Sys_create_ec *r)
 {
-    Sys_create_ec *r = static_cast<Sys_create_ec *>(current->sys_regs());
-
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current, r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
-
     if (EXPECT_FALSE (!Hip::cpu_online (r->cpu()))) {
         trace (TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
         sys_finish<Sys_regs::BAD_CPU>();
@@ -289,12 +285,26 @@ void Ec::sys_create_ec()
         trace (TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
     }
+
     Pd *pd = static_cast<Pd *>(cap.obj());
 
     if (EXPECT_FALSE (r->utcb() >= USER_ADDR || r->utcb() & PAGE_MASK || !pd->insert_utcb (r->utcb()))) {
         trace (TRACE_ERROR, "%s: Invalid UTCB address (%#lx)", __func__, r->utcb());
         sys_finish<Sys_regs::BAD_PAR>();
     }
+
+    return pd;
+}
+
+void Ec::sys_create_ec()
+{
+    Sys_create_ec *r = static_cast<Sys_create_ec *>(current->sys_regs());
+
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current, r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
+
+    Pd *pd = sanitize_syscall_params(r);
+
+    assert(pd);
 
     Ec *ec = new Ec (Pd::current,
                      r->sel(),

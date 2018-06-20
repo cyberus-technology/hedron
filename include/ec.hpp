@@ -31,6 +31,7 @@
 #include "queue.hpp"
 #include "regs.hpp"
 #include "sc.hpp"
+#include "syscall.hpp"
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "si.hpp"
@@ -192,6 +193,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         void transfer_fpu (Ec *);
 
         static bool sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask = 0);
+
+        static Pd *sanitize_syscall_params(Sys_create_ec *);
 
     public:
         static Ec *current CPULOCAL_HOT;
