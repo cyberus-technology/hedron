@@ -157,6 +157,15 @@ class Sys_revoke : public Sys_regs
 class Sys_pd_ctrl : public Sys_regs
 {
     public:
+        enum ctrl_type
+        {
+            LOOKUP,
+            MAP_ACCESS_PAGE,
+        };
+
+        ALWAYS_INLINE
+        ctrl_type type() const { return static_cast<ctrl_type>(flags() & 0x3); }
+
         ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };

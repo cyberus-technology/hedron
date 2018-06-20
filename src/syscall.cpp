@@ -479,7 +479,7 @@ void Ec::sys_revoke()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-void Ec::sys_pd_ctrl()
+void Ec::sys_pd_ctrl_lookup()
 {
     Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
 
@@ -492,6 +492,16 @@ void Ec::sys_pd_ctrl()
         s->crd() = Crd (0);
 
     sys_finish<Sys_regs::SUCCESS>();
+}
+
+void Ec::sys_pd_ctrl()
+{
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+    switch (s->type()) {
+    case Sys_pd_ctrl::LOOKUP: { sys_pd_ctrl_lookup(); }
+    default:
+        die("invalid ctrl");
+    };
 }
 
 void Ec::sys_ec_ctrl()
