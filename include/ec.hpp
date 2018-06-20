@@ -371,7 +371,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void sys_revoke();
 
         NORETURN
-        static void sys_lookup();
+        static void sys_pd_ctrl();
 
         NORETURN
         static void sys_ec_ctrl();

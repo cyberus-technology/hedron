@@ -154,7 +154,7 @@ class Sys_revoke : public Sys_regs
         inline void rem(Pd * p) { ARG_3 = reinterpret_cast<mword>(p); }
 };
 
-class Sys_lookup : public Sys_regs
+class Sys_pd_ctrl : public Sys_regs
 {
     public:
         ALWAYS_INLINE

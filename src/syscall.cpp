@@ -479,9 +479,9 @@ void Ec::sys_revoke()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-void Ec::sys_lookup()
+void Ec::sys_pd_ctrl()
 {
-    Sys_lookup *s = static_cast<Sys_lookup *>(current->sys_regs());
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
 
     trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current, s->crd().type(), s->crd().base());
 
@@ -775,7 +775,7 @@ void (*const syscall[])() =
     &Ec::sys_create_pt,
     &Ec::sys_create_sm,
     &Ec::sys_revoke,
-    &Ec::sys_lookup,
+    &Ec::sys_pd_ctrl,
     &Ec::sys_ec_ctrl,
     &Ec::sys_sc_ctrl,
     &Ec::sys_pt_ctrl,
