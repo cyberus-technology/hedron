@@ -504,14 +504,52 @@ void Ec::sys_pd_ctrl_lookup()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_pd_ctrl_map_access_page()
+{
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+
+    trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current, s->crd().base());
+
+    Pd *pd  = Pd::current;
+    Crd crd = s->crd();
+
+    void *access_addr = pd->apic_access_page;
+
+    assert(pd and access_addr);
+
+    static constexpr mword ord      {0};
+    static constexpr mword rights   {0x3}; // R+W
+    static constexpr mword mem_type {0xe}; // WB + IPAT
+    static constexpr mword sub      {2};   // HPT + EPT
+
+    if (crd.type() != Crd::MEM or crd.attr() != rights or crd.order() != ord) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    mword access_addr_phys = Buddy::ptr_to_phys(access_addr);
+
+    Mdb *mdb = new Mdb (static_cast<Space_mem*>(pd), access_addr_phys >> PAGE_BITS, crd.base(), ord, rights, mem_type, sub);
+
+    if (not pd->Space_mem::tree_insert (mdb)) {
+        delete mdb;
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    bool shootdown = pd->Space_mem::update(mdb);
+    assert(not shootdown);
+
+    sys_finish<Sys_regs::SUCCESS>();
+}
+
 void Ec::sys_pd_ctrl()
 {
     Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
-    switch (s->type()) {
-    case Sys_pd_ctrl::LOOKUP: { sys_pd_ctrl_lookup(); }
-    default:
-        die("invalid ctrl");
+    switch (s->op()) {
+    case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
+    case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
     };
+
+    sys_finish<Sys_regs::BAD_PAR>();
 }
 
 void Ec::sys_ec_ctrl()
