@@ -520,25 +520,25 @@ void Ec::sys_ec_ctrl()
 
     switch (r->op()) {
         case 0:
-{
-    Capability cap = Space_obj::lookup (r->ec());
-    if (EXPECT_FALSE (sanitize_cap(cap, Kobject::EC, 1UL << 0))) {
-        trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
+        {
+            Capability cap = Space_obj::lookup (r->ec());
+            if (EXPECT_FALSE (sanitize_cap(cap, Kobject::EC, 1UL << 0))) {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
 
-    Ec *ec = static_cast<Ec *>(cap.obj());
+            Ec *ec = static_cast<Ec *>(cap.obj());
 
-    if (!(ec->regs.hazard() & HZD_RECALL)) {
+            if (!(ec->regs.hazard() & HZD_RECALL)) {
 
-        ec->regs.set_hazard (HZD_RECALL);
+                ec->regs.set_hazard (HZD_RECALL);
 
-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
-            Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
+                if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
+                    Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
 
-    }
-}
+            }
             break;
+        }
 
         case 1: /* yield */
             current->cont = sys_finish<Sys_regs::SUCCESS>;
