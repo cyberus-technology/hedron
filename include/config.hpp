@@ -43,4 +43,4 @@
 #define SPN_IPI         (SPN_LVT + NUM_LVT)
 #define SPN_GSI         (SPN_IPI + NUM_IPI + 1)
 
-#define NUM_IOAPIC      2
+#define NUM_IOAPIC      5
