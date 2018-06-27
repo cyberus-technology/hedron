@@ -1,15 +1,12 @@
-before_script:
-  - gcc --version
-
 stages:
   - build
   - deploy
 
-image: gcc:7
-
 .build_template: &build_options
   stage: build
+  image: gcc:7
   script:
+  - gcc --version
   - cd build && make ARCH=$ARCH
   artifacts:
     paths:
@@ -33,14 +30,16 @@ build:release:
   <<: *build_options
   <<: *release_only
 
-pages:
+artifacts:
   stage: deploy
+  image: ubuntu:latest
+  tags:
+    - artifacts
+  variables:
+    CI_ARTIFACT_PATH: /srv/html/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG
   dependencies:
-    - build:release
+    - build:x86_64
   script:
-    - mkdir -p public/$CI_COMMIT_REF_SLUG
-    - cp build/hypervisor-x86_64 public/$CI_COMMIT_REF_SLUG/nova
-  artifacts:
-    paths:
-      - public
-  <<: *release_only
+    - mkdir -p /$CI_ARTIFACT_PATH
+    - cp build/hypervisor-x86_64 $CI_ARTIFACT_PATH/nova
+
