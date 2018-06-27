@@ -42,4 +42,5 @@ artifacts:
   script:
     - mkdir -p /$CI_ARTIFACT_PATH
     - cp build/hypervisor-x86_64 $CI_ARTIFACT_PATH/nova
+    - echo "Artifacts pushed to $CI_ARTIFACT_PATH"
 
