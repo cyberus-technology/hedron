@@ -12,23 +12,12 @@ stages:
     paths:
       - build/hypervisor-$ARCH
 
-.release_only_template: &release_only
-  only:
-    - tags
-    - /^[\d-]+-release
-
 build:x86_64:
   variables:
     ARCH: x86_64
   artifacts:
     expire_in: 1 week
   <<: *build_options
-
-build:release:
-  variables:
-    ARCH: x86_64
-  <<: *build_options
-  <<: *release_only
 
 artifacts:
   stage: deploy
