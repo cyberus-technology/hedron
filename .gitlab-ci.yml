@@ -1,24 +1,16 @@
-before_script:
-  - gcc --version
-
 stages:
   - build
   - deploy
 
-image: gcc:7
-
 .build_template: &build_options
   stage: build
+  image: gcc:7
   script:
+  - gcc --version
   - cd build && make ARCH=$ARCH
   artifacts:
     paths:
       - build/hypervisor-$ARCH
-
-.release_only_template: &release_only
-  only:
-    - tags
-    - /^[\d-]+-release
 
 build:x86_64:
   variables:
@@ -27,20 +19,17 @@ build:x86_64:
     expire_in: 1 week
   <<: *build_options
 
-build:release:
-  variables:
-    ARCH: x86_64
-  <<: *build_options
-  <<: *release_only
-
-pages:
+artifacts:
   stage: deploy
+  image: ubuntu:latest
+  tags:
+    - artifacts
+  variables:
+    CI_ARTIFACT_PATH: /srv/html/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG
   dependencies:
-    - build:release
+    - build:x86_64
   script:
-    - mkdir -p public/$CI_COMMIT_REF_SLUG
-    - cp build/hypervisor-x86_64 public/$CI_COMMIT_REF_SLUG/nova
-  artifacts:
-    paths:
-      - public
-  <<: *release_only
+    - mkdir -p /$CI_ARTIFACT_PATH
+    - cp build/hypervisor-x86_64 $CI_ARTIFACT_PATH/nova
+    - echo "Artifacts pushed to $CI_ARTIFACT_PATH"
+
