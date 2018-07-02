@@ -513,7 +513,7 @@ void Ec::sys_pd_ctrl_map_access_page()
     Pd *pd  = Pd::current;
     Crd crd = s->crd();
 
-    void *access_addr = pd->apic_access_page;
+    void *access_addr = pd->get_access_page();
 
     assert(pd and access_addr);
 

@@ -36,6 +36,8 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         WARN_UNUSED_RESULT
         mword clamp (mword &, mword &, mword, mword, mword);
 
+        void *apic_access_page {nullptr};
+
         static void pre_free (Rcu_elem * a)
         {
             Pd * pd = static_cast <Pd *>(a);
@@ -63,7 +65,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         static Pd *current CPULOCAL_HOT;
         static Pd kern, root;
 
-        void *apic_access_page {nullptr};
+        void *get_access_page();
 
         INIT
         Pd (Pd *);

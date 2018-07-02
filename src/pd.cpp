@@ -49,8 +49,6 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
 
 Pd::Pd (Pd *own, mword sel, mword a) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free)
 {
-    // VLAPIC Access Page
-    apic_access_page = Buddy::allocator.alloc(0, Buddy::FILL_0);
 }
 
 template <typename S>
@@ -332,6 +330,23 @@ void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long 
         if (d)
             *d-- = Xfer (crd, s->flags() | set_as_del);
     }
+}
+
+void *Pd::get_access_page()
+{
+    if (!Atomic::load(apic_access_page)) {
+        void *page = Buddy::allocator.alloc(0, Buddy::FILL_0);
+
+        if (!Atomic::cmp_swap(apic_access_page, static_cast<void*>(nullptr), page)) {
+            Buddy::allocator.free(reinterpret_cast<mword>(page));
+        }
+    }
+
+    void *ret {Atomic::load(apic_access_page)};
+
+    assert(ret);
+
+    return ret;
 }
 
 Pd::~Pd()
