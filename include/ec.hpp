@@ -67,6 +67,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         Sm *         xcpu_sm;
 
+        void * vlapic_page {nullptr};
+
         static Slab_cache cache;
 
         REGPARM (1)
