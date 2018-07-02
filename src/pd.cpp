@@ -335,6 +335,11 @@ Pd::~Pd()
 {
     pre_free(this);
 
+    if (apic_access_page) {
+        Buddy::allocator.free(reinterpret_cast<mword>(apic_access_page));
+        apic_access_page = nullptr;
+    }
+
     Space_mem::hpt.clear(Space_mem::hpt.dest_hpt, Space_mem::hpt.iter_hpt_lev);
     Space_mem::dpt.clear();
     Space_mem::npt.clear();
