@@ -29,6 +29,10 @@ class Atomic
 
         template <typename T>
         ALWAYS_INLINE
+        static inline void store (T &ptr, T n) { __atomic_store_n(&ptr, n, __ATOMIC_SEQ_CST); }
+
+        template <typename T>
+        ALWAYS_INLINE
         static inline T add (T &ptr, T v) { return __sync_add_and_fetch (&ptr, v); }
 
         template <typename T>
