@@ -64,6 +64,9 @@ class Sys_create_ec : public Sys_regs
         inline unsigned cpu() const { return ARG_3 & 0xfff; }
 
         ALWAYS_INLINE
+        inline bool use_apic_access_page() const { return flags() & 0x4; }
+
+        ALWAYS_INLINE
         inline bool is_vcpu() const { return flags() & 0x2; }
 
         ALWAYS_INLINE
@@ -151,9 +154,18 @@ class Sys_revoke : public Sys_regs
         inline void rem(Pd * p) { ARG_3 = reinterpret_cast<mword>(p); }
 };
 
-class Sys_lookup : public Sys_regs
+class Sys_pd_ctrl : public Sys_regs
 {
     public:
+        enum ctrl_op
+        {
+            LOOKUP,
+            MAP_ACCESS_PAGE,
+        };
+
+        ALWAYS_INLINE
+        ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+
         ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };

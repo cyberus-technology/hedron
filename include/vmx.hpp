@@ -109,6 +109,7 @@ class Vmcs
             GUEST_SEL_GS            = 0x080aul,
             GUEST_SEL_LDTR          = 0x080cul,
             GUEST_SEL_TR            = 0x080eul,
+            GUEST_INTR_STS          = 0x0810ul,
 
             // 16-Bit Host State Fields
             HOST_SEL_ES             = 0x0c00ul,
@@ -133,6 +134,11 @@ class Vmcs
             APIC_ACCS_ADDR          = 0x2014ul,
             EPTP                    = 0x201aul,
             EPTP_HI                 = 0x201bul,
+
+            EOI_EXIT_BITMAP_0       = 0x201cul,
+            EOI_EXIT_BITMAP_1       = 0x201eul,
+            EOI_EXIT_BITMAP_2       = 0x2020ul,
+            EOI_EXIT_BITMAP_3       = 0x2022ul,
 
             INFO_PHYS_ADDR          = 0x2400ul,
 

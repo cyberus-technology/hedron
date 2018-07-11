@@ -268,12 +268,8 @@ void Ec::sys_create_pd()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-void Ec::sys_create_ec()
+Pd *Ec::sanitize_syscall_params(Sys_create_ec *r)
 {
-    Sys_create_ec *r = static_cast<Sys_create_ec *>(current->sys_regs());
-
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current, r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
-
     if (EXPECT_FALSE (!Hip::cpu_online (r->cpu()))) {
         trace (TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
         sys_finish<Sys_regs::BAD_CPU>();
@@ -289,12 +285,26 @@ void Ec::sys_create_ec()
         trace (TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
     }
+
     Pd *pd = static_cast<Pd *>(cap.obj());
 
     if (EXPECT_FALSE (r->utcb() >= USER_ADDR || r->utcb() & PAGE_MASK || !pd->insert_utcb (r->utcb()))) {
         trace (TRACE_ERROR, "%s: Invalid UTCB address (%#lx)", __func__, r->utcb());
         sys_finish<Sys_regs::BAD_PAR>();
     }
+
+    return pd;
+}
+
+void Ec::sys_create_ec()
+{
+    Sys_create_ec *r = static_cast<Sys_create_ec *>(current->sys_regs());
+
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current, r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
+
+    Pd *pd = sanitize_syscall_params(r);
+
+    assert(pd);
 
     Ec *ec = new Ec (Pd::current,
                      r->sel(),
@@ -304,7 +314,8 @@ void Ec::sys_create_ec()
                      r->evt(),
                      r->is_vcpu() ? r->vlapic_page() : r->utcb(),
                      r->esp(),
-                     r->is_vcpu());
+                     r->is_vcpu(),
+                     r->use_apic_access_page());
 
     if (!Space_obj::insert_root (ec)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
@@ -478,9 +489,9 @@ void Ec::sys_revoke()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-void Ec::sys_lookup()
+void Ec::sys_pd_ctrl_lookup()
 {
-    Sys_lookup *s = static_cast<Sys_lookup *>(current->sys_regs());
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
 
     trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current, s->crd().type(), s->crd().base());
 
@@ -493,31 +504,79 @@ void Ec::sys_lookup()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_pd_ctrl_map_access_page()
+{
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+
+    trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current, s->crd().base());
+
+    Pd *pd  = Pd::current;
+    Crd crd = s->crd();
+
+    void *access_addr = pd->get_access_page();
+
+    assert(pd and access_addr);
+
+    static constexpr mword ord      {0};
+    static constexpr mword rights   {0x3}; // R+W
+    static constexpr mword mem_type {0xe}; // WB + IPAT
+    static constexpr mword sub      {2};   // HPT + EPT
+
+    if (crd.type() != Crd::MEM or crd.attr() != rights or crd.order() != ord) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    mword access_addr_phys = Buddy::ptr_to_phys(access_addr);
+
+    Mdb *mdb = new Mdb (static_cast<Space_mem*>(pd), access_addr_phys >> PAGE_BITS, crd.base(), ord, rights, mem_type, sub);
+
+    if (not pd->Space_mem::tree_insert (mdb)) {
+        delete mdb;
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    bool shootdown = pd->Space_mem::update(mdb);
+    assert(not shootdown);
+
+    sys_finish<Sys_regs::SUCCESS>();
+}
+
+void Ec::sys_pd_ctrl()
+{
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+    switch (s->op()) {
+    case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
+    case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
+    };
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
 void Ec::sys_ec_ctrl()
 {
     Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current->sys_regs());
 
     switch (r->op()) {
         case 0:
-{
-    Capability cap = Space_obj::lookup (r->ec());
-    if (EXPECT_FALSE (sanitize_cap(cap, Kobject::EC, 1UL << 0))) {
-        trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
+        {
+            Capability cap = Space_obj::lookup (r->ec());
+            if (EXPECT_FALSE (sanitize_cap(cap, Kobject::EC, 1UL << 0))) {
+                trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
+                sys_finish<Sys_regs::BAD_CAP>();
+            }
 
-    Ec *ec = static_cast<Ec *>(cap.obj());
+            Ec *ec = static_cast<Ec *>(cap.obj());
 
-    if (!(ec->regs.hazard() & HZD_RECALL)) {
+            if (!(ec->regs.hazard() & HZD_RECALL)) {
 
-        ec->regs.set_hazard (HZD_RECALL);
+                ec->regs.set_hazard (HZD_RECALL);
 
-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
-            Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
+                if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
+                    Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
 
-    }
-}
+            }
             break;
+        }
 
         case 1: /* yield */
             current->cont = sys_finish<Sys_regs::SUCCESS>;
@@ -774,7 +833,7 @@ void (*const syscall[])() =
     &Ec::sys_create_pt,
     &Ec::sys_create_sm,
     &Ec::sys_revoke,
-    &Ec::sys_lookup,
+    &Ec::sys_pd_ctrl,
     &Ec::sys_ec_ctrl,
     &Ec::sys_sc_ctrl,
     &Ec::sys_pt_ctrl,

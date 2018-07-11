@@ -31,6 +31,7 @@
 #include "queue.hpp"
 #include "regs.hpp"
 #include "sc.hpp"
+#include "syscall.hpp"
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "si.hpp"
@@ -66,6 +67,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         mword          user_utcb;
 
         Sm *         xcpu_sm;
+
+        void * vlapic_page {nullptr};
 
         static Slab_cache cache;
 
@@ -191,12 +194,14 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         static bool sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask = 0);
 
+        static Pd *sanitize_syscall_params(Sys_create_ec *);
+
     public:
         static Ec *current CPULOCAL_HOT;
         static Ec *fpowner CPULOCAL;
 
         Ec (Pd *, void (*)(), unsigned);
-        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool);
+        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
         Ec (Pd *, Pd *, void (*f)(), unsigned, Ec *);
 
         ~Ec();
@@ -369,7 +374,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void sys_revoke();
 
         NORETURN
-        static void sys_lookup();
+        static void sys_pd_ctrl();
+
+        NORETURN
+        static void sys_pd_ctrl_lookup();
+
+        NORETURN
+        static void sys_pd_ctrl_map_access_page();
 
         NORETURN
         static void sys_ec_ctrl();

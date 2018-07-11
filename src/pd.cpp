@@ -47,6 +47,10 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
     Space_pio::addreg (0, 1UL << 16, 7);
 }
 
+Pd::Pd (Pd *own, mword sel, mword a) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free)
+{
+}
+
 template <typename S>
 bool Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub, char const * deltype)
 {
@@ -297,7 +301,7 @@ void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long 
     mword set_as_del;
 
     for (Crd crd; ti--; s--) {
-			
+
         crd = *s;
         set_as_del = 0;
 
@@ -328,9 +332,31 @@ void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long 
     }
 }
 
+void *Pd::get_access_page()
+{
+    if (!Atomic::load(apic_access_page)) {
+        void *page = Buddy::allocator.alloc(0, Buddy::FILL_0);
+
+        if (!Atomic::cmp_swap(apic_access_page, static_cast<void*>(nullptr), page)) {
+            Buddy::allocator.free(reinterpret_cast<mword>(page));
+        }
+    }
+
+    void *ret {Atomic::load(apic_access_page)};
+
+    assert(ret);
+
+    return ret;
+}
+
 Pd::~Pd()
 {
     pre_free(this);
+
+    if (apic_access_page) {
+        Buddy::allocator.free(reinterpret_cast<mword>(apic_access_page));
+        apic_access_page = nullptr;
+    }
 
     Space_mem::hpt.clear(Space_mem::hpt.dest_hpt, Space_mem::hpt.iter_hpt_lev);
     Space_mem::dpt.clear();

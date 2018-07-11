@@ -46,7 +46,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), partner (nullptr), prev (nullptr), next (nullptr), fpu (nullptr), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), timeout (this), user_utcb (u), xcpu_sm (nullptr)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
@@ -104,10 +104,15 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             if (u) {
                 /* allocate+register the virtual LAPIC page and map it into user space */
-                void *vlapic_page_v = Buddy::allocator.alloc(0, Buddy::FILL_0);
-                mword vlapic_page   = Buddy::ptr_to_phys(vlapic_page_v);
-                Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page);
-                pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page);
+                vlapic_page         = Buddy::allocator.alloc(0, Buddy::FILL_0);
+                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
+
+                Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
+                pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page_p);
+
+                if (use_apic_access_page) {
+                    Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
+                }
             }
 
             regs.vmcs->clear();
@@ -150,6 +155,10 @@ Ec::~Ec()
     if (utcb) {
         delete utcb;
         return;
+    }
+
+    if (vlapic_page) {
+        Buddy::allocator.free(reinterpret_cast<mword>(vlapic_page));
     }
 
     if (Hip::feature() & Hip::FEAT_VMX)
