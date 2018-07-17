@@ -3,44 +3,28 @@ before_script:
 
 stages:
   - build
-  - deploy
 
 image: gcc:7
-
-.build_template: &build_options
-  stage: build
-  script:
-  - cd build && make ARCH=$ARCH
-  artifacts:
-    paths:
-      - build/hypervisor-$ARCH
 
 .release_only_template: &release_only
   only:
     - tags
     - /^[\d-]+-release
 
-build:x86_64:
-  variables:
-    ARCH: x86_64
+build:default:
+  stage: build
+  script:
+  - cd build && make ARCH=x86_64
   artifacts:
     expire_in: 1 week
-  <<: *build_options
+    paths:
+      - build/hypervisor-x86_64
 
 build:release:
-  variables:
-    ARCH: x86_64
-  <<: *build_options
-  <<: *release_only
-
-pages:
-  stage: deploy
-  dependencies:
-    - build:release
+  stage: build
   script:
-    - mkdir -p public/$CI_COMMIT_REF_SLUG
-    - cp build/hypervisor-x86_64 public/$CI_COMMIT_REF_SLUG/nova
+  - cd build && make ARCH=x86_64
   artifacts:
     paths:
-      - public
+      - build/hypervisor-x86_64
   <<: *release_only
