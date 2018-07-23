@@ -43,9 +43,23 @@ Pci::Pci (unsigned r, unsigned l) : List<Pci> (list), reg_base (hwdev_addr -= PA
             (this->*map[i].func)();
 }
 
-void Pci::init (unsigned b, unsigned l)
+void Pci::init ()
 {
+    static constexpr unsigned MAX_BUS { 0xff };
+
+    unsigned bus = 0;
+    while (bus <= MAX_BUS) {
+        unsigned max = Pci::scan (bus);
+        bus = max ? max + 1 : bus + 1;
+    }
+}
+
+unsigned Pci::scan (unsigned b, unsigned l, unsigned max_bus)
+{
+    unsigned current_max = max_bus > b ? max_bus : b;
     for (unsigned r = b << 8; r < (b + 1) << 8; r++) {
+        if ((r << PAGE_BITS) >= cfg_size)
+            return current_max;
 
         if (*static_cast<uint32 *>(Hpt::remap (cfg_base + (r << PAGE_BITS))) == ~0U)
             continue;
@@ -54,10 +68,15 @@ void Pci::init (unsigned b, unsigned l)
 
         unsigned h = p->read<uint8>(REG_HDR);
 
-        if ((h & 0x7f) == 1)
-            init (p->read<uint8>(REG_SBUSN), l + 1);
+        if ((h & HDR_TYPE) == PCI_BRIDGE) {
+            unsigned new_max = scan (p->read<uint8>(REG_SBUSN), l + 1, current_max);
+            current_max = new_max > current_max ? new_max : current_max;
+        }
 
-        if (!(r & 0x7) && !(h & 0x80))
+        // If the device b:d:0 has no multiple functions, skip the
+        // remaining function slots and move on to the next device.
+        if (!(r & BDF_FUNC) && !(h & HDR_MF))
             r += 7;
     }
+    return current_max;
 }
