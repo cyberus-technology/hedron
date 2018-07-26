@@ -260,9 +260,6 @@ template <> void Exc_regs::nst_ctrl<Vmcs>()
     vmx_set_cpu_ctrl0 (Vmcs::read (Vmcs::CPU_EXEC_CTRL0));
     vmx_set_cpu_ctrl1 (Vmcs::read (Vmcs::CPU_EXEC_CTRL1));
     set_exc<Vmcs>();
-
-    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>());
-    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>());
 }
 
 void Exc_regs::fpu_ctrl (bool on)
@@ -276,8 +273,6 @@ void Exc_regs::fpu_ctrl (bool on)
         set_cr0<Vmcs> (cr0);
 
         set_exc<Vmcs>();
-
-        Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>());
 
     } else {
 
