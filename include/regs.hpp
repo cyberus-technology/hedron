@@ -172,6 +172,7 @@ class Exc_regs : public Sys_regs
         template <typename T> ALWAYS_INLINE inline void set_cr0 (mword);
         template <typename T> ALWAYS_INLINE inline void set_cr3 (mword);
         template <typename T> ALWAYS_INLINE inline void set_cr4 (mword);
+        template <typename T> ALWAYS_INLINE inline void set_cr_masks() const;
 
     public:
         template <typename T> void set_exc() const;

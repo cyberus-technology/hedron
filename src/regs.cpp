@@ -62,6 +62,17 @@ template <> void Exc_regs::set_e_bmp<Vmcs> (uint32 v)   const { Vmcs::write (Vmc
 template <> void Exc_regs::set_s_cr0<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR0_READ_SHADOW, cr0_shadow = v); }
 template <> void Exc_regs::set_s_cr4<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR4_READ_SHADOW, cr4_shadow = v); }
 
+template <> void Exc_regs::set_cr_masks<Vmcs>() const
+{
+    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>(true));
+    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>(true));
+}
+
+template <> void Exc_regs::set_cr_masks<Vmcb>() const
+{
+    // CR masking not implemented for AMD CPUs
+}
+
 template <> void Exc_regs::tlb_flush<Vmcb>(bool) const
 {
     if (vmcb->asid)
@@ -187,8 +198,7 @@ void Exc_regs::set_exc() const
 
     set_e_bmp<T> (msk);
 
-    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>(true));
-    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>(true));
+    set_cr_masks<T>();
 }
 
 void Exc_regs::svm_set_cpu_ctrl0 (mword val)
