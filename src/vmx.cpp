@@ -137,7 +137,7 @@ void Vmcs::init()
 
     fix_cr0_clr |= Cpu::CR0_CD | Cpu::CR0_NW;
 
-    ctrl_cpu[0].set |= CPU_HLT | CPU_IO | CPU_IO_BITMAP | CPU_SECONDARY;
+    ctrl_cpu[0].set |= CPU_HLT | CPU_IO | CPU_SECONDARY;
     ctrl_cpu[1].set |= CPU_VPID | CPU_URG;
 
     if (not ept_vpid.invept) {
