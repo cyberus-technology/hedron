@@ -103,7 +103,9 @@ class Hip
 
         uint64     initial_pat;            // 0x60
 
-        uint64     cap_vmx_sec_exec;       // 0x68
+        uint64     msr_platform_info;      // 0x68
+
+        uint64     cap_vmx_sec_exec;       // 0x70
 
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
