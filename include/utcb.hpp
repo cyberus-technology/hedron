@@ -85,8 +85,10 @@ class Utcb_data
                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
                 uint64          tsc_val, tsc_off;
 
-                uint32          exc_bitmap;
+                uint32          tsc_aux, exc_bitmap;
+
                 uint32          tpr_threshold;
+                uint32          reserved2;
 
                 uint64          eoi_bitmap[4];
 
