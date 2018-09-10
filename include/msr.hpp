@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "arch.hpp"
 #include "compiler.hpp"
 #include "types.hpp"
 
@@ -112,8 +113,28 @@ class Msr
 
         template <typename T>
         ALWAYS_INLINE
+        static inline T read_safe (Register msr)
+        {
+            mword h {0}, l {0};
+            asm volatile ("1: rdmsr; 2:"
+                          ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
+                          : "+a" (l), "+d" (h) : "c" (msr));
+            return static_cast<T>(static_cast<uint64>(h) << 32 | l);
+        }
+
+        template <typename T>
+        ALWAYS_INLINE
         static inline void write (Register msr, T val)
         {
             asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
+        }
+
+        template <typename T>
+        ALWAYS_INLINE
+        static inline void write_safe (Register msr, T val)
+        {
+            asm volatile ("1: wrmsr; 2:"
+                          ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
+                          : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
         }
 };

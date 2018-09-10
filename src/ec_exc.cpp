@@ -109,8 +109,12 @@ bool Ec::handle_exc_ts (Exc_regs *r)
     return true;
 }
 
-bool Ec::handle_exc_gp (Exc_regs *)
+bool Ec::handle_exc_gp (Exc_regs *r)
 {
+    if (fixup (r->REG(ip))) {
+        return true;
+    }
+
     if (Cpu::hazard & HZD_TR) {
         Cpu::hazard &= ~HZD_TR;
         Gdt::unbusy_tss();
