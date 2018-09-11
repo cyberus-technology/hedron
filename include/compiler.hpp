@@ -82,6 +82,9 @@
 
         #define ACCESS_ONCE(x)      (*static_cast<volatile typeof(x) *>(&(x)))
 
+        #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
+                                    ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
+
 #else
         #define COMPILER            "unknown compiler"
         #define COMPILER_VERSION    0
