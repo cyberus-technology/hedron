@@ -42,22 +42,23 @@ void Hip::build (mword addr)
 {
     Hip *h = hip();
 
-    h->signature   = 0x41564f4e;
-    h->cpu_offs    = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
-    h->cpu_size    = static_cast<uint16>(sizeof (Hip_cpu));
-    h->ioapic_offs = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
-    h->ioapic_size = static_cast<uint16>(sizeof (Hip_ioapic));
-    h->mem_offs    = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
-    h->mem_size    = static_cast<uint16>(sizeof (Hip_mem));
-    h->api_flg     = FEAT_VMX | FEAT_SVM;
-    h->api_ver     = CFG_VER;
-    h->sel_num     = Space_obj::caps;
-    h->sel_gsi     = NUM_GSI;
-    h->sel_exc     = NUM_EXC;
-    h->sel_vmi     = NUM_VMI;
-    h->cfg_page    = PAGE_SIZE;
-    h->cfg_utcb    = PAGE_SIZE;
-    h->initial_pat = Msr::read<uint64> (Msr::IA32_CR_PAT);
+    h->signature         = 0x41564f4e;
+    h->cpu_offs          = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
+    h->cpu_size          = static_cast<uint16>(sizeof (Hip_cpu));
+    h->ioapic_offs       = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
+    h->ioapic_size       = static_cast<uint16>(sizeof (Hip_ioapic));
+    h->mem_offs          = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
+    h->mem_size          = static_cast<uint16>(sizeof (Hip_mem));
+    h->api_flg           = FEAT_VMX | FEAT_SVM;
+    h->api_ver           = CFG_VER;
+    h->sel_num           = Space_obj::caps;
+    h->sel_gsi           = NUM_GSI;
+    h->sel_exc           = NUM_EXC;
+    h->sel_vmi           = NUM_VMI;
+    h->cfg_page          = PAGE_SIZE;
+    h->cfg_utcb          = PAGE_SIZE;
+    h->initial_pat       = Msr::read<uint64> (Msr::IA32_CR_PAT);
+    h->msr_platform_info = Msr::read_safe<uint64> (Msr::MSR_PLATFORM_INFO);
 
     Hip_ioapic *ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);
