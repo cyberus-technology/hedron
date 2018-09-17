@@ -61,6 +61,19 @@ class Pci : public List<Pci>
             REG_MAX         = 0xfff,
         };
 
+        enum Mask
+        {
+            BDF_FUNC = 0x7,
+            HDR_TYPE = 0x7f,
+            HDR_MF   = 0x80,
+        };
+
+        enum Type
+        {
+            GENERAL    = 0,
+            PCI_BRIDGE = 1,
+        };
+
         template <typename T>
         ALWAYS_INLINE
         inline unsigned read (Register r) { return *reinterpret_cast<T volatile *>(reg_base + r); }
@@ -109,7 +122,10 @@ class Pci : public List<Pci>
         }
 
         INIT
-        static void init (unsigned = 0, unsigned = 0);
+        static void init ();
+
+        INIT
+        static unsigned scan (unsigned bus = 0, unsigned level = 0, unsigned max_bus = 0);
 
         ALWAYS_INLINE
         static inline unsigned phys_to_rid (Paddr p)
