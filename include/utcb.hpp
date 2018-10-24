@@ -94,6 +94,8 @@ class Utcb_data
 
                 uint16          vintr_status;
                 uint16          reserved_array[3];
+
+                uint64          cr0_mon, cr4_mon;
             };
 
             mword data_begin;

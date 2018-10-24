@@ -92,8 +92,11 @@ class Vmcs
 
         static mword fix_cr0_set CPULOCAL;
         static mword fix_cr0_clr CPULOCAL;
+        static mword fix_cr0_mon CPULOCAL;
+
         static mword fix_cr4_set CPULOCAL;
         static mword fix_cr4_clr CPULOCAL;
+        static mword fix_cr4_mon CPULOCAL;
 
         enum Encoding
         {

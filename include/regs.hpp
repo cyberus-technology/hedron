@@ -161,9 +161,9 @@ class Exc_regs : public Sys_regs
         template <typename T> ALWAYS_INLINE inline void set_s_cr4 (mword);
 
         template <typename T> ALWAYS_INLINE inline mword cr0_set() const;
-        template <typename T> ALWAYS_INLINE inline mword cr0_msk() const;
+        template <typename T> ALWAYS_INLINE inline mword cr0_msk(bool include_mon = false) const;
         template <typename T> ALWAYS_INLINE inline mword cr4_set() const;
-        template <typename T> ALWAYS_INLINE inline mword cr4_msk() const;
+        template <typename T> ALWAYS_INLINE inline mword cr4_msk(bool include_mon = false) const;
 
         template <typename T> ALWAYS_INLINE inline mword get_cr0() const;
         template <typename T> ALWAYS_INLINE inline mword get_cr3() const;
@@ -172,6 +172,7 @@ class Exc_regs : public Sys_regs
         template <typename T> ALWAYS_INLINE inline void set_cr0 (mword);
         template <typename T> ALWAYS_INLINE inline void set_cr3 (mword);
         template <typename T> ALWAYS_INLINE inline void set_cr4 (mword);
+        template <typename T> ALWAYS_INLINE inline void set_cr_masks() const;
 
     public:
         template <typename T> void set_exc() const;

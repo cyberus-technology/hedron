@@ -62,6 +62,17 @@ template <> void Exc_regs::set_e_bmp<Vmcs> (uint32 v)   const { Vmcs::write (Vmc
 template <> void Exc_regs::set_s_cr0<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR0_READ_SHADOW, cr0_shadow = v); }
 template <> void Exc_regs::set_s_cr4<Vmcs> (mword v)          { Vmcs::write (Vmcs::CR4_READ_SHADOW, cr4_shadow = v); }
 
+template <> void Exc_regs::set_cr_masks<Vmcs>() const
+{
+    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>(true));
+    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>(true));
+}
+
+template <> void Exc_regs::set_cr_masks<Vmcb>() const
+{
+    // CR masking not implemented for AMD CPUs
+}
+
 template <> void Exc_regs::tlb_flush<Vmcb>(bool) const
 {
     if (vmcb->asid)
@@ -116,9 +127,9 @@ mword Exc_regs::cr0_set() const
 }
 
 template <typename T>
-mword Exc_regs::cr0_msk() const
+mword Exc_regs::cr0_msk(bool include_mon) const
 {
-    return T::fix_cr0_clr | cr0_set<T>();
+    return T::fix_cr0_clr | cr0_set<T>() | T::fix_cr0_mon * include_mon;
 }
 
 template <typename T>
@@ -128,9 +139,9 @@ mword Exc_regs::cr4_set() const
 }
 
 template <typename T>
-mword Exc_regs::cr4_msk() const
+mword Exc_regs::cr4_msk(bool include_mon) const
 {
-    return T::fix_cr4_clr | cr4_set<T>();
+    return T::fix_cr4_clr | cr4_set<T>() | T::fix_cr4_mon * include_mon;
 }
 
 template <typename T>
@@ -186,6 +197,8 @@ void Exc_regs::set_exc() const
     msk |= exc_bitmap;
 
     set_e_bmp<T> (msk);
+
+    set_cr_masks<T>();
 }
 
 void Exc_regs::svm_set_cpu_ctrl0 (mword val)
@@ -257,9 +270,6 @@ template <> void Exc_regs::nst_ctrl<Vmcs>()
     vmx_set_cpu_ctrl0 (Vmcs::read (Vmcs::CPU_EXEC_CTRL0));
     vmx_set_cpu_ctrl1 (Vmcs::read (Vmcs::CPU_EXEC_CTRL1));
     set_exc<Vmcs>();
-
-    Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>());
-    Vmcs::write (Vmcs::CR4_MASK, cr4_msk<Vmcs>());
 }
 
 void Exc_regs::fpu_ctrl (bool on)
@@ -273,8 +283,6 @@ void Exc_regs::fpu_ctrl (bool on)
         set_cr0<Vmcs> (cr0);
 
         set_exc<Vmcs>();
-
-        Vmcs::write (Vmcs::CR0_MASK, cr0_msk<Vmcs>());
 
     } else {
 

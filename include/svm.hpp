@@ -72,8 +72,11 @@ class Vmcb
 
         static mword const fix_cr0_set = 0;
         static mword const fix_cr0_clr = 0;
+        static mword const fix_cr0_mon = 0;
+
         static mword const fix_cr4_set = 0;
         static mword const fix_cr4_clr = 0;
+        static mword const fix_cr4_mon = 0;
 
         enum Ctrl0
         {
