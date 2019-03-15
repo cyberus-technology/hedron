@@ -28,7 +28,7 @@
 /*
  * Initialization Code
  */
-.section .init
+.section .init.multiboot
 
 .globl                  __start_bsp
 
