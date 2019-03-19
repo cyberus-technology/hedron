@@ -27,10 +27,10 @@
 #define PAGE_SIZE       (1 << PAGE_BITS)
 #define PAGE_MASK       (PAGE_SIZE - 1)
 
-#define LOAD_ADDR       0x4000000
+#define LOAD_ADDR       0x0000000004000000
 
 #define USER_ADDR       0x00007ffffffff000
-#define LINK_ADDR       0xffffffff81000000
+#define LINK_ADDR       0xffffffff88000000
 #define CPU_LOCAL       0xffffffffbfe00000
 #define SPC_LOCAL       0xffffffffc0000000
 

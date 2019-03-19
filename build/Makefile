@@ -57,7 +57,7 @@ DFLAGS		:= -MP -MMD -pipe
 OFLAGS		:= -Os
 
 ifeq ($(ARCH),x86_64)
-AFLAGS		:= -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=large -mno-red-zone -fPIC
+AFLAGS		:= -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=kernel -mno-red-zone -fno-PIC
 else
 $(error $(ARCH) is not a valid architecture)
 endif
