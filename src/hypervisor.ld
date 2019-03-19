@@ -36,6 +36,7 @@ SECTIONS
 {
     .init LOAD_ADDR :
     {
+        *(.init.multiboot)
         *(.init)
         *(.initdata)
     } : init = 0x90909090
