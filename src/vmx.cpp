@@ -86,7 +86,7 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
     write (ENT_CONTROLS, (ent | ctrl_ent.set) & ctrl_ent.clr);
 
     write (HOST_CR3, cr3);
-    write (HOST_CR0, get_cr0() | Cpu::CR0_TS);
+    write (HOST_CR0, get_cr0());
     write (HOST_CR4, get_cr4());
 
     write (HOST_BASE_TR,   reinterpret_cast<mword>(&Tss::run));

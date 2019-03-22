@@ -21,10 +21,7 @@
 
 #pragma once
 
-#include "cpu.hpp"
-#include "hazards.hpp"
 #include "slab.hpp"
-#include "x86.hpp"
 
 class Fpu
 {
@@ -52,12 +49,6 @@ class Fpu
 
         ALWAYS_INLINE
         inline void load() { asm volatile ("fxrstor %0" : : "m" (*data)); }
-
-        ALWAYS_INLINE
-        static inline void enable() { asm volatile ("clts"); Cpu::hazard |= HZD_FPU; }
-
-        ALWAYS_INLINE
-        static inline void disable() { set_cr0 (get_cr0() | Cpu::CR0_TS); Cpu::hazard &= ~HZD_FPU; }
 
         ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }

@@ -125,7 +125,6 @@ class Exc_regs : public Sys_regs
                 mword   dst_portal;
                 mword   nst_fault;
                 mword   nst_error;
-                uint8   fpu_on;
                 uint32  exc_bitmap;
             };
         };
@@ -179,8 +178,6 @@ class Exc_regs : public Sys_regs
 
         ALWAYS_INLINE
         inline bool user() const { return cs & 3; }
-
-        void fpu_ctrl (bool);
 
         void svm_update_shadows();
 
