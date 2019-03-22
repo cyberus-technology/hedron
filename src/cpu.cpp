@@ -10,9 +10,10 @@
  *
  * This file is part of the NOVA microhypervisor.
  *
- * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2017-2019 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * NOVA is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
@@ -70,7 +71,7 @@ unsigned    Cpu::patch;
 unsigned    Cpu::row;
 
 uint32      Cpu::name[12];
-uint32      Cpu::features[6];
+uint32      Cpu::features[7];
 bool        Cpu::bsp;
 bool        Cpu::preemption;
 
@@ -98,6 +99,11 @@ void Cpu::check_features()
 
     switch (static_cast<uint8>(eax)) {
         default:
+            FALL_THROUGH;
+        case 0xD:
+            cpuid(0xD, 1, features[6], ebx, ecx, edx);
+            FALL_THROUGH;
+        case 0x7 ... 0xC:
             cpuid (0x7, 0, eax, features[3], ecx, edx);
             FALL_THROUGH;
         case 0x6:

@@ -8,8 +8,9 @@
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
- * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2017-2019 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -65,10 +66,12 @@ class Cpu
             FEAT_VMX            = 37,
             FEAT_PCID           = 49,
             FEAT_TSC_DEADLINE   = 56,
+            FEAT_XSAVE          = 58,
             FEAT_SMEP           = 103,
             FEAT_1GB_PAGES      = 154,
             FEAT_CMP_LEGACY     = 161,
             FEAT_SVM            = 162,
+            FEAT_XSAVEOPT       = 192,
         };
 
         enum
@@ -109,6 +112,7 @@ class Cpu
             CR4_VMXE        = 1UL << 13,        // 0x2000
             CR4_SMXE        = 1UL << 14,        // 0x4000
             CR4_PCIDE       = 1UL << 17,        // 0x20000
+            CR4_OSXSAVE     = 1UL << 18,        // 0x40000
             CR4_SMEP        = 1UL << 20,        // 0x100000
         };
 
@@ -173,7 +177,7 @@ class Cpu
         static unsigned row                 CPULOCAL;
 
         static uint32 name[12]              CPULOCAL;
-        static uint32 features[6]           CPULOCAL;
+        static uint32 features[7]           CPULOCAL;
         static bool bsp                     CPULOCAL;
         static bool preemption              CPULOCAL;
 
