@@ -72,13 +72,20 @@ Buddy::Buddy (mword phys, mword virt, mword f_addr, size_t size)
         free (i);
 }
 
+void Buddy::fill(void *dst, Fill fill_mem, size_t size)
+{
+    if (fill_mem != NOFILL) {
+        memset (dst, fill_mem == FILL_0 ? 0 : -1, size);
+    }
+}
+
 /*
  * Allocate physically contiguous memory region.
  * @param ord       Block order (2^ord pages)
- * @param zero      Zero out block content if true
+ * @param fill      Initialization mode of allocated memory
  * @return          Pointer to linear memory region
  */
-void *Buddy::alloc (unsigned short ord, Fill fill)
+void *Buddy::alloc (unsigned short ord, Fill fill_mem)
 {
     Lock_guard <Spinlock> guard (lock);
 
@@ -106,8 +113,7 @@ void *Buddy::alloc (unsigned short ord, Fill fill)
         // Ensure corresponding physical block is order-aligned
         assert ((virt_to_phys (virt) & ((1ul << (block->ord + PAGE_BITS)) - 1)) == 0);
 
-        if (fill)
-            memset (reinterpret_cast<void *>(virt), fill == FILL_0 ? 0 : -1, 1ul << (block->ord + PAGE_BITS));
+        fill (reinterpret_cast<void *>(virt), fill_mem, 1ul << (block->ord + PAGE_BITS));
 
         return reinterpret_cast<void *>(virt);
     }

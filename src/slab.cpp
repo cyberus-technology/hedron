@@ -81,21 +81,29 @@ void Slab_cache::grow()
     head = curr = slab;
 }
 
-void *Slab_cache::alloc()
+void *Slab_cache::alloc(Buddy::Fill fill_mem)
 {
-    Lock_guard <Spinlock> guard (lock);
+    void *ret;
 
-    if (EXPECT_FALSE (!curr))
-        grow();
+    {
+        Lock_guard <Spinlock> guard (lock);
 
-    assert (!curr->full());
-    assert (!curr->next || curr->next->full());
+        if (EXPECT_FALSE (!curr)) {
+            grow();
+        }
 
-    // Allocate from slab
-    void *ret = curr->alloc();
+        assert (!curr->full());
+        assert (!curr->next || curr->next->full());
 
-    if (EXPECT_FALSE (curr->full()))
-        curr = curr->prev;
+        // Allocate from slab
+        ret = curr->alloc();
+
+        if (EXPECT_FALSE (curr->full())) {
+            curr = curr->prev;
+        }
+    }
+
+    Buddy::fill(ret, fill_mem, size);
 
     return ret;
 }
