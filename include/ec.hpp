@@ -54,7 +54,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         Ec *        partner {nullptr};
         Ec *        prev {nullptr};
         Ec *        next {nullptr};
-        Fpu *       fpu;
         union {
             struct {
                 uint16  cpu;
@@ -69,6 +68,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         Sm *         xcpu_sm;
 
         void * vlapic_page {nullptr};
+
+        Fpu fpu;
 
         static Slab_cache cache;
 

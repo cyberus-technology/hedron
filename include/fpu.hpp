@@ -26,39 +26,44 @@
 class Fpu
 {
     private:
-        union {
-            char data[512];
-            struct {
-                uint16 fcw;
-                uint16 fsw;
-                uint8 ftw;
-                uint8 res_;
-                uint16 fop;
-                uint64 fip;
-                uint64 fdp;
-                uint32 mxcsr;
-                uint32 mxcsr_mask;
-            };
+        struct FxsaveHdr {
+            uint16 fcw;
+            uint16 fsw;
+            uint8 ftw;
+            uint8 res_;
+            uint16 fop;
+            uint64 fip;
+            uint64 fdp;
+            uint32 mxcsr;
+            uint32 mxcsr_mask;
         };
 
-        static Slab_cache cache;
+        struct FpuCtx {
+            FxsaveHdr legacy_hdr;
+        };
+
+        FpuCtx *data;
+
+        static Slab_cache *cache;
+
+        enum class Mode : uint8 {
+            FXSAVE,
+        };
+
+        struct FpuConfig {
+            size_t context_size;
+            Mode mode;
+        };
+
+        static FpuConfig config;
 
     public:
-        ALWAYS_INLINE
-        inline void save() { asm volatile ("fxsave %0" : "=m" (*data)); }
+        static void probe();
+        static void init();
 
-        ALWAYS_INLINE
-        inline void load() { asm volatile ("fxrstor %0" : : "m" (*data)); }
+        void save();
+        void load();
 
-        ALWAYS_INLINE
-        static inline void *operator new (size_t) { return cache.alloc(); }
-
-        ALWAYS_INLINE
-        static inline void operator delete (void *ptr) { cache.free (ptr); }
-
-        Fpu() {
-            // Mask exceptions by default according to SysV ABI spec.
-            fcw = 0x37f;
-            mxcsr = 0x1f80;
-        }
+        Fpu();
+        ~Fpu() { cache->free (data); }
 };

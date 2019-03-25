@@ -28,6 +28,7 @@
 #include "bits.hpp"
 #include "cmdline.hpp"
 #include "counter.hpp"
+#include "fpu.hpp"
 #include "gdt.hpp"
 #include "hip.hpp"
 #include "idt.hpp"
@@ -211,6 +212,10 @@ void Cpu::init()
 
     Lapic::init();
 
+    if (Cpu::bsp) {
+        Fpu::probe();
+    }
+
     row = Console_vga::con.spinner (id);
 
     Paddr phys; mword attr;
@@ -242,6 +247,8 @@ void Cpu::init()
     Mca::init();
 
     trace (TRACE_CPU, "CORE:%x:%x:%x %x:%x:%x:%x [%x] %.48s", package, core, thread, family, model, stepping, platform, patch, reinterpret_cast<char *>(name));
+
+    Fpu::init();
 
     Hip::add_cpu();
 

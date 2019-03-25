@@ -27,14 +27,12 @@
 
 void Ec::load_fpu()
 {
-    assert (fpu);
-    fpu->load();
+    fpu.load();
 }
 
 void Ec::save_fpu()
 {
-    assert (fpu);
-    fpu->save();
+    fpu.save();
 }
 
 void Ec::transfer_fpu (Ec *from_ec)
