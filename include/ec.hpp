@@ -51,9 +51,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         Ec *        rcap;
         Utcb *      utcb;
         Refptr<Pd>  pd;
-        Ec *        partner;
-        Ec *        prev;
-        Ec *        next;
+        Ec *        partner {nullptr};
+        Ec *        prev {nullptr};
+        Ec *        next {nullptr};
         Fpu *       fpu;
         union {
             struct {
@@ -63,7 +63,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             uint32  xcpu;
         };
         unsigned const evt;
-        Timeout_hypercall timeout;
+        Timeout_hypercall timeout {this};
         mword          user_utcb;
 
         Sm *         xcpu_sm;
