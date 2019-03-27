@@ -48,7 +48,8 @@ void Fpu::probe()
 
         Cpu::cpuid (0xD, 0, discard, current_context, discard, discard);
 
-        Fpu::config = { xcr0, current_context, Fpu::Mode::XSAVE };
+        Fpu::config = { xcr0, current_context,
+                        Cpu::feature (Cpu::FEAT_XSAVEOPT) ? Fpu::Mode::XSAVEOPT : Fpu::Mode::XSAVE };
     } else {
         Fpu::config = { 0, 512, Fpu::Mode::FXSAVE };
     }
@@ -70,6 +71,9 @@ void Fpu::save()
     uint32 xsave_scb_lo {static_cast<uint32>(config.xsave_scb)};
 
     switch (config.mode) {
+    case Mode::XSAVEOPT:
+        asm volatile ("xsaveopt %0" : "=m" (*data) : "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
+        break;
     case Mode::XSAVE:
         asm volatile ("xsave %0" : "=m" (*data) : "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
         break;
@@ -85,6 +89,7 @@ void Fpu::load()
     uint32 xsave_scb_lo {static_cast<uint32>(config.xsave_scb)};
 
     switch (config.mode) {
+    case Mode::XSAVEOPT:
     case Mode::XSAVE:
         asm volatile ("xrstor %0" : : "m" (*data), "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
         break;

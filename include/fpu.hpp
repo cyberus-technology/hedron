@@ -47,6 +47,7 @@ class Fpu
         static Slab_cache *cache;
 
         enum class Mode : uint8 {
+            XSAVEOPT,
             XSAVE,
             FXSAVE,
         };
