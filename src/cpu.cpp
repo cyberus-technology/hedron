@@ -164,6 +164,10 @@ void Cpu::check_features()
     if (vendor == AMD)
         if (family > 0xf || (family == 0xf && model >= 0x40))
             Msr::write (Msr::AMD_IPMR, Msr::read<uint32>(Msr::AMD_IPMR) & ~(3ul << 27));
+
+    // Disable features based on command line arguments
+    if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
+    if (EXPECT_FALSE (Cmdline::noxsave)) { defeature (FEAT_XSAVE); }
 }
 
 void Cpu::setup_thermal()
@@ -186,9 +190,6 @@ void Cpu::setup_sysenter()
 
 void Cpu::setup_pcid()
 {
-    if (EXPECT_FALSE (Cmdline::nopcid))
-        defeature (FEAT_PCID);
-
     if (EXPECT_FALSE (!feature (FEAT_PCID)))
         return;
 
