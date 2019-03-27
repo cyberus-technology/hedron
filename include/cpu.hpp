@@ -118,6 +118,16 @@ class Cpu
 
         enum
         {
+            XCR0_X87       = 1UL << 0,
+            XCR0_SSE       = 1UL << 1,
+            XCR0_AVX       = 1UL << 2,
+            XCR0_AVX512_OP = 1UL << 5,
+            XCR0_AVX512_LO = 1UL << 6,
+            XCR0_AVX512_HI = 1UL << 7,
+        };
+
+        enum
+        {
             EFER_LME        = 1UL << 8,         // 0x100
             EFER_LMA        = 1UL << 10,        // 0x400
             EFER_SVME       = 1UL << 12,        // 0x1000

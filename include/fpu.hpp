@@ -47,10 +47,12 @@ class Fpu
         static Slab_cache *cache;
 
         enum class Mode : uint8 {
+            XSAVE,
             FXSAVE,
         };
 
         struct FpuConfig {
+            uint64 xsave_scb;   // State-Component Bitmap
             size_t context_size;
             Mode mode;
         };
