@@ -98,7 +98,9 @@ class Buddy
         INIT
         Buddy (mword phys, mword virt, mword f_addr, size_t size);
 
-        void *alloc (unsigned short ord, Fill fill);
+        static void fill(void *dst, Fill fill_mem, size_t size);
+
+        void *alloc (unsigned short ord, Fill fill_mem);
 
         void free (mword addr);
 

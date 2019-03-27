@@ -47,7 +47,7 @@ class Slab_cache
         /*
          * Front end allocator
          */
-        void *alloc();
+        void *alloc(Buddy::Fill fill_mem = Buddy::FILL_0);
 
         /*
          * Front end deallocator
@@ -67,7 +67,8 @@ class Slab
         ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
-            return Buddy::allocator.alloc (0, Buddy::FILL_0);
+            // The front-end allocator will initialize memory.
+            return Buddy::allocator.alloc (0, Buddy::NOFILL);
         }
 
         ALWAYS_INLINE

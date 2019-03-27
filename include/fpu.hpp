@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -28,7 +29,20 @@
 class Fpu
 {
     private:
-        char data[512];
+        union {
+            char data[512];
+            struct {
+                uint16 fcw;
+                uint16 fsw;
+                uint8 ftw;
+                uint8 res_;
+                uint16 fop;
+                uint64 fip;
+                uint64 fdp;
+                uint32 mxcsr;
+                uint32 mxcsr_mask;
+            };
+        };
 
         static Slab_cache cache;
 
@@ -38,9 +52,6 @@ class Fpu
 
         ALWAYS_INLINE
         inline void load() { asm volatile ("fxrstor %0" : : "m" (*data)); }
-
-        ALWAYS_INLINE
-        static inline void init() { asm volatile ("fninit"); }
 
         ALWAYS_INLINE
         static inline void enable() { asm volatile ("clts"); Cpu::hazard |= HZD_FPU; }
@@ -53,4 +64,10 @@ class Fpu
 
         ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
+
+        Fpu() {
+            // Mask exceptions by default according to SysV ABI spec.
+            fcw = 0x37f;
+            mxcsr = 0x1f80;
+        }
 };

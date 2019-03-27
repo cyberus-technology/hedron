@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -18,6 +19,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "assert.hpp"
 #include "ec.hpp"
 #include "gdt.hpp"
 #include "mca.hpp"
@@ -28,10 +30,8 @@ void Ec::load_fpu()
     if (!utcb)
         regs.fpu_ctrl (true);
 
-    if (EXPECT_FALSE (!fpu))
-        Fpu::init();
-    else
-        fpu->load();
+    assert (fpu);
+    fpu->load();
 }
 
 void Ec::save_fpu()
@@ -39,9 +39,7 @@ void Ec::save_fpu()
     if (!utcb)
         regs.fpu_ctrl (false);
 
-    if (EXPECT_FALSE (!fpu))
-        fpu = new Fpu;
-
+    assert (fpu);
     fpu->save();
 }
 
