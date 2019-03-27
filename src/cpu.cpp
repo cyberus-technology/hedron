@@ -188,14 +188,6 @@ void Cpu::setup_sysenter()
 #endif
 }
 
-void Cpu::setup_pcid()
-{
-    if (EXPECT_FALSE (!feature (FEAT_PCID)))
-        return;
-
-    set_cr4 (get_cr4() | Cpu::CR4_PCIDE);
-}
-
 void Cpu::init()
 {
     for (void (**func)() = &CTORS_L; func != &CTORS_C; (*func++)()) ;
@@ -231,10 +223,13 @@ void Cpu::init()
     if (EXPECT_TRUE (feature (FEAT_SEP)))
         setup_sysenter();
 
-    setup_pcid();
+    uint64 cr4 {get_cr4()};
 
-    if (EXPECT_TRUE (feature (FEAT_SMEP)))
-        set_cr4 (get_cr4() | Cpu::CR4_SMEP);
+    if (feature (FEAT_PCID)) { cr4 |= Cpu::CR4_PCIDE; }
+    if (feature (FEAT_SMEP)) { cr4 |= Cpu::CR4_SMEP;  }
+    if (feature (FEAT_SMAP)) { cr4 |= Cpu::CR4_SMAP;  }
+
+    set_cr4 (cr4);
 
     // Some BIOSes don't enable VMX and lock the feature control MSR
     auto feature_ctrl = Msr::read<uint32>(Msr::IA32_FEATURE_CONTROL);

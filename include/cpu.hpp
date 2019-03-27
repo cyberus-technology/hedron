@@ -45,9 +45,6 @@ class Cpu
         ALWAYS_INLINE
         static inline void setup_sysenter();
 
-        ALWAYS_INLINE
-        static inline void setup_pcid();
-
     public:
         enum Vendor
         {
@@ -68,6 +65,7 @@ class Cpu
             FEAT_TSC_DEADLINE   = 56,
             FEAT_XSAVE          = 58,
             FEAT_SMEP           = 103,
+            FEAT_SMAP           = 116,
             FEAT_1GB_PAGES      = 154,
             FEAT_CMP_LEGACY     = 161,
             FEAT_SVM            = 162,
@@ -114,6 +112,7 @@ class Cpu
             CR4_PCIDE       = 1UL << 17,        // 0x20000
             CR4_OSXSAVE     = 1UL << 18,        // 0x40000
             CR4_SMEP        = 1UL << 20,        // 0x100000
+            CR4_SMAP        = 1UL << 21,        // 0x200000
         };
 
         enum
