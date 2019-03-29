@@ -64,7 +64,7 @@ endif
 
 # Language options
 FFLAGS		:= -fdata-sections -ffunction-sections -fomit-frame-pointer -freg-struct-return -freorder-blocks -funit-at-a-time
-FFLAGS		+= -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti
+FFLAGS		+= -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threadsafe-statics
 FFLAGS		+= $(call check,-fno-stack-protector)
 FFLAGS		+= $(call check,-fvisibility-inlines-hidden)
 FFLAGS		+= $(call check,-fdiagnostics-color=auto)

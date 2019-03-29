@@ -5,6 +5,8 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Markus Partheymüller, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -105,4 +107,18 @@ ALWAYS_INLINE
 static inline void set_cr4 (mword cr4)
 {
     asm volatile ("mov %0, %%cr4" : : "r" (cr4));
+}
+
+ALWAYS_INLINE
+static inline mword get_xcr(uint32 n)
+{
+    mword h {0}, l {0};
+    asm volatile ("xgetbv" : "=a" (l), "=d" (h) : "c"(n));
+    return static_cast<uint64>(h) << 32 | l;
+}
+
+ALWAYS_INLINE
+static inline void set_xcr(uint32 n, mword val)
+{
+    asm volatile ("xsetbv" :: "c" (n), "a" (static_cast<uint32>(val)), "d" (val >> 32));
 }

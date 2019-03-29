@@ -51,10 +51,6 @@ void Ec::vmx_exception()
         case 0x202:         // NMI
             asm volatile ("int $0x2" : : : "memory");
             ret_user_vmresume();
-
-        case 0x307:         // #NM
-            handle_exc_nm();
-            ret_user_vmresume();
     }
 
     send_msg<ret_user_vmresume>();
@@ -78,7 +74,7 @@ void Ec::vmx_extint()
 
 void Ec::handle_vmx()
 {
-    Cpu::hazard = (Cpu::hazard | HZD_DS_ES | HZD_TR) & ~HZD_FPU;
+    Cpu::hazard |= HZD_DS_ES | HZD_TR;
 
     mword reason = Vmcs::read (Vmcs::EXI_REASON) & 0xff;
 

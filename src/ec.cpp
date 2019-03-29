@@ -35,10 +35,10 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
-Ec *Ec::current, *Ec::fpowner;
+Ec *Ec::current;
 
 // Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), fpu (new Fpu), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0), xcpu_sm (nullptr)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -46,7 +46,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), fpu (new Fpu), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u), xcpu_sm (nullptr)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
@@ -130,7 +130,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     }
 }
 
-Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, static_cast<Space_obj *>(own), 0, 0xd, free, pre_free), cont (f), regs (clone->regs), rcap (clone), utcb (clone->utcb), pd (p), fpu (clone->fpu), cpu (static_cast<uint16>(c)), glb (!!f), evt (clone->evt), user_utcb (0), xcpu_sm (clone->xcpu_sm)
+Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, static_cast<Space_obj *>(own), 0, 0xd, free, pre_free), cont (f), regs (clone->regs), rcap (clone), utcb (clone->utcb), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (clone->evt), user_utcb (0), xcpu_sm (clone->xcpu_sm)
 {
     // Make sure we have a PTAB for this CPU in the PD
     pd->Space_mem::init (c);
@@ -148,9 +148,6 @@ Ec::~Ec()
     }
 
     pre_free(this);
-
-    if (fpu)
-        delete fpu;
 
     if (utcb) {
         delete utcb;
@@ -211,15 +208,11 @@ void Ec::handle_hazard (mword hzd, void (*func)())
         Cpu::hazard &= ~HZD_DS_ES;
         asm volatile ("mov %0, %%ds; mov %0, %%es" : : "r" (SEL_USER_DATA));
     }
-
-    if (hzd & HZD_FPU)
-        if (current != fpowner)
-            Fpu::disable();
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_DS_ES | HZD_SCHED);
+    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
@@ -231,7 +224,7 @@ void Ec::ret_user_sysexit()
 void Ec::ret_user_iret()
 {
     // No need to check HZD_DS_ES because IRET will reload both anyway
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_SCHED);
+    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
@@ -413,7 +406,6 @@ void Ec::xcpu_return()
 
     current->rcap    = nullptr;
     current->utcb    = nullptr;
-    current->fpu     = nullptr;
     current->xcpu_sm = nullptr;
 
     Rcu::call(current);

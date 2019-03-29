@@ -27,73 +27,26 @@
 
 void Ec::load_fpu()
 {
-    if (!utcb)
-        regs.fpu_ctrl (true);
-
-    assert (fpu);
-    fpu->load();
+    fpu.load();
 }
 
 void Ec::save_fpu()
 {
-    if (!utcb)
-        regs.fpu_ctrl (false);
-
-    assert (fpu);
-    fpu->save();
+    fpu.save();
 }
 
-void Ec::transfer_fpu (Ec *ec)
+void Ec::transfer_fpu (Ec *from_ec)
 {
-    if ((!utcb && !regs.fpu_on) ||
-        (!ec->utcb && !ec->regs.fpu_on))
-      return;
-
-    if (!(Cpu::hazard & HZD_FPU)) {
-
-        Fpu::enable();
-
-        if (fpowner != this) {
-            if (fpowner) {
-                fpowner->save_fpu();
-            }
-            load_fpu();
-        }
-    }
-
-    if (fpowner && fpowner->del_rcu()) {
-        Ec * last = fpowner;
-        fpowner = nullptr;
-        Rcu::call (last);
-    }
-
-    fpowner = ec;
-    bool ok = fpowner->add_ref();
-    assert (ok);
-}
-
-void Ec::handle_exc_nm()
-{
-    Fpu::enable();
-
-    if (current == fpowner)
+    if (from_ec == this)
         return;
 
-    if (fpowner) {
-        fpowner->save_fpu();
+    if (!from_ec->is_idle_ec()) {
+        from_ec->save_fpu();
     }
 
-    current->load_fpu();
-
-    if (fpowner && fpowner->del_rcu()) {
-        Ec * last = fpowner;
-        fpowner = nullptr;
-        Rcu::call (last);
+    if (!is_idle_ec()) {
+        load_fpu();
     }
-
-    fpowner = current;
-    bool ok = fpowner->add_ref();
-    assert (ok);
 }
 
 bool Ec::handle_exc_ts (Exc_regs *r)
@@ -164,10 +117,6 @@ void Ec::handle_exc (Exc_regs *r)
     Counter::exc[r->vec]++;
 
     switch (r->vec) {
-
-        case Cpu::EXC_NM:
-            handle_exc_nm();
-            return;
 
         case Cpu::EXC_TS:
             if (handle_exc_ts (r))

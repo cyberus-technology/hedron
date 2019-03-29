@@ -51,7 +51,6 @@ enum {
     TRACE_DEL       = 1UL << 18,
     TRACE_REV       = 1UL << 19,
     TRACE_RCU       = 1UL << 20,
-    TRACE_FPU       = 1UL << 23,
     TRACE_SYSCALL   = 1UL << 30,
     TRACE_ERROR     = 1UL << 31,
 };
@@ -74,7 +73,6 @@ unsigned const trace_mask =
 //                            TRACE_DEL       |
 //                            TRACE_REV       |
 //                            TRACE_RCU       |
-//                            TRACE_FPU       |
 //                            TRACE_SYSCALL   |
 #endif
                             TRACE_ERROR     |

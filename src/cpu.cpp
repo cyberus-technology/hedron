@@ -10,9 +10,10 @@
  *
  * This file is part of the NOVA microhypervisor.
  *
- * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2017-2019 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * NOVA is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
@@ -27,6 +28,7 @@
 #include "bits.hpp"
 #include "cmdline.hpp"
 #include "counter.hpp"
+#include "fpu.hpp"
 #include "gdt.hpp"
 #include "hip.hpp"
 #include "idt.hpp"
@@ -70,7 +72,7 @@ unsigned    Cpu::patch;
 unsigned    Cpu::row;
 
 uint32      Cpu::name[12];
-uint32      Cpu::features[6];
+uint32      Cpu::features[7];
 bool        Cpu::bsp;
 bool        Cpu::preemption;
 
@@ -98,6 +100,11 @@ void Cpu::check_features()
 
     switch (static_cast<uint8>(eax)) {
         default:
+            FALL_THROUGH;
+        case 0xD:
+            cpuid(0xD, 1, features[6], ebx, ecx, edx);
+            FALL_THROUGH;
+        case 0x7 ... 0xC:
             cpuid (0x7, 0, eax, features[3], ecx, edx);
             FALL_THROUGH;
         case 0x6:
@@ -157,6 +164,10 @@ void Cpu::check_features()
     if (vendor == AMD)
         if (family > 0xf || (family == 0xf && model >= 0x40))
             Msr::write (Msr::AMD_IPMR, Msr::read<uint32>(Msr::AMD_IPMR) & ~(3ul << 27));
+
+    // Disable features based on command line arguments
+    if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
+    if (EXPECT_FALSE (Cmdline::noxsave)) { defeature (FEAT_XSAVE); }
 }
 
 void Cpu::setup_thermal()
@@ -179,9 +190,6 @@ void Cpu::setup_sysenter()
 
 void Cpu::setup_pcid()
 {
-    if (EXPECT_FALSE (Cmdline::nopcid))
-        defeature (FEAT_PCID);
-
     if (EXPECT_FALSE (!feature (FEAT_PCID)))
         return;
 
@@ -204,6 +212,10 @@ void Cpu::init()
     check_features();
 
     Lapic::init();
+
+    if (Cpu::bsp) {
+        Fpu::probe();
+    }
 
     row = Console_vga::con.spinner (id);
 
@@ -236,6 +248,8 @@ void Cpu::init()
     Mca::init();
 
     trace (TRACE_CPU, "CORE:%x:%x:%x %x:%x:%x:%x [%x] %.48s", package, core, thread, family, model, stepping, platform, patch, reinterpret_cast<char *>(name));
+
+    Fpu::init();
 
     Hip::add_cpu();
 

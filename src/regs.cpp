@@ -118,12 +118,7 @@ mword Exc_regs::linear_address (mword val) const
 template <typename T>
 mword Exc_regs::cr0_set() const
 {
-    mword set = 0;
-
-    if (!fpu_on)
-        set |= Cpu::CR0_TS;
-
-    return T::fix_cr0_set | set;
+    return T::fix_cr0_set;
 }
 
 template <typename T>
@@ -190,9 +185,6 @@ template <typename T>
 void Exc_regs::set_exc() const
 {
     unsigned msk = 1UL << Cpu::EXC_AC;
-
-    if (!fpu_on)
-        msk |= 1UL << Cpu::EXC_NM;
 
     msk |= exc_bitmap;
 
@@ -270,30 +262,6 @@ template <> void Exc_regs::nst_ctrl<Vmcs>()
     vmx_set_cpu_ctrl0 (Vmcs::read (Vmcs::CPU_EXEC_CTRL0));
     vmx_set_cpu_ctrl1 (Vmcs::read (Vmcs::CPU_EXEC_CTRL1));
     set_exc<Vmcs>();
-}
-
-void Exc_regs::fpu_ctrl (bool on)
-{
-    if (Hip::feature() & Hip::FEAT_VMX) {
-
-        vmcs->make_current();
-
-        mword cr0 = get_cr0<Vmcs>();
-        fpu_on = on;
-        set_cr0<Vmcs> (cr0);
-
-        set_exc<Vmcs>();
-
-    } else {
-
-        mword cr0 = get_cr0<Vmcb>();
-        fpu_on = on;
-        set_cr0<Vmcb> (cr0);
-
-        set_exc<Vmcb>();
-
-        svm_set_cpu_ctrl0 (vmcb->intercept_cpu[0]);
-    }
 }
 
 void Exc_regs::svm_update_shadows()

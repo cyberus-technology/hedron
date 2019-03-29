@@ -31,6 +31,7 @@ bool Cmdline::nodl;
 bool Cmdline::nopcid;
 bool Cmdline::novga;
 bool Cmdline::novpid;
+bool Cmdline::noxsave;
 
 struct Cmdline::param_map Cmdline::map[] INITDATA =
 {
@@ -42,6 +43,7 @@ struct Cmdline::param_map Cmdline::map[] INITDATA =
     { "nopcid",     &Cmdline::nopcid    },
     { "novga",      &Cmdline::novga     },
     { "novpid",     &Cmdline::novpid    },
+    { "noxsave",    &Cmdline::noxsave   },
 };
 
 char *Cmdline::get_arg (char **line)

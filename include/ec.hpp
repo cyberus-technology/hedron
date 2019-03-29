@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
- * Copyright (C) 2013-2015 Alexander Boettcher, Genode Labs GmbH
+ * Copyright (C) 2013-2018 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  *
@@ -54,7 +54,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         Ec *        partner {nullptr};
         Ec *        prev {nullptr};
         Ec *        next {nullptr};
-        Fpu *       fpu;
         union {
             struct {
                 uint16  cpu;
@@ -70,6 +69,8 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         void * vlapic_page {nullptr};
 
+        Fpu fpu;
+
         static Slab_cache cache;
 
         REGPARM (1)
@@ -84,7 +85,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NORETURN
         static void handle_tss() asm ("tss_handler");
 
-        static void handle_exc_nm();
         static bool handle_exc_ts (Exc_regs *);
         static bool handle_exc_gp (Exc_regs *);
         static bool handle_exc_pf (Exc_regs *);
@@ -124,19 +124,11 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
                 e->user_utcb = 0;
             }
-
-            // XXX If e is on another CPU and there the fpowner - this check will fail.
-            // XXX For now the destruction is delayed until somebody else grabs the FPU.
-            if (fpowner == e) {
-                assert (Sc::current->cpu == e->cpu);
-
-                bool zero = fpowner->del_ref();
-                assert (!zero);
-
-                fpowner      = nullptr;
-                Cpu::hazard |= HZD_FPU;
-            }
         }
+
+        ALWAYS_INLINE
+        inline bool is_idle_ec() { return cont == idle; }
+
         static void free (Rcu_elem * a)
         {
             Ec * e = static_cast<Ec *>(a);
@@ -198,7 +190,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
     public:
         static Ec *current CPULOCAL_HOT;
-        static Ec *fpowner CPULOCAL;
 
         Ec (Pd *, void (*)(), unsigned);
         Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
@@ -242,6 +233,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             if (EXPECT_FALSE (current->del_rcu()))
                 Rcu::call (current);
 
+            transfer_fpu(current);
             current = this;
 
             bool ok = current->add_ref();

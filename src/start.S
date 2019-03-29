@@ -72,7 +72,7 @@ __boot_gdt__:
                         mov     %edx, %cr4
                         mov     $PDBR, %edx
                         mov     %edx, %cr3
-                        mov     $0x8001002b, %edx
+                        mov     $0x80010023, %edx
                         mov     %edx, %cr0
 .endm
 

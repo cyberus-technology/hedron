@@ -32,17 +32,7 @@ void Ec::svm_exception (mword reason)
             current->regs.vmcb->inj_control = current->regs.vmcb->exitintinfo;
     }
 
-    switch (reason) {
-
-        default:
-            current->regs.dst_portal = reason;
-            break;
-
-        case 0x47:          // #NM
-            handle_exc_nm();
-            ret_user_vmrun();
-    }
-
+    current->regs.dst_portal = reason;
     send_msg<ret_user_vmrun>();
 }
 
