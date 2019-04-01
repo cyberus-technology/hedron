@@ -296,39 +296,44 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
         shootdown();
 }
 
+Xfer Pd::xfer_item (Pd *src, Crd xlt, Crd del, Xfer s)
+{
+    mword set_as_del = 0;
+    Crd crd = s;
+
+    switch (s.flags() & 3) {
+
+    case 0:
+        xlt_crd (src, xlt, crd);
+        break;
+
+    case 2:
+        xlt_crd (src, xlt, crd);
+        if (crd.type()) break;
+
+        crd = s;
+        set_as_del = 1;
+        FALL_THROUGH;
+    case 1:
+        del_crd (src == &root && s.flags() & 0x800 ? &kern : src, del, crd, s.flags() >> 9 & 3, s.hotspot());
+        break;
+
+    default:
+        crd = Crd(0);
+
+    };
+
+    return Xfer {crd, s.flags() | set_as_del};
+}
+
 void Pd::xfer_items (Pd *src, Crd xlt, Crd del, Xfer *s, Xfer *d, unsigned long ti)
 {
-    mword set_as_del;
+    for (; ti--; s--) {
+        Xfer r {xfer_item (src, xlt, del, *s)};
 
-    for (Crd crd; ti--; s--) {
-
-        crd = *s;
-        set_as_del = 0;
-
-        switch (s->flags() & 3) {
-
-            case 0:
-                xlt_crd (src, xlt, crd);
-                break;
-
-            case 2:
-                xlt_crd (src, xlt, crd);
-                if (crd.type()) break;
-
-                crd = *s;
-                set_as_del = 1;
-                FALL_THROUGH;
-            case 1:
-                del_crd (src == &root && s->flags() & 0x800 ? &kern : src, del, crd, s->flags() >> 9 & 3, s->hotspot());
-                break;
-
-            default:
-                crd = Crd(0);
-
-        };
-
-        if (d)
-            *d-- = Xfer (crd, s->flags() | set_as_del);
+        if (d) {
+            *d-- = r;
+        }
     }
 }
 

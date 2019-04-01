@@ -124,6 +124,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         template <typename>
         void revoke (mword, mword, mword, bool);
 
+        Xfer xfer_item  (Pd *, Crd, Crd, Xfer);
         void xfer_items (Pd *, Crd, Crd, Xfer *, Xfer *, unsigned long);
 
         void xlt_crd (Pd *, Crd, Crd &);
