@@ -56,6 +56,9 @@ class Crd
 
         ALWAYS_INLINE
         inline mword base() const { return val >> 12; }
+
+        ALWAYS_INLINE
+        inline mword value() const { return val; }
 };
 
 class Xfer : public Crd
@@ -72,4 +75,7 @@ class Xfer : public Crd
 
         ALWAYS_INLINE
         inline mword hotspot() const { return val >> 12; }
+
+        ALWAYS_INLINE
+        inline mword value() const { return val; }
 };

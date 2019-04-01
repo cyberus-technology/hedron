@@ -541,12 +541,37 @@ void Ec::sys_pd_ctrl_map_access_page()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_pd_ctrl_delegate()
+{
+    Sys_pd_ctrl_delegate *s = static_cast<Sys_pd_ctrl_delegate *>(current->sys_regs());
+    Xfer xfer = s->xfer();
+
+    trace (TRACE_SYSCALL, "EC:%p SYS_DELEGATE SRC:%#lx DST:%#lx FLAGS:%#lx",
+           current, s->src_pd(), s->dst_pd(), xfer.flags());
+
+    Capability src_pd_cap {Space_obj::lookup (s->src_pd())};
+    Capability dst_pd_cap {Space_obj::lookup (s->dst_pd())};
+
+    if (EXPECT_FALSE (sanitize_cap (src_pd_cap, Kobject::PD) or sanitize_cap (dst_pd_cap, Kobject::PD))) {
+        trace (TRACE_ERROR, "%s: Bad PD CAP SRC:%#lx DST:%#lx", __func__, s->src_pd(), s->dst_pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Pd *src_pd = static_cast<Pd *>(src_pd_cap.obj());
+    Pd *dst_pd = static_cast<Pd *>(dst_pd_cap.obj());
+
+    s->set_xfer (dst_pd->xfer_item (src_pd, s->dst_crd(), s->dst_crd(), xfer));
+
+    sys_finish<Sys_regs::SUCCESS>();
+}
+
 void Ec::sys_pd_ctrl()
 {
     Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
     switch (s->op()) {
     case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
     case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
+    case Sys_pd_ctrl::DELEGATE:        { sys_pd_ctrl_delegate();        }
     };
 
     sys_finish<Sys_regs::BAD_PAR>();
