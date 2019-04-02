@@ -190,6 +190,7 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         cr2 = regs->read_cr<Vmcs> (2);
         cr3 = regs->read_cr<Vmcs> (3);
         cr4 = regs->read_cr<Vmcs> (4);
+        xcr0 = regs->xcr0;
     }
 
     if (m & Mtd::DR)
@@ -378,6 +379,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         regs->write_cr<Vmcs> (2, cr2);
         regs->write_cr<Vmcs> (3, cr3);
         regs->write_cr<Vmcs> (4, cr4);
+        regs->xcr0 = xcr0;
     }
 
     if (mtd & Mtd::DR)
@@ -550,6 +552,7 @@ bool Utcb::load_svm (Cpu_regs *regs)
         cr2 = regs->read_cr<Vmcb> (2);
         cr3 = regs->read_cr<Vmcb> (3);
         cr4 = regs->read_cr<Vmcb> (4);
+        xcr0 = regs->xcr0;
     }
 
     if (m & Mtd::DR)
@@ -667,6 +670,7 @@ bool Utcb::save_svm (Cpu_regs *regs)
         regs->write_cr<Vmcb> (2, cr2);
         regs->write_cr<Vmcb> (3, cr3);
         regs->write_cr<Vmcb> (4, cr4);
+        regs->xcr0 = xcr0;
     }
 
     if (mtd & Mtd::DR)

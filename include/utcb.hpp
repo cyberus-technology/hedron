@@ -76,7 +76,7 @@ class Utcb_data
                 mword           r8,  r9,  r10, r11, r12, r13, r14, r15;
                 uint64          qual[2];
                 uint32          ctrl[2];
-                uint64          reserved;
+                uint64          xcr0;
                 mword           cr0, cr2, cr3, cr4;
                 mword           pdpte[4];
                 mword           cr8, efer, pat;
