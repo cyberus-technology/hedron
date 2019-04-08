@@ -29,18 +29,18 @@ mword Ept::ord = ~0UL;
 mword Hpt::ord = ~0UL;
 
 template <typename P, typename E, unsigned L, unsigned B, bool F>
-P *Pte<P,E,L,B,F>::walk (E v, unsigned long n, bool a)
+P *Pte<P,E,L,B,F>::walk (E v, unsigned long to_level, bool alloc)
 {
     unsigned long l = L;
 
     for (P *p, *e = static_cast<P *>(this);; e = static_cast<P *>(Buddy::phys_to_ptr (e->addr())) + (v >> (--l * B + PAGE_BITS) & ((1UL << B) - 1))) {
 
-        if (l == n)
+        if (l == to_level)
             return e;
 
         if (!e->val) {
 
-            if (!a)
+            if (!alloc)
                 return nullptr;
 
             if (!e->set (0, Buddy::ptr_to_phys (p = new P) | (l == L ? 0 : P::PTE_N)))
@@ -50,7 +50,7 @@ P *Pte<P,E,L,B,F>::walk (E v, unsigned long n, bool a)
 }
 
 template <typename P, typename E, unsigned L, unsigned B, bool F>
-size_t Pte<P,E,L,B,F>::lookup (E v, Paddr &p, mword &a)
+size_t Pte<P,E,L,B,F>::lookup (E v, Paddr &p, mword &attr)
 {
     unsigned long l = L;
 
@@ -66,14 +66,14 @@ size_t Pte<P,E,L,B,F>::lookup (E v, Paddr &p, mword &a)
 
         p = static_cast<Paddr>(e->addr() | (v & (s - 1)));
 
-        a = e->attr();
+        attr = e->attr();
 
         return s;
     }
 }
 
 template <typename P, typename E, unsigned L, unsigned B, bool F>
-bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword a, Type t)
+bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword attr, Type t)
 {
     unsigned long l = o / B, n = 1UL << o % B, s;
 
@@ -82,8 +82,8 @@ bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword a, Type t)
     if (!e)
         return false;
 
-    if (a) {
-        p |= P::order (o % B) | (l ? P::PTE_S : 0) | a;
+    if (attr) {
+        p |= P::order (o % B) | (l ? P::PTE_S : 0) | attr;
         s = 1UL << (l * B + PAGE_BITS);
     } else
         p = s = 0;
