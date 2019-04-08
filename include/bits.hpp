@@ -29,9 +29,8 @@ inline long int bit_scan_reverse (mword val)
     if (EXPECT_FALSE (!val))
         return -1;
 
-    asm volatile ("bsr %1, %0" : "=r" (val) : "rm" (val));
-
-    return val;
+    static_assert(sizeof(mword) == sizeof(long long), "builtin call has wrong size");
+    return __builtin_ia32_bsrdi(val);
 }
 
 ALWAYS_INLINE
@@ -40,9 +39,8 @@ inline long int bit_scan_forward (mword val)
     if (EXPECT_FALSE (!val))
         return -1;
 
-    asm volatile ("bsf %1, %0" : "=r" (val) : "rm" (val));
-
-    return val;
+    static_assert(sizeof(mword) == sizeof(long), "builtin call has wrong size");
+    return __builtin_ctzl(val);
 }
 
 ALWAYS_INLINE
