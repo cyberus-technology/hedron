@@ -31,11 +31,11 @@ bool Hpt::sync_from (Hpt src, mword v, mword o)
 {
     mword l = (bit_scan_reverse (v ^ o) - PAGE_BITS) / bits_per_level();
 
-    Hpt *s = static_cast<Hpt *>(src.walk (v, l, false));
+    Hpt *s = src.walk (v, l, false);
     if (!s)
         return false;
 
-    Hpt *d = static_cast<Hpt *>(walk (v, l));
+    Hpt *d = walk (v, l);
     assert (d);
 
     if (d->val == s->val)
