@@ -29,8 +29,8 @@ do {                                                                \
     if (EXPECT_FALSE ((trace_mask & (T)) == (T))) {                 \
         mword __esp;                                                \
         Console::print ("[%2ld] " format,                           \
-                static_cast<long>(((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) ==     \
-                CPU_LOCAL_STCK ? Cpu::id : ~0UL), ## __VA_ARGS__);  \
+                static_cast<long>(((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR \
+                 ? Cpu::id : ~0UL), ## __VA_ARGS__);  \
     }                                                               \
 } while (0)
 

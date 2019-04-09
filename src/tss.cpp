@@ -18,6 +18,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "cpulocal.hpp"
 #include "hpt.hpp"
 #include "tss.hpp"
 
@@ -25,6 +26,6 @@ ALIGNED(8) Tss Tss::run;
 
 void Tss::build()
 {
-    run.sp0     = CPU_LOCAL_STCK + PAGE_SIZE;
+    run.sp0     = reinterpret_cast<mword>(&Cpulocal::get().self);
     run.iobm    = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&run));
 }

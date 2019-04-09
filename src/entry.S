@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -45,17 +46,21 @@ handlers:
                         .previous
 .endm
 
+.macro                  RESTORE_STACK
+                        mov     %gs:0, %REG(sp) // Per_cpu::self
+.endm
+
 .macro                  SAVE_STATE
                         SAVE_SEG
                         SAVE_GPR
                         mov     %REG(sp), %REG(bx)
-                        cmp     $CPU_LOCAL_STCK, %REG(sp)
-                        jae     1f
                         cld
-                        mov     $CPU_LOCAL_STCK + PAGE_SIZE, %REG(sp)
-                        mov     $SEL_USER_DATA, %REG(ax)
-                        mov     %REG(ax), %ds
-                        mov     %REG(ax), %es
+
+                        // If CS[1:0] != 0, we come from userspace.
+                        testb   $0x3, OFS_CS(%REG(sp))
+                        jz      1f
+                        swapgs
+                        RESTORE_STACK
 1:
 .endm
 
@@ -187,10 +192,12 @@ ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
  */
 .align                  4, 0x90
 .globl                  entry_sysenter
-entry_sysenter:         LOAD_KSP
+entry_sysenter:         mov     PREG(sp), PREG(11)
+                        swapgs
+                        mov     %gs:8, PREG(sp) // Per_cpu::sys_entry_stack
                         lea     -11*SIZE(%REG(sp)), %REG(sp)
                         SAVE_GPR
-                        mov     $(CPU_LOCAL_STCK + PAGE_SIZE), %REG(sp)
+                        RESTORE_STACK
                         and     $0xf, %ARG_1
                         jmp     *syscall(,%ARG_1,SIZE)
 
@@ -202,5 +209,5 @@ entry_sysenter:         LOAD_KSP
 entry_vmx:              SAVE_GPR
                         mov     %cr2, %REG(ax)
                         mov     %REG(ax), OFS_CR2 (%REG(sp))
-                        mov     $(CPU_LOCAL_STCK + PAGE_SIZE), %REG(sp)
+                        RESTORE_STACK
                         jmp     vmx_handler

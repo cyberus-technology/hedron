@@ -8,6 +8,7 @@
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -144,7 +145,10 @@ __start_all:            INIT_STATE
                         test    %REG(bx), %REG(bx)
                         je      1b
 
-3:                      call    kern_ptab_setup
+3:
+                        call    setup_cpulocal
+                        mov     %REG(ax), %REG(sp)
+                        call    kern_ptab_setup
 
                         movabs  $(start), %REG(bx)
                         jmp     *%REG(bx)
@@ -152,5 +156,4 @@ __start_all:            INIT_STATE
 .text
 
 start:                  mov     %REG(ax), %cr3
-                        mov     $(CPU_LOCAL_STCK + PAGE_SIZE), %REG(sp)
                         jmp     bootstrap

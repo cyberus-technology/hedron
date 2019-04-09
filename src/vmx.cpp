@@ -23,6 +23,7 @@
 
 #include "bits.hpp"
 #include "cmdline.hpp"
+#include "cpulocal.hpp"
 #include "ept.hpp"
 #include "gdt.hpp"
 #include "hip.hpp"
@@ -45,7 +46,7 @@ vmx_ctrl_ent Vmcs::ctrl_ent;
 mword        Vmcs::fix_cr0_set, Vmcs::fix_cr0_clr, Vmcs::fix_cr0_mon;
 mword        Vmcs::fix_cr4_set, Vmcs::fix_cr4_clr, Vmcs::fix_cr4_mon;
 
-Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
+Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp, unsigned cpu) : rev (basic.revision)
 {
     make_current();
 
@@ -89,6 +90,7 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
     write (HOST_CR0, get_cr0());
     write (HOST_CR4, get_cr4());
 
+    write (HOST_BASE_GS,   reinterpret_cast<mword>(&Cpulocal::get_remote(cpu).self));
     write (HOST_BASE_TR,   reinterpret_cast<mword>(&Tss::run));
     write (HOST_BASE_GDTR, reinterpret_cast<mword>(Gdt::gdt));
     write (HOST_BASE_IDTR, reinterpret_cast<mword>(Idt::idt));

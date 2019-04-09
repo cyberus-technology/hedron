@@ -115,6 +115,18 @@ class Lapic
             return read (LAPIC_IDR) >> 24 & 0xff;
         }
 
+        // This is a special version of id() that already works when the LAPIC
+        // is not mapped yet.
+        ALWAYS_INLINE
+        static inline unsigned early_id()
+        {
+            uint32 ebx, dummy;
+
+            cpuid (1, dummy, ebx, dummy, dummy);
+
+            return ebx >> 24; // APIC ID is encoded in bits 31 to 24.
+        }
+
         ALWAYS_INLINE
         static inline unsigned version()
         {

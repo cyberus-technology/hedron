@@ -340,7 +340,7 @@ class Vmcs
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
         }
 
-        Vmcs (mword, mword, mword, uint64);
+        Vmcs (mword, mword, mword, uint64, unsigned);
 
         ALWAYS_INLINE
         inline Vmcs() : rev (basic.revision)
