@@ -22,6 +22,11 @@
 #include "bits.hpp"
 #include "hpt.hpp"
 
+bool Hpt::sync_user (Hpt src, mword v)
+{
+    return Hpt::sync_from (src, v, CANON_BOUND);
+}
+
 bool Hpt::sync_from (Hpt src, mword v, mword o)
 {
     mword l = (bit_scan_reverse (v ^ o) - PAGE_BITS) / bpl();
