@@ -67,7 +67,6 @@ class Tss
         uint16  iobm;                   // 0x66
 
         static Tss run asm ("tss_run")  CPULOCAL;
-        static Tss dbf asm ("tss_dbf")  CPULOCAL;
 
         static void build();
 

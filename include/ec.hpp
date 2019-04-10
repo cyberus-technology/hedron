@@ -82,9 +82,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NORETURN
         static void USED handle_svm() asm ("svm_handler");
 
-        NORETURN
-        static void handle_tss() asm ("tss_handler");
-
         static bool handle_exc_gp (Exc_regs *);
         static bool handle_exc_pf (Exc_regs *);
 

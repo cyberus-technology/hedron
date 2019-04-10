@@ -368,11 +368,6 @@ void Ec::root_invoke()
     ret_user_sysexit();
 }
 
-void Ec::handle_tss()
-{
-    Console::panic ("Task gate invoked");
-}
-
 bool Ec::fixup (mword &eip)
 {
     for (mword *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2)

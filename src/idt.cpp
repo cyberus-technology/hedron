@@ -30,5 +30,5 @@ void Idt::build()
         if (*ptr)
             idt[vector].set (SYS_INTR_GATE, *ptr & 3, SEL_KERN_CODE, *ptr & ~3);
         else
-            idt[vector].set (SYS_TASK_GATE, 0, SEL_TSS_DBF, 0);
+            idt[vector].set (SYS_TASK_GATE, 0, SEL_TSS_RUN, 0);
 }

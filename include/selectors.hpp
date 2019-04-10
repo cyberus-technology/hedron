@@ -27,5 +27,4 @@
 #define SEL_USER_DATA   0x23
 #define SEL_USER_CODE_L 0x2b
 #define SEL_TSS_RUN     0x30
-#define SEL_TSS_DBF     0x40
 #define SEL_MAX         0x50
