@@ -30,7 +30,7 @@ do {                                                                \
         mword __esp;                                                \
         Console::print ("[%2ld] " format,                           \
                 static_cast<long>(((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR \
-                 ? Cpu::id : ~0UL), ## __VA_ARGS__);  \
+                 ? Cpu::id() : ~0UL), ## __VA_ARGS__);  \
     }                                                               \
 } while (0)
 

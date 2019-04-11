@@ -57,7 +57,7 @@ Sc::Sc (Pd *own, Ec *e, unsigned c, Sc *x) : Kobject (SC, static_cast<Space_obj 
 void Sc::ready_enqueue (uint64 t, bool inc_ref, bool use_left)
 {
     assert (prio < priorities);
-    assert (cpu == Cpu::id);
+    assert (cpu == Cpu::id());
 
     if (inc_ref) {
         bool ok = add_ref();
@@ -93,7 +93,7 @@ void Sc::ready_enqueue (uint64 t, bool inc_ref, bool use_left)
 void Sc::ready_dequeue (uint64 t)
 {
     assert (prio < priorities);
-    assert (cpu == Cpu::id);
+    assert (cpu == Cpu::id());
     assert (prev && next);
 
     if (list[prio] == this)
@@ -148,7 +148,7 @@ void Sc::schedule (bool suspend, bool use_left)
 
 void Sc::remote_enqueue(bool inc_ref)
 {
-    if (Cpu::id == cpu)
+    if (Cpu::id() == cpu)
         ready_enqueue (rdtsc(), inc_ref);
 
     else {
@@ -197,6 +197,6 @@ void Sc::rrq_handler()
 
 void Sc::rke_handler()
 {
-    if (Pd::current->Space_mem::htlb.chk (Cpu::id))
+    if (Pd::current->Space_mem::htlb.chk (Cpu::id()))
         Cpu::hazard |= HZD_SCHED;
 }

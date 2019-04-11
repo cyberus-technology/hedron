@@ -97,7 +97,7 @@ void Rcu::update()
     if (!curr.empty() && !next.empty() && (next.count > 2000 || curr.count > 2000))
         for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
 
-            if (!Hip::cpu_online (cpu) || Cpu::id == cpu)
+            if (!Hip::cpu_online (cpu) || Cpu::id() == cpu)
                 continue;
 
             Lapic::send_ipi (cpu, VEC_IPI_IDL);

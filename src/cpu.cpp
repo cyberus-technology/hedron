@@ -58,7 +58,6 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-unsigned    Cpu::id;
 unsigned    Cpu::hazard;
 unsigned    Cpu::package;
 unsigned    Cpu::core;
@@ -205,12 +204,12 @@ void Cpu::init()
         Fpu::probe();
     }
 
-    row = Console_vga::con.spinner (id);
+    row = Console_vga::con.spinner (id());
 
     Paddr phys; mword attr;
-    Pd::kern->Space_mem::loc[id] = Hptp (Hpt::current());
-    Pd::kern->Space_mem::loc[id].lookup (CPU_LOCAL_DATA, phys, attr);
-    Pd::kern->Space_mem::insert (HV_GLOBAL_CPUS + id * PAGE_SIZE, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_W | Hpt::HPT_P, phys);
+    Pd::kern->Space_mem::loc[id()] = Hptp (Hpt::current());
+    Pd::kern->Space_mem::loc[id()].lookup (CPU_LOCAL_DATA, phys, attr);
+    Pd::kern->Space_mem::insert (HV_GLOBAL_CPUS + id() * PAGE_SIZE, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_W | Hpt::HPT_P, phys);
     Hpt::ord = min (Hpt::ord, feature (FEAT_1GB_PAGES) ? 26UL : 17UL);
 
     if (EXPECT_TRUE (feature (FEAT_ACPI)))

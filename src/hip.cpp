@@ -131,14 +131,14 @@ void Hip::add_mhv (Hip_mem *&mem)
 
 void Hip::add_cpu()
 {
-    Hip_cpu *cpu = hip()->cpu_desc + Cpu::id;
+    Hip_cpu *cpu = hip()->cpu_desc + Cpu::id();
 
-    cpu->acpi_id = Cpu::acpi_id[Cpu::id];
+    cpu->acpi_id = Cpu::acpi_id[Cpu::id()];
     cpu->package = static_cast<uint8>(Cpu::package);
     cpu->core    = static_cast<uint8>(Cpu::core);
     cpu->thread  = static_cast<uint8>(Cpu::thread);
     cpu->flags   = 1;
-    cpu->lapic_info = Cpu::lapic_info[Cpu::id];
+    cpu->lapic_info = Cpu::lapic_info[Cpu::id()];
 }
 
 void Hip::add_check()

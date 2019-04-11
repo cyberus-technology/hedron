@@ -25,7 +25,8 @@
 
 // This struct defines the layout of CPU-local memory. It's designed to make it
 // convenient to use %gs:0 to restore the stack pointer and to get a normal
-// pointer to CPU-local variables:
+// pointer to CPU-local variables. The first members in the Per_cpu struct are
+// frequently accessed and are deliberately placed on a single cache line.
 //
 //                 +---------------------+
 //                 | ... other vars ...  |
@@ -49,6 +50,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The system call entry point dumps userspace state here.
     void *sys_entry_stack {nullptr};
+
+    // The APIC ID of the current CPU.
+    unsigned cpu_id;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

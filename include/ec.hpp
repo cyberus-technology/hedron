@@ -9,6 +9,7 @@
  * Copyright (C) 2013-2018 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *

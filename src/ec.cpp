@@ -253,8 +253,8 @@ void Ec::ret_user_vmresume()
 
     current->regs.vmcs->make_current();
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
-        Pd::current->gtlb.clr (Cpu::id);
+    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id()))) {
+        Pd::current->gtlb.clr (Cpu::id());
         Pd::current->ept.flush();
     }
 
@@ -282,8 +282,8 @@ void Ec::ret_user_vmrun()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmrun);
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
-        Pd::current->gtlb.clr (Cpu::id);
+    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id()))) {
+        Pd::current->gtlb.clr (Cpu::id());
         current->regs.vmcb->tlb_control = 1;
     }
 
@@ -332,7 +332,7 @@ void Ec::root_invoke()
         die ("No ELF");
 
     unsigned count = e->ph_count;
-    current->regs.set_pt (Cpu::id);
+    current->regs.set_pt (Cpu::id());
     current->regs.set_ip (e->entry);
     current->regs.set_sp (USER_ADDR - PAGE_SIZE);
 

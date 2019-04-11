@@ -107,7 +107,7 @@ void Space_mem::shootdown()
         if (!pd->htlb.chk (cpu) && !pd->gtlb.chk (cpu))
             continue;
 
-        if (Cpu::id == cpu) {
+        if (Cpu::id() == cpu) {
             Cpu::hazard |= HZD_SCHED;
             continue;
         }

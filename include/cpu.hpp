@@ -30,6 +30,7 @@
 #include "config.hpp"
 #include "types.hpp"
 #include "assert.hpp"
+#include "cpulocal.hpp"
 
 enum class Cpu_vendor : unsigned
 {
@@ -167,7 +168,7 @@ class Cpu
         };
         static lapic_info_t lapic_info[NUM_CPU];
 
-        static unsigned id                  CPULOCAL_HOT;
+        CPULOCAL_CONST_ACCESSOR(cpu, id);
         static unsigned hazard              CPULOCAL_HOT;
         static unsigned package             CPULOCAL;
         static unsigned core                CPULOCAL;
