@@ -39,6 +39,7 @@ void Ec::svm_exception (mword reason)
 void Ec::handle_svm()
 {
     current->regs.vmcb->tlb_control = 0;
+    Fpu::restore_xcr0();
 
     mword reason = static_cast<mword>(current->regs.vmcb->exitcode);
 

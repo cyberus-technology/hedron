@@ -67,6 +67,9 @@ class Fpu
         void save();
         void load();
 
+        static bool load_xcr0 (uint64 xcr0);
+        static void restore_xcr0();
+
         Fpu();
         ~Fpu() { cache->free (data); }
 };

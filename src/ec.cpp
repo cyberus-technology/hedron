@@ -80,6 +80,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         utcb = nullptr;
 
         regs.dst_portal = NUM_VMI - 2;
+        regs.xcr0 = Cpu::XCR0_X87;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
 
@@ -260,6 +261,10 @@ void Ec::ret_user_vmresume()
     if (EXPECT_FALSE (get_cr2() != current->regs.cr2))
         set_cr2 (current->regs.cr2);
 
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (current->regs.xcr0))) {
+        die ("Invalid XCR0");
+    }
+
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
@@ -280,6 +285,10 @@ void Ec::ret_user_vmrun()
     if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
         Pd::current->gtlb.clr (Cpu::id);
         current->regs.vmcb->tlb_control = 1;
+    }
+
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (current->regs.xcr0))) {
+        die ("Invalid XCR0");
     }
 
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)

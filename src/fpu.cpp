@@ -25,6 +25,7 @@
 Fpu::FpuConfig Fpu::config;
 Slab_cache *Fpu::cache;
 
+static const uint64 required_xsave_state {Cpu::XCR0_X87};
 static const uint64 supported_xsave_state
     {Cpu::XCR0_X87 | Cpu::XCR0_SSE | Cpu::XCR0_AVX | Cpu::XCR0_AVX512_OP | Cpu::XCR0_AVX512_LO | Cpu::XCR0_AVX512_HI};
 
@@ -97,6 +98,47 @@ void Fpu::load()
         asm volatile ("fxrstor %0" : : "m" (*data));
         break;
     }
+}
+
+static bool is_valid_xcr0 (uint64 xsave_scb, uint64 xcr0)
+{
+    mword sanitized {xcr0};
+
+    sanitized &= xsave_scb;
+    sanitized |= Cpu::XCR0_X87;
+
+    if (xcr0 & Cpu::XCR0_AVX) {
+        sanitized |= Cpu::XCR0_SSE;
+    }
+
+    if (xcr0 & (Cpu::XCR0_AVX512_OP | Cpu::XCR0_AVX512_LO | Cpu::XCR0_AVX512_HI)) {
+        sanitized |= Cpu::XCR0_AVX | Cpu::XCR0_AVX512_OP | Cpu::XCR0_AVX512_LO | Cpu::XCR0_AVX512_HI;
+    }
+
+    return sanitized == xcr0;
+}
+
+bool Fpu::load_xcr0 (uint64 xcr0)
+{
+    if (EXPECT_FALSE (not Cpu::feature (Cpu::FEAT_XSAVE))) {
+        return true;
+    }
+
+    if (EXPECT_FALSE (not is_valid_xcr0 (config.xsave_scb, xcr0))) {
+        return false;
+    }
+
+    set_xcr (0, xcr0);
+    return true;
+}
+
+void Fpu::restore_xcr0()
+{
+    if (EXPECT_FALSE (not Cpu::feature (Cpu::FEAT_XSAVE))) {
+        return;
+    }
+
+    set_xcr (0, config.xsave_scb);
 }
 
 Fpu::Fpu() : data (static_cast<FpuCtx *>(cache->alloc())) {
