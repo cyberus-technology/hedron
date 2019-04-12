@@ -49,17 +49,6 @@ void Ec::transfer_fpu (Ec *from_ec)
     }
 }
 
-bool Ec::handle_exc_ts (Exc_regs *r)
-{
-    if (r->user())
-        return false;
-
-    // SYSENTER with EFLAGS.NT=1 and IRET faulted
-    r->REG(fl) &= ~Cpu::EFL_NT;
-
-    return true;
-}
-
 bool Ec::handle_exc_gp (Exc_regs *r)
 {
     if (fixup (r->REG(ip))) {
@@ -68,8 +57,11 @@ bool Ec::handle_exc_gp (Exc_regs *r)
 
     if (Cpu::hazard & HZD_TR) {
         Cpu::hazard &= ~HZD_TR;
+
+        // The VM exit has re-set the TR segment limit to 0x67. This breaks the
+        // IO permission bitmap. Restore the correct value.
         Gdt::unbusy_tss();
-        asm volatile ("ltr %w0" : : "r" (SEL_TSS_RUN));
+        Tss::load();
         return true;
     }
 
@@ -117,11 +109,6 @@ void Ec::handle_exc (Exc_regs *r)
     Counter::exc[r->vec]++;
 
     switch (r->vec) {
-
-        case Cpu::EXC_TS:
-            if (handle_exc_ts (r))
-                return;
-            break;
 
         case Cpu::EXC_GP:
             if (handle_exc_gp (r))
