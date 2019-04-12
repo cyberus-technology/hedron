@@ -42,9 +42,6 @@ class Cpu
         ALWAYS_INLINE
         static inline void setup_thermal();
 
-        ALWAYS_INLINE
-        static inline void setup_sysenter();
-
     public:
         enum Vendor
         {
@@ -251,4 +248,6 @@ class Cpu
 
             return ~0U;
         }
+
+        static void setup_sysenter();
 };

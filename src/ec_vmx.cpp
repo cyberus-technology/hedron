@@ -75,6 +75,7 @@ void Ec::vmx_extint()
 void Ec::handle_vmx()
 {
     Cpu::hazard |= HZD_DS_ES | HZD_TR;
+    Cpu::setup_sysenter();
     Fpu::restore_xcr0();
 
     mword reason = Vmcs::read (Vmcs::EXI_REASON) & 0xff;

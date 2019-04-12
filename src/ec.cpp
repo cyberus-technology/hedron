@@ -91,10 +91,9 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.nst_ctrl<Vmcs>();
 
-            /* allocate and register the host MSR area */
-            mword host_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
-            Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, host_msr_area_phys);
-            Vmcs::write(Vmcs::EXI_MSR_LD_CNT, Msr_area::MSR_COUNT);
+            /* Host MSRs are restored in the exit path. */
+            Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);
+            Vmcs::write(Vmcs::EXI_MSR_LD_CNT, 0);
 
             /* allocate and register the guest MSR area */
             mword guest_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
