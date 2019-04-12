@@ -13,7 +13,7 @@ OFLAGS  = -Os
 AFLAGS  = -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=kernel -mno-red-zone -fno-PIC
 
 # Language options
-FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer -freg-struct-return -freorder-blocks -funit-at-a-time
+FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer -freg-struct-return
 FFLAGS += -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threadsafe-statics
 FFLAGS += -fno-stack-protector
 FFLAGS += -fvisibility-inlines-hidden
