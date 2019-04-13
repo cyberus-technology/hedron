@@ -22,6 +22,7 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
+class Ec;
 
 // This struct defines the layout of CPU-local memory. It's designed to make it
 // convenient to use %gs:0 to restore the stack pointer and to get a normal
@@ -57,6 +58,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     // Any special conditions that need to be checked on kernel entry/exit
     // paths. See hazards.hpp.
     unsigned cpu_hazard;
+
+    // The current execution context.
+    Ec *ec_current;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

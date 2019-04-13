@@ -23,25 +23,25 @@
 
 void Ec::svm_exception (mword reason)
 {
-    if (current->regs.vmcb->exitintinfo & 0x80000000) {
+    if (current()->regs.vmcb->exitintinfo & 0x80000000) {
 
-        mword t = static_cast<mword>(current->regs.vmcb->exitintinfo) >> 8 & 0x7;
-        mword v = static_cast<mword>(current->regs.vmcb->exitintinfo) & 0xff;
+        mword t = static_cast<mword>(current()->regs.vmcb->exitintinfo) >> 8 & 0x7;
+        mword v = static_cast<mword>(current()->regs.vmcb->exitintinfo) & 0xff;
 
         if (t == 0 || (t == 3 && v != 3 && v != 4))
-            current->regs.vmcb->inj_control = current->regs.vmcb->exitintinfo;
+            current()->regs.vmcb->inj_control = current()->regs.vmcb->exitintinfo;
     }
 
-    current->regs.dst_portal = reason;
+    current()->regs.dst_portal = reason;
     send_msg<ret_user_vmrun>();
 }
 
 void Ec::handle_svm()
 {
-    current->regs.vmcb->tlb_control = 0;
+    current()->regs.vmcb->tlb_control = 0;
     Fpu::restore_xcr0();
 
-    mword reason = static_cast<mword>(current->regs.vmcb->exitcode);
+    mword reason = static_cast<mword>(current()->regs.vmcb->exitcode);
 
     switch (reason) {
         case -1UL:              // Invalid state
@@ -49,8 +49,8 @@ void Ec::handle_svm()
             break;
         case 0x400:             // NPT
             reason = NUM_VMI - 4;
-            current->regs.nst_error = static_cast<mword>(current->regs.vmcb->exitinfo1);
-            current->regs.nst_fault = static_cast<mword>(current->regs.vmcb->exitinfo2);
+            current()->regs.nst_error = static_cast<mword>(current()->regs.vmcb->exitinfo1);
+            current()->regs.nst_fault = static_cast<mword>(current()->regs.vmcb->exitinfo2);
             break;
     }
 
@@ -66,7 +66,7 @@ void Ec::handle_svm()
             ret_user_vmrun();
     }
 
-    current->regs.dst_portal = reason;
+    current()->regs.dst_portal = reason;
 
     send_msg<ret_user_vmrun>();
 }

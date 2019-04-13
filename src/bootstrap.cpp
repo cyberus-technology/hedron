@@ -31,10 +31,10 @@ void bootstrap()
     Cpu::init();
 
     // Create idle EC
-    Ec::current = new Ec (Pd::current = &Pd::kern, Ec::idle, Cpu::id());
-    Ec::current->add_ref();
+    Ec::current() = new Ec (Pd::current = &Pd::kern, Ec::idle, Cpu::id());
+    Ec::current()->add_ref();
     Pd::current->add_ref();
-    Space_obj::insert_root (Sc::current = new Sc (&Pd::kern, Cpu::id(), Ec::current));
+    Space_obj::insert_root (Sc::current = new Sc (&Pd::kern, Cpu::id(), Ec::current()));
     Sc::current->add_ref();
 
     // Barrier: wait for all ECs to arrive here

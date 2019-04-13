@@ -39,11 +39,11 @@ template <Sys_regs::Status S, bool T>
 void Ec::sys_finish()
 {
     if (T)
-        current->clr_timeout();
+        current()->clr_timeout();
 
-    current->regs.set_status (S);
+    current()->regs.set_status (S);
 
-    if (current->xcpu_sm)
+    if (current()->xcpu_sm)
         xcpu_return();
 
     ret_user_sysexit();
@@ -66,11 +66,11 @@ void Ec::activate()
 template <bool C>
 void Ec::delegate()
 {
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
     assert (ec);
 
-    Ec *src = C ? ec : current;
-    Ec *dst = C ? current : ec;
+    Ec *src = C ? ec : current();
+    Ec *dst = C ? current() : ec;
 
     bool user = C || ((dst->cont == ret_user_sysexit) || (dst->cont == xcpu_return));
 
@@ -85,22 +85,22 @@ void Ec::delegate()
 template <void (*C)()>
 void Ec::send_msg()
 {
-    Exc_regs *r = &current->regs;
+    Exc_regs *r = &current()->regs;
 
-    Capability cap = Space_obj::lookup (current->evt + r->dst_portal);
+    Capability cap = Space_obj::lookup (current()->evt + r->dst_portal);
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PT)))
         die ("PT not found");
 
     Pt *pt = static_cast<Pt *>(cap.obj());
     Ec *ec = pt->ec;
 
-    if (EXPECT_FALSE (current->cpu != ec->xcpu))
+    if (EXPECT_FALSE (current()->cpu != ec->xcpu))
         die ("PT wrong CPU");
 
     if (EXPECT_TRUE (!ec->cont)) {
-        current->cont = C;
-        current->set_partner (ec);
-        current->regs.mtd = pt->mtd.val;
+        current()->cont = C;
+        current()->set_partner (ec);
+        current()->regs.mtd = pt->mtd.val;
         ec->cont = recv_kern;
         ec->regs.set_pt (pt->id);
         ec->regs.set_ip (pt->ip);
@@ -114,7 +114,7 @@ void Ec::send_msg()
 
 void Ec::sys_call()
 {
-    Sys_call *s = static_cast<Sys_call *>(current->sys_regs());
+    Sys_call *s = static_cast<Sys_call *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (s->pt());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PT)))
@@ -123,12 +123,12 @@ void Ec::sys_call()
     Pt *pt = static_cast<Pt *>(cap.obj());
     Ec *ec = pt->ec;
 
-    if (EXPECT_FALSE (current->cpu != ec->xcpu))
+    if (EXPECT_FALSE (current()->cpu != ec->xcpu))
         Ec::sys_xcpu_call();
 
     if (EXPECT_TRUE (!ec->cont)) {
-        current->cont = current->xcpu_sm ? xcpu_return : ret_user_sysexit;
-        current->set_partner (ec);
+        current()->cont = current()->xcpu_sm ? xcpu_return : ret_user_sysexit;
+        current()->set_partner (ec);
         ec->cont = recv_user;
         ec->regs.set_pt (pt->id);
         ec->regs.set_ip (pt->ip);
@@ -143,28 +143,28 @@ void Ec::sys_call()
 
 void Ec::recv_kern()
 {
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
 
     bool fpu = false;
 
     if (ec->cont == ret_user_iret)
-        fpu = current->utcb->load_exc (&ec->regs);
+        fpu = current()->utcb->load_exc (&ec->regs);
     else if (ec->cont == ret_user_vmresume)
-        fpu = current->utcb->load_vmx (&ec->regs);
+        fpu = current()->utcb->load_vmx (&ec->regs);
     else if (ec->cont == ret_user_vmrun)
-        fpu = current->utcb->load_svm (&ec->regs);
+        fpu = current()->utcb->load_svm (&ec->regs);
 
     if (EXPECT_FALSE (fpu))
-        ec->transfer_fpu (current);
+        ec->transfer_fpu (current());
 
     ret_user_sysexit();
 }
 
 void Ec::recv_user()
 {
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
 
-    ec->utcb->save (current->utcb);
+    ec->utcb->save (current()->utcb);
 
     if (EXPECT_FALSE (ec->utcb->tcnt()))
         delegate<true>();
@@ -174,12 +174,12 @@ void Ec::recv_user()
 
 void Ec::reply (void (*c)(), Sm * sm)
 {
-    current->cont = c;
+    current()->cont = c;
 
-    if (EXPECT_FALSE (current->glb))
+    if (EXPECT_FALSE (current()->glb))
         Sc::schedule (true);
 
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
 
     if (EXPECT_FALSE (!ec))
         Sc::current->ec->activate();
@@ -200,12 +200,12 @@ void Ec::reply (void (*c)(), Sm * sm)
 
 void Ec::sys_reply()
 {
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
     Sm *sm = nullptr;
 
     if (EXPECT_TRUE (ec)) {
 
-        Sys_reply *r = static_cast<Sys_reply *>(current->sys_regs());
+        Sys_reply *r = static_cast<Sys_reply *>(current()->sys_regs());
         if (EXPECT_FALSE (r->sm())) {
             Capability cap = Space_obj::lookup (r->sm());
             if (EXPECT_TRUE (sanitize_cap(cap, Kobject::SM, 2))) {
@@ -218,14 +218,14 @@ void Ec::sys_reply()
             }
         }
 
-        Utcb *src = current->utcb;
+        Utcb *src = current()->utcb;
 
         if (EXPECT_FALSE (src->tcnt()))
             delegate<false>();
 
         bool fpu = false;
 
-        assert (current->cont != ret_xcpu_reply);
+        assert (current()->cont != ret_xcpu_reply);
 
         if (EXPECT_TRUE ((ec->cont == ret_user_sysexit) || ec->cont == xcpu_return))
             src->save (ec->utcb);
@@ -237,7 +237,7 @@ void Ec::sys_reply()
             fpu = src->save_svm (&ec->regs);
 
         if (EXPECT_FALSE (fpu))
-            current->transfer_fpu (ec);
+            current()->transfer_fpu (ec);
     }
 
     reply(nullptr, sm);
@@ -245,9 +245,9 @@ void Ec::sys_reply()
 
 void Ec::sys_create_pd()
 {
-    Sys_create_pd *r = static_cast<Sys_create_pd *>(current->sys_regs());
+    Sys_create_pd *r = static_cast<Sys_create_pd *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE PD:%#lx", current, r->sel());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE PD:%#lx", current(), r->sel());
 
     Capability cap = Space_obj::lookup (r->pd());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD, 1UL << Kobject::PD))) {
@@ -298,9 +298,9 @@ Pd *Ec::sanitize_syscall_params(Sys_create_ec *r)
 
 void Ec::sys_create_ec()
 {
-    Sys_create_ec *r = static_cast<Sys_create_ec *>(current->sys_regs());
+    Sys_create_ec *r = static_cast<Sys_create_ec *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current, r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current(), r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
 
     Pd *pd = sanitize_syscall_params(r);
 
@@ -330,9 +330,9 @@ void Ec::sys_create_ec()
 
 void Ec::sys_create_sc()
 {
-    Sys_create_sc *r = static_cast<Sys_create_sc *>(current->sys_regs());
+    Sys_create_sc *r = static_cast<Sys_create_sc *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SC:%#lx EC:%#lx P:%#x Q:%#x", current, r->sel(), r->ec(), r->qpd().prio(), r->qpd().quantum());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SC:%#lx EC:%#lx P:%#x Q:%#x", current(), r->sel(), r->ec(), r->qpd().prio(), r->qpd().quantum());
 
     Capability cap = Space_obj::lookup (r->pd());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD, 1UL << Kobject::SC))) {
@@ -371,9 +371,9 @@ void Ec::sys_create_sc()
 
 void Ec::sys_create_pt()
 {
-    Sys_create_pt *r = static_cast<Sys_create_pt *>(current->sys_regs());
+    Sys_create_pt *r = static_cast<Sys_create_pt *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE PT:%#lx EC:%#lx EIP:%#lx", current, r->sel(), r->ec(), r->eip());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE PT:%#lx EC:%#lx EIP:%#lx", current(), r->sel(), r->ec(), r->eip());
 
     Capability cap = Space_obj::lookup (r->pd());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD, 1UL << Kobject::PT))) {
@@ -405,9 +405,9 @@ void Ec::sys_create_pt()
 
 void Ec::sys_create_sm()
 {
-    Sys_create_sm *r = static_cast<Sys_create_sm *>(current->sys_regs());
+    Sys_create_sm *r = static_cast<Sys_create_sm *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SM:%#lx CNT:%lu", current, r->sel(), r->cnt());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SM:%#lx CNT:%lu", current(), r->sel(), r->cnt());
 
     Capability cap = Space_obj::lookup (r->pd());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD, 1UL << Kobject::SM))) {
@@ -447,13 +447,13 @@ void Ec::sys_create_sm()
 
 void Ec::sys_revoke()
 {
-    Sys_revoke *r = static_cast<Sys_revoke *>(current->sys_regs());
+    Sys_revoke *r = static_cast<Sys_revoke *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_REVOKE", current);
+    trace (TRACE_SYSCALL, "EC:%p SYS_REVOKE", current());
 
     Pd * pd = Pd::current;
 
-    if (current->cont != sys_revoke) {
+    if (current()->cont != sys_revoke) {
         if (r->remote()) {
             Capability cap = Space_obj::lookup (r->pd());
             if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD))) {
@@ -464,7 +464,7 @@ void Ec::sys_revoke()
             if (!pd->add_ref())
                 sys_finish<Sys_regs::BAD_CAP>();
         }
-        current->cont = sys_revoke;
+        current()->cont = sys_revoke;
 
         r->rem(pd);
     } else
@@ -472,7 +472,7 @@ void Ec::sys_revoke()
 
     pd->rev_crd (r->crd(), r->self());
 
-    current->cont = sys_finish<Sys_regs::SUCCESS>;
+    current()->cont = sys_finish<Sys_regs::SUCCESS>;
     r->rem(nullptr);
 
     if (r->remote() && pd->del_rcu())
@@ -491,9 +491,9 @@ void Ec::sys_revoke()
 
 void Ec::sys_pd_ctrl_lookup()
 {
-    Sys_pd_ctrl_lookup *s = static_cast<Sys_pd_ctrl_lookup *>(current->sys_regs());
+    Sys_pd_ctrl_lookup *s = static_cast<Sys_pd_ctrl_lookup *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current, s->crd().type(), s->crd().base());
+    trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current(), s->crd().type(), s->crd().base());
 
     Space *space; Mdb *mdb;
     if ((space = Pd::current->subspace (s->crd().type())) && (mdb = space->tree_lookup (s->crd().base())))
@@ -506,9 +506,9 @@ void Ec::sys_pd_ctrl_lookup()
 
 void Ec::sys_pd_ctrl_map_access_page()
 {
-    Sys_pd_ctrl_map_access_page *s = static_cast<Sys_pd_ctrl_map_access_page *>(current->sys_regs());
+    Sys_pd_ctrl_map_access_page *s = static_cast<Sys_pd_ctrl_map_access_page *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current, s->crd().base());
+    trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current(), s->crd().base());
 
     Pd *pd  = Pd::current;
     Crd crd = s->crd();
@@ -543,7 +543,7 @@ void Ec::sys_pd_ctrl_map_access_page()
 
 void Ec::sys_pd_ctrl_delegate()
 {
-    Sys_pd_ctrl_delegate *s = static_cast<Sys_pd_ctrl_delegate *>(current->sys_regs());
+    Sys_pd_ctrl_delegate *s = static_cast<Sys_pd_ctrl_delegate *>(current()->sys_regs());
     Xfer xfer = s->xfer();
 
     trace (TRACE_SYSCALL, "EC:%p SYS_DELEGATE SRC:%#lx DST:%#lx FLAGS:%#lx",
@@ -567,7 +567,7 @@ void Ec::sys_pd_ctrl_delegate()
 
 void Ec::sys_pd_ctrl()
 {
-    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current()->sys_regs());
     switch (s->op()) {
     case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
     case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
@@ -579,7 +579,7 @@ void Ec::sys_pd_ctrl()
 
 void Ec::sys_ec_ctrl()
 {
-    Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current->sys_regs());
+    Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current()->sys_regs());
 
     switch (r->op()) {
         case 0:
@@ -604,7 +604,7 @@ void Ec::sys_ec_ctrl()
         }
 
         case 1: /* yield */
-            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            current()->cont = sys_finish<Sys_regs::SUCCESS>;
             Sc::schedule (false, false);
             break;
 
@@ -618,20 +618,20 @@ void Ec::sys_ec_ctrl()
 
             Ec *ec = static_cast<Ec *>(cap.obj());
 
-            if (EXPECT_FALSE(ec->cpu != current->cpu))
+            if (EXPECT_FALSE(ec->cpu != current()->cpu))
                 sys_finish<Sys_regs::BAD_CPU>();
 
-            if (EXPECT_FALSE(!ec->utcb || ec->blocked() || ec->partner || ec->pd != Ec::current->pd || (r->cnt() != ec->utcb->tls)))
+            if (EXPECT_FALSE(!ec->utcb || ec->blocked() || ec->partner || ec->pd != Ec::current()->pd || (r->cnt() != ec->utcb->tls)))
                 sys_finish<Sys_regs::BAD_PAR>();
 
-            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            current()->cont = sys_finish<Sys_regs::SUCCESS>;
             ec->make_current();
 
             break;
         }
 
         case 3: /* re-schedule */
-            current->cont = sys_finish<Sys_regs::SUCCESS>;
+            current()->cont = sys_finish<Sys_regs::SUCCESS>;
             Sc::schedule (false, true);
             break;
 
@@ -644,7 +644,7 @@ void Ec::sys_ec_ctrl()
 
 void Ec::sys_sc_ctrl()
 {
-    Sys_sc_ctrl *r = static_cast<Sys_sc_ctrl *>(current->sys_regs());
+    Sys_sc_ctrl *r = static_cast<Sys_sc_ctrl *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (r->sc());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::SC, 1UL << 0))) {
@@ -660,7 +660,7 @@ void Ec::sys_sc_ctrl()
 
 void Ec::sys_pt_ctrl()
 {
-    Sys_pt_ctrl *r = static_cast<Sys_pt_ctrl *>(current->sys_regs());
+    Sys_pt_ctrl *r = static_cast<Sys_pt_ctrl *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (r->pt());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PT, Pt::PERM_CTRL))) {
@@ -677,7 +677,7 @@ void Ec::sys_pt_ctrl()
 
 void Ec::sys_sm_ctrl()
 {
-    Sys_sm_ctrl *r = static_cast<Sys_sm_ctrl *>(current->sys_regs());
+    Sys_sm_ctrl *r = static_cast<Sys_sm_ctrl *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (r->sm());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::SM, 1UL << r->op()))) {
@@ -703,7 +703,7 @@ void Ec::sys_sm_ctrl()
             if (sm->is_signal())
                 sys_finish<Sys_regs::BAD_CAP>();
 
-            current->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
+            current()->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
             sm->dn (r->zc(), r->time());
             break;
     }
@@ -713,7 +713,7 @@ void Ec::sys_sm_ctrl()
 
 void Ec::sys_assign_pci()
 {
-    Sys_assign_pci *r = static_cast<Sys_assign_pci *>(current->sys_regs());
+    Sys_assign_pci *r = static_cast<Sys_assign_pci *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (r->pd());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PD))) {
@@ -742,7 +742,7 @@ void Ec::sys_assign_pci()
 
 void Ec::sys_assign_gsi()
 {
-    Sys_assign_gsi *r = static_cast<Sys_assign_gsi *>(current->sys_regs());
+    Sys_assign_gsi *r = static_cast<Sys_assign_gsi *>(current()->sys_regs());
 
     if (EXPECT_FALSE (!Hip::cpu_online (r->cpu()))) {
         trace (TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
@@ -797,7 +797,7 @@ void Ec::sys_assign_gsi()
 
 void Ec::sys_xcpu_call()
 {
-    Sys_call *s = static_cast<Sys_call *>(current->sys_regs());
+    Sys_call *s = static_cast<Sys_call *>(current()->sys_regs());
 
     Capability cap = Space_obj::lookup (s->pt());
     if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PT))) {
@@ -808,38 +808,38 @@ void Ec::sys_xcpu_call()
     Pt *pt = static_cast<Pt *>(cap.obj());
     Ec *ec = pt->ec;
 
-    if (EXPECT_FALSE (current->cpu == ec->cpu || !(cap.prm() & Pt::PERM_XCPU))) {
+    if (EXPECT_FALSE (current()->cpu == ec->cpu || !(cap.prm() & Pt::PERM_XCPU))) {
         trace (TRACE_ERROR, "%s: Bad CPU", __func__);
         sys_finish<Sys_regs::BAD_CPU>();
     }
 
     enum { UNUSED = 0, CNT = 0 };
 
-    current->xcpu_sm = new Sm (Pd::current, UNUSED, CNT);
+    current()->xcpu_sm = new Sm (Pd::current, UNUSED, CNT);
 
-    Ec *xcpu_ec = new Ec (Pd::current, Pd::current, Ec::sys_call, ec->cpu, current);
+    Ec *xcpu_ec = new Ec (Pd::current, Pd::current, Ec::sys_call, ec->cpu, current());
     Sc *xcpu_sc = new Sc (Pd::current, xcpu_ec, xcpu_ec->cpu, Sc::current);
 
     xcpu_sc->remote_enqueue();
-    current->xcpu_sm->dn (false, 0);
+    current()->xcpu_sm->dn (false, 0);
 
     ret_xcpu_reply();
 }
 
 void Ec::ret_xcpu_reply()
 {
-    assert (current->xcpu_sm);
+    assert (current()->xcpu_sm);
 
-    delete current->xcpu_sm;
-    current->xcpu_sm = nullptr;
+    delete current()->xcpu_sm;
+    current()->xcpu_sm = nullptr;
 
-    if (current->regs.status() != Sys_regs::SUCCESS) {
-        current->cont = sys_call;
-        current->regs.set_status (Sys_regs::SUCCESS, false);
+    if (current()->regs.status() != Sys_regs::SUCCESS) {
+        current()->cont = sys_call;
+        current()->regs.set_status (Sys_regs::SUCCESS, false);
     } else
-        current->cont = ret_user_sysexit;
+        current()->cont = ret_user_sysexit;
 
-    current->make_current();
+    current()->make_current();
 }
 
 bool Ec::sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask)
