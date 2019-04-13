@@ -53,6 +53,10 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The APIC ID of the current CPU.
     unsigned cpu_id;
+
+    // Any special conditions that need to be checked on kernel entry/exit
+    // paths. See hazards.hpp.
+    unsigned cpu_hazard;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

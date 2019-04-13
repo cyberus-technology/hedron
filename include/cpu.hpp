@@ -169,7 +169,7 @@ class Cpu
         static lapic_info_t lapic_info[NUM_CPU];
 
         CPULOCAL_CONST_ACCESSOR(cpu, id);
-        static unsigned hazard              CPULOCAL_HOT;
+        CPULOCAL_ACCESSOR(cpu, hazard);
         static unsigned package             CPULOCAL;
         static unsigned core                CPULOCAL;
         static unsigned thread              CPULOCAL;

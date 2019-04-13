@@ -69,7 +69,7 @@ void Rcu::start_batch (State s)
 
 void Rcu::quiet()
 {
-    Cpu::hazard &= ~HZD_RCU;
+    Cpu::hazard() &= ~HZD_RCU;
 
     if (Atomic::sub (count, 1UL) == 0)
         start_batch (RCU_CMP);
@@ -79,7 +79,7 @@ void Rcu::update()
 {
     if (l_batch != batch()) {
         l_batch = batch();
-        Cpu::hazard |= HZD_RCU;
+        Cpu::hazard() |= HZD_RCU;
         Counter::print<1,16> (l_batch, Console_vga::COLOR_LIGHT_GREEN, SPN_RCU);
     }
 

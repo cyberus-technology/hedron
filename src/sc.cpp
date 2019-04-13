@@ -82,7 +82,7 @@ void Sc::ready_enqueue (uint64 t, bool inc_ref, bool use_left)
     trace (TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top, prio > current->prio ? "reschedule" : "");
 
     if (prio > current->prio || (this != current && prio == current->prio && (use_left && left)))
-        Cpu::hazard |= HZD_SCHED;
+        Cpu::hazard() |= HZD_SCHED;
 
     if (!left)
         left = budget;
@@ -126,7 +126,7 @@ void Sc::schedule (bool suspend, bool use_left)
     current->time += t - current->tsc;
     current->left = d > t ? d - t : 0;
 
-    Cpu::hazard &= ~HZD_SCHED;
+    Cpu::hazard() &= ~HZD_SCHED;
 
     if (EXPECT_TRUE (!suspend))
         current->ready_enqueue (t, false, use_left);
@@ -198,5 +198,5 @@ void Sc::rrq_handler()
 void Sc::rke_handler()
 {
     if (Pd::current->Space_mem::htlb.chk (Cpu::id()))
-        Cpu::hazard |= HZD_SCHED;
+        Cpu::hazard() |= HZD_SCHED;
 }

@@ -25,5 +25,5 @@ No_destruct<Timeout_budget> Timeout_budget::budget;
 
 void Timeout_budget::trigger()
 {
-    Cpu::hazard |= HZD_SCHED;
+    Cpu::hazard() |= HZD_SCHED;
 }

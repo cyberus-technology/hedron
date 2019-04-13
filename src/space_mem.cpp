@@ -108,7 +108,7 @@ void Space_mem::shootdown()
             continue;
 
         if (Cpu::id() == cpu) {
-            Cpu::hazard |= HZD_SCHED;
+            Cpu::hazard() |= HZD_SCHED;
             continue;
         }
 

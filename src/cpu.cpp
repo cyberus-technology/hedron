@@ -58,7 +58,6 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-unsigned    Cpu::hazard;
 unsigned    Cpu::package;
 unsigned    Cpu::core;
 unsigned    Cpu::thread;

@@ -55,8 +55,8 @@ bool Ec::handle_exc_gp (Exc_regs *r)
         return true;
     }
 
-    if (Cpu::hazard & HZD_TR) {
-        Cpu::hazard &= ~HZD_TR;
+    if (Cpu::hazard() & HZD_TR) {
+        Cpu::hazard() &= ~HZD_TR;
 
         // The VM exit has re-set the TR segment limit to 0x67. This breaks the
         // IO permission bitmap. Restore the correct value.
