@@ -20,10 +20,10 @@
 #include "timeout.hpp"
 #include "nodestruct.hpp"
 
-class Timeout_budget : public Timeout
+class Timeout_budget final : public Timeout
 {
     private:
-        void trigger();
+        virtual void trigger() override;
 
     public:
         static No_destruct<Timeout_budget> budget CPULOCAL;
