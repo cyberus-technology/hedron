@@ -319,7 +319,7 @@ void Ec::idle()
         asm volatile ("sti; hlt; cli" : : : "memory");
         uint64 t2 = rdtsc();
 
-        Counter::cycles_idle += t2 - t1;
+        Counter::cycles_idle() += t2 - t1;
     }
 }
 

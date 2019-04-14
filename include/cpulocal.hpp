@@ -97,6 +97,16 @@ struct alignas(PAGE_SIZE) Per_cpu {
     unsigned vmcb_asid_ctr;
     uint32   vmcb_svm_version;
     uint32   vmcb_svm_feature;
+
+    // Statistics
+    unsigned counter_ipi[NUM_IPI];
+    unsigned counter_lvt[NUM_LVT];
+    unsigned counter_gsi[NUM_GSI];
+    unsigned counter_exc[NUM_EXC];
+    unsigned counter_vmi[NUM_VMI];
+    unsigned counter_schedule;
+    unsigned counter_helping;
+    uint64   counter_cycles_idle;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

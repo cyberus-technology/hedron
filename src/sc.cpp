@@ -114,7 +114,7 @@ void Sc::ready_dequeue (uint64 t)
 
 void Sc::schedule (bool suspend, bool use_left)
 {
-    Counter::print<1,16> (++Counter::schedule, Console_vga::COLOR_LIGHT_CYAN, SPN_SCH);
+    Counter::print<1,16> (++Counter::schedule(), Console_vga::COLOR_LIGHT_CYAN, SPN_SCH);
 
     assert (current());
     assert (suspend || !current()->prev);
