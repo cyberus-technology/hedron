@@ -250,7 +250,7 @@ template <> void Exc_regs::nst_ctrl<Vmcb>()
 
 template <> void Exc_regs::nst_ctrl<Vmcs>()
 {
-    assert (Vmcs::current == vmcs);
+    assert (Vmcs::current() == vmcs);
 
     mword cr0 = get_cr0<Vmcs>();
     mword cr3 = get_cr3<Vmcs>();

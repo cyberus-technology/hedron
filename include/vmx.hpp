@@ -24,6 +24,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "cpulocal.hpp"
 #include "msr.hpp"
 #include "vmx_types.hpp"
 
@@ -33,7 +34,7 @@ class Vmcs
         uint32  rev;
         uint32  abort;
 
-        static Vmcs *current CPULOCAL_HOT;
+        CPULOCAL_ACCESSOR(vmcs, current);
 
         static unsigned     vpid_ctr    CPULOCAL;
         static vmx_basic    basic       CPULOCAL;
@@ -355,8 +356,8 @@ class Vmcs
         ALWAYS_INLINE
         inline void clear()
         {
-            if (EXPECT_TRUE (current == this))
-                current = nullptr;
+            if (EXPECT_TRUE (current() == this))
+                current() = nullptr;
 
             uint64 phys = Buddy::ptr_to_phys (this);
 
@@ -368,10 +369,10 @@ class Vmcs
         ALWAYS_INLINE
         inline void make_current()
         {
-            if (EXPECT_TRUE (current == this))
+            if (EXPECT_TRUE (current() == this))
                 return;
 
-            uint64 phys = Buddy::ptr_to_phys (current = this);
+            uint64 phys = Buddy::ptr_to_phys (current() = this);
 
             bool ret;
             asm volatile ("vmptrld %1; seta %0" : "=q" (ret) : "m" (phys) : "cc");

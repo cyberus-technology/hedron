@@ -35,7 +35,6 @@
 #include "vmx.hpp"
 #include "x86.hpp"
 
-Vmcs *       Vmcs::current;
 unsigned     Vmcs::vpid_ctr;
 vmx_basic    Vmcs::basic;
 vmx_ept_vpid Vmcs::ept_vpid;
