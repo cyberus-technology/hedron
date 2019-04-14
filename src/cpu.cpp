@@ -132,7 +132,7 @@ void Cpu::check_features()
     if (eax & 0x80000000) {
         switch (static_cast<uint8>(eax)) {
             default:
-                cpuid (0x8000000a, Vmcb::svm_version, ebx, ecx, Vmcb::svm_feature);
+                cpuid (0x8000000a, Vmcb::svm_version(), ebx, ecx, Vmcb::svm_feature());
                 FALL_THROUGH;
             case 0x4 ... 0x9:
                 cpuid (0x80000004, name[8], name[9], name[10], name[11]);

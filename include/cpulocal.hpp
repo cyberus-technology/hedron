@@ -91,6 +91,12 @@ struct alignas(PAGE_SIZE) Per_cpu {
     mword vmcs_fix_cr4_set;
     mword vmcs_fix_cr4_clr;
     mword vmcs_fix_cr4_mon;
+
+    // SVM-related variables
+    Paddr    vmcb_root;
+    unsigned vmcb_asid_ctr;
+    uint32   vmcb_svm_version;
+    uint32   vmcb_svm_feature;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,
