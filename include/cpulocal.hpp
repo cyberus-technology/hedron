@@ -27,6 +27,7 @@
 class Ec;
 class Pd;
 class Sc;
+class Timeout;
 class Vmcs;
 
 // This struct defines the layout of CPU-local memory. It's designed to make it
@@ -75,6 +76,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The current virtual machine control structure.
     Vmcs *vmcs_current;
+
+    // The list of pending timeouts.
+    Timeout *timeout_list;
 
     // Scheduling-related variables
     Rq  sc_rq;

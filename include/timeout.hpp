@@ -19,6 +19,7 @@
 
 #include "compiler.hpp"
 #include "types.hpp"
+#include "cpulocal.hpp"
 
 class Timeout
 {
@@ -29,7 +30,7 @@ class Timeout
         virtual void trigger() = 0;
 
     public:
-        static Timeout *list CPULOCAL;
+        CPULOCAL_ACCESSOR(timeout, list);
 
         ALWAYS_INLINE
         inline Timeout() : prev (nullptr), next (nullptr), time (0) {}
@@ -38,7 +39,7 @@ class Timeout
         ~Timeout() { if (active()) dequeue(); }
 
         ALWAYS_INLINE
-        inline bool active() const { return prev || list == this; }
+        inline bool active() const { return prev || list() == this; }
 
         void enqueue (uint64);
         uint64 dequeue();
