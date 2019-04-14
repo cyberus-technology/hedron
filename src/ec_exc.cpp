@@ -73,9 +73,9 @@ bool Ec::handle_exc_pf (Exc_regs *r)
     mword addr = r->cr2;
 
     if (r->err & Hpt::ERR_U)
-        return addr < USER_ADDR && Pd::current->Space_mem::loc[Cpu::id()].sync_user (Pd::current->Space_mem::hpt, addr);
+        return addr < USER_ADDR && Pd::current()->Space_mem::loc[Cpu::id()].sync_user (Pd::current()->Space_mem::hpt, addr);
 
-    if (addr >= LINK_ADDR && addr < CPU_LOCAL && Pd::current->Space_mem::loc[Cpu::id()].sync_from (Hptp (reinterpret_cast<mword>(&PDBR)), addr, CPU_LOCAL))
+    if (addr >= LINK_ADDR && addr < CPU_LOCAL && Pd::current()->Space_mem::loc[Cpu::id()].sync_from (Hptp (reinterpret_cast<mword>(&PDBR)), addr, CPU_LOCAL))
         return true;
 
     // Kernel fault in I/O space

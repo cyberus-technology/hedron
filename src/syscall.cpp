@@ -255,7 +255,7 @@ void Ec::sys_create_pd()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Pd *pd = new Pd (Pd::current, r->sel(), cap.prm());
+    Pd *pd = new Pd (Pd::current(), r->sel(), cap.prm());
     if (!Space_obj::insert_root (pd)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete pd;
@@ -263,7 +263,7 @@ void Ec::sys_create_pd()
     }
 
     Crd crd = r->crd();
-    pd->del_crd (Pd::current, Crd (Crd::OBJ), crd);
+    pd->del_crd (Pd::current(), Crd (Crd::OBJ), crd);
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -306,7 +306,7 @@ void Ec::sys_create_ec()
 
     assert(pd);
 
-    Ec *ec = new Ec (Pd::current,
+    Ec *ec = new Ec (Pd::current(),
                      r->sel(),
                      pd,
                      r->flags() & 1 ? static_cast<void (*)()>(send_msg<ret_user_iret>) : nullptr,
@@ -357,7 +357,7 @@ void Ec::sys_create_sc()
         sys_finish<Sys_regs::BAD_PAR>();
     }
 
-    Sc *sc = new Sc (Pd::current, r->sel(), ec, ec->cpu, r->qpd().prio(), r->qpd().quantum());
+    Sc *sc = new Sc (Pd::current(), r->sel(), ec, ec->cpu, r->qpd().prio(), r->qpd().quantum());
     if (!Space_obj::insert_root (sc)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete sc;
@@ -393,7 +393,7 @@ void Ec::sys_create_pt()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Pt *pt = new Pt (Pd::current, r->sel(), ec, r->mtd(), r->eip());
+    Pt *pt = new Pt (Pd::current(), r->sel(), ec, r->mtd(), r->eip());
     if (!Space_obj::insert_root (pt)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete pt;
@@ -432,9 +432,9 @@ void Ec::sys_create_sm()
             sys_finish<Sys_regs::BAD_CAP>();
         }
 
-        sm = new Sm (Pd::current, r->sel(), 0, si, r->cnt());
+        sm = new Sm (Pd::current(), r->sel(), 0, si, r->cnt());
     } else
-        sm = new Sm (Pd::current, r->sel(), r->cnt());
+        sm = new Sm (Pd::current(), r->sel(), r->cnt());
 
     if (!Space_obj::insert_root (sm)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
@@ -451,7 +451,7 @@ void Ec::sys_revoke()
 
     trace (TRACE_SYSCALL, "EC:%p SYS_REVOKE", current());
 
-    Pd * pd = Pd::current;
+    Pd * pd = Pd::current();
 
     if (current()->cont != sys_revoke) {
         if (r->remote()) {
@@ -496,7 +496,7 @@ void Ec::sys_pd_ctrl_lookup()
     trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current(), s->crd().type(), s->crd().base());
 
     Space *space; Mdb *mdb;
-    if ((space = Pd::current->subspace (s->crd().type())) && (mdb = space->tree_lookup (s->crd().base())))
+    if ((space = Pd::current()->subspace (s->crd().type())) && (mdb = space->tree_lookup (s->crd().base())))
         s->crd() = Crd (s->crd().type(), mdb->node_base, mdb->node_order, mdb->node_attr);
     else
         s->crd() = Crd (0);
@@ -510,7 +510,7 @@ void Ec::sys_pd_ctrl_map_access_page()
 
     trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current(), s->crd().base());
 
-    Pd *pd  = Pd::current;
+    Pd *pd  = Pd::current();
     Crd crd = s->crd();
 
     void *access_addr = pd->get_access_page();
@@ -785,7 +785,7 @@ void Ec::sys_assign_gsi()
     }
 
     Paddr phys; unsigned rid = 0, gsi = static_cast<unsigned>(sm->node_base - NUM_CPU);
-    if (EXPECT_FALSE (!Gsi::gsi_table[gsi].ioapic && (!Pd::current->Space_mem::lookup (r->dev(), phys) || ((rid = Pci::phys_to_rid (phys)) == ~0U && (rid = Hpet::phys_to_rid (phys)) == ~0U)))) {
+    if (EXPECT_FALSE (!Gsi::gsi_table[gsi].ioapic && (!Pd::current()->Space_mem::lookup (r->dev(), phys) || ((rid = Pci::phys_to_rid (phys)) == ~0U && (rid = Hpet::phys_to_rid (phys)) == ~0U)))) {
         trace (TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
         sys_finish<Sys_regs::BAD_DEV>();
     }
@@ -815,10 +815,10 @@ void Ec::sys_xcpu_call()
 
     enum { UNUSED = 0, CNT = 0 };
 
-    current()->xcpu_sm = new Sm (Pd::current, UNUSED, CNT);
+    current()->xcpu_sm = new Sm (Pd::current(), UNUSED, CNT);
 
-    Ec *xcpu_ec = new Ec (Pd::current, Pd::current, Ec::sys_call, ec->cpu, current());
-    Sc *xcpu_sc = new Sc (Pd::current, xcpu_ec, xcpu_ec->cpu, Sc::current);
+    Ec *xcpu_ec = new Ec (Pd::current(), Pd::current(), Ec::sys_call, ec->cpu, current());
+    Sc *xcpu_sc = new Sc (Pd::current(), xcpu_ec, xcpu_ec->cpu, Sc::current);
 
     xcpu_sc->remote_enqueue();
     current()->xcpu_sm->dn (false, 0);

@@ -31,9 +31,9 @@ void bootstrap()
     Cpu::init();
 
     // Create idle EC
-    Ec::current() = new Ec (Pd::current = &Pd::kern, Ec::idle, Cpu::id());
+    Ec::current() = new Ec (Pd::current() = &Pd::kern, Ec::idle, Cpu::id());
     Ec::current()->add_ref();
-    Pd::current->add_ref();
+    Pd::current()->add_ref();
     Space_obj::insert_root (Sc::current = new Sc (&Pd::kern, Cpu::id(), Ec::current()));
     Sc::current->add_ref();
 

@@ -26,8 +26,6 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
 
-Pd *Pd::current;
-
 ALIGNED(32) No_destruct<Pd> Pd::kern (&Pd::kern);
 ALIGNED(32) No_destruct<Pd> Pd::root (&Pd::root, NUM_EXC, 0x1f);
 

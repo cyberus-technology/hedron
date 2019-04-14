@@ -251,9 +251,9 @@ void Ec::ret_user_vmresume()
 
     current()->regs.vmcs->make_current();
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id()))) {
-        Pd::current->gtlb.clr (Cpu::id());
-        Pd::current->ept.flush();
+    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
+        Pd::current()->gtlb.clr (Cpu::id());
+        Pd::current()->ept.flush();
     }
 
     if (EXPECT_FALSE (get_cr2() != current()->regs.cr2))
@@ -280,8 +280,8 @@ void Ec::ret_user_vmrun()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmrun);
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id()))) {
-        Pd::current->gtlb.clr (Cpu::id());
+    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
+        Pd::current()->gtlb.clr (Cpu::id());
         current()->regs.vmcb->tlb_control = 1;
     }
 
@@ -352,14 +352,14 @@ void Ec::root_invoke()
             mword size = align_up (p->f_size, PAGE_SIZE);
 
             for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o)
-                Pd::current->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr);
+                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr);
         }
     }
 
     // Map hypervisor information page
-    Pd::current->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
+    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
 
-    Space_obj::insert_root (Pd::current);
+    Space_obj::insert_root (Pd::current());
     Space_obj::insert_root (Ec::current());
     Space_obj::insert_root (Sc::current);
 
