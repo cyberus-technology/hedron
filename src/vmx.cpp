@@ -34,16 +34,16 @@
 #include "vmx.hpp"
 #include "x86.hpp"
 
-Vmcs *              Vmcs::current;
-unsigned            Vmcs::vpid_ctr;
-Vmcs::vmx_basic     Vmcs::basic;
-Vmcs::vmx_ept_vpid  Vmcs::ept_vpid;
-Vmcs::vmx_ctrl_pin  Vmcs::ctrl_pin;
-Vmcs::vmx_ctrl_cpu  Vmcs::ctrl_cpu[2];
-Vmcs::vmx_ctrl_exi  Vmcs::ctrl_exi;
-Vmcs::vmx_ctrl_ent  Vmcs::ctrl_ent;
-mword               Vmcs::fix_cr0_set, Vmcs::fix_cr0_clr, Vmcs::fix_cr0_mon;
-mword               Vmcs::fix_cr4_set, Vmcs::fix_cr4_clr, Vmcs::fix_cr4_mon;
+Vmcs *       Vmcs::current;
+unsigned     Vmcs::vpid_ctr;
+vmx_basic    Vmcs::basic;
+vmx_ept_vpid Vmcs::ept_vpid;
+vmx_ctrl_pin Vmcs::ctrl_pin;
+vmx_ctrl_cpu Vmcs::ctrl_cpu[2];
+vmx_ctrl_exi Vmcs::ctrl_exi;
+vmx_ctrl_ent Vmcs::ctrl_ent;
+mword        Vmcs::fix_cr0_set, Vmcs::fix_cr0_clr, Vmcs::fix_cr0_mon;
+mword        Vmcs::fix_cr4_set, Vmcs::fix_cr4_clr, Vmcs::fix_cr4_mon;
 
 Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
 {
