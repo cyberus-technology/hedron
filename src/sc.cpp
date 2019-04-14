@@ -29,7 +29,7 @@ INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Sc::cache (sizeof (Sc), 32);
 
 INIT_PRIORITY (PRIO_LOCAL)
-Sc::Rq Sc::rq;
+Rq Sc::rq;
 
 Sc *        Sc::current;
 unsigned    Sc::ctr_link;
@@ -159,7 +159,7 @@ void Sc::remote_enqueue(bool inc_ref)
                 return;
         }
 
-        Sc::Rq *r = remote (cpu);
+        Rq *r = remote (cpu);
 
         Lock_guard <Spinlock> guard (r->lock);
 
