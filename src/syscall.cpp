@@ -54,8 +54,8 @@ void Ec::activate()
     Ec *ec = this;
 
     // XXX: Make the loop preemptible
-    for (Sc::ctr_link = 0; ec->partner; ec = ec->partner)
-        Sc::ctr_link++;
+    for (Sc::ctr_link() = 0; ec->partner; ec = ec->partner)
+        Sc::ctr_link()++;
 
     if (EXPECT_FALSE (ec->blocked()))
         ec->block_sc();
@@ -352,7 +352,7 @@ void Ec::sys_create_sc()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    if (EXPECT_FALSE (!r->qpd().prio() || !r->qpd().quantum() | (r->qpd().prio() >= Sc::priorities))) {
+    if (EXPECT_FALSE (!r->qpd().prio() || !r->qpd().quantum() | (r->qpd().prio() >= NUM_PRIORITIES))) {
         trace (TRACE_ERROR, "%s: Invalid QPD", __func__);
         sys_finish<Sys_regs::BAD_PAR>();
     }

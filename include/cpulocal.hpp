@@ -21,6 +21,7 @@
 #include "config.hpp"
 #include "compiler.hpp"
 #include "types.hpp"
+#include "rq.hpp"
 #include "vmx_types.hpp"
 
 class Ec;
@@ -74,6 +75,13 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The current virtual machine control structure.
     Vmcs *vmcs_current;
+
+    // Scheduling-related variables
+    Rq  sc_rq;
+    Sc *sc_list[NUM_PRIORITIES];
+    unsigned sc_prio_top;
+    unsigned sc_ctr_link;
+    unsigned sc_ctr_loop;
 
     // VMX-related variables
     unsigned     vmcs_vpid_ctr;

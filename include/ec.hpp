@@ -152,7 +152,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             partner->rcap = this;
             ok = partner->rcap->add_ref();
             assert (ok);
-            Sc::ctr_link++;
+            Sc::ctr_link()++;
         }
 
         ALWAYS_INLINE
@@ -167,7 +167,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             bool last = partner->del_ref();
             assert (!last);
             partner = nullptr;
-            return Sc::ctr_link--;
+            return Sc::ctr_link()--;
         }
 
         ALWAYS_INLINE
@@ -262,7 +262,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 Counter::print<1,16> (++Counter::helping(), Console_vga::COLOR_LIGHT_WHITE, SPN_HLP);
                 current()->cont = c;
 
-                if (EXPECT_TRUE (++Sc::ctr_loop < 100))
+                if (EXPECT_TRUE (++Sc::ctr_loop() < 100))
                     activate();
 
                 die ("Livelock");

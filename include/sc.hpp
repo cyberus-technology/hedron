@@ -24,7 +24,6 @@
 
 #include "compiler.hpp"
 #include "cpulocal.hpp"
-#include "rq.hpp"
 
 class Ec;
 
@@ -39,8 +38,6 @@ class Sc : public Kobject, public Refcount
         uint64 const budget;
         uint64 time;
 
-        static unsigned const priorities = 128;
-
     private:
         uint64 left;
         Sc *prev, *next;
@@ -48,11 +45,9 @@ class Sc : public Kobject, public Refcount
 
         static Slab_cache cache;
 
-        static Rq rq CPULOCAL;
-
-        static Sc *list[priorities] CPULOCAL;
-
-        static unsigned prio_top CPULOCAL;
+        CPULOCAL_ACCESSOR(sc, rq);
+        CPULOCAL_ACCESSOR(sc, list);
+        CPULOCAL_ACCESSOR(sc, prio_top);
 
         void ready_enqueue (uint64, bool, bool = true);
 
@@ -69,8 +64,8 @@ class Sc : public Kobject, public Refcount
 
     public:
         CPULOCAL_ACCESSOR(sc, current);
-        static unsigned ctr_link    CPULOCAL;
-        static unsigned ctr_loop    CPULOCAL;
+        CPULOCAL_ACCESSOR(sc, ctr_link);
+        CPULOCAL_ACCESSOR(sc, ctr_loop);
 
         static unsigned const default_prio = 1;
         static unsigned const default_quantum = 10000;
@@ -80,9 +75,9 @@ class Sc : public Kobject, public Refcount
         Sc (Pd *, Ec *, unsigned, Sc *);
 
         ALWAYS_INLINE
-        static inline Rq *remote (unsigned long c)
+        static inline Rq *remote (unsigned c)
         {
-            return reinterpret_cast<typeof rq *>(reinterpret_cast<mword>(&rq) - CPU_LOCAL_DATA + HV_GLOBAL_CPUS + c * PAGE_SIZE);
+            return &Cpulocal::get_remote(c).sc_rq;
         }
 
         void remote_enqueue(bool = true);
