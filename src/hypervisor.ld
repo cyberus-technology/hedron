@@ -112,7 +112,6 @@ SECTIONS
 
     .cpulocal CPU_LOCAL_DATA :
     {
-        *(SORT_BY_ALIGNMENT(.cpulocal.hot))
         *(SORT_BY_ALIGNMENT(.cpulocal))
     }
 
