@@ -21,6 +21,7 @@
 #include "config.hpp"
 #include "compiler.hpp"
 #include "types.hpp"
+#include "vmx_types.hpp"
 
 class Ec;
 class Pd;
@@ -73,6 +74,23 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The current virtual machine control structure.
     Vmcs *vmcs_current;
+
+    // VMX-related variables
+    unsigned     vmcs_vpid_ctr;
+    vmx_basic    vmcs_basic;
+    vmx_ept_vpid vmcs_ept_vpid;
+    vmx_ctrl_pin vmcs_ctrl_pin;
+    vmx_ctrl_cpu vmcs_ctrl_cpu[2];
+    vmx_ctrl_exi vmcs_ctrl_exi;
+    vmx_ctrl_ent vmcs_ctrl_ent;
+
+    mword vmcs_fix_cr0_set;
+    mword vmcs_fix_cr0_clr;
+    mword vmcs_fix_cr0_mon;
+
+    mword vmcs_fix_cr4_set;
+    mword vmcs_fix_cr4_clr;
+    mword vmcs_fix_cr4_mon;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

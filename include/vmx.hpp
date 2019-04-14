@@ -36,21 +36,21 @@ class Vmcs
 
         CPULOCAL_ACCESSOR(vmcs, current);
 
-        static unsigned     vpid_ctr    CPULOCAL;
-        static vmx_basic    basic       CPULOCAL;
-        static vmx_ept_vpid ept_vpid    CPULOCAL;
-        static vmx_ctrl_pin ctrl_pin    CPULOCAL;
-        static vmx_ctrl_cpu ctrl_cpu[2] CPULOCAL;
-        static vmx_ctrl_exi ctrl_exi    CPULOCAL;
-        static vmx_ctrl_ent ctrl_ent    CPULOCAL;
+        CPULOCAL_ACCESSOR(vmcs, vpid_ctr);
+        CPULOCAL_ACCESSOR(vmcs, basic);
+        CPULOCAL_ACCESSOR(vmcs, ept_vpid);
+        CPULOCAL_ACCESSOR(vmcs, ctrl_pin);
+        CPULOCAL_ACCESSOR(vmcs, ctrl_cpu);
+        CPULOCAL_ACCESSOR(vmcs, ctrl_exi);
+        CPULOCAL_ACCESSOR(vmcs, ctrl_ent);
 
-        static mword fix_cr0_set CPULOCAL;
-        static mword fix_cr0_clr CPULOCAL;
-        static mword fix_cr0_mon CPULOCAL;
+        CPULOCAL_ACCESSOR(vmcs, fix_cr0_set);
+        CPULOCAL_ACCESSOR(vmcs, fix_cr0_clr);
+        CPULOCAL_ACCESSOR(vmcs, fix_cr0_mon);
 
-        static mword fix_cr4_set CPULOCAL;
-        static mword fix_cr4_clr CPULOCAL;
-        static mword fix_cr4_mon CPULOCAL;
+        CPULOCAL_ACCESSOR(vmcs, fix_cr4_set);
+        CPULOCAL_ACCESSOR(vmcs, fix_cr4_clr);
+        CPULOCAL_ACCESSOR(vmcs, fix_cr4_mon);
 
         enum Encoding
         {
@@ -344,7 +344,7 @@ class Vmcs
         Vmcs (mword, mword, mword, uint64, unsigned);
 
         ALWAYS_INLINE
-        inline Vmcs() : rev (basic.revision)
+        inline Vmcs() : rev (basic().revision)
         {
             uint64 phys = Buddy::ptr_to_phys (this);
 
@@ -409,12 +409,12 @@ class Vmcs
             return has_vpid() ? read (VPID) : 0;
         }
 
-        static bool has_secondary() { return ctrl_cpu[0].clr & CPU_SECONDARY; }
-        static bool has_guest_pat() { return ctrl_exi.clr & (EXI_SAVE_PAT | EXI_LOAD_PAT); }
-        static bool has_ept()       { return ctrl_cpu[1].clr & CPU_EPT; }
-        static bool has_vpid()      { return ctrl_cpu[1].clr & CPU_VPID; }
-        static bool has_urg()       { return ctrl_cpu[1].clr & CPU_URG; }
-        static bool has_vnmi()      { return ctrl_pin.clr & PIN_VIRT_NMI; }
+        static bool has_secondary() { return ctrl_cpu()[0].clr & CPU_SECONDARY; }
+        static bool has_guest_pat() { return ctrl_exi().clr & (EXI_SAVE_PAT | EXI_LOAD_PAT); }
+        static bool has_ept()       { return ctrl_cpu()[1].clr & CPU_EPT; }
+        static bool has_vpid()      { return ctrl_cpu()[1].clr & CPU_VPID; }
+        static bool has_urg()       { return ctrl_cpu()[1].clr & CPU_URG; }
+        static bool has_vnmi()      { return ctrl_pin().clr & PIN_VIRT_NMI; }
 
         static void init();
 };

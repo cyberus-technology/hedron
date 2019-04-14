@@ -70,13 +70,13 @@ class Vmcb
         static uint32       svm_version CPULOCAL;
         static uint32       svm_feature CPULOCAL;
 
-        static mword const fix_cr0_set = 0;
-        static mword const fix_cr0_clr = 0;
-        static mword const fix_cr0_mon = 0;
+        static mword fix_cr0_set() { return 0; }
+        static mword fix_cr0_clr() { return 0; }
+        static mword fix_cr0_mon() { return 0; }
 
-        static mword const fix_cr4_set = 0;
-        static mword const fix_cr4_clr = 0;
-        static mword const fix_cr4_mon = 0;
+        static mword fix_cr4_set() { return 0; }
+        static mword fix_cr4_clr() { return 0; }
+        static mword fix_cr4_mon() { return 0; }
 
         enum Ctrl0
         {
