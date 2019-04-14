@@ -24,6 +24,7 @@
 
 class Ec;
 class Pd;
+class Sc;
 
 // This struct defines the layout of CPU-local memory. It's designed to make it
 // convenient to use %gs:0 to restore the stack pointer and to get a normal
@@ -65,6 +66,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The current protection domain.
     Pd *pd_current;
+
+    // The current scheduling context.
+    Sc *sc_current;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

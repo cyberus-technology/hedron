@@ -182,18 +182,18 @@ void Ec::reply (void (*c)(), Sm * sm)
     Ec *ec = current()->rcap;
 
     if (EXPECT_FALSE (!ec))
-        Sc::current->ec->activate();
+        Sc::current()->ec->activate();
 
     bool clr = ec->clr_partner();
 
-    if (Sc::current->ec == ec && Sc::current->last_ref())
+    if (Sc::current()->ec == ec && Sc::current()->last_ref())
         Sc::schedule (true);
 
     if (sm)
         sm->dn (false, 0, ec, clr);
 
     if (!clr)
-        Sc::current->ec->activate();
+        Sc::current()->ec->activate();
 
     ec->make_current();
 }
@@ -818,7 +818,7 @@ void Ec::sys_xcpu_call()
     current()->xcpu_sm = new Sm (Pd::current(), UNUSED, CNT);
 
     Ec *xcpu_ec = new Ec (Pd::current(), Pd::current(), Ec::sys_call, ec->cpu, current());
-    Sc *xcpu_sc = new Sc (Pd::current(), xcpu_ec, xcpu_ec->cpu, Sc::current);
+    Sc *xcpu_sc = new Sc (Pd::current(), xcpu_ec, xcpu_ec->cpu, Sc::current());
 
     xcpu_sc->remote_enqueue();
     current()->xcpu_sm->dn (false, 0);

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "cpulocal.hpp"
 #include "rq.hpp"
 
 class Ec;
@@ -61,13 +62,13 @@ class Sc : public Kobject, public Refcount
             Sc * s = static_cast<Sc *>(a);
 
             if (s->del_ref()) {
-                assert(Sc::current != s);
+                assert(Sc::current() != s);
                 delete s;
             }
         }
 
     public:
-        static Sc *     current     CPULOCAL_HOT;
+        CPULOCAL_ACCESSOR(sc, current);
         static unsigned ctr_link    CPULOCAL;
         static unsigned ctr_loop    CPULOCAL;
 

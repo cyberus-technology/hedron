@@ -31,7 +31,6 @@ Slab_cache Sc::cache (sizeof (Sc), 32);
 INIT_PRIORITY (PRIO_LOCAL)
 Rq Sc::rq;
 
-Sc *        Sc::current;
 unsigned    Sc::ctr_link;
 unsigned    Sc::ctr_loop;
 
@@ -79,9 +78,9 @@ void Sc::ready_enqueue (uint64 t, bool inc_ref, bool use_left)
             list[prio] = this;
     }
 
-    trace (TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top, prio > current->prio ? "reschedule" : "");
+    trace (TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top, prio > current()->prio ? "reschedule" : "");
 
-    if (prio > current->prio || (this != current && prio == current->prio && (use_left && left)))
+    if (prio > current()->prio || (this != current() && prio == current()->prio && (use_left && left)))
         Cpu::hazard() |= HZD_SCHED;
 
     if (!left)
@@ -117,22 +116,22 @@ void Sc::schedule (bool suspend, bool use_left)
 {
     Counter::print<1,16> (++Counter::schedule, Console_vga::COLOR_LIGHT_CYAN, SPN_SCH);
 
-    assert (current);
-    assert (suspend || !current->prev);
+    assert (current());
+    assert (suspend || !current()->prev);
 
     uint64 t = rdtsc();
     uint64 d = Timeout_budget::budget->dequeue();
 
-    current->time += t - current->tsc;
-    current->left = d > t ? d - t : 0;
+    current()->time += t - current()->tsc;
+    current()->left = d > t ? d - t : 0;
 
     Cpu::hazard() &= ~HZD_SCHED;
 
     if (EXPECT_TRUE (!suspend))
-        current->ready_enqueue (t, false, use_left);
+        current()->ready_enqueue (t, false, use_left);
     else
-        if (current->del_rcu())
-            Rcu::call (current);
+        if (current()->del_rcu())
+            Rcu::call (current());
 
     Sc *sc = list[prio_top];
     assert (sc);
@@ -141,7 +140,7 @@ void Sc::schedule (bool suspend, bool use_left)
 
     ctr_loop = 0;
 
-    current = sc;
+    current() = sc;
     sc->ready_dequeue (t);
     sc->ec->activate();
 }

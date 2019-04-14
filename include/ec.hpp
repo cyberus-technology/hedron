@@ -277,10 +277,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 if (!blocked())
                     return;
 
-                bool ok = Sc::current->add_ref();
+                bool ok = Sc::current()->add_ref();
                 assert (ok);
 
-                enqueue (Sc::current);
+                enqueue (Sc::current());
             }
 
             Sc::schedule (true);

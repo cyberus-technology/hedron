@@ -361,7 +361,7 @@ void Ec::root_invoke()
 
     Space_obj::insert_root (Pd::current());
     Space_obj::insert_root (Ec::current());
-    Space_obj::insert_root (Sc::current);
+    Space_obj::insert_root (Sc::current());
 
     ret_user_sysexit();
 }
@@ -382,10 +382,10 @@ void Ec::die (char const *reason, Exc_regs *r)
     if (current()->utcb || current()->pd == &Pd::kern) {
         if (strcmp(reason, "PT not found"))
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
-               current(), Sc::current, r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
+               current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else
         trace (0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)",
-               current(), Sc::current, r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
+               current(), Sc::current(), r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
 
     Ec *ec = current()->rcap;
 
@@ -400,7 +400,7 @@ void Ec::xcpu_return()
     assert (current()->xcpu_sm);
     assert (current()->rcap);
     assert (current()->utcb);
-    assert (Sc::current->ec == current());
+    assert (Sc::current()->ec == current());
 
     current()->rcap->regs =  current()->regs;
 
@@ -411,7 +411,7 @@ void Ec::xcpu_return()
     current()->xcpu_sm = nullptr;
 
     Rcu::call(current());
-    Rcu::call(Sc::current);
+    Rcu::call(Sc::current());
 
     Sc::schedule(true);
 }
