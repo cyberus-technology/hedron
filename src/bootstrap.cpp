@@ -22,6 +22,7 @@
 #include "ec.hpp"
 #include "hip.hpp"
 #include "msr.hpp"
+#include "timeout_budget.hpp"
 
 extern "C" NORETURN
 void bootstrap()
@@ -31,6 +32,7 @@ void bootstrap()
     Cpu::init();
 
     // Create idle EC
+    Timeout_budget::init();
     Ec::current() = new Ec (Pd::current() = &Pd::kern, Ec::idle, Cpu::id());
     Ec::current()->add_ref();
     Pd::current()->add_ref();

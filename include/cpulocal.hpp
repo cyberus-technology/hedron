@@ -79,6 +79,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The list of pending timeouts.
     Timeout *timeout_list;
+    Timeout *timeout_budget;
 
     // Scheduling-related variables
     Rq  sc_rq;
