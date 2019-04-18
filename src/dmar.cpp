@@ -42,7 +42,7 @@ Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | 
     cap  = read<uint64>(REG_CAP);
     ecap = read<uint64>(REG_ECAP);
 
-    Dpt::ord = min (Dpt::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(cap >> 34) & 0xf) + 2) * Dpt::bpl() - 1);
+    Dpt::ord = min (Dpt::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(cap >> 34) & 0xf) + 2) * Dpt::bits_per_level() - 1);
 
     write<uint32>(REG_FEADDR, 0xfee00000 | Cpu::apic_id[0] << 12);
     write<uint32>(REG_FEDATA, VEC_MSI_DMAR);
