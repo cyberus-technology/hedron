@@ -22,15 +22,20 @@
 #include "bits.hpp"
 #include "hpt.hpp"
 
+bool Hpt::sync_user (Hpt src, mword v)
+{
+    return Hpt::sync_from (src, v, CANON_BOUND);
+}
+
 bool Hpt::sync_from (Hpt src, mword v, mword o)
 {
-    mword l = (bit_scan_reverse (v ^ o) - PAGE_BITS) / bpl();
+    mword l = (bit_scan_reverse (v ^ o) - PAGE_BITS) / bits_per_level();
 
-    Hpt *s = static_cast<Hpt *>(src.walk (v, l, false));
+    Hpt *s = src.walk (v, l, false);
     if (!s)
         return false;
 
-    Hpt *d = static_cast<Hpt *>(walk (v, l));
+    Hpt *d = walk (v, l);
     assert (d);
 
     if (d->val == s->val)
@@ -43,7 +48,8 @@ bool Hpt::sync_from (Hpt src, mword v, mword o)
 
 void Hpt::sync_master_range (mword s, mword e)
 {
-    for (mword l = (bit_scan_reverse (LINK_ADDR ^ CPU_LOCAL) - PAGE_BITS) / bpl(); s < e; s += 1UL << (l * bpl() + PAGE_BITS))
+    for (mword l = (bit_scan_reverse (LINK_ADDR ^ CPU_LOCAL) - PAGE_BITS) / bits_per_level();
+         s < e; s += 1UL << (l * bits_per_level() + PAGE_BITS))
         sync_from (Hptp (reinterpret_cast<mword>(&PDBR)), s, CPU_LOCAL);
 }
 
@@ -60,7 +66,7 @@ void *Hpt::remap (Paddr phys)
 {
     Hptp hpt (current());
 
-    size_t size = 1UL << (bpl() + PAGE_BITS);
+    size_t size = 1UL << (bits_per_level() + PAGE_BITS);
 
     mword offset = phys & (size - 1);
 
@@ -68,12 +74,12 @@ void *Hpt::remap (Paddr phys)
 
     Paddr old; mword attr;
     if (hpt.lookup (SPC_LOCAL_REMAP, old, attr)) {
-        hpt.update (SPC_LOCAL_REMAP,        bpl(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP);
-        hpt.update (SPC_LOCAL_REMAP + size, bpl(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP + size);
+        hpt.update (SPC_LOCAL_REMAP,        bits_per_level(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP);
+        hpt.update (SPC_LOCAL_REMAP + size, bits_per_level(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP + size);
     }
 
-    hpt.update (SPC_LOCAL_REMAP,        bpl(), phys,        HPT_W | HPT_P);
-    hpt.update (SPC_LOCAL_REMAP + size, bpl(), phys + size, HPT_W | HPT_P);
+    hpt.update (SPC_LOCAL_REMAP,        bits_per_level(), phys,        HPT_W | HPT_P);
+    hpt.update (SPC_LOCAL_REMAP + size, bits_per_level(), phys + size, HPT_W | HPT_P);
 
     return reinterpret_cast<void *>(SPC_LOCAL_REMAP + offset);
 }

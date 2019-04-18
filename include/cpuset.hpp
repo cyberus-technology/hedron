@@ -27,6 +27,7 @@ class Cpuset
 {
     private:
         mword val;
+        static_assert(sizeof(val) * 8 <= NUM_CPU, "NUM_CPU is too large");
 
     public:
         ALWAYS_INLINE

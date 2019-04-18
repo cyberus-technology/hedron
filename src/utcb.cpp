@@ -436,13 +436,6 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         Vmcs::write (Vmcs::GUEST_PAT, pat);
     }
 
-    mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
-    Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
-    host_msr_area->ia32_star.msr_data = Msr::read<uint64>(Msr::IA32_STAR);
-    host_msr_area->ia32_lstar.msr_data = Msr::read<uint64>(Msr::IA32_LSTAR);
-    host_msr_area->ia32_fmask.msr_data = Msr::read<uint64>(Msr::IA32_FMASK);
-    host_msr_area->ia32_kernel_gs_base.msr_data = Msr::read<uint64>(Msr::IA32_KERNEL_GS_BASE);
-
     if (mtd & Mtd::SYSCALL_SWAPGS) {
         mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
         Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));

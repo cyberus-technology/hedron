@@ -132,7 +132,7 @@ void Vmcs::init()
     }
 
     ept_vpid.val = Msr::read<uint64>(Msr::IA32_VMX_EPT_VPID);
-    Ept::ord = min (Ept::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(ept_vpid.super)) + 2) * Ept::bpl() - 1);
+    Ept::ord = min (Ept::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(ept_vpid.super)) + 2) * Ept::bits_per_level() - 1);
     fix_cr0_set &= ~(Cpu::CR0_PG | Cpu::CR0_PE);
 
     fix_cr0_clr |= Cpu::CR0_CD | Cpu::CR0_NW;

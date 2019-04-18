@@ -61,7 +61,7 @@ class Sc : public Kobject, public Refcount
 
         static void free (Rcu_elem * a) {
             Sc * s = static_cast<Sc *>(a);
-              
+
             if (s->del_ref()) {
                 assert(Sc::current != s);
                 delete s;

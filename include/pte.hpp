@@ -96,9 +96,11 @@ class Pte
             TYPE_DF,
         };
 
+        // Returns the number of linear address bits that are used to index into the page table.
         ALWAYS_INLINE
-        static inline unsigned bpl() { return B; }
+        static inline unsigned bits_per_level() { return B; }
 
+        // Returns the number of levels in the page table.
         ALWAYS_INLINE
         static inline unsigned max() { return L; }
 

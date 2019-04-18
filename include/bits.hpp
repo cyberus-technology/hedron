@@ -29,9 +29,8 @@ inline long int bit_scan_reverse (mword val)
     if (EXPECT_FALSE (!val))
         return -1;
 
-    asm volatile ("bsr %1, %0" : "=r" (val) : "rm" (val));
-
-    return val;
+    static_assert(sizeof(mword) == sizeof(long long), "builtin call has wrong size");
+    return __builtin_ia32_bsrdi(val);
 }
 
 ALWAYS_INLINE
@@ -40,9 +39,8 @@ inline long int bit_scan_forward (mword val)
     if (EXPECT_FALSE (!val))
         return -1;
 
-    asm volatile ("bsf %1, %0" : "=r" (val) : "rm" (val));
-
-    return val;
+    static_assert(sizeof(mword) == sizeof(long), "builtin call has wrong size");
+    return __builtin_ctzl(val);
 }
 
 ALWAYS_INLINE
@@ -60,23 +58,8 @@ ALWAYS_INLINE
 inline uint64 div64 (uint64 n, uint32 d, uint32 *r)
 {
     uint64 q;
-
-#ifdef __i386__
-    asm volatile ("divl %5;"
-                  "xchg %1, %2;"
-                  "divl %5;"
-                  "xchg %1, %3;"
-                  : "=A" (q),   // quotient
-                    "=r" (*r)   // remainder
-                  : "a"  (static_cast<uint32>(n >> 32)),
-                    "d"  (0),
-                    "1"  (static_cast<uint32>(n)),
-                    "rm" (d));
-#else
      q = n / d;
     *r = static_cast<uint32>(n % d);
-#endif
-
     return q;
 }
 
