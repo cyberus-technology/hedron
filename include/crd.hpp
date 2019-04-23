@@ -89,4 +89,10 @@ class Xfer : public Crd
 
         ALWAYS_INLINE
         inline Kind kind() const { return Kind (val & 0x3); }
+
+        ALWAYS_INLINE
+        inline mword subspaces() const { return (val >> 9) & 0x3; }
+
+        ALWAYS_INLINE
+        inline bool from_kern() const { return flags() & 0x800; }
 };
