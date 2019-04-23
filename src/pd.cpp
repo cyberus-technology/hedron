@@ -301,20 +301,20 @@ Xfer Pd::xfer_item (Pd *src, Crd xlt, Crd del, Xfer s)
     mword set_as_del = 0;
     Crd crd = s;
 
-    switch (s.flags() & 3) {
+    switch (s.kind()) {
 
-    case 0:
+    case Xfer::Kind::TRANSLATE:
         xlt_crd (src, xlt, crd);
         break;
 
-    case 2:
+    case Xfer::Kind::TRANS_DELEGATE:
         xlt_crd (src, xlt, crd);
         if (crd.type()) break;
 
         crd = s;
         set_as_del = 1;
         FALL_THROUGH;
-    case 1:
+    case Xfer::Kind::DELEGATE:
         del_crd (src == &root && s.flags() & 0x800 ? &kern : src, del, crd, s.flags() >> 9 & 3, s.hotspot());
         break;
 

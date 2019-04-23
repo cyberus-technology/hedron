@@ -78,4 +78,15 @@ class Xfer : public Crd
 
         ALWAYS_INLINE
         inline mword value() const { return val; }
+
+        enum class Kind
+        {
+            TRANSLATE      = 0,
+            DELEGATE       = 1,
+            TRANS_DELEGATE = 2,
+            INVALID        = 3,
+        };
+
+        ALWAYS_INLINE
+        inline Kind kind() const { return Kind (val & 0x3); }
 };
