@@ -186,8 +186,8 @@ class Sys_pd_ctrl_delegate : public Sys_regs
         ALWAYS_INLINE
         inline void set_xfer(Xfer const &xfer)
         {
-            ARG_3 = static_cast<Crd const &>(xfer).value();
-            ARG_4 = xfer.value();
+            ARG_3 = xfer.crd().value();
+            ARG_4 = xfer.metadata();
         }
 
         ALWAYS_INLINE

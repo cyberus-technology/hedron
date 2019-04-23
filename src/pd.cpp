@@ -299,7 +299,7 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
 Xfer Pd::xfer_item (Pd *src_pd, Crd xlt, Crd del, Xfer s_ti)
 {
     mword set_as_del = 0;
-    Crd crd = s_ti;
+    Crd crd = s_ti.crd();
 
     switch (s_ti.kind()) {
 
@@ -313,7 +313,7 @@ Xfer Pd::xfer_item (Pd *src_pd, Crd xlt, Crd del, Xfer s_ti)
             break;
         }
 
-        crd = s_ti;
+        crd = s_ti.crd();
         set_as_del = 1;
         FALL_THROUGH;
     case Xfer::Kind::DELEGATE:
