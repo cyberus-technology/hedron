@@ -1,27 +1,46 @@
 stages:
   - build
 
-image: gcc:7
-
 .release_only_template: &release_only
   only:
     - tags
-    - /^[\d-]+-release
+    - /^[\d-]+-release$/
 
-build:default:
+.exclude_release_template: &exclude_release
+  except:
+    - tags
+    - /^[\d-]+-release$/
+
+.build_all_template: &build_all
   stage: build
   script:
-  - cd build && make ARCH=x86_64
+    - tup init
+    - tup variant configs/*
+    - tup
   artifacts:
     expire_in: 1 week
     paths:
-      - build/hypervisor-x86_64
+      - build-*/src/hypervisor-x86_64
+
+build:default-fedora:
+  image: fedora:latest
+  before_script:
+    - dnf -y update && dnf -y install 'dnf-command(copr)' && dnf -y copr enable boelthorn/tup
+    - dnf -y update && dnf -y install gcc gcc-c++ tup
+  <<: *build_all
+  <<: *exclude_release
+
+.build_ubuntu_template: &build_ubuntu
+  image: ubuntu:bionic
+  before_script:
+    - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
+    - apt-get update && apt-get -y install build-essential tup g++
+
+build:default-ubuntu:
+  <<: *build_ubuntu
+  <<: *build_all
 
 build:release:
-  stage: build
-  script:
-  - cd build && make ARCH=x86_64
-  artifacts:
-    paths:
-      - build/hypervisor-x86_64
+  <<: *build_ubuntu
+  <<: *build_all
   <<: *release_only
