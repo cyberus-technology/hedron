@@ -1,5 +1,3 @@
-# Mostly taken from Makefile
-
 ifeq (@(BUILD_NOVA),y)
 
 include_rules
