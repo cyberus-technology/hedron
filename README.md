@@ -26,13 +26,14 @@ Supported platforms
 The NOVA microhypervisor runs on single- and multi-processor x86 machines
 that support ACPI.
 
+Recommended Intel CPUs are Intel Core processors starting with the Sandy Bridge
+microarchitecture. AMD support is experimental and currently not actively used.
+
 The virtualization features are available on:
 
-- Intel CPUs with VMX,
-  regardless of whether the CPU supports nested paging (EPT) or not.
+- Intel CPUs with VMX and nested paging (EPT).
 
-- AMD CPUs with SVM,
-  regardless of whether the CPU supports nested paging (NPT) or not.
+- AMD CPUs with SVM and nested paging (NPT),
 
 
 Building from source code
@@ -40,19 +41,22 @@ Building from source code
 
 You need the following tools to compile the source code:
 
-- make 3.81 or higher,
-  available from http://www.gnu.org/software/make/
+- tup 0.7.8 or higher,
+  available from http://gittup.org/tup/
 
-- binutils 2.21.51.0.3 or higher,
+- binutils 2.30 or higher,
   available from http://www.kernel.org/pub/linux/devel/binutils/
 
 - gcc, available from http://gcc.gnu.org/
-  - for x86_64: gcc 5.4.0 or higher
+  - for x86_64: gcc 7.4.0 or higher
 
 
-You can build a 64-bit microhypervisor binary as follows:
+You can build a microhypervisor binary as follows:
 
-    cd build; make ARCH=x86_64
+    # Only needs to be done once
+    tup init && tup variant configs/default.config
+    
+    tup
 
 
 Booting
@@ -117,4 +121,4 @@ GNU General Public License version 2 for more details.
 Contact
 -------
 
-Feedback and comments should be sent to udo@hypervisor.org
+Feedback and comments should be sent to hypervisor@cyberus-technology.de.
