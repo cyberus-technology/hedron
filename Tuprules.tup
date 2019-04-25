@@ -1,0 +1,7 @@
+ifndef CC
+CC=gcc
+endif
+
+ifndef CXX
+CXX=g++
+endif
