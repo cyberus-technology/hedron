@@ -372,6 +372,3 @@ Pd::~Pd()
         if (Hip::cpu_online (cpu))
             Space_mem::loc[cpu].clear(Space_mem::hpt.dest_loc, Space_mem::hpt.iter_loc_lev);
 }
-
-extern "C" int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }
-void * __dso_handle = nullptr;
