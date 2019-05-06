@@ -491,7 +491,7 @@ void Ec::sys_revoke()
 
 void Ec::sys_pd_ctrl_lookup()
 {
-    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+    Sys_pd_ctrl_lookup *s = static_cast<Sys_pd_ctrl_lookup *>(current->sys_regs());
 
     trace (TRACE_SYSCALL, "EC:%p SYS_LOOKUP T:%d B:%#lx", current, s->crd().type(), s->crd().base());
 
@@ -506,7 +506,7 @@ void Ec::sys_pd_ctrl_lookup()
 
 void Ec::sys_pd_ctrl_map_access_page()
 {
-    Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current->sys_regs());
+    Sys_pd_ctrl_map_access_page *s = static_cast<Sys_pd_ctrl_map_access_page *>(current->sys_regs());
 
     trace (TRACE_SYSCALL, "EC:%p SYS_MAP_ACCESS_PAGE B:%#lx", current, s->crd().base());
 

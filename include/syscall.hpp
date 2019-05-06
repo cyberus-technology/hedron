@@ -166,7 +166,18 @@ class Sys_pd_ctrl : public Sys_regs
 
         ALWAYS_INLINE
         ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};
 
+class Sys_pd_ctrl_lookup : public Sys_regs
+{
+    public:
+        ALWAYS_INLINE
+        inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
+};
+
+class Sys_pd_ctrl_map_access_page : public Sys_regs
+{
+    public:
         ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };
