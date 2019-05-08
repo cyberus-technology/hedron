@@ -371,6 +371,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void sys_pd_ctrl_map_access_page();
 
         NORETURN
+        static void sys_pd_ctrl_delegate();
+
+        NORETURN
         static void sys_ec_ctrl();
 
         NORETURN

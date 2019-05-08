@@ -161,13 +161,48 @@ class Sys_pd_ctrl : public Sys_regs
         {
             LOOKUP,
             MAP_ACCESS_PAGE,
+            DELEGATE,
         };
 
         ALWAYS_INLINE
         ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};
 
+class Sys_pd_ctrl_lookup : public Sys_regs
+{
+    public:
         ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
+};
+
+class Sys_pd_ctrl_map_access_page : public Sys_regs
+{
+    public:
+        ALWAYS_INLINE
+        inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
+};
+
+class Sys_pd_ctrl_delegate : public Sys_regs
+{
+    public:
+        ALWAYS_INLINE
+        inline mword src_pd() const { return ARG_1 >> 8; }
+
+        ALWAYS_INLINE
+        inline mword dst_pd() const { return ARG_2; }
+
+        ALWAYS_INLINE
+        inline Xfer xfer() const { return Xfer {Crd {ARG_3}, ARG_4}; }
+
+        ALWAYS_INLINE
+        inline void set_xfer(Xfer const &xfer)
+        {
+            ARG_3 = xfer.crd().value();
+            ARG_4 = xfer.metadata();
+        }
+
+        ALWAYS_INLINE
+        inline Crd dst_crd() const { return Crd {ARG_5}; }
 };
 
 class Sys_reply : public Sys_regs

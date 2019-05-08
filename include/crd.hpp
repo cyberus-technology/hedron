@@ -56,20 +56,47 @@ class Crd
 
         ALWAYS_INLINE
         inline mword base() const { return val >> 12; }
+
+        ALWAYS_INLINE
+        inline mword value() const { return val; }
 };
 
-class Xfer : public Crd
+class Xfer
 {
     private:
-        mword val;
+        Crd   xfer_crd;
+        mword xfer_meta;
 
     public:
         ALWAYS_INLINE
-        inline explicit Xfer (Crd c, mword v) : Crd (c), val (v) {}
+        inline explicit Xfer (Crd c, mword v) : xfer_crd (c), xfer_meta (v) {}
 
         ALWAYS_INLINE
-        inline mword flags() const { return val & 0xfff; }
+        inline mword flags() const { return xfer_meta & 0xfff; }
 
         ALWAYS_INLINE
-        inline mword hotspot() const { return val >> 12; }
+        inline mword hotspot() const { return xfer_meta >> 12; }
+
+        ALWAYS_INLINE
+        inline mword metadata() const { return xfer_meta; }
+
+        ALWAYS_INLINE
+        inline Crd crd() const { return xfer_crd; }
+
+        enum class Kind
+        {
+            TRANSLATE      = 0,
+            DELEGATE       = 1,
+            TRANS_DELEGATE = 2,
+            INVALID        = 3,
+        };
+
+        ALWAYS_INLINE
+        inline Kind kind() const { return Kind (xfer_meta & 0x3); }
+
+        ALWAYS_INLINE
+        inline mword subspaces() const { return (xfer_meta >> 9) & 0x3; }
+
+        ALWAYS_INLINE
+        inline bool from_kern() const { return flags() & 0x800; }
 };
