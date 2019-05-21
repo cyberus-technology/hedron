@@ -18,20 +18,24 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "cpulocal.hpp"
 #include "gdt.hpp"
 #include "memory.hpp"
 #include "tss.hpp"
 
-ALIGNED(8) Gdt Gdt::gdt[SEL_MAX >> 3];
+Gdt &Gdt::gdt(uint32 sel)
+{
+    return Cpulocal::get().gdt[sel >> 3];
+}
 
 void Gdt::build()
 {
-    gdt[SEL_KERN_CODE   >> 3].set32 (CODE_XRA, PAGES, BIT_16, true, 0, 0, ~0ul);
-    gdt[SEL_KERN_DATA   >> 3].set32 (DATA_RWA, PAGES, BIT_16, true, 0, 0, ~0ul);
+    gdt(SEL_KERN_CODE).set32 (CODE_XRA, PAGES, BIT_16, true, 0, 0, ~0ul);
+    gdt(SEL_KERN_DATA).set32 (DATA_RWA, PAGES, BIT_16, true, 0, 0, ~0ul);
 
-    gdt[SEL_USER_CODE   >> 3].set32 (CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
-    gdt[SEL_USER_DATA   >> 3].set32 (DATA_RWA, PAGES, BIT_16, true, 3, 0, ~0ul);
-    gdt[SEL_USER_CODE_L >> 3].set32 (CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
+    gdt(SEL_USER_CODE).set32 (CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
+    gdt(SEL_USER_DATA).set32 (DATA_RWA, PAGES, BIT_16, true, 3, 0, ~0ul);
+    gdt(SEL_USER_CODE_L).set32 (CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
 
-    gdt[SEL_TSS_RUN >> 3].set64 (SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::run), SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::run));
+    gdt(SEL_TSS_RUN).set64 (SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::run), SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::run));
 }

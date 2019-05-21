@@ -20,6 +20,7 @@
 #include "memory.hpp"
 #include "config.hpp"
 #include "compiler.hpp"
+#include "gdt.hpp"
 #include "types.hpp"
 #include "rcu_list.hpp"
 #include "rq.hpp"
@@ -137,6 +138,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     Rcu_list rcu_next;
     Rcu_list rcu_curr;
     Rcu_list rcu_done;
+
+    // Global descriptor table
+    alignas(8) Gdt::Gdt_array gdt;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,
