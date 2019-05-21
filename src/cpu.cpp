@@ -58,26 +58,13 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-unsigned    Cpu::package;
-unsigned    Cpu::core;
-unsigned    Cpu::thread;
-
-Cpu_vendor  Cpu::vendor;
-unsigned    Cpu::platform;
-unsigned    Cpu::family;
-unsigned    Cpu::model;
-unsigned    Cpu::stepping;
-unsigned    Cpu::brand;
-unsigned    Cpu::patch;
-unsigned    Cpu::row;
-
-uint32      Cpu::name[12];
 uint32      Cpu::features[7];
 bool        Cpu::bsp;
 bool        Cpu::preemption;
 
-void Cpu::check_features()
+Cpu_info Cpu::check_features()
 {
+    Cpu_info cpu_info {};
     unsigned top, tpp = 1, cpp = 1;
 
     uint32 eax, ebx, ecx, edx;
@@ -91,11 +78,11 @@ void Cpu::check_features()
             *reinterpret_cast<uint32 const *>(vendor_string[v] + 8) == ecx)
             break;
 
-    vendor = Cpu_vendor (v);
+    cpu_info.vendor = Cpu_vendor (v);
 
-    if (vendor == Cpu_vendor::INTEL) {
+    if (cpu_info.vendor == Cpu_vendor::INTEL) {
         Msr::write<uint64>(Msr::IA32_BIOS_SIGN_ID, 0);
-        platform = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_PLATFORM_ID) >> 50) & 7;
+        cpu_info.platform = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
     switch (static_cast<uint8>(eax)) {
@@ -116,20 +103,22 @@ void Cpu::check_features()
             FALL_THROUGH;
         case 0x1 ... 0x3:
             cpuid (0x1, eax, ebx, features[1], features[0]);
-            family   = (eax >> 8 & 0xf) + (eax >> 20 & 0xff);
-            model    = (eax >> 4 & 0xf) + (eax >> 12 & 0xf0);
-            stepping =  eax & 0xf;
-            brand    =  ebx & 0xff;
+            cpu_info.family   = (eax >> 8 & 0xf) + (eax >> 20 & 0xff);
+            cpu_info.model    = (eax >> 4 & 0xf) + (eax >> 12 & 0xf0);
+            cpu_info.stepping =  eax & 0xf;
+            cpu_info.brand    =  ebx & 0xff;
             top      =  ebx >> 24;
             tpp      =  ebx >> 16 & 0xff;
             FALL_THROUGH;
     }
 
-    patch = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_BIOS_SIGN_ID) >> 32);
+    cpu_info.patch = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_BIOS_SIGN_ID) >> 32);
 
     cpuid (0x80000000, eax, ebx, ecx, edx);
 
     if (eax & 0x80000000) {
+        auto &name {cpu_info.name};
+
         switch (static_cast<uint8>(eax)) {
             default:
                 cpuid (0x8000000a, Vmcb::svm_version(), ebx, ecx, Vmcb::svm_feature());
@@ -156,18 +145,20 @@ void Cpu::check_features()
     unsigned long t_bits = bit_scan_reverse (tpc - 1) + 1;
     unsigned long c_bits = bit_scan_reverse (cpp - 1) + 1;
 
-    thread  = top            & ((1u << t_bits) - 1);
-    core    = top >>  t_bits & ((1u << c_bits) - 1);
-    package = top >> (t_bits + c_bits);
+    cpu_info.thread  = top            & ((1u << t_bits) - 1);
+    cpu_info.core    = top >>  t_bits & ((1u << c_bits) - 1);
+    cpu_info.package = top >> (t_bits + c_bits);
 
     // Disable C1E on AMD Rev.F and beyond because it stops LAPIC clock
-    if (vendor == Cpu_vendor::AMD)
-        if (family > 0xf || (family == 0xf && model >= 0x40))
+    if (cpu_info.vendor == Cpu_vendor::AMD)
+        if (cpu_info.family > 0xf || (cpu_info.family == 0xf && cpu_info.model >= 0x40))
             Msr::write (Msr::AMD_IPMR, Msr::read<uint32>(Msr::AMD_IPMR) & ~(3ul << 27));
 
     // Disable features based on command line arguments
     if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
     if (EXPECT_FALSE (Cmdline::noxsave)) { defeature (FEAT_XSAVE); }
+
+    return cpu_info;
 }
 
 void Cpu::setup_thermal()
@@ -195,7 +186,7 @@ void Cpu::init()
     Idt::load();
 
     // Initialize CPU number and check features
-    check_features();
+    Cpu_info const cpu_info {check_features()};
 
     Lapic::init();
 
@@ -203,7 +194,7 @@ void Cpu::init()
         Fpu::probe();
     }
 
-    row = Console_vga::con.spinner (id());
+    row() = Console_vga::con.spinner (id());
 
     Paddr phys; mword attr;
     Pd::kern->Space_mem::loc[id()] = Hptp (Hpt::current());
@@ -234,13 +225,15 @@ void Cpu::init()
     Vmcs::init();
     Vmcb::init();
 
-    Mca::init();
+    Mca::init(cpu_info);
 
-    trace (TRACE_CPU, "CORE:%x:%x:%x %x:%x:%x:%x [%x] %.48s", package, core, thread, family, model, stepping, platform, patch, reinterpret_cast<char *>(name));
+    trace (TRACE_CPU, "CORE:%x:%x:%x %x:%x:%x:%x [%x] %.48s", cpu_info.package, cpu_info.core, cpu_info.thread,
+           cpu_info.family, cpu_info.model, cpu_info.stepping, cpu_info.platform, cpu_info.patch,
+           reinterpret_cast<char const *>(cpu_info.name));
 
     Fpu::init();
 
-    Hip::add_cpu();
+    Hip::add_cpu(cpu_info);
 
     boot_lock++;
 }

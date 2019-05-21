@@ -47,8 +47,8 @@ class Counter
         template <unsigned D, unsigned B>
         static void print (mword val, Console_vga::Color c, unsigned col)
         {
-            if (EXPECT_FALSE (Cpu::row))
+            if (EXPECT_FALSE (Cpu::row()))
                 for (unsigned i = 0; i < D; i++, val /= B)
-                    Console_vga::con.put (Cpu::row, col - i, c, !i || val ? (val % B)["0123456789ABCDEF"] : ' ');
+                    Console_vga::con.put (Cpu::row(), col - i, c, !i || val ? (val % B)["0123456789ABCDEF"] : ' ');
         }
 };

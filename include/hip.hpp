@@ -29,6 +29,8 @@
 #include "config.hpp"
 #include "extern.hpp"
 
+struct Cpu_info;
+
 class Hip_cpu
 {
     public:
@@ -164,6 +166,6 @@ class Hip
         INIT
         static void add_mhv (Hip_mem *&);
 
-        static void add_cpu();
+        static void add_cpu (Cpu_info const &);
         static void add_check();
 };

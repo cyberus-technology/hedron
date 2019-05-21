@@ -28,16 +28,10 @@
 
 #include "compiler.hpp"
 #include "config.hpp"
+#include "cpuinfo.hpp"
 #include "types.hpp"
 #include "assert.hpp"
 #include "cpulocal.hpp"
-
-enum class Cpu_vendor : unsigned
-{
-    UNKNOWN,
-    INTEL,
-    AMD,
-};
 
 class Cpu
 {
@@ -45,7 +39,7 @@ class Cpu
         static char const * const vendor_string[];
 
         ALWAYS_INLINE
-        static inline void check_features();
+        static inline Cpu_info check_features();
 
         ALWAYS_INLINE
         static inline void setup_thermal();
@@ -170,20 +164,8 @@ class Cpu
 
         CPULOCAL_CONST_ACCESSOR(cpu, id);
         CPULOCAL_ACCESSOR(cpu, hazard);
-        static unsigned package             CPULOCAL;
-        static unsigned core                CPULOCAL;
-        static unsigned thread              CPULOCAL;
+        CPULOCAL_ACCESSOR(cpu, row);
 
-        static Cpu_vendor vendor            CPULOCAL;
-        static unsigned platform            CPULOCAL;
-        static unsigned family              CPULOCAL;
-        static unsigned model               CPULOCAL;
-        static unsigned stepping            CPULOCAL;
-        static unsigned brand               CPULOCAL;
-        static unsigned patch               CPULOCAL;
-        static unsigned row                 CPULOCAL;
-
-        static uint32 name[12]              CPULOCAL;
         static uint32 features[7]           CPULOCAL;
         static bool bsp                     CPULOCAL;
         static bool preemption              CPULOCAL;

@@ -1,9 +1,7 @@
 /*
- * Machine-Check Architecture (MCA)
+ * CPU information
  *
- * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
- *
- * This file is part of the NOVA microhypervisor.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * NOVA is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
@@ -17,14 +15,28 @@
 
 #pragma once
 
-struct Cpu_info;
+#include "types.hpp"
 
-class Mca
+enum class Cpu_vendor : unsigned
 {
-    private:
-        static unsigned banks   CPULOCAL;
+    UNKNOWN,
+    INTEL,
+    AMD,
+};
 
-    public:
-        static void init (Cpu_info const &info);
-        static void vector();
+struct Cpu_info
+{
+    unsigned package;
+    unsigned core;
+    unsigned thread;
+
+    Cpu_vendor vendor;
+    unsigned platform;
+    unsigned family;
+    unsigned model;
+    unsigned stepping;
+    unsigned brand;
+    unsigned patch;
+
+    uint32 name[12];
 };

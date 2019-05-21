@@ -120,6 +120,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     unsigned counter_schedule;
     unsigned counter_helping;
     uint64   counter_cycles_idle;
+
+    // CPU-related variables (that are not performance critical)
+    unsigned cpu_row;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,
