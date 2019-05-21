@@ -21,6 +21,7 @@
 #include "config.hpp"
 #include "compiler.hpp"
 #include "types.hpp"
+#include "rcu_list.hpp"
 #include "rq.hpp"
 #include "vmx_types.hpp"
 
@@ -129,6 +130,13 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // Machine-check variables
     unsigned mca_banks;
+
+    // Read-copy update
+    mword rcu_l_batch;
+    mword rcu_c_batch;
+    Rcu_list rcu_next;
+    Rcu_list rcu_curr;
+    Rcu_list rcu_done;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

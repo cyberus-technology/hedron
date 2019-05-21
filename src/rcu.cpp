@@ -33,29 +33,22 @@
 mword   Rcu::state = RCU_CMP;
 mword   Rcu::count;
 
-mword   Rcu::l_batch;
-mword   Rcu::c_batch;
-
-INIT_PRIORITY (PRIO_LOCAL) Rcu_list Rcu::next;
-INIT_PRIORITY (PRIO_LOCAL) Rcu_list Rcu::curr;
-INIT_PRIORITY (PRIO_LOCAL) Rcu_list Rcu::done;
-
 void Rcu::invoke_batch()
 {
-    for (Rcu_elem *e = done.head, *n = nullptr; n != done.head; e = n) {
+    for (Rcu_elem *e = done().head, *n = nullptr; n != done().head; e = n) {
         n = e->next;
         e->next = nullptr;
         (e->func)(e);
     }
 
-    done.clear();
+    done().clear();
 }
 
 void Rcu::start_batch (State s)
 {
     mword v, m = RCU_CMP | RCU_PND;
 
-    do if ((v = state) >> 2 != l_batch) return; while (!(v & s) && !Atomic::cmp_swap (state, v, v | s));
+    do if ((v = state) >> 2 != l_batch()) return; while (!(v & s) && !Atomic::cmp_swap (state, v, v | s));
 
     if ((v ^ ~s) & m)
         return;
@@ -77,24 +70,24 @@ void Rcu::quiet()
 
 void Rcu::update()
 {
-    if (l_batch != batch()) {
-        l_batch = batch();
+    if (l_batch() != batch()) {
+        l_batch() = batch();
         Cpu::hazard() |= HZD_RCU;
-        Counter::print<1,16> (l_batch, Console_vga::COLOR_LIGHT_GREEN, SPN_RCU);
+        Counter::print<1,16> (l_batch(), Console_vga::COLOR_LIGHT_GREEN, SPN_RCU);
     }
 
-    if (!curr.empty() && complete (c_batch))
-        done.append (&curr);
+    if (!curr().empty() && complete (c_batch()))
+        done().append (&curr());
 
-    if (curr.empty() && !next.empty()) {
-        curr.append (&next);
+    if (curr().empty() && !next().empty()) {
+        curr().append (&next());
 
-        c_batch = l_batch + 1;
+        c_batch() = l_batch() + 1;
 
         start_batch (RCU_PND);
     }
 
-    if (!curr.empty() && !next.empty() && (next.count > 2000 || curr.count > 2000))
+    if (!curr().empty() && !next().empty() && (next().count > 2000 || curr().count > 2000))
         for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
 
             if (!Hip::cpu_online (cpu) || Cpu::id() == cpu)
@@ -103,6 +96,6 @@ void Rcu::update()
             Lapic::send_ipi (cpu, VEC_IPI_IDL);
         }
 
-    if (!done.empty())
+    if (!done().empty())
         invoke_batch();
 }
