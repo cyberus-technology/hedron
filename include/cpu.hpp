@@ -166,8 +166,8 @@ class Cpu
         CPULOCAL_ACCESSOR(cpu, hazard);
         CPULOCAL_ACCESSOR(cpu, row);
 
-        static uint32 features[7]           CPULOCAL;
-        static bool bsp                     CPULOCAL;
+        CPULOCAL_ACCESSOR(cpu, features);
+        CPULOCAL_ACCESSOR(cpu, bsp);
         static bool preemption              CPULOCAL;
 
         static void init();
@@ -175,13 +175,13 @@ class Cpu
         ALWAYS_INLINE
         static inline bool feature (Feature f)
         {
-            return features[f / 32] & 1U << f % 32;
+            return features()[f / 32] & 1U << f % 32;
         }
 
         ALWAYS_INLINE
         static inline void defeature (Feature f)
         {
-            features[f / 32] &= ~(1U << f % 32);
+            features()[f / 32] &= ~(1U << f % 32);
         }
 
         ALWAYS_INLINE

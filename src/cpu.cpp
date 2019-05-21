@@ -58,8 +58,6 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-uint32      Cpu::features[7];
-bool        Cpu::bsp;
 bool        Cpu::preemption;
 
 Cpu_info Cpu::check_features()
@@ -89,20 +87,20 @@ Cpu_info Cpu::check_features()
         default:
             FALL_THROUGH;
         case 0xD:
-            cpuid(0xD, 1, features[6], ebx, ecx, edx);
+            cpuid(0xD, 1, features()[6], ebx, ecx, edx);
             FALL_THROUGH;
         case 0x7 ... 0xC:
-            cpuid (0x7, 0, eax, features[3], ecx, edx);
+            cpuid (0x7, 0, eax, features()[3], ecx, edx);
             FALL_THROUGH;
         case 0x6:
-            cpuid (0x6, features[2], ebx, ecx, edx);
+            cpuid (0x6, features()[2], ebx, ecx, edx);
             FALL_THROUGH;
         case 0x4 ... 0x5:
             cpuid (0x4, 0, eax, ebx, ecx, edx);
             cpp = (eax >> 26 & 0x3f) + 1;
             FALL_THROUGH;
         case 0x1 ... 0x3:
-            cpuid (0x1, eax, ebx, features[1], features[0]);
+            cpuid (0x1, eax, ebx, features()[1], features()[0]);
             cpu_info.family   = (eax >> 8 & 0xf) + (eax >> 20 & 0xff);
             cpu_info.model    = (eax >> 4 & 0xf) + (eax >> 12 & 0xf0);
             cpu_info.stepping =  eax & 0xf;
@@ -133,7 +131,7 @@ Cpu_info Cpu::check_features()
                 cpuid (0x80000002, name[0], name[1], name[2], name[3]);
                 FALL_THROUGH;
             case 0x1:
-                cpuid (0x80000001, eax, ebx, features[5], features[4]);
+                cpuid (0x80000001, eax, ebx, features()[5], features()[4]);
                 FALL_THROUGH;
         }
     }
@@ -190,7 +188,7 @@ void Cpu::init()
 
     Lapic::init();
 
-    if (Cpu::bsp) {
+    if (Cpu::bsp()) {
         Fpu::probe();
     }
 

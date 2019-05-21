@@ -88,7 +88,7 @@ void Lapic::init()
     write (LAPIC_TPR, 0x10);
     write (LAPIC_TMR_DCR, 0xb);
 
-    if ((Cpu::bsp = apic_base & 0x100)) {
+    if ((Cpu::bsp() = apic_base & 0x100)) {
 
         send_ipi (0, 0, DLV_INIT, DSH_EXC_SELF);
 
