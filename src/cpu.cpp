@@ -58,8 +58,6 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
-bool        Cpu::preemption;
-
 Cpu_info Cpu::check_features()
 {
     Cpu_info cpu_info {};

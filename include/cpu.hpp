@@ -168,7 +168,7 @@ class Cpu
 
         CPULOCAL_ACCESSOR(cpu, features);
         CPULOCAL_ACCESSOR(cpu, bsp);
-        static bool preemption              CPULOCAL;
+        CPULOCAL_ACCESSOR(cpu, preemption);
 
         static void init();
 
@@ -187,18 +187,18 @@ class Cpu
         ALWAYS_INLINE
         static inline void preempt_disable()
         {
-            assert (preemption);
+            assert (preemption());
 
             asm volatile ("cli" : : : "memory");
-            preemption = false;
+            preemption() = false;
         }
 
         ALWAYS_INLINE
         static inline void preempt_enable()
         {
-            assert (!preemption);
+            assert (!preemption());
 
-            preemption = true;
+            preemption() = true;
             asm volatile ("sti" : : : "memory");
         }
 

@@ -123,7 +123,7 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
                 (!self && ((mdb == node) || (d + 1 == x->dpth) || !(x->node_attr & attr))));
         assert (x->dpth > node->dpth ? (x->dpth == node->dpth + 1) : true);
 
-        bool preempt = Cpu::preemption;
+        bool preempt = Cpu::preemption();
 
         for (Mdb *ptr;; node = ptr) {
 

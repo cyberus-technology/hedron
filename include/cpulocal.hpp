@@ -125,6 +125,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
     unsigned cpu_row;
     uint32   cpu_features[7];
     bool     cpu_bsp;
+    bool     cpu_preemption;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,
