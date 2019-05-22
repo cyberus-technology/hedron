@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -19,13 +20,39 @@
  */
 
 #include "cpulocal.hpp"
+#include "cpu.hpp"
 #include "hpt.hpp"
 #include "tss.hpp"
 
-ALIGNED(8) Tss Tss::run;
+static_assert((TSS_AREA_E - TSS_AREA) / sizeof (Tss) >= NUM_CPU, "TSS area too small to fit TSSs for all CPUs");
+static_assert(SPC_LOCAL_IOP >= TSS_AREA_E, "IO permission bitmap must lie behind TSS area");
+static_assert(SPC_LOCAL_IOP_E - TSS_AREA < (1 << 16), "TSS and IO permission bitmap must fit in a 64K segment");
+
+Tss &Tss::run_remote (unsigned id)
+{
+    assert (id < NUM_CPU);
+    return reinterpret_cast<Tss *>(TSS_AREA)[id];
+}
+
+Tss &Tss::run()
+{
+    return run_remote (Cpu::id());
+}
+
+void Tss::setup()
+{
+    Hptp hptp {reinterpret_cast<mword>(&PDBR)};
+
+    for (mword page = TSS_AREA; page < TSS_AREA_E; page += PAGE_SIZE) {
+        hptp.update (page, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_W | Hpt::HPT_P,
+                     Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0)));
+    }
+}
 
 void Tss::build()
 {
-    run.sp0     = reinterpret_cast<mword>(&Cpulocal::get().self);
-    run.iobm    = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&run));
+    auto &tss {run()};
+
+    tss.sp0  = reinterpret_cast<mword>(&Cpulocal::get().self);
+    tss.iobm = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&tss));
 }

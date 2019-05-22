@@ -80,12 +80,12 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp, unsigned cpu) : rev (b
     write (HOST_CR4, get_cr4());
 
     write (HOST_BASE_GS,   reinterpret_cast<mword>(&Cpulocal::get_remote(cpu).self));
-    write (HOST_BASE_TR,   reinterpret_cast<mword>(&Tss::run));
+    write (HOST_BASE_TR,   reinterpret_cast<mword>(&Tss::run_remote(cpu)));
     write (HOST_BASE_GDTR, reinterpret_cast<mword>(&Cpulocal::get_remote(cpu).gdt));
     write (HOST_BASE_IDTR, reinterpret_cast<mword>(Idt::idt));
 
     write (HOST_SYSENTER_CS,  SEL_KERN_CODE);
-    write (HOST_SYSENTER_ESP, reinterpret_cast<mword>(&Tss::run.sp0));
+    write (HOST_SYSENTER_ESP, reinterpret_cast<mword>(&Tss::run_remote(cpu).sp0));
     write (HOST_SYSENTER_EIP, reinterpret_cast<mword>(&entry_sysenter));
 
     write (HOST_RSP, esp);

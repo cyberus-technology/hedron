@@ -31,6 +31,7 @@
 
 // 0xffff_ffff_c000_2000 SPC_LOCAL_IOP_E
 // 0xffff_ffff_c000_0000 SPC_LOCAL / SPC_LOCAL_IOP
+// 0xffff_ffff_bfff_e000 TSS_AREA
 // 0xffff_ffff_bfff_d000 CPU_LOCAL_DATA
 // 0xffff_ffff_bfff_c000 CPU_LOCAL_APIC
 // 0xffff_ffff_bfe0_0000 CPU_LOCAL
@@ -56,6 +57,9 @@
 
 #define CPU_LOCAL_APIC  (SPC_LOCAL - PAGE_SIZE * 4)
 #define CPU_LOCAL_DATA  (SPC_LOCAL - PAGE_SIZE * 3)
+
+#define TSS_AREA        (SPC_LOCAL - PAGE_SIZE * 2)
+#define TSS_AREA_E      (SPC_LOCAL)
 
 #define SPC_LOCAL_IOP   (SPC_LOCAL)
 #define SPC_LOCAL_IOP_E (SPC_LOCAL_IOP + PAGE_SIZE * 2)
