@@ -62,7 +62,6 @@
     #endif
 
         #define ALIGNED(X)          __attribute__((aligned(X)))
-        #define CPULOCAL            __attribute__((section (".cpulocal,\"w\",@nobits#")))
         #define FORMAT(X,Y)         __attribute__((format (printf, (X),(Y))))
         #define INIT                __attribute__((section (".init")))
         #define INITDATA            __attribute__((section (".initdata")))

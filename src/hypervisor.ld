@@ -110,11 +110,6 @@ SECTIONS
 
     } : kern
 
-    .cpulocal CPU_LOCAL_DATA :
-    {
-        *(SORT_BY_ALIGNMENT(.cpulocal))
-    }
-
     /DISCARD/ :
     {
         *(.note.GNU-stack)

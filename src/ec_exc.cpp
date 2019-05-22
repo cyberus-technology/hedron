@@ -75,9 +75,6 @@ bool Ec::handle_exc_pf (Exc_regs *r)
     if (r->err & Hpt::ERR_U)
         return addr < USER_ADDR && Pd::current()->Space_mem::loc[Cpu::id()].sync_user (Pd::current()->Space_mem::hpt, addr);
 
-    if (addr >= LINK_ADDR && addr < CPU_LOCAL && Pd::current()->Space_mem::loc[Cpu::id()].sync_from (Hptp (reinterpret_cast<mword>(&PDBR)), addr, CPU_LOCAL))
-        return true;
-
     // Kernel fault in I/O space
     if (addr >= SPC_LOCAL_IOP && addr <= SPC_LOCAL_IOP_E) {
         Space_pio::page_fault (addr, r->err);
