@@ -83,7 +83,5 @@ bool Space_obj::insert_root (Kobject *obj)
 void Space_obj::page_fault (mword addr, mword error)
 {
     assert (!(error & Hpt::ERR_W));
-
-    if (!Pd::current()->Space_mem::loc[Cpu::id()].sync_from (Pd::current()->Space_mem::hpt, addr, CPU_LOCAL))
-        Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt::HPT_NX | Hpt::HPT_A | Hpt::HPT_P);
+    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt::HPT_NX | Hpt::HPT_A | Hpt::HPT_P);
 }

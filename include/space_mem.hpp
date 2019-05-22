@@ -31,7 +31,6 @@
 class Space_mem : public Space
 {
     public:
-        Hpt loc[NUM_CPU];
         Hpt hpt;
         Dpt dpt;
         union {

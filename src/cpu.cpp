@@ -171,8 +171,6 @@ void Cpu::setup_sysenter()
 
 void Cpu::init()
 {
-    for (void (**func)() = &CTORS_L; func != &CTORS_C; (*func++)()) ;
-
     Gdt::build();
     Tss::build();
 
@@ -192,7 +190,6 @@ void Cpu::init()
 
     row() = Console_vga::con.spinner (id());
 
-    Pd::kern->Space_mem::loc[id()] = Hptp (Hpt::current());
     Hpt::ord = min (Hpt::ord, feature (FEAT_1GB_PAGES) ? 26UL : 17UL);
 
     if (EXPECT_TRUE (feature (FEAT_ACPI)))

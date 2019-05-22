@@ -22,6 +22,7 @@
 #pragma once
 
 #include "arch.hpp"
+#include "assert.hpp"
 #include "pte.hpp"
 
 class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
@@ -72,13 +73,9 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
 
         inline void make_current (mword pcid)
         {
+            assert ((val & PAGE_MASK) == 0);
             asm volatile ("mov %0, %%cr3" : : "r" (val | pcid) : "memory");
         }
-
-        bool sync_user (Hpt, mword);
-        bool sync_from (Hpt, mword, mword);
-
-        void sync_master_range (mword, mword);
 
         Paddr replace (mword, mword);
 
@@ -97,6 +94,10 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
 
         static bool dest_loc (Paddr, mword v, unsigned l) { return v >= USER_ADDR && l >= 3; }
         static bool iter_loc_lev(unsigned l, mword) { return l > 3; }
+
+        // Performs a deep copy of the page table structures referenced from
+        // this page table entry.
+        Hpt copy (unsigned lvl = 0) const;
 };
 
 class Hptp : public Hpt

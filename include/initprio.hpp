@@ -25,5 +25,4 @@
 #define PRIO_GLOBAL     100
 #define PRIO_BUDDY      AFTER (PRIO_GLOBAL)
 #define PRIO_SLAB       AFTER (PRIO_BUDDY)
-#define PRIO_CONSOLE    0xfffd
-#define PRIO_LOCAL      0xfffe
+#define PRIO_CONSOLE    0xfffe

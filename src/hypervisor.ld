@@ -67,10 +67,8 @@ SECTIONS
 
     .init_array : AT (ADDR (.init_array) - OFFSET)
     {
-        PROVIDE (CTORS_L = .);
-        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.65534) SORT_BY_INIT_PRIORITY(.ctors.00001)))
         PROVIDE (CTORS_C = .);
-        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.65533) SORT_BY_INIT_PRIORITY(.ctors.00002)))
+        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.65534) SORT_BY_INIT_PRIORITY(.ctors.00001)))
         PROVIDE (CTORS_G = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array .ctors))

@@ -149,6 +149,7 @@ class Lapic
         }
 
         static void init();
+        static void setup();
 
         static void send_ipi (unsigned, unsigned, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
 

@@ -148,12 +148,6 @@ __start_all:            INIT_STATE
 3:
                         call    setup_cpulocal
                         mov     %REG(ax), %REG(sp)
-                        call    kern_ptab_setup
 
-                        movabs  $(start), %REG(bx)
+                        movabs  $(bootstrap), %REG(bx)
                         jmp     *%REG(bx)
-
-.text
-
-start:                  mov     %REG(ax), %cr3
-                        jmp     bootstrap

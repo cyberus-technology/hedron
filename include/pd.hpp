@@ -65,7 +65,11 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
     public:
         CPULOCAL_ACCESSOR(pd, current);
-        static No_destruct<Pd> kern, root;
+        static No_destruct<Pd> kern;
+
+        // The roottask is privileged and can map arbitrary physical memory that
+        // is not claimed by the hypervisor.
+        bool const is_priv = false;
 
         void *get_access_page();
 
@@ -73,7 +77,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         Pd (Pd *);
         ~Pd();
 
-        Pd (Pd *own, mword sel, mword a);
+        Pd (Pd *own, mword sel, mword a, bool priv = false);
 
         HOT
         inline void make_current()
@@ -99,7 +103,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
             bool ok = current()->add_ref();
             assert (ok);
 
-            loc[Cpu::id()].make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
+            hpt.make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
         }
 
         static inline Pd *remote (unsigned c)
