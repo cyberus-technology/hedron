@@ -21,6 +21,7 @@
 #pragma once
 
 #include "crd.hpp"
+#include "nodestruct.hpp"
 #include "space_mem.hpp"
 #include "space_obj.hpp"
 #include "space_pio.hpp"
@@ -63,7 +64,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
     public:
         static Pd *current CPULOCAL_HOT;
-        static Pd kern, root;
+        static No_destruct<Pd> kern, root;
 
         void *get_access_page();
 
@@ -133,6 +134,9 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
         ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
+
+        ALWAYS_INLINE
+        static inline void *operator new (size_t, void *p) { return p; }
 
         ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }

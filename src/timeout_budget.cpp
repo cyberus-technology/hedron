@@ -21,7 +21,7 @@
 #include "timeout_budget.hpp"
 
 INIT_PRIORITY (PRIO_LOCAL)
-Timeout_budget Timeout_budget::budget;
+No_destruct<Timeout_budget> Timeout_budget::budget;
 
 void Timeout_budget::trigger()
 {

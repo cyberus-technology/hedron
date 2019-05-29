@@ -18,6 +18,7 @@
 #pragma once
 
 #include "timeout.hpp"
+#include "nodestruct.hpp"
 
 class Timeout_budget : public Timeout
 {
@@ -25,5 +26,8 @@ class Timeout_budget : public Timeout
         void trigger();
 
     public:
-        static Timeout_budget budget CPULOCAL;
+        static No_destruct<Timeout_budget> budget CPULOCAL;
+
+        ALWAYS_INLINE
+        static inline void *operator new (size_t, void *p) { return p; }
 };

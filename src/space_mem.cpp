@@ -33,7 +33,7 @@ unsigned Space_mem::did_ctr;
 void Space_mem::init (unsigned cpu)
 {
     if (cpus.set (cpu)) {
-        loc[cpu].sync_from (Pd::kern.loc[cpu], CPU_LOCAL, SPC_LOCAL);
+        loc[cpu].sync_from (Pd::kern->loc[cpu], CPU_LOCAL, SPC_LOCAL);
         loc[cpu].sync_master_range (LINK_ADDR, CPU_LOCAL);
     }
 }

@@ -36,7 +36,7 @@ struct Pci::quirk_map Pci::map[] INITDATA =
 
 Pci::Pci (unsigned r, unsigned l) : List<Pci> (list), reg_base (hwdev_addr -= PAGE_SIZE), rid (static_cast<uint16>(r)), lev (static_cast<uint16>(l))
 {
-    Pd::kern.Space_mem::insert (reg_base, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_UC | Hpt::HPT_W | Hpt::HPT_P, cfg_base + (rid << PAGE_BITS));
+    Pd::kern->Space_mem::insert (reg_base, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_UC | Hpt::HPT_W | Hpt::HPT_P, cfg_base + (rid << PAGE_BITS));
 
     for (unsigned i = 0; i < sizeof map / sizeof *map; i++)
         if (read<uint16>(REG_VID) == map[i].vid && read<uint16>(REG_DID) == map[i].did)

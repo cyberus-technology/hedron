@@ -33,3 +33,35 @@ static inline T max (T v1, T v2)
 {
     return v1 > v2 ? v1 : v2;
 }
+
+template <typename T, T v>
+struct integral_constant
+{
+        using value_type = T;
+
+        static constexpr value_type value = v;
+        constexpr operator value_type() const { return v; }
+};
+
+using true_type  = integral_constant<bool, true>;
+using false_type = integral_constant<bool, false>;
+
+template <typename T> struct remove_reference       { using type = T; };
+template <typename T> struct remove_reference<T &>  { using type = T; };
+template <typename T> struct remove_reference<T &&> { using type = T; };
+
+template <typename T> struct is_lvalue_reference     : false_type {};
+template <typename T> struct is_lvalue_reference<T&> : true_type  {};
+
+template <typename T>
+constexpr T &&forward (typename remove_reference<T>::type &arg)
+{
+    return static_cast<T &&>(arg);
+}
+
+template <typename T>
+constexpr T &&forward (typename remove_reference<T>::type &&arg)
+{
+    static_assert(not is_lvalue_reference<T>::value, "Invalid rvalue to lvalue conversion");
+    return static_cast<T &&>(arg);
+}
