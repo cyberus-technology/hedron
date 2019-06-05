@@ -377,7 +377,6 @@ bool Ec::fixup (mword &eip)
 void Ec::die (char const *reason, Exc_regs *r)
 {
     if (current()->utcb || current()->pd == &Pd::kern) {
-        if (strcmp(reason, "PT not found"))
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else
