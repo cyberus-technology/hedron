@@ -27,6 +27,7 @@
 
 #include "bits.hpp"
 #include "cmdline.hpp"
+#include "cpu.hpp"
 #include "counter.hpp"
 #include "fpu.hpp"
 #include "gdt.hpp"
@@ -40,6 +41,7 @@
 #include "svm.hpp"
 #include "tss.hpp"
 #include "vmx.hpp"
+#include "x86.hpp"
 
 char const * const Cpu::vendor_string[] =
 {

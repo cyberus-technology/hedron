@@ -228,18 +228,6 @@ class Cpu
         }
 
         ALWAYS_INLINE
-        static inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
-        {
-            asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf));
-        }
-
-        ALWAYS_INLINE
-        static inline void cpuid (unsigned leaf, unsigned subleaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
-        {
-            asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
-        }
-
-        ALWAYS_INLINE
         static unsigned find_by_apic_id (unsigned x)
         {
             for (unsigned i = 0; i < NUM_CPU; i++)
