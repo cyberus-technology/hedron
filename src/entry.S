@@ -195,8 +195,6 @@ ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
 entry_sysenter:         mov     PREG(sp), PREG(11)
                         swapgs
                         mov     %gs:8, PREG(sp) // Per_cpu::sys_entry_stack
-                        lea     -11*PTR_SIZE(%REG(sp)), %REG(sp)
-
                         SAVE_GPR
                         RESTORE_STACK
                         and     $0xf, %ARG_1

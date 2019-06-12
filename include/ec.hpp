@@ -237,10 +237,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             assert (ok);
 
             // Set the stack to just behind the register block to be able to use
-            // push instructions to fill it.
-            auto exc_stack {exc_regs() + 1};
-            Tss::run.sp0 = reinterpret_cast<mword>(exc_stack);
-            Cpulocal::set_sys_entry_stack (exc_stack);
+            // push instructions to fill it. System call entry points need to
+            // preserve less state.
+            Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+            Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
             pd->make_current();
 
