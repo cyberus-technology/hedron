@@ -99,27 +99,27 @@ __start_bsp:            mov     $(__start_bsp - __start_ap), %ecx
                         mov     $0x1000, %edi
                         rep     movsb
                         mov     $(LVL3L + 0x27), %ecx
-                        mov     %ecx, LVL4  + SIZE * (LOAD_ADDR >> (3 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
+                        mov     %ecx, LVL4  + PTR_SIZE * (LOAD_ADDR >> (3 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
                         mov     $(LVL2L + 0x27), %ecx
-                        mov     %ecx, LVL3L + SIZE * (LOAD_ADDR >> (2 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
+                        mov     %ecx, LVL3L + PTR_SIZE * (LOAD_ADDR >> (2 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
 
                         mov     $(LVL3H + 0x27), %ecx
-                        mov     %ecx, LVL4  + SIZE * (LINK_ADDR >> (3 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
+                        mov     %ecx, LVL4  + PTR_SIZE * (LINK_ADDR >> (3 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
                         mov     $(LVL2H + 0x27), %ecx
-                        mov     %ecx, LVL3H + SIZE * (LINK_ADDR >> (2 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
+                        mov     %ecx, LVL3H + PTR_SIZE * (LINK_ADDR >> (2 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
                         mov     $0xe3, %ecx
                         mov     $LVL2L, %edi
 1:                      mov     %ecx, (%edi)
                         add     $(1 << (PTE_BPL + PAGE_BITS)), %ecx
-                        add     $SIZE, %edi
+                        add     $PTR_SIZE, %edi
                         cmp     $LOAD_E, %ecx
                         jb      1b
 
                         mov     $(LINK_P + 0x1e3), %ecx
-                        mov     $(LVL2H + SIZE * (LINK_ADDR >> (PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))), %edi
+                        mov     $(LVL2H + PTR_SIZE * (LINK_ADDR >> (PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))), %edi
 1:                      mov     %ecx, (%edi)
                         add     $(1 << (PTE_BPL + PAGE_BITS)), %ecx
-                        add     $SIZE, %edi
+                        add     $PTR_SIZE, %edi
                         cmp     $LINK_E, %ecx
                         jb      1b
 

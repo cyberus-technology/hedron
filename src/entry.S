@@ -184,7 +184,7 @@ ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
                         jnz     ret_user_iret
                         call    chk_kern_preempt
                         LOAD_GPR
-                        add     $(6 * SIZE), %REG(sp)
+                        add     $(6 * PTR_SIZE), %REG(sp)
                         RET_USER_EXC
 
 /*
@@ -195,11 +195,12 @@ ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
 entry_sysenter:         mov     PREG(sp), PREG(11)
                         swapgs
                         mov     %gs:8, PREG(sp) // Per_cpu::sys_entry_stack
-                        lea     -11*SIZE(%REG(sp)), %REG(sp)
+                        lea     -11*PTR_SIZE(%REG(sp)), %REG(sp)
+
                         SAVE_GPR
                         RESTORE_STACK
                         and     $0xf, %ARG_1
-                        jmp     *syscall(,%ARG_1,SIZE)
+                        jmp     *syscall(,%ARG_1,PTR_SIZE)
 
 /*
  * VMX Entry
