@@ -1,7 +1,7 @@
-ifndef CC
+ifeq ($(CC),)
 CC=gcc
 endif
 
-ifndef CXX
+ifeq ($(CXX),)
 CXX=g++
 endif
