@@ -85,6 +85,8 @@
         #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
                                     ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
 
+        #define OFFSETOF(type, m)   __builtin_offsetof (type, m)
+
 #else
         #define COMPILER            "unknown compiler"
         #define COMPILER_VERSION    0

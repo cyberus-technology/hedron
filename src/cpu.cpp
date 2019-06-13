@@ -27,6 +27,7 @@
 
 #include "bits.hpp"
 #include "cmdline.hpp"
+#include "cpu.hpp"
 #include "counter.hpp"
 #include "fpu.hpp"
 #include "gdt.hpp"
@@ -40,6 +41,7 @@
 #include "svm.hpp"
 #include "tss.hpp"
 #include "vmx.hpp"
+#include "x86.hpp"
 
 char const * const Cpu::vendor_string[] =
 {
@@ -62,7 +64,7 @@ unsigned    Cpu::package;
 unsigned    Cpu::core;
 unsigned    Cpu::thread;
 
-Cpu::Vendor Cpu::vendor;
+Cpu_vendor  Cpu::vendor;
 unsigned    Cpu::platform;
 unsigned    Cpu::family;
 unsigned    Cpu::model;
@@ -91,9 +93,9 @@ void Cpu::check_features()
             *reinterpret_cast<uint32 const *>(vendor_string[v] + 8) == ecx)
             break;
 
-    vendor = Vendor (v);
+    vendor = Cpu_vendor (v);
 
-    if (vendor == INTEL) {
+    if (vendor == Cpu_vendor::INTEL) {
         Msr::write<uint64>(Msr::IA32_BIOS_SIGN_ID, 0);
         platform = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
@@ -161,7 +163,7 @@ void Cpu::check_features()
     package = top >> (t_bits + c_bits);
 
     // Disable C1E on AMD Rev.F and beyond because it stops LAPIC clock
-    if (vendor == AMD)
+    if (vendor == Cpu_vendor::AMD)
         if (family > 0xf || (family == 0xf && model >= 0x40))
             Msr::write (Msr::AMD_IPMR, Msr::read<uint32>(Msr::AMD_IPMR) & ~(3ul << 27));
 

@@ -68,6 +68,18 @@ static inline uint64 rdtsc()
 }
 
 ALWAYS_INLINE
+static inline void cpuid (unsigned leaf, unsigned subleaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
+{
+    asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
+}
+
+ALWAYS_INLINE
+static inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
+{
+    cpuid (leaf, 0, eax, ebx, ecx, edx);
+}
+
+ALWAYS_INLINE
 static inline mword get_cr0()
 {
     mword cr0;

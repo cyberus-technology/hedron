@@ -87,7 +87,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
                                   pd->Space_pio::walk(),
                                   pd->loc[c].root(),
-                                  pd->ept.root());
+                                  pd->ept.root(),
+                                  c);
 
             regs.nst_ctrl<Vmcs>();
 
@@ -228,7 +229,7 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG RET_USER_EXC) : : "m" (current->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current->regs) : "memory");
 
     UNREACHED;
 }
@@ -267,8 +268,8 @@ void Ec::ret_user_vmresume()
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
-                  "mov %1," EXPAND (PREG(sp);)
-                  : : "m" (current->regs), "i" (CPU_LOCAL_STCK + PAGE_SIZE) : "memory");
+                  "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
+                  : : "m" (current->regs) : "memory");
 
     trace (0, "VM entry failed with error %#lx", Vmcs::read (Vmcs::VMX_INST_ERROR));
 
@@ -298,12 +299,12 @@ void Ec::ret_user_vmrun()
                   "vmsave;"
                   EXPAND (SAVE_GPR)
                   "mov %1," EXPAND (PREG(ax);)
-                  "mov %2," EXPAND (PREG(sp);)
+                  "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
                   "vmload;"
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
-                  : : "m" (current->regs), "m" (Vmcb::root), "i" (CPU_LOCAL_STCK + PAGE_SIZE) : "memory");
+                  : : "m" (current->regs), "m" (Vmcb::root) : "memory");
 
     UNREACHED;
 }

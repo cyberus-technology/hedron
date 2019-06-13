@@ -29,7 +29,7 @@
 
 #define ARCH            "x86_64"
 #define WORD            .quad
-#define SIZE            8
+#define PTR_SIZE        8
 #define ELF_PHDR        Ph64
 #define ELF_CLASS       2
 #define ELF_MACHINE     62
@@ -47,11 +47,8 @@
 #define OFS_VEC         0xa8
 #define OFS_CS          0xb8
 
-#define LOAD_KSP        mov     PREG(sp), PREG(11);     \
-                        mov     tss_run + 4, PREG(sp)
-
-#define SAVE_SEG        sub     $(4 * SIZE), PREG(sp);
-#define LOAD_SEG        add     $(6 * SIZE), PREG(sp);
+#define SAVE_SEG        sub     $(4 * PTR_SIZE), PREG(sp);
+#define LOAD_SEG        add     $(6 * PTR_SIZE), PREG(sp);
 
 #define SAVE_GPR        push    PREG(ax);               \
                         push    PREG(cx);               \
@@ -89,6 +86,7 @@
 
 #define RET_USER_HYP    mov     PREG(11), PREG(sp);     \
                         mov     $0x200, PREG(11);       \
+                        swapgs;                         \
                         sysretq;
 
 #define RET_USER_EXC    iretq;

@@ -25,6 +25,7 @@
 
 #include "assert.hpp"
 #include "msr.hpp"
+#include "vmx_types.hpp"
 
 class Vmcs
 {
@@ -34,61 +35,13 @@ class Vmcs
 
         static Vmcs *current CPULOCAL_HOT;
 
-        static unsigned vpid_ctr CPULOCAL;
-
-        static union vmx_basic {
-            uint64      val;
-            struct {
-                uint32  revision;
-                uint32  size        : 13,
-                                    :  3,
-                        width       :  1,
-                        dual        :  1,
-                        type        :  4,
-                        insouts     :  1,
-                        ctrl        :  1;
-            };
-        } basic CPULOCAL;
-
-        static union vmx_ept_vpid {
-            uint64      val;
-            struct {
-                uint32              : 16,
-                        super       :  2,
-                                    :  2,
-                        invept      :  1,
-                                    : 11;
-                uint32  invvpid     :  1;
-            };
-        } ept_vpid CPULOCAL;
-
-        static union vmx_ctrl_pin {
-            uint64      val;
-            struct {
-                uint32  set, clr;
-            };
-        } ctrl_pin CPULOCAL;
-
-        static union vmx_ctrl_cpu {
-            uint64      val;
-            struct {
-                uint32  set, clr;
-            };
-        } ctrl_cpu[2] CPULOCAL;
-
-        static union vmx_ctrl_exi {
-            uint64      val;
-            struct {
-                uint32  set, clr;
-            };
-        } ctrl_exi CPULOCAL;
-
-        static union vmx_ctrl_ent {
-            uint64      val;
-            struct {
-                uint32  set, clr;
-            };
-        } ctrl_ent CPULOCAL;
+        static unsigned     vpid_ctr    CPULOCAL;
+        static vmx_basic    basic       CPULOCAL;
+        static vmx_ept_vpid ept_vpid    CPULOCAL;
+        static vmx_ctrl_pin ctrl_pin    CPULOCAL;
+        static vmx_ctrl_cpu ctrl_cpu[2] CPULOCAL;
+        static vmx_ctrl_exi ctrl_exi    CPULOCAL;
+        static vmx_ctrl_ent ctrl_ent    CPULOCAL;
 
         static mword fix_cr0_set CPULOCAL;
         static mword fix_cr0_clr CPULOCAL;
@@ -387,7 +340,7 @@ class Vmcs
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
         }
 
-        Vmcs (mword, mword, mword, uint64);
+        Vmcs (mword, mword, mword, uint64, unsigned);
 
         ALWAYS_INLINE
         inline Vmcs() : rev (basic.revision)

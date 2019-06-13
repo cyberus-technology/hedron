@@ -1,10 +1,12 @@
 /*
- * Task State Segment (TSS)
+ * Run Queue
  *
  * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
- * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
+ * Copyright (C) 2013-2014 Alexander Boettcher, Genode Labs GmbH
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -18,14 +20,13 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "cpulocal.hpp"
-#include "hpt.hpp"
-#include "tss.hpp"
+#pragma once
 
-ALIGNED(8) Tss Tss::run;
+#include "spinlock.hpp"
 
-void Tss::build()
-{
-    run.sp0     = reinterpret_cast<mword>(&Cpulocal::get().self);
-    run.iobm    = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&run));
-}
+class Sc;
+
+struct Rq {
+    Spinlock lock;
+    Sc *queue;
+};

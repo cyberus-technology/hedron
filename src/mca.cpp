@@ -43,7 +43,7 @@ void Mca::init()
 
     banks = cap & 0xff;
 
-    for (unsigned i = (Cpu::vendor == Cpu::INTEL && Cpu::family == 6 && Cpu::model < 0x1a); i < banks; i++) {
+    for (unsigned i = (Cpu::vendor == Cpu_vendor::INTEL && Cpu::family == 6 && Cpu::model < 0x1a); i < banks; i++) {
         Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_CTL), ~0ULL);
         Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_STATUS), 0);
     }

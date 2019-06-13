@@ -41,13 +41,13 @@ void Fpu::probe()
         uint32 valid_xcr0_lo, valid_xcr0_hi, current_context, discard;
         uint64 xcr0;
 
-        Cpu::cpuid (0xD, 0, valid_xcr0_lo, discard, discard, valid_xcr0_hi);
+        cpuid (0xD, 0, valid_xcr0_lo, discard, discard, valid_xcr0_hi);
 
         xcr0 = static_cast<uint64>(valid_xcr0_lo) << 32 | valid_xcr0_lo;
         xcr0 &= supported_xsave_state;
         xsave_enable (xcr0);
 
-        Cpu::cpuid (0xD, 0, discard, current_context, discard, discard);
+        cpuid (0xD, 0, discard, current_context, discard, discard);
 
         Fpu::config = { xcr0, current_context,
                         Cpu::feature (Cpu::FEAT_XSAVEOPT) ? Fpu::Mode::XSAVEOPT : Fpu::Mode::XSAVE };

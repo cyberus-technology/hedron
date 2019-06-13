@@ -25,6 +25,7 @@
 #pragma once
 
 #include "counter.hpp"
+#include "cpulocal.hpp"
 #include "fpu.hpp"
 #include "mtd.hpp"
 #include "pd.hpp"
@@ -235,11 +236,15 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             bool ok = current->add_ref();
             assert (ok);
 
+            // Set the stack to just behind the register block to be able to use
+            // push instructions to fill it. System call entry points need to
+            // preserve less state.
             Tss::run.sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+            Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
             pd->make_current();
 
-            asm volatile ("mov %0," EXPAND (PREG(sp);) "jmp *%1" : : "g" (CPU_LOCAL_STCK + PAGE_SIZE), "q" (cont) : "memory"); UNREACHED;
+            asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
         }
 
         ALWAYS_INLINE

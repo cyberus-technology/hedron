@@ -23,6 +23,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "rq.hpp"
 
 class Ec;
 
@@ -46,10 +47,7 @@ class Sc : public Kobject, public Refcount
 
         static Slab_cache cache;
 
-        static struct Rq {
-            Spinlock    lock;
-            Sc *        queue;
-        } rq CPULOCAL;
+        static Rq rq CPULOCAL;
 
         static Sc *list[priorities] CPULOCAL;
 

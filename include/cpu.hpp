@@ -31,6 +31,13 @@
 #include "types.hpp"
 #include "assert.hpp"
 
+enum class Cpu_vendor : unsigned
+{
+    UNKNOWN,
+    INTEL,
+    AMD,
+};
+
 class Cpu
 {
     private:
@@ -43,13 +50,6 @@ class Cpu
         static inline void setup_thermal();
 
     public:
-        enum Vendor
-        {
-            UNKNOWN,
-            INTEL,
-            AMD
-        };
-
         enum Feature
         {
             FEAT_MCE            =  7,
@@ -173,7 +173,7 @@ class Cpu
         static unsigned core                CPULOCAL;
         static unsigned thread              CPULOCAL;
 
-        static Vendor   vendor              CPULOCAL;
+        static Cpu_vendor vendor            CPULOCAL;
         static unsigned platform            CPULOCAL;
         static unsigned family              CPULOCAL;
         static unsigned model               CPULOCAL;
@@ -225,18 +225,6 @@ class Cpu
             mword flags = 0;
             asm volatile ("pushf; pop %0" : "=r" (flags));
             return flags & 0x200;
-        }
-
-        ALWAYS_INLINE
-        static inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
-        {
-            asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf));
-        }
-
-        ALWAYS_INLINE
-        static inline void cpuid (unsigned leaf, unsigned subleaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
-        {
-            asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
         }
 
         ALWAYS_INLINE
