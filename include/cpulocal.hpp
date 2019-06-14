@@ -55,7 +55,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // This member is pointed to by %gs:0 and points to itself, i.e. the stack
     // pointer value for an empty stack.
-    void *self {&self};
+    void * const self {const_cast<void **>(&self)};
 
     // The system call entry point dumps userspace state here.
     void *sys_entry_stack {nullptr};
