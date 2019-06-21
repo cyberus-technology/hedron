@@ -16,7 +16,7 @@ FFLAGS += -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threads
 FFLAGS += -fno-stack-protector
 FFLAGS += -fvisibility-inlines-hidden
 FFLAGS += -fdiagnostics-color=auto
-FFLAGS += -std=gnu++11
+FFLAGS += -std=c++14
 FFLAGS += -mno-sse
 FFLAGS += -mno-mmx
 FFLAGS += -mno-3dnow
