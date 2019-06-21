@@ -24,39 +24,33 @@ class Atomic
 {
     public:
         template <typename T>
-        static inline bool cmp_swap (T &ptr, T o, T n) { return __sync_bool_compare_and_swap (&ptr, o, n); }
+        static inline bool cmp_swap (T &ptr, T o, T n)
+        {
+            return __atomic_compare_exchange_n (&ptr, &o, n, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        }
 
         template <typename T>
-        static inline T load (T &ptr) { return __atomic_load_n(&ptr, __ATOMIC_SEQ_CST); }
+        static inline T load (T &ptr) { return __atomic_load_n (&ptr, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline void store (T &ptr, T n) { __atomic_store_n(&ptr, n, __ATOMIC_SEQ_CST); }
+        static inline void store (T &ptr, T n) { __atomic_store_n (&ptr, n, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline T add (T &ptr, T v) { return __sync_add_and_fetch (&ptr, v); }
+        static inline T add (T &ptr, T v) { return __atomic_fetch_add (&ptr, v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline T sub (T &ptr, T v) { return __sync_sub_and_fetch (&ptr, v); }
+        static inline T sub (T &ptr, T v) { return __atomic_fetch_sub (&ptr, v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline void set_mask (T &ptr, T v) { __sync_or_and_fetch (&ptr, v); }
+        static inline void set_mask (T &ptr, T v) { __atomic_fetch_or (&ptr, v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline void clr_mask (T &ptr, T v) { __sync_and_and_fetch (&ptr, ~v); }
+        static inline void clr_mask (T &ptr, T v) { __atomic_fetch_and (&ptr, ~v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
         static inline bool test_set_bit (T &val, unsigned long bit)
         {
-            bool ret;
-            asm volatile ("lock; bts%z1 %2, %1; setc %0" : "=q" (ret), "+m" (val) : "ir" (bit) : "cc");
-            return ret;
-        }
-
-        template <typename T>
-        static inline bool test_clr_bit (T &val, unsigned long bit)
-        {
-            bool ret;
-            asm volatile ("lock; btr%z1 %2, %1; setc %0" : "=q" (ret), "+m" (val) : "ir" (bit) : "cc");
-            return ret;
+            auto const bitmask {static_cast<T>(1) << bit};
+            return __atomic_fetch_or (&val, bitmask, __ATOMIC_SEQ_CST) & bitmask;
         }
 };
