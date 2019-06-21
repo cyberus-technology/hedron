@@ -50,7 +50,6 @@ class Gsi
         static void mask (unsigned);
         static void unmask (unsigned);
 
-        ALWAYS_INLINE
         static inline unsigned irq_to_gsi (unsigned irq)
         {
             assert (irq < NUM_IRQ);

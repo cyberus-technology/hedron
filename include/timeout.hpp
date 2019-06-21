@@ -32,13 +32,10 @@ class Timeout
     public:
         CPULOCAL_ACCESSOR(timeout, list);
 
-        ALWAYS_INLINE
         inline Timeout() : prev (nullptr), next (nullptr), time (0) {}
 
-        ALWAYS_INLINE
         ~Timeout() { if (active()) dequeue(); }
 
-        ALWAYS_INLINE
         inline bool active() const { return prev || list() == this; }
 
         void enqueue (uint64);

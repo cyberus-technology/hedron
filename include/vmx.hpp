@@ -329,13 +329,11 @@ class Vmcs
             VMX_XSETBV              = 55
         };
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
             return Buddy::allocator.alloc (0, Buddy::FILL_0);
         }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr)
         {
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
@@ -343,7 +341,6 @@ class Vmcs
 
         Vmcs (mword, mword, mword, uint64, unsigned);
 
-        ALWAYS_INLINE
         inline Vmcs() : rev (basic().revision)
         {
             uint64 phys = Buddy::ptr_to_phys (this);
@@ -353,7 +350,6 @@ class Vmcs
             assert (ret);
         }
 
-        ALWAYS_INLINE
         inline void clear()
         {
             if (EXPECT_TRUE (current() == this))
@@ -366,7 +362,6 @@ class Vmcs
             assert (ret);
         }
 
-        ALWAYS_INLINE
         inline void make_current()
         {
             if (EXPECT_TRUE (current() == this))
@@ -379,7 +374,6 @@ class Vmcs
             assert (ret);
         }
 
-        ALWAYS_INLINE
         static inline mword read (Encoding enc)
         {
             mword val;
@@ -387,13 +381,11 @@ class Vmcs
             return val;
         }
 
-        ALWAYS_INLINE
         static inline void write (Encoding enc, mword val)
         {
             asm volatile ("vmwrite %0, %1" : : "rm" (val), "r" (static_cast<mword>(enc)) : "cc");
         }
 
-        ALWAYS_INLINE
         static inline void adjust_rip()
         {
             write (GUEST_RIP, read (GUEST_RIP) + read (EXI_INST_LEN));
@@ -403,7 +395,6 @@ class Vmcs
                 write (GUEST_INTR_STATE, intr & ~3);
         }
 
-        ALWAYS_INLINE
         static inline unsigned long vpid()
         {
             return has_vpid() ? read (VPID) : 0;
@@ -439,14 +430,12 @@ struct Msr_area
     Msr_entry ia32_fmask          { Msr::IA32_FMASK };
     Msr_entry ia32_kernel_gs_base { Msr::IA32_KERNEL_GS_BASE };
 
-    ALWAYS_INLINE
     static inline void *operator new (size_t)
     {
         /* allocate one page */
         return Buddy::allocator.alloc (0, Buddy::FILL_0);
     }
 
-    ALWAYS_INLINE
     static inline void destroy(Msr_area *obj)
     {
         Buddy::allocator.free (reinterpret_cast<mword>(obj));

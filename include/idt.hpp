@@ -30,7 +30,6 @@ class Idt : public Descriptor
     private:
         uint32 val[sizeof (mword) / 2];
 
-        ALWAYS_INLINE
         inline void set (Type type, unsigned dpl, unsigned selector, mword offset)
         {
             val[0] = static_cast<uint32>(selector << 16 | (offset & 0xffff));
@@ -44,7 +43,6 @@ class Idt : public Descriptor
         INIT
         static void build();
 
-        ALWAYS_INLINE
         static inline void load()
         {
             asm volatile ("lidt %0" : : "m" (Pseudo_descriptor (sizeof (idt) - 1, reinterpret_cast<mword>(idt))));

@@ -59,16 +59,12 @@ class Dmar_ctx
         uint64 lo, hi;
 
     public:
-        ALWAYS_INLINE
         inline bool present() const { return lo & 1; }
 
-        ALWAYS_INLINE
         inline Paddr addr() const { return static_cast<Paddr>(lo) & ~PAGE_MASK; }
 
-        ALWAYS_INLINE
         inline void set (uint64 h, uint64 l) { hi = h; lo = l; flush (this); }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return flush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
@@ -78,10 +74,8 @@ class Dmar_irt
         uint64 lo, hi;
 
     public:
-        ALWAYS_INLINE
         inline void set (uint64 h, uint64 l) { hi = h; lo = l; flush (this); }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return flush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
@@ -138,50 +132,40 @@ class Dmar : public List<Dmar>
             GCMD_TE     = 1UL << 31,
         };
 
-        ALWAYS_INLINE
         inline unsigned nfr() const { return static_cast<unsigned>(cap >> 40 & 0xff) + 1; }
 
-        ALWAYS_INLINE
         inline mword fro() const { return static_cast<mword>(cap >> 20 & 0x3ff0) + reg_base; }
 
-        ALWAYS_INLINE
         inline mword iro() const { return static_cast<mword>(ecap >> 4 & 0x3ff0) + reg_base; }
 
-        ALWAYS_INLINE
         inline unsigned ir() const { return static_cast<unsigned>(ecap) & 0x8; }
 
-        ALWAYS_INLINE
         inline unsigned qi() const { return static_cast<unsigned>(ecap) & 0x2; }
 
         template <typename T>
-        ALWAYS_INLINE
         inline T read (Reg reg)
         {
             return *reinterpret_cast<T volatile *>(reg_base + reg);
         }
 
         template <typename T>
-        ALWAYS_INLINE
         inline void write (Reg reg, T val)
         {
             *reinterpret_cast<T volatile *>(reg_base + reg) = val;
         }
 
         template <typename T>
-        ALWAYS_INLINE
         inline T read (Tlb tlb)
         {
             return *reinterpret_cast<T volatile *>(iro() + tlb);
         }
 
         template <typename T>
-        ALWAYS_INLINE
         inline void write (Tlb tlb, T val)
         {
             *reinterpret_cast<T volatile *>(iro() + tlb) = val;
         }
 
-        ALWAYS_INLINE
         inline void read (unsigned frr, uint64 &hi, uint64 &lo)
         {
             lo = *reinterpret_cast<uint64 volatile *>(fro() + frr * 16);
@@ -189,7 +173,6 @@ class Dmar : public List<Dmar>
             *reinterpret_cast<uint64 volatile *>(fro() + frr * 16 + 8) = 1ULL << 63;
         }
 
-        ALWAYS_INLINE
         inline void command (uint32 val)
         {
             write<uint32>(REG_GCMD, val);
@@ -197,7 +180,6 @@ class Dmar : public List<Dmar>
                 pause();
         }
 
-        ALWAYS_INLINE
         inline void qi_submit (Dmar_qi const &q)
         {
             invq[invq_idx] = q;
@@ -205,13 +187,11 @@ class Dmar : public List<Dmar>
             write<uint64>(REG_IQT, invq_idx << 4);
         };
 
-        ALWAYS_INLINE
         inline void qi_wait()
         {
             for (uint64 v = read<uint64>(REG_IQT); v != read<uint64>(REG_IQH); pause()) ;
         }
 
-        ALWAYS_INLINE
         inline void flush_ctx()
         {
             if (qi()) {
@@ -234,10 +214,8 @@ class Dmar : public List<Dmar>
         INIT
         Dmar (Paddr);
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void enable (unsigned flags)
         {
             if (!(flags & 1))
@@ -247,13 +225,11 @@ class Dmar : public List<Dmar>
                 dmar->command (gcmd);
         }
 
-        ALWAYS_INLINE
         static inline void set_irt (unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
         {
             irt[i].set (1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
         }
 
-        ALWAYS_INLINE
         static bool ire() { return gcmd & GCMD_IRE; }
 
         void assign (unsigned long, Pd *);

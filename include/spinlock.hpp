@@ -27,7 +27,6 @@ class Spinlock
         uint16 val;
 
     public:
-        ALWAYS_INLINE
         inline Spinlock() : val (0) {}
 
         NOINLINE
@@ -45,7 +44,6 @@ class Spinlock
                           : "+Q" (tmp), "+m" (val) : : "memory");
         }
 
-        ALWAYS_INLINE
         inline void unlock()
         {
             asm volatile ("incb %0" : "=m" (val) : : "memory");

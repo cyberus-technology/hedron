@@ -38,10 +38,8 @@ class Cpu
     private:
         static char const * const vendor_string[];
 
-        ALWAYS_INLINE
         static inline Cpu_info check_features();
 
-        ALWAYS_INLINE
         static inline void setup_thermal();
 
     public:
@@ -172,19 +170,16 @@ class Cpu
 
         static void init();
 
-        ALWAYS_INLINE
         static inline bool feature (Feature f)
         {
             return features()[f / 32] & 1U << f % 32;
         }
 
-        ALWAYS_INLINE
         static inline void defeature (Feature f)
         {
             features()[f / 32] &= ~(1U << f % 32);
         }
 
-        ALWAYS_INLINE
         static inline void preempt_disable()
         {
             assert (preemption());
@@ -193,7 +188,6 @@ class Cpu
             preemption() = false;
         }
 
-        ALWAYS_INLINE
         static inline void preempt_enable()
         {
             assert (!preemption());
@@ -202,7 +196,6 @@ class Cpu
             asm volatile ("sti" : : : "memory");
         }
 
-        ALWAYS_INLINE
         static inline bool preempt_status()
         {
             mword flags = 0;
@@ -210,7 +203,6 @@ class Cpu
             return flags & 0x200;
         }
 
-        ALWAYS_INLINE
         static unsigned find_by_apic_id (unsigned x)
         {
             for (unsigned i = 0; i < NUM_CPU; i++)

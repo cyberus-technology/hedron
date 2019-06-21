@@ -30,13 +30,10 @@ class Queue
         T *headptr;
 
     public:
-        ALWAYS_INLINE
         inline Queue() : headptr (nullptr) {}
 
-        ALWAYS_INLINE
         inline T *head() const { return headptr; }
 
-        ALWAYS_INLINE
         inline void enqueue (T *t)
         {
             if (!headptr)
@@ -48,7 +45,6 @@ class Queue
             }
         }
 
-        ALWAYS_INLINE
         inline bool dequeue (T *t)
         {
             if (!t || !t->next || !t->prev)

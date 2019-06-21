@@ -47,23 +47,19 @@ class Space_mem : public Space
 
         static unsigned did_ctr;
 
-        ALWAYS_INLINE
         inline Space_mem() : did (Atomic::add (did_ctr, 1U)) {}
 
-        ALWAYS_INLINE
         inline size_t lookup (mword virt, Paddr &phys)
         {
             mword attr;
             return hpt.lookup (virt, phys, attr);
         }
 
-        ALWAYS_INLINE
         inline void insert (mword virt, unsigned o, mword attr, Paddr phys)
         {
             hpt.update (virt, o, phys, attr);
         }
 
-        ALWAYS_INLINE
         inline Paddr replace (mword v, Paddr p)
         {
             return hpt.replace (v, p);

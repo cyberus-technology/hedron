@@ -34,121 +34,90 @@ class Sys_call : public Sys_regs
             DISABLE_REPLYCAP    = 1ul << 2
         };
 
-        ALWAYS_INLINE
         inline unsigned long pt() const { return ARG_1 >> 8; }
 };
 
 class Sys_create_pd : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sel() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline Crd crd() const { return Crd (ARG_3); }
 };
 
 class Sys_create_ec : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sel() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline unsigned cpu() const { return ARG_3 & 0xfff; }
 
-        ALWAYS_INLINE
         inline bool use_apic_access_page() const { return flags() & 0x4; }
 
-        ALWAYS_INLINE
         inline bool is_vcpu() const { return flags() & 0x2; }
 
-        ALWAYS_INLINE
         inline mword utcb() const { return is_vcpu() ? 0 : ARG_3 & ~0xfff; }
 
-        ALWAYS_INLINE
         inline mword vlapic_page() const { return is_vcpu() ? ARG_3 & ~0xfff : 0; }
 
-        ALWAYS_INLINE
         inline mword esp() const { return ARG_4; }
 
-        ALWAYS_INLINE
         inline unsigned evt() const { return static_cast<unsigned>(ARG_5); }
 };
 
 class Sys_create_sc : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sel() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline unsigned long ec() const { return ARG_3; }
 
-        ALWAYS_INLINE
         inline Qpd qpd() const { return Qpd (ARG_4); }
 };
 
 class Sys_create_pt : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sel() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline unsigned long ec() const { return ARG_3; }
 
-        ALWAYS_INLINE
         inline Mtd mtd() const { return Mtd (ARG_4); }
 
-        ALWAYS_INLINE
         inline mword eip() const { return ARG_5; }
 };
 
 class Sys_create_sm : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sel() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline mword cnt() const { return ARG_3; }
 
-        ALWAYS_INLINE
         inline unsigned long sm() const { return ARG_4; }
 };
 
 class Sys_revoke : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline Crd crd() const { return Crd (ARG_2); }
 
-        ALWAYS_INLINE
         inline bool self() const { return flags() & 0x1; }
 
-        ALWAYS_INLINE
         inline bool remote() const { return flags() & 0x2; }
 
-        ALWAYS_INLINE
         inline mword pd() const { return ARG_3; }
 
-        ALWAYS_INLINE
         inline mword sm() const { return ARG_1 >> 8; }
 
         inline void rem(Pd * p) { ARG_3 = reinterpret_cast<mword>(p); }
@@ -164,74 +133,60 @@ class Sys_pd_ctrl : public Sys_regs
             DELEGATE,
         };
 
-        ALWAYS_INLINE
         ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
 };
 
 class Sys_pd_ctrl_lookup : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };
 
 class Sys_pd_ctrl_map_access_page : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline Crd & crd() { return reinterpret_cast<Crd &>(ARG_2); }
 };
 
 class Sys_pd_ctrl_delegate : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline mword src_pd() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline mword dst_pd() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline Xfer xfer() const { return Xfer {Crd {ARG_3}, ARG_4}; }
 
-        ALWAYS_INLINE
         inline void set_xfer(Xfer const &xfer)
         {
             ARG_3 = xfer.crd().value();
             ARG_4 = xfer.metadata();
         }
 
-        ALWAYS_INLINE
         inline Crd dst_crd() const { return Crd {ARG_5}; }
 };
 
 class Sys_reply : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sm() const { return ARG_1 >> 8; }
 };
 
 class Sys_ec_ctrl : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long ec() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned long cnt() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline unsigned op() const { return flags() & 0x3; }
 };
 
 class Sys_sc_ctrl : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sc() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline void set_time (uint64 val)
         {
             ARG_2 = static_cast<mword>(val >> 32);
@@ -242,58 +197,44 @@ class Sys_sc_ctrl : public Sys_regs
 class Sys_pt_ctrl : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long pt() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline mword id() const { return ARG_2; }
 };
 
 class Sys_sm_ctrl : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sm() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline unsigned op() const { return flags() & 0x1; }
 
-        ALWAYS_INLINE
         inline unsigned zc() const { return flags() & 0x2; }
 
-        ALWAYS_INLINE
         inline uint64 time() const { return static_cast<uint64>(ARG_2) << 32 | ARG_3; }
 };
 
 class Sys_assign_pci : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long pd() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline mword dev() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline mword hnt() const { return ARG_3; }
 };
 
 class Sys_assign_gsi : public Sys_regs
 {
     public:
-        ALWAYS_INLINE
         inline unsigned long sm() const { return ARG_1 >> 8; }
 
-        ALWAYS_INLINE
         inline mword dev() const { return ARG_2; }
 
-        ALWAYS_INLINE
         inline unsigned cpu() const { return static_cast<unsigned>(ARG_3); }
 
-        ALWAYS_INLINE
         inline mword si() const { return ARG_4; }
 
-        ALWAYS_INLINE
         inline void set_msi (uint64 val)
         {
             ARG_2 = static_cast<mword>(val >> 32);

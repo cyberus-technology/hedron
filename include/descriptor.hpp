@@ -73,7 +73,6 @@ class Pseudo_descriptor
         mword   base;
 
     public:
-        ALWAYS_INLINE
         inline Pseudo_descriptor (mword l, mword b) : limit (static_cast<uint16>(l)), base (b) {}
 };
 #pragma pack()

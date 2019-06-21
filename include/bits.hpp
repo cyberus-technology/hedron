@@ -23,7 +23,6 @@
 #include "types.hpp"
 #include "util.hpp"
 
-ALWAYS_INLINE
 inline long int bit_scan_reverse (mword val)
 {
     if (EXPECT_FALSE (!val))
@@ -33,7 +32,6 @@ inline long int bit_scan_reverse (mword val)
     return __builtin_ia32_bsrdi(val);
 }
 
-ALWAYS_INLINE
 inline long int bit_scan_forward (mword val)
 {
     if (EXPECT_FALSE (!val))
@@ -43,7 +41,6 @@ inline long int bit_scan_forward (mword val)
     return __builtin_ctzl(val);
 }
 
-ALWAYS_INLINE
 inline unsigned long max_order (mword base, size_t size)
 {
     long int o = bit_scan_reverse (size);
@@ -54,7 +51,6 @@ inline unsigned long max_order (mword base, size_t size)
     return o;
 }
 
-ALWAYS_INLINE
 inline uint64 div64 (uint64 n, uint32 d, uint32 *r)
 {
     uint64 q;
@@ -63,14 +59,12 @@ inline uint64 div64 (uint64 n, uint32 d, uint32 *r)
     return q;
 }
 
-ALWAYS_INLINE
 static inline mword align_dn (mword val, mword align)
 {
     val &= ~(align - 1);                // Expect power-of-2
     return val;
 }
 
-ALWAYS_INLINE
 static inline mword align_up (mword val, mword align)
 {
     val += (align - 1);                 // Expect power-of-2

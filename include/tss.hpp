@@ -42,7 +42,6 @@ class Tss
 
         static void build();
 
-        ALWAYS_INLINE
         static inline void load()
         {
             asm volatile ("ltr %w0" : : "rm" (SEL_TSS_RUN));

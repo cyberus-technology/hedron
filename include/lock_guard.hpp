@@ -31,7 +31,6 @@ class Lock_guard
         uint8 pre;
 
     public:
-        ALWAYS_INLINE
         inline Lock_guard (T &l) : _lock (l), pre(Cpu::preempt_status())
         {
             if (pre)
@@ -40,7 +39,6 @@ class Lock_guard
             _lock.lock();
         }
 
-        ALWAYS_INLINE
         inline ~Lock_guard()
         {
             _lock.unlock();

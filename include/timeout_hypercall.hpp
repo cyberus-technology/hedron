@@ -31,7 +31,6 @@ class Timeout_hypercall final : public Timeout
         virtual void trigger() override;
 
     public:
-        ALWAYS_INLINE
         inline Timeout_hypercall (Ec *e) : ec (e) {}
 
         ~Timeout_hypercall();

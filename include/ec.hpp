@@ -124,7 +124,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             }
         }
 
-        ALWAYS_INLINE
         inline bool is_idle_ec() { return cont == idle; }
 
         static void free (Rcu_elem * a)
@@ -137,13 +136,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             }
         }
 
-        ALWAYS_INLINE
         inline Sys_regs *sys_regs() { return &regs; }
 
-        ALWAYS_INLINE
         inline Exc_regs *exc_regs() { return &regs; }
 
-        ALWAYS_INLINE
         inline void set_partner (Ec *p)
         {
             partner = p;
@@ -155,7 +151,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             Sc::ctr_link()++;
         }
 
-        ALWAYS_INLINE
         inline unsigned clr_partner()
         {
             assert (partner == current());
@@ -170,7 +165,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             return Sc::ctr_link()--;
         }
 
-        ALWAYS_INLINE
         inline void redirect_to_iret()
         {
             regs.REG(sp) = regs.ARG_SP;
@@ -195,37 +189,32 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         ~Ec();
 
-        ALWAYS_INLINE
         inline void add_tsc_offset (uint64 tsc)
         {
             regs.add_tsc_offset (tsc);
         }
 
-        ALWAYS_INLINE
         inline bool blocked() const { return next || !cont; }
 
-        ALWAYS_INLINE
         inline void set_timeout (uint64 t, Sm *s)
         {
             if (EXPECT_FALSE (t))
                 timeout.enqueue (t, s);
         }
 
-        ALWAYS_INLINE
         inline void clr_timeout()
         {
             if (EXPECT_FALSE (timeout.active()))
                 timeout.dequeue();
         }
 
-        ALWAYS_INLINE
         inline void set_si_regs(mword sig, mword cnt)
         {
             regs.ARG_2 = sig;
             regs.ARG_3 = cnt;
         }
 
-        ALWAYS_INLINE NORETURN
+        NORETURN
         inline void make_current()
         {
             if (EXPECT_FALSE (current()->del_rcu()))
@@ -248,7 +237,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
         }
 
-        ALWAYS_INLINE
         static inline Ec *remote (unsigned cpu)
         {
             return ACCESS_ONCE(Cpulocal::get_remote(cpu).ec_current);
@@ -286,7 +274,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             Sc::schedule (true);
         }
 
-        ALWAYS_INLINE
         inline void release (void (*c)())
         {
             if (c)
@@ -420,9 +407,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         static void idl_handler();
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

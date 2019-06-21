@@ -29,7 +29,6 @@ class Rcu_elem
         void (*func)(Rcu_elem *);
         void (*pre_func)(Rcu_elem *);
 
-        ALWAYS_INLINE
         explicit Rcu_elem (void (*f)(Rcu_elem *), void (*pf) (Rcu_elem *) = nullptr) : next (nullptr), func (f), pre_func(pf) {}
 };
 
@@ -40,16 +39,12 @@ class Rcu_list
         Rcu_elem ** tail;
         mword       count;
 
-        ALWAYS_INLINE
         explicit Rcu_list() { clear(); }
 
-        ALWAYS_INLINE
         inline void clear() { head = nullptr; tail = &head; count = 0;}
 
-        ALWAYS_INLINE
         inline bool empty() { return &head == tail || head == nullptr; }
 
-        ALWAYS_INLINE
         inline void append (Rcu_list *l)
         {
            *tail   = l->head;
@@ -60,7 +55,6 @@ class Rcu_list
             l->clear();
         }
 
-        ALWAYS_INLINE
         inline bool enqueue (Rcu_elem *e)
         {
             Rcu_elem * const unused = nullptr;

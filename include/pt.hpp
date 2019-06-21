@@ -45,12 +45,9 @@ class Pt : public Kobject
 
         Pt (Pd *, mword, Ec *, Mtd, mword);
 
-        ALWAYS_INLINE
         inline void set_id (mword i) { id = i; }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

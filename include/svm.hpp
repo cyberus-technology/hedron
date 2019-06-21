@@ -114,13 +114,11 @@ class Vmcb
                                             CPU_CLGI    |
                                             CPU_SKINIT;
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
             return Buddy::allocator.alloc (0, Buddy::FILL_0);
         }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr)
         {
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
@@ -129,13 +127,11 @@ class Vmcb
         Vmcb (mword, mword);
         ~Vmcb();
 
-        ALWAYS_INLINE
         inline Vmcb()
         {
             asm volatile ("vmsave" : : "a" (Buddy::ptr_to_phys (this)) : "memory");
         }
 
-        ALWAYS_INLINE
         inline void adjust_rip (mword len)
         {
             rip += len;

@@ -27,7 +27,6 @@
 class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
 {
     private:
-        ALWAYS_INLINE
         static inline void flush()
         {
             mword cr3;
@@ -35,7 +34,6 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
         }
 
     public:
-        ALWAYS_INLINE
         static inline void flush (mword addr)
         {
             asm volatile ("invlpg %0" : : "m" (*reinterpret_cast<mword *>(addr)));
@@ -61,13 +59,10 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
             PTE_N   = HPT_A | HPT_U | HPT_W | HPT_P,
         };
 
-        ALWAYS_INLINE
         inline Paddr addr() const { return static_cast<Paddr>(val) & ~PAGE_MASK; }
 
-        ALWAYS_INLINE
         static inline mword hw_attr (mword a) { return a ? a | HPT_D | HPT_A | HPT_U | HPT_P : 0; }
 
-        ALWAYS_INLINE
         static inline mword current()
         {
             mword addr;
@@ -75,7 +70,6 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
             return addr;
         }
 
-        ALWAYS_INLINE
         inline void make_current (mword pcid)
         {
             asm volatile ("mov %0, %%cr3" : : "r" (val | pcid) : "memory");
@@ -108,6 +102,5 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
 class Hptp : public Hpt
 {
     public:
-        ALWAYS_INLINE
         inline explicit Hptp (mword v = 0) { val = v; }
 };

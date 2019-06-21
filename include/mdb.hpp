@@ -55,10 +55,8 @@ class Mdb : public Avl, public Rcu_elem
         mword     const node_type;
         mword     const node_sub;
 
-        ALWAYS_INLINE
         inline bool larger (Mdb *x) const { return  node_base > x->node_base; }
 
-        ALWAYS_INLINE
         inline bool equal  (Mdb *x) const { return (node_base ^ x->node_base) >> max (node_order, x->node_order) == 0; }
 
         NOINLINE
@@ -88,9 +86,7 @@ class Mdb : public Avl, public Rcu_elem
         void demote_node (mword);
         bool remove_node();
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

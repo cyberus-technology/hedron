@@ -74,7 +74,6 @@ class Sc : public Kobject, public Refcount
         Sc (Pd *, mword, Ec *, unsigned, unsigned, unsigned);
         Sc (Pd *, Ec *, unsigned, Sc *);
 
-        ALWAYS_INLINE
         static inline Rq *remote (unsigned c)
         {
             return &Cpulocal::get_remote(c).sc_rq;
@@ -88,9 +87,7 @@ class Sc : public Kobject, public Refcount
         NORETURN
         static void schedule (bool = false, bool = true);
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

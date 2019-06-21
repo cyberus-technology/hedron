@@ -37,10 +37,8 @@ class Si
         Si (Sm *, mword);
         ~Si();
 
-        ALWAYS_INLINE
         inline bool is_signal() const { return sm; }
 
-        ALWAYS_INLINE
         inline bool queued() const { return next; }
 
         void chain(Sm *s);
