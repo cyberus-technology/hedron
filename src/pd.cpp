@@ -110,13 +110,13 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
                 node->demote_node (attr);
             }
 
-            ptr = ACCESS_ONCE (node->next);
+            ptr = Atomic::load (node->next);
 
             if (ptr->dpth <= d)
                 break;
         }
 
-        Mdb *x = ACCESS_ONCE (node->next);
+        Mdb *x = Atomic::load (node->next);
 
         assert ((x->dpth <= d) ||
                 (self && !(x->node_attr & attr)) ||
@@ -136,7 +136,7 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
             if (preempt)
                 Cpu::preempt_enable();
 
-            ptr = ACCESS_ONCE (node->prev);
+            ptr = Atomic::load (node->prev);
 
             if (node->dpth <= d)
                 break;

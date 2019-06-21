@@ -46,7 +46,7 @@ class Refcount
 
         inline bool last_ref()
         {
-            return ACCESS_ONCE(ref) == 1;
+            return Atomic::load (ref) == 1;
         }
 
         inline bool del_rcu()
