@@ -82,7 +82,7 @@ void Lapic::init()
         case 0:
             Cpu::lapic_info[Cpu::id()].lvt_timer = read (LAPIC_LVT_TIMER);
             set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
-            FALL_THROUGH;
+            break;
     }
 
     write (LAPIC_TPR, 0x10);
