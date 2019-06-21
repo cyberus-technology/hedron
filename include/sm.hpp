@@ -60,7 +60,7 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
         }
 
         ALWAYS_INLINE
-        inline void dn (bool zero, uint64 t, Ec *ec = Ec::current, bool block = true)
+        inline void dn (bool zero, uint64 t, Ec *ec = Ec::current(), bool block = true)
         {
             {   Lock_guard <Spinlock> guard (lock);
 

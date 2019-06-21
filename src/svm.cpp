@@ -28,12 +28,7 @@
 #include "stdio.hpp"
 #include "svm.hpp"
 
-Paddr       Vmcb::root;
-unsigned    Vmcb::asid_ctr;
-uint32      Vmcb::svm_version;
-uint32      Vmcb::svm_feature;
-
-Vmcb::Vmcb (mword bmp, mword nptp) : base_io (bmp), asid (++asid_ctr), int_control (1ul << 24), npt_cr3 (nptp), efer (Cpu::EFER_SVME), g_pat (0x7040600070406ull)
+Vmcb::Vmcb (mword bmp, mword nptp) : base_io (bmp), asid (++asid_ctr()), int_control (1ul << 24), npt_cr3 (nptp), efer (Cpu::EFER_SVME), g_pat (0x7040600070406ull)
 {
     base_msr = Buddy::ptr_to_phys (Buddy::allocator.alloc (1, Buddy::FILL_1));
 }
@@ -51,7 +46,7 @@ void Vmcb::init()
     }
 
     Msr::write (Msr::IA32_EFER, Msr::read<uint32>(Msr::IA32_EFER) | Cpu::EFER_SVME);
-    Msr::write (Msr::AMD_SVM_HSAVE_PA, root = Buddy::ptr_to_phys (new Vmcb));
+    Msr::write (Msr::AMD_SVM_HSAVE_PA, root() = Buddy::ptr_to_phys (new Vmcb));
 
-    trace (TRACE_SVM, "VMCB:%#010lx REV:%#x NPT:%d", root, svm_version, has_npt());
+    trace (TRACE_SVM, "VMCB:%#010lx REV:%#x NPT:%d", root(), svm_version(), has_npt());
 }

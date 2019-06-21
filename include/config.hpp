@@ -33,6 +33,7 @@
 #define NUM_LVT         6
 #define NUM_MSI         1
 #define NUM_IPI         3
+#define NUM_PRIORITIES  128
 
 #define SPN_SCH         0
 #define SPN_HLP         1

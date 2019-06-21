@@ -17,13 +17,19 @@
 
 #include "cpu.hpp"
 #include "hazards.hpp"
-#include "initprio.hpp"
+#include "nodestruct.hpp"
 #include "timeout_budget.hpp"
 
-INIT_PRIORITY (PRIO_LOCAL)
-No_destruct<Timeout_budget> Timeout_budget::budget;
+// Including this field directly in Per_cpu creates a circular header
+// dependency. So we have to compromise.
+static No_destruct<Timeout_budget> percpu_budget[NUM_CPU];
 
 void Timeout_budget::trigger()
 {
-    Cpu::hazard |= HZD_SCHED;
+    Cpu::hazard() |= HZD_SCHED;
+}
+
+void Timeout_budget::init()
+{
+    Cpulocal::get().timeout_budget = &percpu_budget[Cpu::id()];
 }

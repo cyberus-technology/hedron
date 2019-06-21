@@ -118,25 +118,25 @@ mword Exc_regs::linear_address (mword val) const
 template <typename T>
 mword Exc_regs::cr0_set() const
 {
-    return T::fix_cr0_set;
+    return T::fix_cr0_set();
 }
 
 template <typename T>
 mword Exc_regs::cr0_msk(bool include_mon) const
 {
-    return T::fix_cr0_clr | cr0_set<T>() | T::fix_cr0_mon * include_mon;
+    return T::fix_cr0_clr() | cr0_set<T>() | T::fix_cr0_mon() * include_mon;
 }
 
 template <typename T>
 mword Exc_regs::cr4_set() const
 {
-    return T::fix_cr4_set;
+    return T::fix_cr4_set();
 }
 
 template <typename T>
 mword Exc_regs::cr4_msk(bool include_mon) const
 {
-    return T::fix_cr4_clr | cr4_set<T>() | T::fix_cr4_mon * include_mon;
+    return T::fix_cr4_clr() | cr4_set<T>() | T::fix_cr4_mon() * include_mon;
 }
 
 template <typename T>
@@ -210,8 +210,8 @@ void Exc_regs::svm_set_cpu_ctrl1 (mword val)
 
 void Exc_regs::vmx_set_cpu_ctrl0 (mword val)
 {
-    val |= Vmcs::ctrl_cpu[0].set;
-    val &= Vmcs::ctrl_cpu[0].clr;
+    val |= Vmcs::ctrl_cpu()[0].set;
+    val &= Vmcs::ctrl_cpu()[0].clr;
 
     bool tpr_shadow_active = val & Vmcs::Ctrl0::CPU_TPR_SHADOW;
 
@@ -228,8 +228,8 @@ void Exc_regs::vmx_set_cpu_ctrl1 (mword val)
 
     val |= msk;
 
-    val |= Vmcs::ctrl_cpu[1].set;
-    val &= Vmcs::ctrl_cpu[1].clr;
+    val |= Vmcs::ctrl_cpu()[1].set;
+    val &= Vmcs::ctrl_cpu()[1].clr;
 
     Vmcs::write (Vmcs::CPU_EXEC_CTRL1, val);
 }
@@ -250,7 +250,7 @@ template <> void Exc_regs::nst_ctrl<Vmcb>()
 
 template <> void Exc_regs::nst_ctrl<Vmcs>()
 {
-    assert (Vmcs::current == vmcs);
+    assert (Vmcs::current() == vmcs);
 
     mword cr0 = get_cr0<Vmcs>();
     mword cr3 = get_cr3<Vmcs>();

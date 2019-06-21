@@ -35,8 +35,6 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
-Ec *Ec::current;
-
 // Constructors
 Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0), xcpu_sm (nullptr)
 {
@@ -171,53 +169,53 @@ void Ec::handle_hazard (mword hzd, void (*func)())
         Rcu::quiet();
 
     if (hzd & HZD_SCHED) {
-        current->cont = func;
+        current()->cont = func;
         Sc::schedule();
     }
 
     if (hzd & HZD_RECALL) {
-        current->regs.clr_hazard (HZD_RECALL);
+        current()->regs.clr_hazard (HZD_RECALL);
 
         if (func == ret_user_vmresume) {
-            current->regs.dst_portal = NUM_VMI - 1;
+            current()->regs.dst_portal = NUM_VMI - 1;
             send_msg<ret_user_vmresume>();
         }
 
         if (func == ret_user_vmrun) {
-            current->regs.dst_portal = NUM_VMI - 1;
+            current()->regs.dst_portal = NUM_VMI - 1;
             send_msg<ret_user_vmrun>();
         }
 
         if (func == ret_user_sysexit)
-            current->redirect_to_iret();
+            current()->redirect_to_iret();
 
-        current->regs.dst_portal = NUM_EXC - 1;
+        current()->regs.dst_portal = NUM_EXC - 1;
         send_msg<ret_user_iret>();
     }
 
     if (hzd & HZD_STEP) {
-        current->regs.clr_hazard (HZD_STEP);
+        current()->regs.clr_hazard (HZD_STEP);
 
         if (func == ret_user_sysexit)
-            current->redirect_to_iret();
+            current()->redirect_to_iret();
 
-        current->regs.dst_portal = Cpu::EXC_DB;
+        current()->regs.dst_portal = Cpu::EXC_DB;
         send_msg<ret_user_iret>();
     }
 
     if (hzd & HZD_DS_ES) {
-        Cpu::hazard &= ~HZD_DS_ES;
+        Cpu::hazard() &= ~HZD_DS_ES;
         asm volatile ("mov %0, %%ds; mov %0, %%es" : : "r" (SEL_USER_DATA));
     }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
@@ -225,21 +223,21 @@ void Ec::ret_user_sysexit()
 void Ec::ret_user_iret()
 {
     // No need to check HZD_DS_ES because IRET will reload both anyway
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
 
 void Ec::chk_kern_preempt()
 {
-    if (!Cpu::preemption)
+    if (!Cpu::preemption())
         return;
 
-    if (Cpu::hazard & HZD_SCHED) {
+    if (Cpu::hazard() & HZD_SCHED) {
         Cpu::preempt_disable();
         Sc::schedule();
     }
@@ -247,21 +245,21 @@ void Ec::chk_kern_preempt()
 
 void Ec::ret_user_vmresume()
 {
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmresume);
 
-    current->regs.vmcs->make_current();
+    current()->regs.vmcs->make_current();
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
-        Pd::current->gtlb.clr (Cpu::id);
-        Pd::current->ept.flush();
+    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
+        Pd::current()->gtlb.clr (Cpu::id());
+        Pd::current()->ept.flush();
     }
 
-    if (EXPECT_FALSE (get_cr2() != current->regs.cr2))
-        set_cr2 (current->regs.cr2);
+    if (EXPECT_FALSE (get_cr2() != current()->regs.cr2))
+        set_cr2 (current()->regs.cr2);
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (current->regs.xcr0))) {
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
         die ("Invalid XCR0");
     }
 
@@ -269,7 +267,7 @@ void Ec::ret_user_vmresume()
                   "vmresume;"
                   "vmlaunch;"
                   "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
-                  : : "m" (current->regs) : "memory");
+                  : : "m" (current()->regs) : "memory");
 
     trace (0, "VM entry failed with error %#lx", Vmcs::read (Vmcs::VMX_INST_ERROR));
 
@@ -278,16 +276,16 @@ void Ec::ret_user_vmresume()
 
 void Ec::ret_user_vmrun()
 {
-    mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmrun);
 
-    if (EXPECT_FALSE (Pd::current->gtlb.chk (Cpu::id))) {
-        Pd::current->gtlb.clr (Cpu::id);
-        current->regs.vmcb->tlb_control = 1;
+    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
+        Pd::current()->gtlb.clr (Cpu::id());
+        current()->regs.vmcb->tlb_control = 1;
     }
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (current->regs.xcr0))) {
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
         die ("Invalid XCR0");
     }
 
@@ -304,7 +302,7 @@ void Ec::ret_user_vmrun()
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
-                  : : "m" (current->regs), "m" (Vmcb::root) : "memory");
+                  : : "m" (current()->regs), "m" (Vmcb::root) : "memory");
 
     UNREACHED;
 }
@@ -313,7 +311,7 @@ void Ec::idle()
 {
     for (;;) {
 
-        mword hzd = Cpu::hazard & (HZD_RCU | HZD_SCHED);
+        mword hzd = Cpu::hazard() & (HZD_RCU | HZD_SCHED);
         if (EXPECT_FALSE (hzd))
             handle_hazard (hzd, idle);
 
@@ -321,7 +319,7 @@ void Ec::idle()
         asm volatile ("sti; hlt; cli" : : : "memory");
         uint64 t2 = rdtsc();
 
-        Counter::cycles_idle += t2 - t1;
+        Counter::cycles_idle() += t2 - t1;
     }
 }
 
@@ -332,9 +330,9 @@ void Ec::root_invoke()
         die ("No ELF");
 
     unsigned count = e->ph_count;
-    current->regs.set_pt (Cpu::id);
-    current->regs.set_ip (e->entry);
-    current->regs.set_sp (USER_ADDR - PAGE_SIZE);
+    current()->regs.set_pt (Cpu::id());
+    current()->regs.set_ip (e->entry);
+    current()->regs.set_sp (USER_ADDR - PAGE_SIZE);
 
     ELF_PHDR *p = static_cast<ELF_PHDR *>(Hpt::remap (Hip::root_addr + e->ph_offset));
 
@@ -354,16 +352,16 @@ void Ec::root_invoke()
             mword size = align_up (p->f_size, PAGE_SIZE);
 
             for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o)
-                Pd::current->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr);
+                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr);
         }
     }
 
     // Map hypervisor information page
-    Pd::current->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
+    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
 
-    Space_obj::insert_root (Pd::current);
-    Space_obj::insert_root (Ec::current);
-    Space_obj::insert_root (Sc::current);
+    Space_obj::insert_root (Pd::current());
+    Space_obj::insert_root (Ec::current());
+    Space_obj::insert_root (Sc::current());
 
     ret_user_sysexit();
 }
@@ -381,15 +379,15 @@ bool Ec::fixup (mword &eip)
 
 void Ec::die (char const *reason, Exc_regs *r)
 {
-    if (current->utcb || current->pd == &Pd::kern) {
+    if (current()->utcb || current()->pd == &Pd::kern) {
         if (strcmp(reason, "PT not found"))
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
-               current, Sc::current, r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
+               current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else
         trace (0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)",
-               current, Sc::current, r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
+               current(), Sc::current(), r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
 
-    Ec *ec = current->rcap;
+    Ec *ec = current()->rcap;
 
     if (ec)
         ec->cont = ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
@@ -399,27 +397,27 @@ void Ec::die (char const *reason, Exc_regs *r)
 
 void Ec::xcpu_return()
 {
-    assert (current->xcpu_sm);
-    assert (current->rcap);
-    assert (current->utcb);
-    assert (Sc::current->ec == current);
+    assert (current()->xcpu_sm);
+    assert (current()->rcap);
+    assert (current()->utcb);
+    assert (Sc::current()->ec == current());
 
-    current->rcap->regs =  current->regs;
+    current()->rcap->regs =  current()->regs;
 
-    current->xcpu_sm->up (ret_xcpu_reply);
+    current()->xcpu_sm->up (ret_xcpu_reply);
 
-    current->rcap    = nullptr;
-    current->utcb    = nullptr;
-    current->xcpu_sm = nullptr;
+    current()->rcap    = nullptr;
+    current()->utcb    = nullptr;
+    current()->xcpu_sm = nullptr;
 
-    Rcu::call(current);
-    Rcu::call(Sc::current);
+    Rcu::call(current());
+    Rcu::call(Sc::current());
 
     Sc::schedule(true);
 }
 
 void Ec::idl_handler()
 {
-    if (Ec::current->cont == Ec::idle)
+    if (Ec::current()->cont == Ec::idle)
         Rcu::update();
 }

@@ -65,18 +65,18 @@ class Vmcb
         char                reserved7[24];
         uint64              g_pat;
 
-        static Paddr        root        CPULOCAL;
-        static unsigned     asid_ctr    CPULOCAL;
-        static uint32       svm_version CPULOCAL;
-        static uint32       svm_feature CPULOCAL;
+        CPULOCAL_ACCESSOR(vmcb, root);
+        CPULOCAL_ACCESSOR(vmcb, asid_ctr);
+        CPULOCAL_ACCESSOR(vmcb, svm_version);
+        CPULOCAL_ACCESSOR(vmcb, svm_feature);
 
-        static mword const fix_cr0_set = 0;
-        static mword const fix_cr0_clr = 0;
-        static mword const fix_cr0_mon = 0;
+        static mword fix_cr0_set() { return 0; }
+        static mword fix_cr0_clr() { return 0; }
+        static mword fix_cr0_mon() { return 0; }
 
-        static mword const fix_cr4_set = 0;
-        static mword const fix_cr4_clr = 0;
-        static mword const fix_cr4_mon = 0;
+        static mword fix_cr4_set() { return 0; }
+        static mword fix_cr4_clr() { return 0; }
+        static mword fix_cr4_mon() { return 0; }
 
         enum Ctrl0
         {
@@ -144,7 +144,7 @@ class Vmcb
                 int_shadow = 0;
         }
 
-        static bool has_npt() { return Vmcb::svm_feature & 1; }
+        static bool has_npt() { return Vmcb::svm_feature() & 1; }
         static bool has_urg() { return true; }
 
         static void init();

@@ -46,19 +46,21 @@ class Gdt : public Descriptor
         }
 
     public:
-        static Gdt gdt[SEL_MAX >> 3] CPULOCAL;
+
+        using Gdt_array = Gdt[SEL_MAX >> 3];
+        static Gdt &gdt(uint32 sel);
 
         static void build();
 
         ALWAYS_INLINE
         static inline void load()
         {
-            asm volatile ("lgdt %0" : : "m" (Pseudo_descriptor (sizeof (gdt) - 1, reinterpret_cast<mword>(gdt))));
+            asm volatile ("lgdt %0" : : "m" (Pseudo_descriptor (sizeof (Gdt_array) - 1, reinterpret_cast<mword>(&gdt(0)))));
         }
 
         ALWAYS_INLINE
         static inline void unbusy_tss()
         {
-            gdt[SEL_TSS_RUN >> 3].val[1] &= ~0x200;
+            gdt(SEL_TSS_RUN).val[1] &= ~0x200;
         }
 };

@@ -17,12 +17,16 @@
 
 #pragma once
 
+#include "cpulocal.hpp"
+
+struct Cpu_info;
+
 class Mca
 {
     private:
-        static unsigned banks   CPULOCAL;
+        CPULOCAL_CONST_ACCESSOR(mca, banks);
 
     public:
-        static void init();
+        static void init (Cpu_info const &info);
         static void vector();
 };

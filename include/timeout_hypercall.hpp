@@ -22,13 +22,13 @@
 class Ec;
 class Sm;
 
-class Timeout_hypercall : public Timeout
+class Timeout_hypercall final : public Timeout
 {
     private:
         Ec * const ec;
         Sm *       sm { nullptr };
 
-        void trigger();
+        virtual void trigger() override;
 
     public:
         ALWAYS_INLINE

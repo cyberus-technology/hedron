@@ -65,3 +65,6 @@ constexpr T &&forward (typename remove_reference<T>::type &&arg)
     static_assert(not is_lvalue_reference<T>::value, "Invalid rvalue to lvalue conversion");
     return static_cast<T &&>(arg);
 }
+
+// Placement new operator
+inline void *operator new (size_t, void *p) { return p; }

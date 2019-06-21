@@ -36,6 +36,8 @@ mword Cpulocal::setup_cpulocal()
     unsigned cpu_id {Cpu::find_by_apic_id (Lapic::early_id())};
     Per_cpu &local {cpu[cpu_id]};
 
+    local.cpu_id = cpu_id;
+
     mword gs_base {reinterpret_cast<mword>(&local.self)};
     Msr::write<mword> (Msr::IA32_GS_BASE, gs_base);
     Msr::write<mword> (Msr::IA32_KERNEL_GS_BASE, 0);

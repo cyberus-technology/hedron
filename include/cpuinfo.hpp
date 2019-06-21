@@ -1,9 +1,7 @@
 /*
- * Budget Timeout
+ * CPU information
  *
- * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
- *
- * This file is part of the NOVA microhypervisor.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * NOVA is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
@@ -17,14 +15,28 @@
 
 #pragma once
 
-#include "timeout.hpp"
+#include "types.hpp"
 
-class Timeout_budget final : public Timeout
+enum class Cpu_vendor : unsigned
 {
-    private:
-        virtual void trigger() override;
+    UNKNOWN,
+    INTEL,
+    AMD,
+};
 
-    public:
-        CPULOCAL_CONST_ACCESSOR(timeout, budget);
-        static void init();
+struct Cpu_info
+{
+    unsigned package;
+    unsigned core;
+    unsigned thread;
+
+    Cpu_vendor vendor;
+    unsigned platform;
+    unsigned family;
+    unsigned model;
+    unsigned stepping;
+    unsigned brand;
+    unsigned patch;
+
+    uint32 name[12];
 };

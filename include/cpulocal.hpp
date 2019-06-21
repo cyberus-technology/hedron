@@ -20,12 +20,22 @@
 #include "memory.hpp"
 #include "config.hpp"
 #include "compiler.hpp"
+#include "gdt.hpp"
 #include "types.hpp"
+#include "rcu_list.hpp"
+#include "rq.hpp"
+#include "vmx_types.hpp"
 
+class Ec;
+class Pd;
+class Sc;
+class Timeout;
+class Vmcs;
 
 // This struct defines the layout of CPU-local memory. It's designed to make it
 // convenient to use %gs:0 to restore the stack pointer and to get a normal
-// pointer to CPU-local variables:
+// pointer to CPU-local variables. The first members in the Per_cpu struct are
+// frequently accessed and are deliberately placed on a single cache line.
 //
 //                 +---------------------+
 //                 | ... other vars ...  |
@@ -49,6 +59,88 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // The system call entry point dumps userspace state here.
     void *sys_entry_stack {nullptr};
+
+    // The APIC ID of the current CPU.
+    unsigned cpu_id;
+
+    // Any special conditions that need to be checked on kernel entry/exit
+    // paths. See hazards.hpp.
+    unsigned cpu_hazard;
+
+    // The current execution context.
+    Ec *ec_current;
+
+    // The current protection domain.
+    Pd *pd_current;
+
+    // The current scheduling context.
+    Sc *sc_current;
+
+    // The current virtual machine control structure.
+    Vmcs *vmcs_current;
+
+    // The list of pending timeouts.
+    Timeout *timeout_list;
+    Timeout *timeout_budget;
+
+    // Scheduling-related variables
+    Rq  sc_rq;
+    Sc *sc_list[NUM_PRIORITIES];
+    unsigned sc_prio_top;
+    unsigned sc_ctr_link;
+    unsigned sc_ctr_loop;
+
+    // VMX-related variables
+    unsigned     vmcs_vpid_ctr;
+    vmx_basic    vmcs_basic;
+    vmx_ept_vpid vmcs_ept_vpid;
+    vmx_ctrl_pin vmcs_ctrl_pin;
+    vmx_ctrl_cpu vmcs_ctrl_cpu[2];
+    vmx_ctrl_exi vmcs_ctrl_exi;
+    vmx_ctrl_ent vmcs_ctrl_ent;
+
+    mword vmcs_fix_cr0_set;
+    mword vmcs_fix_cr0_clr;
+    mword vmcs_fix_cr0_mon;
+
+    mword vmcs_fix_cr4_set;
+    mword vmcs_fix_cr4_clr;
+    mword vmcs_fix_cr4_mon;
+
+    // SVM-related variables
+    Paddr    vmcb_root;
+    unsigned vmcb_asid_ctr;
+    uint32   vmcb_svm_version;
+    uint32   vmcb_svm_feature;
+
+    // Statistics
+    unsigned counter_ipi[NUM_IPI];
+    unsigned counter_lvt[NUM_LVT];
+    unsigned counter_gsi[NUM_GSI];
+    unsigned counter_exc[NUM_EXC];
+    unsigned counter_vmi[NUM_VMI];
+    unsigned counter_schedule;
+    unsigned counter_helping;
+    uint64   counter_cycles_idle;
+
+    // CPU-related variables (that are not performance critical)
+    unsigned cpu_row;
+    uint32   cpu_features[7];
+    bool     cpu_bsp;
+    bool     cpu_preemption;
+
+    // Machine-check variables
+    unsigned mca_banks;
+
+    // Read-copy update
+    mword rcu_l_batch;
+    mword rcu_c_batch;
+    Rcu_list rcu_next;
+    Rcu_list rcu_curr;
+    Rcu_list rcu_done;
+
+    // Global descriptor table
+    alignas(8) Gdt::Gdt_array gdt;
 };
 
 static_assert(OFFSETOF(Per_cpu, self)            == PAGE_SIZE,

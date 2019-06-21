@@ -9,6 +9,7 @@
  * Copyright (C) 2013-2018 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -131,7 +132,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             Ec * e = static_cast<Ec *>(a);
 
             if (e->del_ref()) {
-                assert(e != Ec::current);
+                assert(e != Ec::current());
                 delete e;
             }
         }
@@ -151,13 +152,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             partner->rcap = this;
             ok = partner->rcap->add_ref();
             assert (ok);
-            Sc::ctr_link++;
+            Sc::ctr_link()++;
         }
 
         ALWAYS_INLINE
         inline unsigned clr_partner()
         {
-            assert (partner == current);
+            assert (partner == current());
             if (partner->rcap) {
                 bool last = partner->rcap->del_ref();
                 assert (!last);
@@ -166,7 +167,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             bool last = partner->del_ref();
             assert (!last);
             partner = nullptr;
-            return Sc::ctr_link--;
+            return Sc::ctr_link()--;
         }
 
         ALWAYS_INLINE
@@ -186,7 +187,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static Pd *sanitize_syscall_params(Sys_create_ec *);
 
     public:
-        static Ec *current CPULOCAL_HOT;
+        CPULOCAL_ACCESSOR(ec, current);
 
         Ec (Pd *, void (*)(), unsigned);
         Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
@@ -227,13 +228,13 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         ALWAYS_INLINE NORETURN
         inline void make_current()
         {
-            if (EXPECT_FALSE (current->del_rcu()))
-                Rcu::call (current);
+            if (EXPECT_FALSE (current()->del_rcu()))
+                Rcu::call (current());
 
-            transfer_fpu(current);
-            current = this;
+            transfer_fpu(current());
+            current() = this;
 
-            bool ok = current->add_ref();
+            bool ok = current()->add_ref();
             assert (ok);
 
             // Set the stack to just behind the register block to be able to use
@@ -248,9 +249,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         }
 
         ALWAYS_INLINE
-        static inline Ec *remote (unsigned c)
+        static inline Ec *remote (unsigned cpu)
         {
-            return *reinterpret_cast<volatile typeof current *>(reinterpret_cast<mword>(&current) - CPU_LOCAL_DATA + HV_GLOBAL_CPUS + c * PAGE_SIZE);
+            return ACCESS_ONCE(Cpulocal::get_remote(cpu).ec_current);
         }
 
         NOINLINE
@@ -258,10 +259,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         {
             if (EXPECT_TRUE (cont != dead)) {
 
-                Counter::print<1,16> (++Counter::helping, Console_vga::COLOR_LIGHT_WHITE, SPN_HLP);
-                current->cont = c;
+                Counter::print<1,16> (++Counter::helping(), Console_vga::COLOR_LIGHT_WHITE, SPN_HLP);
+                current()->cont = c;
 
-                if (EXPECT_TRUE (++Sc::ctr_loop < 100))
+                if (EXPECT_TRUE (++Sc::ctr_loop() < 100))
                     activate();
 
                 die ("Livelock");
@@ -276,10 +277,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
                 if (!blocked())
                     return;
 
-                bool ok = Sc::current->add_ref();
+                bool ok = Sc::current()->add_ref();
                 assert (ok);
 
-                enqueue (Sc::current);
+                enqueue (Sc::current());
             }
 
             Sc::schedule (true);
@@ -415,7 +416,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void dead() { die ("IPC Abort"); }
 
         NORETURN
-        static void die (char const *, Exc_regs * = &current->regs);
+        static void die (char const *, Exc_regs * = &current()->regs);
 
         static void idl_handler();
 

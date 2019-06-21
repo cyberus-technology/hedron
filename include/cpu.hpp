@@ -28,15 +28,10 @@
 
 #include "compiler.hpp"
 #include "config.hpp"
+#include "cpuinfo.hpp"
 #include "types.hpp"
 #include "assert.hpp"
-
-enum class Cpu_vendor : unsigned
-{
-    UNKNOWN,
-    INTEL,
-    AMD,
-};
+#include "cpulocal.hpp"
 
 class Cpu
 {
@@ -44,7 +39,7 @@ class Cpu
         static char const * const vendor_string[];
 
         ALWAYS_INLINE
-        static inline void check_features();
+        static inline Cpu_info check_features();
 
         ALWAYS_INLINE
         static inline void setup_thermal();
@@ -167,55 +162,43 @@ class Cpu
         };
         static lapic_info_t lapic_info[NUM_CPU];
 
-        static unsigned id                  CPULOCAL_HOT;
-        static unsigned hazard              CPULOCAL_HOT;
-        static unsigned package             CPULOCAL;
-        static unsigned core                CPULOCAL;
-        static unsigned thread              CPULOCAL;
+        CPULOCAL_CONST_ACCESSOR(cpu, id);
+        CPULOCAL_ACCESSOR(cpu, hazard);
+        CPULOCAL_ACCESSOR(cpu, row);
 
-        static Cpu_vendor vendor            CPULOCAL;
-        static unsigned platform            CPULOCAL;
-        static unsigned family              CPULOCAL;
-        static unsigned model               CPULOCAL;
-        static unsigned stepping            CPULOCAL;
-        static unsigned brand               CPULOCAL;
-        static unsigned patch               CPULOCAL;
-        static unsigned row                 CPULOCAL;
-
-        static uint32 name[12]              CPULOCAL;
-        static uint32 features[7]           CPULOCAL;
-        static bool bsp                     CPULOCAL;
-        static bool preemption              CPULOCAL;
+        CPULOCAL_ACCESSOR(cpu, features);
+        CPULOCAL_ACCESSOR(cpu, bsp);
+        CPULOCAL_ACCESSOR(cpu, preemption);
 
         static void init();
 
         ALWAYS_INLINE
         static inline bool feature (Feature f)
         {
-            return features[f / 32] & 1U << f % 32;
+            return features()[f / 32] & 1U << f % 32;
         }
 
         ALWAYS_INLINE
         static inline void defeature (Feature f)
         {
-            features[f / 32] &= ~(1U << f % 32);
+            features()[f / 32] &= ~(1U << f % 32);
         }
 
         ALWAYS_INLINE
         static inline void preempt_disable()
         {
-            assert (preemption);
+            assert (preemption());
 
             asm volatile ("cli" : : : "memory");
-            preemption = false;
+            preemption() = false;
         }
 
         ALWAYS_INLINE
         static inline void preempt_enable()
         {
-            assert (!preemption);
+            assert (!preemption());
 
-            preemption = true;
+            preemption() = true;
             asm volatile ("sti" : : : "memory");
         }
 

@@ -22,9 +22,7 @@
 #include "stdio.hpp"
 #include "x86.hpp"
 
-unsigned Mca::banks;
-
-void Mca::init()
+void Mca::init(Cpu_info const &cpu_info)
 {
     if (EXPECT_FALSE (!Cpu::feature (Cpu::FEAT_MCE)))
         return;
@@ -41,9 +39,9 @@ void Mca::init()
     if (cap & 0x100)
         Msr::write<uint64>(Msr::IA32_MCG_CTL, ~0ULL);
 
-    banks = cap & 0xff;
+    Cpulocal::get().mca_banks = cap & 0xff;
 
-    for (unsigned i = (Cpu::vendor == Cpu_vendor::INTEL && Cpu::family == 6 && Cpu::model < 0x1a); i < banks; i++) {
+    for (unsigned i = (cpu_info.vendor == Cpu_vendor::INTEL and cpu_info.family == 6 and cpu_info.model < 0x1a); i < banks(); i++) {
         Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_CTL), ~0ULL);
         Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_STATUS), 0);
     }
@@ -53,7 +51,7 @@ void Mca::vector()
 {
     uint64 sts;
 
-    for (unsigned i = 0; i < banks; i++)
+    for (unsigned i = 0; i < banks(); i++)
         if ((sts = Msr::read<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_STATUS))) & 1ULL << 63)
             trace (TRACE_ERROR, "Machine Check B%u: %#018llx", i, sts);
 }

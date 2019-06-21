@@ -69,6 +69,6 @@ void Space_pio::page_fault (mword addr, mword error)
 {
     assert (!(error & Hpt::ERR_W));
 
-    if (!Pd::current->Space_mem::loc[Cpu::id].sync_from (Pd::current->Space_mem::hpt, addr, CPU_LOCAL))
-        Pd::current->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_1) | Hpt::HPT_NX | Hpt::HPT_A | Hpt::HPT_P);
+    if (!Pd::current()->Space_mem::loc[Cpu::id()].sync_from (Pd::current()->Space_mem::hpt, addr, CPU_LOCAL))
+        Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_1) | Hpt::HPT_NX | Hpt::HPT_A | Hpt::HPT_P);
 }

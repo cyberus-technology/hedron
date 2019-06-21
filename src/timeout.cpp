@@ -20,11 +20,8 @@
 #include "x86.hpp"
 #include "assert.hpp"
 
-Timeout *Timeout::list;
-
 void Timeout::enqueue (uint64 t)
 {
-
     assert(prev == nullptr);
     assert(next == nullptr);
 
@@ -32,15 +29,15 @@ void Timeout::enqueue (uint64 t)
 
     Timeout *p = nullptr;
 
-    for (Timeout *n = list; n; p = n, n = n->next)
+    for (Timeout *n = list(); n; p = n, n = n->next)
         if (n->time >= time)
             break;
 
     prev = p;
 
     if (!p) {
-        next = list;
-        list = this;
+        next = list();
+        list() = this;
         Lapic::set_timer (time);
     } else {
         next = p->next;
@@ -61,8 +58,8 @@ uint64 Timeout::dequeue()
         if (prev)
             prev->next = next;
 
-        else if ((list = next))
-            Lapic::set_timer (list->time);
+        else if ((list() = next))
+            Lapic::set_timer (list()->time);
     }
 
     prev = next = nullptr;
@@ -72,20 +69,20 @@ uint64 Timeout::dequeue()
 
 void Timeout::check()
 {
-    Timeout *prev_list = list;
+    Timeout *prev_list = list();
 
-    while (list && list->time <= rdtsc()) {
-        Timeout *t = list;
+    while (list() && list()->time <= rdtsc()) {
+        Timeout *t = list();
         t->dequeue();
         t->trigger();
     }
 
-    if (list && (list == prev_list)) {
+    if (list() && (list() == prev_list)) {
         /*
          * No timeout was dequeued, which can happen if the TSC stops in CPU
          * sleep states (non-invariant TSC). In that case, we program the
          * LAPIC again for the next timeout.
          */
-         Lapic::set_timer(list->time);
+         Lapic::set_timer(list()->time);
     }
 }

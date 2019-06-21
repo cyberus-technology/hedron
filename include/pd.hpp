@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "cpulocal.hpp"
 #include "crd.hpp"
 #include "nodestruct.hpp"
 #include "space_mem.hpp"
@@ -57,13 +58,13 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
             Pd * pd = static_cast <Pd *>(a);
 
             if (pd->del_ref()) {
-                assert (pd != Pd::current);
+                assert (pd != Pd::current());
                 delete pd;
             }
         }
 
     public:
-        static Pd *current CPULOCAL_HOT;
+        CPULOCAL_ACCESSOR(pd, current);
         static No_destruct<Pd> kern, root;
 
         void *get_access_page();
@@ -79,32 +80,32 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         {
             mword pcid = did;
 
-            if (EXPECT_FALSE (htlb.chk (Cpu::id)))
-                htlb.clr (Cpu::id);
+            if (EXPECT_FALSE (htlb.chk (Cpu::id())))
+                htlb.clr (Cpu::id());
 
             else {
 
-                if (EXPECT_TRUE (current == this))
+                if (EXPECT_TRUE (current() == this))
                     return;
 
                 pcid |= static_cast<mword>(1ULL << 63);
             }
 
-            if (current->del_rcu())
-                Rcu::call (current);
+            if (current()->del_rcu())
+                Rcu::call (current());
 
-            current = this;
+            current() = this;
 
-            bool ok = current->add_ref();
+            bool ok = current()->add_ref();
             assert (ok);
 
-            loc[Cpu::id].make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
+            loc[Cpu::id()].make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
         }
 
         ALWAYS_INLINE
         static inline Pd *remote (unsigned c)
         {
-            return *reinterpret_cast<volatile typeof current *>(reinterpret_cast<mword>(&current) - CPU_LOCAL_DATA + HV_GLOBAL_CPUS + c * PAGE_SIZE);
+            return Cpulocal::get_remote(c).pd_current;
         }
 
         ALWAYS_INLINE

@@ -107,8 +107,8 @@ void Space_mem::shootdown()
         if (!pd->htlb.chk (cpu) && !pd->gtlb.chk (cpu))
             continue;
 
-        if (Cpu::id == cpu) {
-            Cpu::hazard |= HZD_SCHED;
+        if (Cpu::id() == cpu) {
+            Cpu::hazard() |= HZD_SCHED;
             continue;
         }
 
@@ -116,13 +116,13 @@ void Space_mem::shootdown()
 
         Lapic::send_ipi (cpu, VEC_IPI_RKE);
 
-        if (!Cpu::preemption)
+        if (!Cpu::preemption())
             asm volatile ("sti" : : : "memory");
 
         while (Counter::remote (cpu, 1) == ctr)
             pause();
 
-        if (!Cpu::preemption)
+        if (!Cpu::preemption())
             asm volatile ("cli" : : : "memory");
     }
 }
