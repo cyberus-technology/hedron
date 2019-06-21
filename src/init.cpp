@@ -52,8 +52,8 @@ extern "C" INIT REGPARM (1)
 void init (mword mbi)
 {
     // Setup 0-page and 1-page
-    memset (reinterpret_cast<void *>(&PAGE_0),  0,  PAGE_SIZE);
-    memset (reinterpret_cast<void *>(&PAGE_1), ~0u, PAGE_SIZE);
+    memset (PAGE_0,  0,  PAGE_SIZE);
+    memset (PAGE_1, ~0u, PAGE_SIZE);
 
     for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
 

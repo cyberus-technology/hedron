@@ -126,7 +126,7 @@ class Hip
         ALWAYS_INLINE
         static inline Hip *hip()
         {
-            return reinterpret_cast<Hip *>(&PAGE_H);
+            return reinterpret_cast<Hip *>(PAGE_H);
         }
 
         static uint32 feature()
