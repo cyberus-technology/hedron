@@ -31,6 +31,10 @@ WFLAGS += -Wstrict-overflow=5
 WFLAGS += -Wvolatile-register-var
 WFLAGS += -Wzero-as-null-pointer-constant
 
+ifeq (@(WERROR),y)
+WFLAGS += -Werror
+endif
+
 # Compiler flags
 SFLAGS  = $(PFLAGS) $(DFLAGS) $(AFLAGS)
 CFLAGS  = $(PFLAGS) $(DFLAGS) $(AFLAGS) $(OFLAGS) $(FFLAGS) $(WFLAGS)
