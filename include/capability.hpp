@@ -34,9 +34,7 @@ class Capability
 
         Capability (Kobject *o, mword a) : val (a ? reinterpret_cast<mword>(o) | (a & perm) : 0) {}
 
-        ALWAYS_INLINE
         inline Kobject *obj() const { return reinterpret_cast<Kobject *>(val & ~perm); }
 
-        ALWAYS_INLINE
         inline unsigned prm() const { return val & perm; }
 };

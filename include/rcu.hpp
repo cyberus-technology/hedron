@@ -40,17 +40,14 @@ class Rcu
             RCU_PND = 1UL << 1,
         };
 
-        ALWAYS_INLINE
         static inline mword batch() { return state >> 2; }
 
-        ALWAYS_INLINE
         static inline bool complete (mword b) { return static_cast<signed long>((state & ~RCU_PND) - (b << 2)) > 0; }
 
         static void start_batch (State);
         static void invoke_batch();
 
     public:
-        ALWAYS_INLINE
         static inline bool call (Rcu_elem *e) {
             if (e->pre_func)
                 e->pre_func(e);

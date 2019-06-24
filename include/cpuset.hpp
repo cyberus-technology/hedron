@@ -30,18 +30,13 @@ class Cpuset
         static_assert(sizeof(val) * 8 <= NUM_CPU, "NUM_CPU is too large");
 
     public:
-        ALWAYS_INLINE
         inline explicit Cpuset() : val (0) {}
 
-        ALWAYS_INLINE
         inline bool chk (unsigned cpu) const { return val & 1UL << cpu; }
 
-        ALWAYS_INLINE
         inline bool set (unsigned cpu) { return !Atomic::test_set_bit (val, cpu); }
 
-        ALWAYS_INLINE
         inline void clr (unsigned cpu) { Atomic::clr_mask (val, 1UL << cpu); }
 
-        ALWAYS_INLINE
         inline void merge (Cpuset &s) { Atomic::set_mask (val, s.val); }
 };

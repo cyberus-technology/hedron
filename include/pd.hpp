@@ -75,7 +75,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
         Pd (Pd *own, mword sel, mword a);
 
-        ALWAYS_INLINE HOT
+        HOT
         inline void make_current()
         {
             mword pcid = did;
@@ -102,13 +102,11 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
             loc[Cpu::id()].make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
         }
 
-        ALWAYS_INLINE
         static inline Pd *remote (unsigned c)
         {
             return Cpulocal::get_remote(c).pd_current;
         }
 
-        ALWAYS_INLINE
         inline Space *subspace (Crd::Type t)
         {
             switch (t) {
@@ -133,12 +131,9 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         void del_crd (Pd *, Crd, Crd &, mword = 0, mword = 0);
         void rev_crd (Crd, bool, bool = true);
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t, void *p) { return p; }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

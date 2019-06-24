@@ -43,10 +43,8 @@ class Mtrr : public List<Mtrr>
         }
 
     public:
-        ALWAYS_INLINE
         explicit inline Mtrr (uint64 b, uint64 m) : List<Mtrr> (list), base (b), mask (m) {}
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
         INIT

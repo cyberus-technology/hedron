@@ -123,7 +123,6 @@ class Hip
         static mword root_addr;
         static mword root_size;
 
-        ALWAYS_INLINE
         static inline Hip *hip()
         {
             return reinterpret_cast<Hip *>(&PAGE_H);

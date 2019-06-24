@@ -59,7 +59,6 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
                 up (Ec::sys_finish<Sys_regs::BAD_CAP, true>);
         }
 
-        ALWAYS_INLINE
         inline void dn (bool zero, uint64 t, Ec *ec = Ec::current(), bool block = true)
         {
             {   Lock_guard <Spinlock> guard (lock);
@@ -92,7 +91,6 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
             ec->clr_timeout();
         }
 
-        ALWAYS_INLINE
         inline void up (void (*c)() = nullptr, Sm * si = nullptr)
         {
             Ec *ec = nullptr;
@@ -123,7 +121,6 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
             } while (EXPECT_FALSE(ec->del_rcu()));
         }
 
-        ALWAYS_INLINE
         inline void timeout (Ec *ec)
         {
             {   Lock_guard <Spinlock> guard (lock);
@@ -135,7 +132,6 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
             ec->release (Ec::sys_finish<Sys_regs::COM_TIM>);
         }
 
-        ALWAYS_INLINE
         inline void add_to_rcu()
         {
             if (!add_ref())
@@ -147,9 +143,7 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
                     Rcu::call (this);
         }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { cache.free (ptr); }
 };

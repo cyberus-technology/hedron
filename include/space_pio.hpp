@@ -29,19 +29,16 @@ class Space_pio : public Space
     private:
         Paddr hbmp, gbmp;
 
-        ALWAYS_INLINE
         static inline mword idx_to_virt (mword idx)
         {
             return SPC_LOCAL_IOP + (idx / 8 / sizeof (mword)) * sizeof (mword);
         }
 
-        ALWAYS_INLINE
         static inline mword idx_to_mask (mword idx)
         {
             return 1UL << (idx % (8 * sizeof (mword)));
         }
 
-        ALWAYS_INLINE
         inline Space_mem *space_mem();
 
         void update (bool, mword, mword);

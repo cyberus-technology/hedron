@@ -42,10 +42,8 @@ class Console_serial : public Console
 
         unsigned base;
 
-        ALWAYS_INLINE
         inline unsigned in (Register r) { return Io::in<uint8>(base + r); }
 
-        ALWAYS_INLINE
         inline void out (Register r, unsigned v) { Io::out (base + r, static_cast<uint8>(v)); }
 
         void putc (int c);

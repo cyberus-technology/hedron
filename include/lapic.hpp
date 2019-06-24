@@ -74,34 +74,27 @@ class Lapic
             DSH_EXC_SELF    = 3U << 18,
         };
 
-        ALWAYS_INLINE
         static inline uint32 read (Register reg)
         {
             return *reinterpret_cast<uint32 volatile *>(CPU_LOCAL_APIC + (reg << 4));
         }
 
-        ALWAYS_INLINE
         static inline void write (Register reg, uint32 val)
         {
             *reinterpret_cast<uint32 volatile *>(CPU_LOCAL_APIC + (reg << 4)) = val;
         }
 
-        ALWAYS_INLINE
         static inline void set_lvt (Register reg, Delivery_mode dlv, unsigned vector, unsigned misc = 0)
         {
             write (reg, misc | dlv | vector);
         }
 
-        ALWAYS_INLINE
         static inline void timer_handler();
 
-        ALWAYS_INLINE
         static inline void error_handler();
 
-        ALWAYS_INLINE
         static inline void perfm_handler();
 
-        ALWAYS_INLINE
         static inline void therm_handler();
 
     public:
@@ -109,7 +102,6 @@ class Lapic
         static unsigned freq_bus;
         static bool     use_tsc_timer;
 
-        ALWAYS_INLINE
         static inline unsigned id()
         {
             return read (LAPIC_IDR) >> 24 & 0xff;
@@ -117,7 +109,6 @@ class Lapic
 
         // This is a special version of id() that already works when the LAPIC
         // is not mapped yet.
-        ALWAYS_INLINE
         static inline unsigned early_id()
         {
             uint32 ebx, dummy;
@@ -127,25 +118,21 @@ class Lapic
             return ebx >> 24; // APIC ID is encoded in bits 31 to 24.
         }
 
-        ALWAYS_INLINE
         static inline unsigned version()
         {
             return read (LAPIC_LVR) & 0xff;
         }
 
-        ALWAYS_INLINE
         static inline unsigned lvt_max()
         {
             return read (LAPIC_LVR) >> 16 & 0xff;
         }
 
-        ALWAYS_INLINE
         static inline void eoi()
         {
             write (LAPIC_EOI, 0);
         }
 
-        ALWAYS_INLINE
         static inline void set_timer (uint64 tsc)
         {
             if (not use_tsc_timer) {
@@ -156,7 +143,6 @@ class Lapic
                 Msr::write (Msr::IA32_TSC_DEADLINE, tsc);
         }
 
-        ALWAYS_INLINE
         static inline unsigned get_timer()
         {
             return read (LAPIC_TMR_CCR);

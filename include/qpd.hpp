@@ -26,16 +26,13 @@ class Qpd
         mword val;
 
     public:
-        ALWAYS_INLINE
         inline explicit Qpd (mword v) : val (v) {}
 
-        ALWAYS_INLINE
         inline unsigned quantum() const
         {
             return static_cast<unsigned>(val >> 12);
         }
 
-        ALWAYS_INLINE
         inline unsigned prio() const
         {
             return static_cast<unsigned>(val & 0xff);

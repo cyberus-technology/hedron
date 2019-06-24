@@ -64,14 +64,12 @@ class Slab
         Slab *          next;                     // Next slab in cache
         char *          head;
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
             // The front-end allocator will initialize memory.
             return Buddy::allocator.alloc (0, Buddy::NOFILL);
         }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr)
         {
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
@@ -79,13 +77,11 @@ class Slab
 
         Slab (Slab_cache *slab_cache);
 
-        ALWAYS_INLINE
         inline bool full() const
         {
             return !avail;
         }
 
-        ALWAYS_INLINE
         inline bool empty() const
         {
             return avail == cache->elem;
@@ -94,9 +90,7 @@ class Slab
         void enqueue();
         void dequeue();
 
-        ALWAYS_INLINE
         inline void *alloc();
 
-        ALWAYS_INLINE
         inline void free (void *ptr);
 };

@@ -58,13 +58,11 @@ class Ioapic : public List<Ioapic>
             IOAPIC_IRT  = 0x10,
         };
 
-        ALWAYS_INLINE
         inline void index (Register reg)
         {
             *reinterpret_cast<uint8 volatile *>(reg_base + IOAPIC_IDX) = reg;
         }
 
-        ALWAYS_INLINE
         inline uint32 read (Register reg)
         {
             Lock_guard <Spinlock> guard (lock);
@@ -72,7 +70,6 @@ class Ioapic : public List<Ioapic>
             return *reinterpret_cast<uint32 volatile *>(reg_base + IOAPIC_WND);
         }
 
-        ALWAYS_INLINE
         inline void write (Register reg, uint32 val)
         {
             Lock_guard <Spinlock> guard (lock);
@@ -84,10 +81,8 @@ class Ioapic : public List<Ioapic>
         INIT
         Ioapic (Paddr, unsigned, unsigned);
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline bool claim_dev (unsigned r, unsigned i)
         {
             for (Ioapic *ioapic = list; ioapic; ioapic = ioapic->next)
@@ -99,7 +94,6 @@ class Ioapic : public List<Ioapic>
             return false;
         }
 
-        ALWAYS_INLINE
         static inline void add_to_hip (Hip_ioapic *&entry)
         {
             for (Ioapic *ioapic = list; ioapic; ioapic = ioapic->next) {
@@ -111,36 +105,26 @@ class Ioapic : public List<Ioapic>
             }
         }
 
-        ALWAYS_INLINE
         inline uint32 read_id_reg()      { return read (IOAPIC_ID); }
-        ALWAYS_INLINE
         inline uint32 read_version_reg() { return read (IOAPIC_VER); }
-        ALWAYS_INLINE
         inline uint32 get_paddr()        { return paddr; }
 
-        ALWAYS_INLINE
         inline uint16 get_rid() const { return rid; }
 
-        ALWAYS_INLINE
         inline unsigned get_gsi() const { return gsi_base; }
 
-        ALWAYS_INLINE
         inline unsigned version() { return read (IOAPIC_VER) & 0xff; }
 
-        ALWAYS_INLINE
         inline unsigned prq() { return read (IOAPIC_VER) >> 15 & 0x1; }
 
-        ALWAYS_INLINE
         inline unsigned irt_max() { return read (IOAPIC_VER) >> 16 & 0xff; }
 
-        ALWAYS_INLINE
         inline void set_irt (unsigned gsi, unsigned val)
         {
             unsigned pin = gsi - gsi_base;
             write (Register (IOAPIC_IRT + 2 * pin), val);
         }
 
-        ALWAYS_INLINE
         inline void set_cpu (unsigned gsi, unsigned cpu, bool ire)
         {
             unsigned pin = gsi - gsi_base;

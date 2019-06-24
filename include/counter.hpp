@@ -38,7 +38,6 @@ class Counter
 
         static void dump();
 
-        ALWAYS_INLINE
         static inline unsigned remote (unsigned cpu, unsigned ipi)
         {
             return ACCESS_ONCE(Cpulocal::get_remote(cpu).counter_ipi[ipi]);

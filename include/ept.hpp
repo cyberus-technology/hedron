@@ -41,16 +41,12 @@ class Ept : public Pte<Ept, uint64, 4, 9, false>
             PTE_N   = EPT_R | EPT_W | EPT_X,
         };
 
-        ALWAYS_INLINE
         static inline mword hw_attr (mword a, mword t) { return a ? t << 3 | a | EPT_R : 0; }
 
-        ALWAYS_INLINE
         inline mword order() const { return PAGE_BITS + (static_cast<mword>(val) >> 8 & 0xf); }
 
-        ALWAYS_INLINE
         static inline mword order (mword o) { return o << 8; }
 
-        ALWAYS_INLINE
         inline void flush()
         {
             struct { uint64 eptp, rsvd; } desc = { addr() | (max() - 1) << 3 | 6, 0 };

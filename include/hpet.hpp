@@ -35,13 +35,10 @@ class Hpet : public List<Hpet>
         static Slab_cache   cache;
 
     public:
-        ALWAYS_INLINE
         explicit inline Hpet (Paddr p, unsigned i) : List<Hpet> (list), phys (p), id (i), rid (0) {}
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline bool claim_dev (unsigned r, unsigned i)
         {
             for (Hpet *hpet = list; hpet; hpet = hpet->next)
@@ -53,7 +50,6 @@ class Hpet : public List<Hpet>
             return false;
         }
 
-        ALWAYS_INLINE
         static inline unsigned phys_to_rid (Paddr p)
         {
             for (Hpet *hpet = list; hpet; hpet = hpet->next)

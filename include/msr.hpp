@@ -108,7 +108,6 @@ class Msr
         };
 
         template <typename T>
-        ALWAYS_INLINE
         static inline T read (Register msr)
         {
             mword h, l;
@@ -117,7 +116,6 @@ class Msr
         }
 
         template <typename T>
-        ALWAYS_INLINE
         static inline T read_safe (Register msr)
         {
             mword h {0}, l {0};
@@ -127,14 +125,12 @@ class Msr
         }
 
         template <typename T>
-        ALWAYS_INLINE
         static inline void write (Register msr, T val)
         {
             asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
         }
 
         template <typename T>
-        ALWAYS_INLINE
         static inline void write_safe (Register msr, T val)
         {
             asm volatile (FIXUP_CALL(wrmsr)

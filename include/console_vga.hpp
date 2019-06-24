@@ -36,27 +36,23 @@ class Console_vga : public Console
 
         unsigned num, row, col;
 
-        ALWAYS_INLINE
         static inline unsigned read (Register reg)
         {
             Io::out<uint8>(0x3d4, reg);
             return Io::in<uint8>(0x3d5);
         }
 
-        ALWAYS_INLINE
         static inline void write (Register reg, uint8 val)
         {
             Io::out<uint8>(0x3d4, reg);
             Io::out<uint8>(0x3d5, val);
         }
 
-        ALWAYS_INLINE
         inline void clear_all()
         {
             memset (reinterpret_cast<void *>(HV_GLOBAL_FBUF), 0, 160 * num);
         }
 
-        ALWAYS_INLINE
         inline void clear_row (unsigned r)
         {
             memcpy (reinterpret_cast<void *>(HV_GLOBAL_FBUF), reinterpret_cast<void *>(HV_GLOBAL_FBUF + 160), 160 * r);
@@ -92,16 +88,13 @@ class Console_vga : public Console
         INIT
         void setup();
 
-        ALWAYS_INLINE
         inline unsigned spinner (unsigned id) { return id < 25 - num ? 24 - id : 0; }
 
-        ALWAYS_INLINE
         inline void put (unsigned long r, unsigned long c, Color color, int x)
         {
             *reinterpret_cast<unsigned short volatile *>(HV_GLOBAL_FBUF + r * 160 + c * 2) = static_cast<unsigned short>(color << 8 | x);
         }
 
-        ALWAYS_INLINE
         static inline void set_page (unsigned page)
         {
             page <<= 11;    // due to odd/even addressing

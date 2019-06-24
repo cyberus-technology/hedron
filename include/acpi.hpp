@@ -106,7 +106,6 @@ class Acpi
         static void write (Register, unsigned);
         static void clear (Register, unsigned);
 
-        ALWAYS_INLINE
         static inline mword tmr_msb() { return feature & 0x100 ? 31 : 23; }
 
     public:

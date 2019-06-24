@@ -28,10 +28,8 @@ class Refcount
         uint32 ref;
 
     public:
-        ALWAYS_INLINE
         inline Refcount() : ref (1) {}
 
-        ALWAYS_INLINE
         inline bool add_ref()
         {
             for (uint32 r; (r = ref); )
@@ -41,19 +39,16 @@ class Refcount
             return false;
         }
 
-        ALWAYS_INLINE
         inline bool del_ref()
         {
             return Atomic::sub (ref, 1U) == 0;
         }
 
-        ALWAYS_INLINE
         inline bool last_ref()
         {
             return ACCESS_ONCE(ref) == 1;
         }
 
-        ALWAYS_INLINE
         inline bool del_rcu()
         {
             if (last_ref())
@@ -78,10 +73,8 @@ class Refptr
         operator T*() const     { return ptr; }
         T * operator->() const  { return ptr; }
 
-        ALWAYS_INLINE
         inline Refptr (T *p) : ptr (p->add_ref() ? p : nullptr) {}
 
-        ALWAYS_INLINE
         inline ~Refptr()
         {
             if (!ptr)

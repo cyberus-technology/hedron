@@ -33,25 +33,18 @@ class Pte
 
         P *walk (E, unsigned long, bool = true);
 
-        ALWAYS_INLINE
         inline bool present() const { return val & P::PTE_P; }
 
-        ALWAYS_INLINE
         inline bool super() const { return val & P::PTE_S; }
 
-        ALWAYS_INLINE
         inline mword attr() const { return static_cast<mword>(val) & PAGE_MASK; }
 
-        ALWAYS_INLINE
         inline Paddr addr() const { return static_cast<Paddr>(val) & ~((1UL << order()) - 1); }
 
-        ALWAYS_INLINE
         inline mword order() const { return PAGE_BITS; }
 
-        ALWAYS_INLINE
         static inline mword order (mword) { return 0; }
 
-        ALWAYS_INLINE
         inline bool set (E o, E v)
         {
             bool b = Atomic::cmp_swap (val, o, v);
@@ -62,7 +55,6 @@ class Pte
             return b;
         }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t)
         {
             void *p = Buddy::allocator.alloc (0, Buddy::FILL_0);
@@ -73,7 +65,6 @@ class Pte
             return p;
         }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { Buddy::allocator.free (reinterpret_cast<mword>(ptr)); }
 
         void free_up (unsigned l, P *, mword, bool (*) (Paddr, mword, unsigned), bool (*) (unsigned, mword));
@@ -97,14 +88,11 @@ class Pte
         };
 
         // Returns the number of linear address bits that are used to index into the page table.
-        ALWAYS_INLINE
         static inline unsigned bits_per_level() { return B; }
 
         // Returns the number of levels in the page table.
-        ALWAYS_INLINE
         static inline unsigned max() { return L; }
 
-        ALWAYS_INLINE
         inline E root (mword l = L - 1) { return Buddy::ptr_to_phys (walk (0, l)); }
 
         size_t lookup (E, Paddr &, mword &);

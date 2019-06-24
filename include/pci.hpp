@@ -75,14 +75,11 @@ class Pci : public List<Pci>
         };
 
         template <typename T>
-        ALWAYS_INLINE
         inline unsigned read (Register r) { return *reinterpret_cast<T volatile *>(reg_base + r); }
 
         template <typename T>
-        ALWAYS_INLINE
         inline void write (Register r, T v) { *reinterpret_cast<T volatile *>(reg_base + r) = v; }
 
-        ALWAYS_INLINE
         static inline Pci *find_dev (unsigned long r)
         {
             for (Pci *pci = list; pci; pci = pci->next)
@@ -96,10 +93,8 @@ class Pci : public List<Pci>
         INIT
         Pci (unsigned, unsigned);
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        ALWAYS_INLINE
         static inline void claim_all (Dmar *d)
         {
             for (Pci *pci = list; pci; pci = pci->next)
@@ -107,7 +102,6 @@ class Pci : public List<Pci>
                     pci->dmar = d;
         }
 
-        ALWAYS_INLINE
         static inline bool claim_dev (Dmar *d, unsigned r)
         {
             Pci *pci = find_dev (r);
@@ -127,13 +121,11 @@ class Pci : public List<Pci>
         INIT
         static unsigned scan (unsigned bus = 0, unsigned level = 0, unsigned max_bus = 0);
 
-        ALWAYS_INLINE
         static inline unsigned phys_to_rid (Paddr p)
         {
             return p - cfg_base < cfg_size ? static_cast<unsigned>((bus_base << 8) + (p - cfg_base) / PAGE_SIZE) : ~0U;
         }
 
-        ALWAYS_INLINE
         static inline Dmar *find_dmar (unsigned long r)
         {
             Pci *pci = find_dev (r);

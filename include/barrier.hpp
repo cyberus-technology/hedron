@@ -20,7 +20,6 @@
 
 #include "compiler.hpp"
 
-ALWAYS_INLINE
 inline void barrier()
 {
     asm volatile ("" : : : "memory");

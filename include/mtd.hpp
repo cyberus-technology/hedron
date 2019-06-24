@@ -65,6 +65,5 @@ class Mtd
             FPU             = 1UL << 31,
         };
 
-        ALWAYS_INLINE
         inline explicit Mtd (mword v) : val (v) {}
 };

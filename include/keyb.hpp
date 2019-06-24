@@ -31,10 +31,8 @@ class Keyb
             STS_AUXB = 1U << 5,
         };
 
-        ALWAYS_INLINE
         static inline unsigned output() { return Io::in<uint8>(0x60); }
 
-        ALWAYS_INLINE
         static inline unsigned status() { return Io::in<uint8>(0x64); }
 
     public:

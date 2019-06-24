@@ -28,13 +28,11 @@ class Space_mem;
 class Space_obj : public Space
 {
     private:
-        ALWAYS_INLINE
         static inline mword idx_to_virt (unsigned long idx)
         {
             return SPC_LOCAL_OBJ + (idx % caps) * sizeof (Capability);
         }
 
-        ALWAYS_INLINE
         inline Space_mem *space_mem();
 
         bool update (mword, Capability);
@@ -42,7 +40,6 @@ class Space_obj : public Space
     public:
         static unsigned const caps = (END_SPACE_LIM - SPC_LOCAL_OBJ) / sizeof (Capability);
 
-        ALWAYS_INLINE
         static inline Capability lookup (unsigned long idx)
         {
             return *reinterpret_cast<Capability *>(idx_to_virt (idx));

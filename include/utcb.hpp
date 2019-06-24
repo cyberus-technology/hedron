@@ -37,7 +37,6 @@ class Utcb_segment
         uint32  limit;
         uint64  base;
 
-        ALWAYS_INLINE
         inline void set_vmx (mword s, mword b, mword l, mword a)
         {
             sel   = static_cast<uint16>(s);
@@ -123,7 +122,7 @@ class Utcb : public Utcb_head, private Utcb_data
 
         inline mword &mr(mword i) { return (&data_begin)[i]; }
 
-        ALWAYS_INLINE NONNULL
+        NONNULL
         inline void save (Utcb *dst)
         {
             register mword n = ui();
@@ -134,12 +133,9 @@ class Utcb : public Utcb_head, private Utcb_data
             }
         }
 
-        ALWAYS_INLINE
         inline Xfer *xfer() { return reinterpret_cast<Xfer *>(this) + PAGE_SIZE / sizeof (Xfer) - 1; }
 
-        ALWAYS_INLINE
         static inline void *operator new (size_t) { return Buddy::allocator.alloc (0, Buddy::FILL_0); }
 
-        ALWAYS_INLINE
         static inline void operator delete (void *ptr) { Buddy::allocator.free (reinterpret_cast<mword>(ptr)); }
 };

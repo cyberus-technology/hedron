@@ -24,7 +24,6 @@ class Io
 {
     public:
         template <typename T>
-        ALWAYS_INLINE
         static inline unsigned in (unsigned port)
         {
             T val;
@@ -33,7 +32,6 @@ class Io
         }
 
         template <typename T>
-        ALWAYS_INLINE
         static inline void out (unsigned port, T val)
         {
             asm volatile ("out %0, %w1" : : "a" (val), "Nd" (port));
