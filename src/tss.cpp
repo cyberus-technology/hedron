@@ -28,15 +28,15 @@ static_assert((TSS_AREA_E - TSS_AREA) / sizeof (Tss) >= NUM_CPU, "TSS area too s
 static_assert(SPC_LOCAL_IOP >= TSS_AREA_E, "IO permission bitmap must lie behind TSS area");
 static_assert(SPC_LOCAL_IOP_E - TSS_AREA < (1 << 16), "TSS and IO permission bitmap must fit in a 64K segment");
 
-Tss &Tss::run_remote (unsigned id)
+Tss &Tss::remote (unsigned id)
 {
     assert (id < NUM_CPU);
     return reinterpret_cast<Tss *>(TSS_AREA)[id];
 }
 
-Tss &Tss::run()
+Tss &Tss::local()
 {
-    return run_remote (Cpu::id());
+    return remote (Cpu::id());
 }
 
 void Tss::setup()
@@ -51,7 +51,7 @@ void Tss::setup()
 
 void Tss::build()
 {
-    auto &tss {run()};
+    auto &tss {local()};
 
     tss.sp0  = reinterpret_cast<mword>(&Cpulocal::get().self);
     tss.iobm = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&tss));

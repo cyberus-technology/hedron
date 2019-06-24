@@ -38,8 +38,8 @@ class Tss
         uint16  trap;                   // 0x64
         uint16  iobm;                   // 0x66
 
-        static Tss &run();
-        static Tss &run_remote (unsigned id);
+        static Tss &local();
+        static Tss &remote (unsigned id);
 
         static void setup();
         static void build();
