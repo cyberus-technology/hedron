@@ -37,5 +37,5 @@ void Gdt::build()
     gdt(SEL_USER_DATA).set32 (DATA_RWA, PAGES, BIT_16, true, 3, 0, ~0ul);
     gdt(SEL_USER_CODE_L).set32 (CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
 
-    gdt(SEL_TSS_RUN).set64 (SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::run), SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::run));
+    gdt(SEL_TSS_RUN).set64 (SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::local()), SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::local()));
 }

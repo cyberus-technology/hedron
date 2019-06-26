@@ -31,6 +31,7 @@
 #include "idt.hpp"
 #include "keyb.hpp"
 #include "multiboot.hpp"
+#include "tss.hpp"
 
 extern "C" INIT
 mword kern_ptab_setup()
@@ -44,6 +45,9 @@ mword kern_ptab_setup()
 
     // Sync kernel code and data
     hpt.sync_master_range (LINK_ADDR, CPU_LOCAL);
+
+    // Sync TSS area
+    hpt.sync_master_range (TSS_AREA, TSS_AREA_E);
 
     return hpt.addr();
 }
@@ -69,6 +73,7 @@ void init (mword mbi)
     Idt::build();
     Gsi::setup();
     Acpi::setup();
+    Tss::setup();
 
     Hip::build (mbi);
 

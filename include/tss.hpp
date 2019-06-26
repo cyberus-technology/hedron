@@ -38,8 +38,10 @@ class Tss
         uint16  trap;                   // 0x64
         uint16  iobm;                   // 0x66
 
-        static Tss run asm ("tss_run")  CPULOCAL;
+        static Tss &local();
+        static Tss &remote (unsigned id);
 
+        static void setup();
         static void build();
 
         static inline void load()

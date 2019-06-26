@@ -23,6 +23,23 @@
 
 #pragma once
 
+// Current virtual memory layout in the kernel:
+//
+// 0xffff_ffff_ffff_ffff END_SPACE_LIM - 1
+// 0xffff_ffff_e000_0000 SPC_LOCAL_OBJ
+// 0xffff_ffff_df00_0000 SPC_LOCAL_REMAP
+
+// 0xffff_ffff_c000_2000 SPC_LOCAL_IOP_E
+// 0xffff_ffff_c000_0000 SPC_LOCAL / SPC_LOCAL_IOP
+// 0xffff_ffff_bfff_e000 TSS_AREA
+// 0xffff_ffff_bfff_d000 CPU_LOCAL_DATA
+// 0xffff_ffff_bfff_c000 CPU_LOCAL_APIC
+// 0xffff_ffff_bfe0_0000 CPU_LOCAL
+// 0xffff_ffff_bfdf_f000 HV_GLOBAL_FBUF
+// 0xffff_ffff_bee0_0000 HV_GLOBAL_CPUS
+
+// 0xffff_ffff_8800_0000 LINK_ADDR
+
 #define PAGE_BITS       12
 #define PAGE_SIZE       (1 << PAGE_BITS)
 #define PAGE_MASK       (PAGE_SIZE - 1)
@@ -38,8 +55,11 @@
 #define HV_GLOBAL_CPUS  (CPU_LOCAL - 0x1000000)
 #define HV_GLOBAL_FBUF  (CPU_LOCAL - PAGE_SIZE * 1)
 
-#define CPU_LOCAL_APIC  (SPC_LOCAL - PAGE_SIZE * 2)
-#define CPU_LOCAL_DATA  (SPC_LOCAL - PAGE_SIZE * 1)
+#define CPU_LOCAL_APIC  (SPC_LOCAL - PAGE_SIZE * 4)
+#define CPU_LOCAL_DATA  (SPC_LOCAL - PAGE_SIZE * 3)
+
+#define TSS_AREA        (SPC_LOCAL - PAGE_SIZE * 2)
+#define TSS_AREA_E      (SPC_LOCAL)
 
 #define SPC_LOCAL_IOP   (SPC_LOCAL)
 #define SPC_LOCAL_IOP_E (SPC_LOCAL_IOP + PAGE_SIZE * 2)
