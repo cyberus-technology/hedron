@@ -21,12 +21,13 @@
 #pragma once
 
 #include "types.hpp"
+#include "memory.hpp"
 
 extern char GIT_VER;
 
-extern char PAGE_0;
-extern char PAGE_1;
-extern char PAGE_H;
+extern char PAGE_0[PAGE_SIZE];
+extern char PAGE_1[PAGE_SIZE];
+extern char PAGE_H[PAGE_SIZE];
 
 extern char FRAME_0;
 extern char FRAME_1;

@@ -105,7 +105,7 @@ Cpu_info Cpu::check_features()
             cpu_info.brand    =  ebx & 0xff;
             top      =  ebx >> 24;
             tpp      =  ebx >> 16 & 0xff;
-            FALL_THROUGH;
+            break;
     }
 
     cpu_info.patch = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_BIOS_SIGN_ID) >> 32);
@@ -130,7 +130,7 @@ Cpu_info Cpu::check_features()
                 FALL_THROUGH;
             case 0x1:
                 cpuid (0x80000001, eax, ebx, features()[5], features()[4]);
-                FALL_THROUGH;
+                break;
         }
     }
 

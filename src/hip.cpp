@@ -156,8 +156,8 @@ void Hip::add_check()
     h->hpet_base     = Hpet::list == nullptr ? 0 : Hpet::list->phys;
 
     uint16 c = 0;
-    for (uint16 const *ptr = reinterpret_cast<uint16 const *>(&PAGE_H);
-                       ptr < reinterpret_cast<uint16 const *>(&PAGE_H + h->length);
+    for (uint16 const *ptr = reinterpret_cast<uint16 const *>(PAGE_H);
+                       ptr < reinterpret_cast<uint16 const *>(PAGE_H + h->length);
                        c = static_cast<uint16>(c - *ptr++)) ;
 
     h->checksum = c;

@@ -42,5 +42,12 @@ build:default-ubuntu:
 
 build:release:
   <<: *build_ubuntu
-  <<: *build_all
-  <<: *release_only
+  stage: build
+  script:
+    - tup init
+    - tup variant configs/default.config
+    - tup
+  artifacts:
+    expire_in: 5 year
+    paths:
+      - build-*/src/hypervisor-x86_64
