@@ -25,16 +25,17 @@
 #include "compiler.hpp"
 
 template <typename T>
-static inline void flush (T t)
+inline void clflush (T *t)
 {
     asm volatile ("clflush %0" : : "m" (*t) : "memory");
 }
 
 NONNULL
-inline void *flush (void *d, size_t n)
+inline void *clflush (void *d, size_t n)
 {
-    for (char *p = static_cast<char *>(d); p < static_cast<char *>(d) + n; p += 32)
-        flush (p);
+    for (char *p = static_cast<char *>(d); p < static_cast<char *>(d) + n; p += 32) {
+        clflush (p);
+    }
 
     return d;
 }

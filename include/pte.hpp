@@ -50,7 +50,7 @@ class Pte
             bool b = Atomic::cmp_swap (val, o, v);
 
             if (F && b)
-                flush (this);
+                clflush (this);
 
             return b;
         }
@@ -60,7 +60,7 @@ class Pte
             void *p = Buddy::allocator.alloc (0, Buddy::FILL_0);
 
             if (F)
-                flush (p, PAGE_SIZE);
+                clflush (p, PAGE_SIZE);
 
             return p;
         }

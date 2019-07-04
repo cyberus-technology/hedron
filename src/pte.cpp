@@ -107,8 +107,9 @@ bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword attr, Type t)
         }
     }
 
-    if (F)
-        flush (e, n * sizeof (E));
+    if (F) {
+        clflush (e, n * sizeof (E));
+    }
 
     return flush_tlb;
 }
