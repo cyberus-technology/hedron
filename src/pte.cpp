@@ -46,6 +46,8 @@ P *Pte<P,E,L,B,F>::walk (E v, unsigned long to_level, bool alloc)
             if (!e->set (0, Buddy::ptr_to_phys (p = new P) | (l == L ? 0 : P::PTE_N)))
                 delete p;
         }
+
+        assert (!e->super());
     }
 }
 
