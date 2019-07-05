@@ -62,7 +62,7 @@ size_t Pte<P,E,L,B,F>::lookup (E v, Paddr &p, mword &attr)
         if (EXPECT_FALSE (l && !e->super()))
             continue;
 
-        size_t s = 1UL << (l * B + e->order());
+        size_t s = 1UL << (l * B + PAGE_BITS);
 
         p = static_cast<Paddr>(e->addr() | (v & (s - 1)));
 
@@ -83,7 +83,7 @@ bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword attr, Type t)
         return false;
 
     if (attr) {
-        p |= P::order (o % B) | (l ? P::PTE_S : 0) | attr;
+        p |= (l ? P::PTE_S : 0) | attr;
         s = 1UL << (l * B + PAGE_BITS);
     } else
         p = s = 0;

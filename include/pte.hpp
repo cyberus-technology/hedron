@@ -39,11 +39,7 @@ class Pte
 
         inline mword attr() const { return static_cast<mword>(val) & PAGE_MASK; }
 
-        inline Paddr addr() const { return static_cast<Paddr>(val) & ~((1UL << order()) - 1); }
-
-        inline mword order() const { return PAGE_BITS; }
-
-        static inline mword order (mword) { return 0; }
+        inline Paddr addr() const { return static_cast<Paddr>(val) & ~((1UL << PAGE_BITS) - 1); }
 
         inline bool set (E o, E v)
         {
