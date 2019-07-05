@@ -84,7 +84,6 @@ class Pte
         {
             TYPE_UP,
             TYPE_DN,
-            TYPE_DF,
         };
 
         // Returns the number of linear address bits that are used to index into the page table.
