@@ -1,0 +1,12 @@
+NOVA_HOST_CXXFLAGS  = -Og -g -Wall -Wextra `pkg-config --cflags catch2`
+NOVA_HOST_CXXFLAGS += -fsanitize=address -fsanitize=undefined
+NOVA_HOST_LDFLAGS   = `pkg-config --libs catch2`
+
+ifeq (@(WERROR),y)
+NOVA_HOST_CXXFLAGS += -Werror
+endif
+
+NOVA_HOST_CXX = g++
+
+!nova_host_cxx = |> ^o^ $(NOVA_HOST_CXX) $(NOVA_HOST_CXXFLAGS) -c -o %o %f |> %B.o
+!nova_host_ld = |> ^o^ $(NOVA_HOST_CXX) $(NOVA_HOST_CXXFLAGS) $(NOVA_HOST_LDFLAGS) -o %o %f |>
