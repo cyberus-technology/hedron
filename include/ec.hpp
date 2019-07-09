@@ -28,6 +28,7 @@
 #include "counter.hpp"
 #include "cpulocal.hpp"
 #include "fpu.hpp"
+#include "lock_guard.hpp"
 #include "mtd.hpp"
 #include "pd.hpp"
 #include "queue.hpp"

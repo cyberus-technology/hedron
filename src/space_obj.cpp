@@ -18,6 +18,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "lock_guard.hpp"
 #include "pd.hpp"
 
 Space_mem *Space_obj::space_mem()

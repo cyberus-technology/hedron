@@ -22,6 +22,7 @@
 #include "hazards.hpp"
 #include "hip.hpp"
 #include "lapic.hpp"
+#include "lock_guard.hpp"
 #include "mtrr.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"

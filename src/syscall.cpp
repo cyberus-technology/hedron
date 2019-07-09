@@ -22,6 +22,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "bits.hpp"
 #include "dmar.hpp"
 #include "gsi.hpp"
 #include "hip.hpp"
