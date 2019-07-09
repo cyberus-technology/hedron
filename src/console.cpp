@@ -37,12 +37,12 @@ void Console::print_num (uint64 val, unsigned base, unsigned width, unsigned fla
         val = -val;
     }
 
+    static char const digits[] = "0123456789abcdef";
     char buffer[24], *ptr = buffer + sizeof buffer;
 
     do {
-        uint32 r;
-        val = div64 (val, base, &r);
-        *--ptr = r["0123456789abcdef"];
+        *--ptr = digits[val % base];
+        val = val / base;
     } while (val);
 
     if (neg)

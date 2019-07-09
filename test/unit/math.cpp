@@ -53,17 +53,6 @@ TEST_CASE ("Finding maximum order works", "[math]")
     CHECK (max_order (1 << 2, 1 << 4) ==  2);
 }
 
-TEST_CASE ("64-bit division works")
-{
-    uint32_t mod;
-
-    CHECK (div64 (10, 5, &mod) == 2);
-    CHECK (mod == 0);
-
-    CHECK (div64 ((4*static_cast<uint64>(1) << 30) + 3, 1 << 30, &mod) == 4);
-    CHECK (mod == 3);
-}
-
 TEST_CASE ("Alignment functions work", "[math]")
 {
     CHECK (align_dn (0x4000, 0x1000) == 0x4000);

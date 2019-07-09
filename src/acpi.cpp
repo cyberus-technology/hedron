@@ -30,7 +30,6 @@
 #include "gsi.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
-#include "math.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
 
@@ -53,9 +52,8 @@ void Acpi::delay (unsigned ms)
 
 uint64 Acpi::time()
 {
-    uint32 dummy;
     mword b = tmr_msb(), c = read (PM_TMR), p = 1UL << b;
-    return div64 (1000000 * ((tmr_ovf + ((c >> b ^ tmr_ovf) & 1)) * static_cast<uint64>(p) + (c & (p - 1))), timer_frequency, &dummy);
+    return (1000000 * ((tmr_ovf + ((c >> b ^ tmr_ovf) & 1)) * static_cast<uint64>(p) + (c & (p - 1)))) / timer_frequency;
 }
 
 void Acpi::reset()
