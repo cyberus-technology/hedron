@@ -18,9 +18,9 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "space.hpp"
 #include "lock_guard.hpp"
+#include "math.hpp"
 #include "mdb.hpp"
 
 Mdb *Space::tree_lookup (mword idx, bool next)

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "avl.hpp"
+#include "math.hpp"
 #include "rcu.hpp"
 #include "slab.hpp"
 #include "util.hpp"

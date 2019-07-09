@@ -27,10 +27,10 @@
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
 #include "assert.hpp"
-#include "bits.hpp"
 #include "gsi.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
+#include "math.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
 

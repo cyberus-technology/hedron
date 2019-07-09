@@ -19,7 +19,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "dmar.hpp"
 #include "lapic.hpp"
 #include "pd.hpp"

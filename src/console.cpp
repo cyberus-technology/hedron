@@ -20,9 +20,9 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "console.hpp"
 #include "lock_guard.hpp"
+#include "math.hpp"
 #include "x86.hpp"
 
 Console *Console::list;

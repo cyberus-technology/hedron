@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "math.hpp"
 #include "counter.hpp"
 #include "cpulocal.hpp"
 #include "fpu.hpp"

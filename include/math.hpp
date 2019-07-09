@@ -1,5 +1,5 @@
 /*
- * Bit Scan Functions
+ * Math Helper Functions
  *
  * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
  * Economic rights: Technische Universitaet Dresden (Germany)
@@ -20,8 +20,20 @@
 
 #pragma once
 
+#include "compiler.hpp"
 #include "types.hpp"
-#include "util.hpp"
+
+template <typename T>
+T min (T v1, T v2)
+{
+    return v1 < v2 ? v1 : v2;
+}
+
+template <typename T>
+T max (T v1, T v2)
+{
+    return v1 > v2 ? v1 : v2;
+}
 
 inline long int bit_scan_reverse (mword val)
 {
@@ -59,13 +71,13 @@ inline uint64 div64 (uint64 n, uint32 d, uint32 *r)
     return q;
 }
 
-static inline mword align_dn (mword val, mword align)
+inline mword align_dn (mword val, mword align)
 {
     val &= ~(align - 1);                // Expect power-of-2
     return val;
 }
 
-static inline mword align_up (mword val, mword align)
+inline mword align_up (mword val, mword align)
 {
     val += (align - 1);                 // Expect power-of-2
     return align_dn (val, align);

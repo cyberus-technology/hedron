@@ -25,7 +25,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "cmdline.hpp"
 #include "cpu.hpp"
 #include "counter.hpp"

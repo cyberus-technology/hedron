@@ -19,10 +19,10 @@
  */
 
 #include "assert.hpp"
-#include "bits.hpp"
 #include "buddy.hpp"
 #include "initprio.hpp"
 #include "lock_guard.hpp"
+#include "math.hpp"
 #include "stdio.hpp"
 #include "string.hpp"
 
