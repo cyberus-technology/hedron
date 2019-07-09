@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "config.hpp"
+#include "atomic.hpp"
 #include "console_vga.hpp"
 #include "cpu.hpp"
 
@@ -40,7 +40,7 @@ class Counter
 
         static inline unsigned remote (unsigned cpu, unsigned ipi)
         {
-            return ACCESS_ONCE(Cpulocal::get_remote(cpu).counter_ipi[ipi]);
+            return Atomic::load (Cpulocal::get_remote (cpu).counter_ipi[ipi]);
         }
 
         template <unsigned D, unsigned B>

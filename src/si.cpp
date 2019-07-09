@@ -81,7 +81,7 @@ void Si::submit()
     assert(i);
 
     if (i->space == static_cast<Space_obj *>(&Pd::kern)) {
-        Sm * si = ACCESS_ONCE(i->sm);
+        Sm * si = Atomic::load (i->sm);
         if (si) {
             si->submit();
             return;
@@ -90,7 +90,7 @@ void Si::submit()
 
     i->up();
 
-    Sm * sm_chained = ACCESS_ONCE(sm);
+    Sm * sm_chained = Atomic::load (sm);
     /* if !sm than it is just a semaphore */
     if (!sm_chained) return;
 

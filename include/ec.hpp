@@ -239,7 +239,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         static inline Ec *remote (unsigned cpu)
         {
-            return ACCESS_ONCE(Cpulocal::get_remote(cpu).ec_current);
+            return Atomic::load (Cpulocal::get_remote (cpu).ec_current);
         }
 
         NOINLINE
