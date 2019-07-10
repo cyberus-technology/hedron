@@ -1,6 +1,7 @@
 stages:
   - build
   - unit_test
+  - integration_test
 
 # Job description helpers
 
@@ -58,12 +59,18 @@ stages:
     expire_in: 1 week
     paths:
       - build-$VARIANT/src/hypervisor-x86_64
+      - build-$VARIANT/src/hypervisor-x86_64.elf32
       - build-$VARIANT/test/unit/unit
 
 .unit_test_variant:
   stage: unit_test
   script:
     - ./build-$VARIANT/test/unit/unit
+
+.integration_test_variant:
+  stage: integration_test
+  script:
+    - ./test/integration/qemu-boot ./build-$VARIANT/src/hypervisor-x86_64.elf32
 
 # Build Job descriptions
 
@@ -127,4 +134,39 @@ unit_test:release:
     - .in_ubuntu_bionic
     - .with_ubuntu_testdeps
     - .unit_test_variant
+    - .only_for_releases
+
+# Integration Test Decriptions
+
+integration_test:fedora:
+  dependencies:
+    - build:fedora
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_testdeps
+    - .integration_test_variant
+    - .except_for_releases
+
+integration_test:bionic:
+  dependencies:
+    - build:bionic
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .integration_test_variant
+    - .except_for_releases
+
+integration_test:release:
+  dependencies:
+    - build:release
+  variables:
+    VARIANT: 'default'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .integration_test_variant
     - .only_for_releases
