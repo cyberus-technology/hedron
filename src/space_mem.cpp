@@ -32,10 +32,7 @@ unsigned Space_mem::did_ctr;
 
 void Space_mem::init (unsigned cpu)
 {
-    if (cpus.set (cpu)) {
-        loc[cpu].sync_from (Pd::kern->loc[cpu], CPU_LOCAL, SPC_LOCAL);
-        loc[cpu].sync_master_range (LINK_ADDR, CPU_LOCAL);
-    }
+    cpus.set (cpu);
 }
 
 bool Space_mem::update (Mdb *mdb, mword r)
@@ -80,15 +77,6 @@ bool Space_mem::update (Mdb *mdb, mword r)
         f |= hpt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), r ? Hpt::TYPE_DN : Hpt::TYPE_UP);
 
     if (r || f) {
-
-        for (unsigned j = 0; j < sizeof (loc) / sizeof (*loc); j++) {
-            if (!loc[j].addr())
-                continue;
-
-            for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-                loc[j].update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), Hpt::TYPE_DF);
-        }
-
         htlb.merge (cpus);
     }
 

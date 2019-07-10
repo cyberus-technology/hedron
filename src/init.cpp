@@ -29,28 +29,10 @@
 #include "hip.hpp"
 #include "hpt.hpp"
 #include "idt.hpp"
+#include "lapic.hpp"
 #include "keyb.hpp"
 #include "multiboot.hpp"
 #include "tss.hpp"
-
-extern "C" INIT
-mword kern_ptab_setup()
-{
-    Hptp hpt;
-
-    // Allocate and map cpu page
-    hpt.update (CPU_LOCAL_DATA, 0,
-                Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0)),
-                Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_W | Hpt::HPT_P);
-
-    // Sync kernel code and data
-    hpt.sync_master_range (LINK_ADDR, CPU_LOCAL);
-
-    // Sync TSS area
-    hpt.sync_master_range (TSS_AREA, TSS_AREA_E);
-
-    return hpt.addr();
-}
 
 extern "C" INIT REGPARM (1)
 void init (mword mbi)
@@ -74,7 +56,7 @@ void init (mword mbi)
     Gsi::setup();
     Acpi::setup();
     Tss::setup();
-
+    Lapic::setup();
     Hip::build (mbi);
 
     Console_vga::con.setup();

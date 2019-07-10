@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -18,39 +20,36 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "assert.hpp"
 #include "bits.hpp"
 #include "hpt.hpp"
 
-bool Hpt::sync_user (Hpt src, mword v)
+// Perform a recursive page table copy. No page table structures are shared and
+// a full set of new page tables are allocated.
+Hpt Hpt::copy (unsigned lvl) const
 {
-    return Hpt::sync_from (src, v, CANON_BOUND);
-}
+    size_t pt_entries {1UL << bits_per_level()};
 
-bool Hpt::sync_from (Hpt src, mword v, mword o)
-{
-    mword l = (bit_scan_reverse (v ^ o) - PAGE_BITS) / bits_per_level();
+    // Copy terminal entries. The root entry has no present bit.
+    if ((lvl + 1 == max()) or (lvl != 0 and not present()) or super()) {
+        return *this;
+    }
 
-    Hpt *s = src.walk (v, l, false);
-    if (!s)
-        return false;
+    // Recurse for entries that reference further tables.
+    Hpt *dst_pt {new Hpt};
+    auto *src_pt {static_cast<Hpt const *>(Buddy::phys_to_ptr (addr()))};
 
-    Hpt *d = walk (v, l);
-    assert (d);
+    for (size_t i = 0; i < pt_entries; i++) {
+        // The low half of the address space contains kernel bootstrap code
+        // and should never be copied to new page tables.
+        bool user_mapping {lvl == 0 and i < (pt_entries / 2)};
 
-    if (d->val == s->val)
-        return false;
+        dst_pt[i] = user_mapping ? Hpt {} : src_pt[i].copy (lvl + 1);
+    }
 
-    d->val = s->val;
+    Hpt copied;
 
-    return true;
-}
-
-void Hpt::sync_master_range (mword s, mword e)
-{
-    for (mword l = (bit_scan_reverse (LINK_ADDR ^ CPU_LOCAL) - PAGE_BITS) / bits_per_level();
-         s < e; s += 1UL << (l * bits_per_level() + PAGE_BITS))
-        sync_from (Hptp (reinterpret_cast<mword>(&PDBR)), s, CPU_LOCAL);
+    copied.val = Buddy::ptr_to_phys (dst_pt) | attr();
+    return copied;
 }
 
 Paddr Hpt::replace (mword v, mword p)

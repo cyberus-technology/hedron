@@ -46,7 +46,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
 
 Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u), xcpu_sm (nullptr)
 {
-    // Make sure we have a PTAB for this CPU in the PD
+    // Make sure we consider the right CPUs for TLB shootdown
     pd->Space_mem::init (c);
 
     regs.vmcs = nullptr;
@@ -84,7 +84,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
                                   pd->Space_pio::walk(),
-                                  pd->loc[c].root(),
+                                  pd->hpt.root(),
                                   pd->ept.root(),
                                   c);
 
@@ -131,9 +131,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
 Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, static_cast<Space_obj *>(own), 0, 0xd, free, pre_free), cont (f), regs (clone->regs), rcap (clone), utcb (clone->utcb), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (clone->evt), user_utcb (0), xcpu_sm (clone->xcpu_sm)
 {
-    // Make sure we have a PTAB for this CPU in the PD
-    pd->Space_mem::init (c);
-
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 }
@@ -380,7 +377,6 @@ bool Ec::fixup (mword &eip)
 void Ec::die (char const *reason, Exc_regs *r)
 {
     if (current()->utcb || current()->pd == &Pd::kern) {
-        if (strcmp(reason, "PT not found"))
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else

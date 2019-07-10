@@ -27,7 +27,6 @@ INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
 
 ALIGNED(32) No_destruct<Pd> Pd::kern (&Pd::kern);
-ALIGNED(32) No_destruct<Pd> Pd::root (&Pd::root, NUM_EXC, 0x1f);
 
 Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
 {
@@ -45,8 +44,10 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
     Space_pio::addreg (0, 1UL << 16, 7);
 }
 
-Pd::Pd (Pd *own, mword sel, mword a) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free)
+Pd::Pd (Pd *own, mword sel, mword a, bool priv) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free), is_priv(priv)
 {
+    Hptp const root_pt {reinterpret_cast<mword>(&PDBR)};
+    hpt = root_pt.copy();
 }
 
 template <typename S>
@@ -315,7 +316,7 @@ Xfer Pd::xfer_item (Pd *src_pd, Crd xlt, Crd del, Xfer s_ti)
         set_as_del = 1;
         FALL_THROUGH;
     case Xfer::Kind::DELEGATE:
-        del_crd (src_pd == &root && s_ti.from_kern() ? &kern : src_pd, del, crd, s_ti.subspaces(), s_ti.hotspot());
+        del_crd (src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd, s_ti.subspaces(), s_ti.hotspot());
         break;
 
     default:
@@ -366,7 +367,4 @@ Pd::~Pd()
     Space_mem::hpt.clear(Space_mem::hpt.dest_hpt, Space_mem::hpt.iter_hpt_lev);
     Space_mem::dpt.clear();
     Space_mem::npt.clear();
-    for (unsigned cpu = 0; cpu < NUM_CPU; cpu++)
-        if (Hip::cpu_online (cpu))
-            Space_mem::loc[cpu].clear(Space_mem::hpt.dest_loc, Space_mem::hpt.iter_loc_lev);
 }
