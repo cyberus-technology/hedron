@@ -24,18 +24,18 @@
 #include "types.hpp"
 
 template <typename T>
-T min (T v1, T v2)
+constexpr T min (T v1, T v2)
 {
     return v1 < v2 ? v1 : v2;
 }
 
 template <typename T>
-T max (T v1, T v2)
+constexpr T max (T v1, T v2)
 {
     return v1 > v2 ? v1 : v2;
 }
 
-inline long int bit_scan_reverse (mword val)
+constexpr inline long int bit_scan_reverse (mword val)
 {
     if (EXPECT_FALSE (!val))
         return -1;
@@ -44,7 +44,7 @@ inline long int bit_scan_reverse (mword val)
     return __builtin_ia32_bsrdi(val);
 }
 
-inline long int bit_scan_forward (mword val)
+constexpr inline long int bit_scan_forward (mword val)
 {
     if (EXPECT_FALSE (!val))
         return -1;
@@ -53,7 +53,7 @@ inline long int bit_scan_forward (mword val)
     return __builtin_ctzl(val);
 }
 
-inline unsigned long max_order (mword base, size_t size)
+constexpr inline unsigned long max_order (mword base, size_t size)
 {
     long int o = bit_scan_reverse (size);
 
@@ -63,13 +63,13 @@ inline unsigned long max_order (mword base, size_t size)
     return o;
 }
 
-inline mword align_dn (mword val, mword align)
+constexpr inline mword align_dn (mword val, mword align)
 {
     val &= ~(align - 1);                // Expect power-of-2
     return val;
 }
 
-inline mword align_up (mword val, mword align)
+constexpr inline mword align_up (mword val, mword align)
 {
     val += (align - 1);                 // Expect power-of-2
     return align_dn (val, align);
