@@ -47,5 +47,6 @@ LFLAGS  = -static -nostdlib -Wl,--defsym=GIT_VER=0x$(GITVER),--gc-sections,--war
 : foreach *.cpp |> $(CXX) $(CFLAGS) $(LTO_FLAGS) -c %f -o %o |> %B.o
 : hypervisor.ld |> $(CC) $(SFLAGS) -xc -E -P %f -o %o |> hypervisor-x86_64.ld
 : *.o | hypervisor-x86_64.ld |> $(CXX) $(LFLAGS) $(LTO_FLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
+: hypervisor-x86_64 |> objcopy -SO elf32-i386 %f %o |> hypervisor-x86_64.elf32
 
 endif

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "bits.hpp"
 #include "list.hpp"
+#include "math.hpp"
 #include "slab.hpp"
 
 class Mtrr : public List<Mtrr>

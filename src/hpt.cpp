@@ -20,7 +20,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "hpt.hpp"
 
 // Perform a recursive page table copy. No page table structures are shared and

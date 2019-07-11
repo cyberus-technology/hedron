@@ -20,18 +20,6 @@
 
 #include "compiler.hpp"
 
-template <typename T>
-static inline T min (T v1, T v2)
-{
-    return v1 < v2 ? v1 : v2;
-}
-
-template <typename T>
-static inline T max (T v1, T v2)
-{
-    return v1 > v2 ? v1 : v2;
-}
-
 template <typename T, T v>
 struct integral_constant
 {

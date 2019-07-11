@@ -20,62 +20,23 @@
 
 #pragma once
 
-#include "bits.hpp"
-#include "lock_guard.hpp"
-#include "mdb.hpp"
+#include "spinlock.hpp"
+
+class Avl;
+class Mdb;
 
 class Space
 {
     private:
         Spinlock    lock;
-        Avl *       tree;
+        Avl *       tree {nullptr};
 
     public:
-        Space() : tree (nullptr) {}
+        Mdb *tree_lookup (mword idx, bool next = false);
 
-        Mdb *tree_lookup (mword idx, bool next = false)
-        {
-            Lock_guard <Spinlock> guard (lock);
-            return Mdb::lookup (tree, idx, next);
-        }
+        static bool tree_insert (Mdb *node);
+        static bool tree_remove (Mdb *node);
 
-        static bool tree_insert (Mdb *node)
-        {
-            Lock_guard <Spinlock> guard (node->space->lock);
-            return Mdb::insert<Mdb> (&node->space->tree, node);
-        }
-
-        static bool tree_remove (Mdb *node)
-        {
-            Lock_guard <Spinlock> guard (node->space->lock);
-            return Mdb::remove<Mdb> (&node->space->tree, node);
-        }
-
-        void addreg (mword addr, size_t size, mword attr, mword type = 0)
-        {
-            Lock_guard <Spinlock> guard (lock);
-
-            for (mword o; size; size -= 1UL << o, addr += 1UL << o)
-                Mdb::insert<Mdb> (&tree, new Mdb (nullptr, addr, addr, (o = max_order (addr, size)), attr, type));
-        }
-
-        void delreg (mword addr)
-        {
-            Mdb *node;
-
-            {   Lock_guard <Spinlock> guard (lock);
-
-                if (!(node = Mdb::lookup (tree, addr >>= PAGE_BITS, false)))
-                    return;
-
-                Mdb::remove<Mdb> (&tree, node);
-            }
-
-            mword next = addr + 1, base = node->node_base, last = base + (1UL << node->node_order);
-
-            addreg (base, addr - base, node->node_attr, node->node_type);
-            addreg (next, last - next, node->node_attr, node->node_type);
-
-            delete node;
-        }
+        void addreg (mword addr, size_t size, mword attr, mword type = 0);
+        void delreg (mword addr);
 };

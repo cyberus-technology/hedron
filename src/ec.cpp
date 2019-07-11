@@ -22,7 +22,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "bits.hpp"
 #include "ec.hpp"
 #include "elf.hpp"
 #include "hip.hpp"

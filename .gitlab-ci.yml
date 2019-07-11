@@ -1,53 +1,172 @@
 stages:
   - build
+  - unit_test
+  - integration_test
 
-.release_only_template: &release_only
+# Job description helpers
+
+.in_ubuntu_bionic:
+  image: ubuntu:bionic
+  variables:
+    DEBIAN_FRONTEND: 'noninteractive'
+
+.with_ubuntu_builddeps:
+  variables:
+    CATCH_VERSION: 'v2.9.1'
+  before_script:
+    - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
+    - apt-get update && apt-get -y install build-essential tup g++ pkg-config git cmake
+    - git clone --depth=1 --single-branch -b $CATCH_VERSION https://github.com/catchorg/Catch2.git
+    - ( cd Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && cmake --build build/ --target install ) ; rm -rf Catch2
+
+.with_ubuntu_testdeps:
+  before_script:
+    - apt-get update && apt-get -y install build-essential qemu-system-x86 expect
+
+.in_latest_fedora:
+  image: fedora:latest
+
+.with_fedora_builddeps:
+  before_script:
+    - dnf -y update && dnf -y install 'dnf-command(copr)' && dnf -y copr enable boelthorn/tup
+    - dnf -y update && dnf -y install gcc gcc-c++ tup catch-devel libasan libubsan
+
+.with_fedora_testdeps:
+  before_script:
+    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 expect
+
+.only_for_releases:
   only:
     - tags
     - /^[\d-]+-release$/
+  artifacts:
+    expire_in: 5 year
 
-.exclude_release_template: &exclude_release
+.except_for_releases:
   except:
     - tags
     - /^[\d-]+-release$/
+  artifacts:
+    expire_in: 1 week
 
-.build_all_template: &build_all
+.build_variant:
   stage: build
   script:
     - tup init
-    - tup variant configs/*
+    - tup variant configs/$VARIANT.config
     - tup
   artifacts:
     expire_in: 1 week
     paths:
-      - build-*/src/hypervisor-x86_64
+      - build-$VARIANT/src/hypervisor-x86_64
+      - build-$VARIANT/src/hypervisor-x86_64.elf32
+      - build-$VARIANT/test/unit/unit
 
-build:default-fedora:
-  image: fedora:latest
-  before_script:
-    - dnf -y update && dnf -y install 'dnf-command(copr)' && dnf -y copr enable boelthorn/tup
-    - dnf -y update && dnf -y install gcc gcc-c++ tup
-  <<: *build_all
-  <<: *exclude_release
+.unit_test_variant:
+  stage: unit_test
+  script:
+    - ./build-$VARIANT/test/unit/unit
 
-.build_ubuntu_template: &build_ubuntu
-  image: ubuntu:bionic
-  before_script:
-    - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
-    - apt-get update && apt-get -y install build-essential tup g++
+.integration_test_variant:
+  stage: integration_test
+  script:
+    - ./test/integration/qemu-boot ./build-$VARIANT/src/hypervisor-x86_64.elf32
 
-build:default-ubuntu:
-  <<: *build_ubuntu
-  <<: *build_all
+# Build Job descriptions
+
+build:fedora:
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_builddeps
+    - .build_variant
+    - .except_for_releases
+
+build:bionic:
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_builddeps
+    - .build_variant
+    - .except_for_releases
 
 build:release:
-  <<: *build_ubuntu
-  stage: build
-  script:
-    - tup init
-    - tup variant configs/default.config
-    - tup
-  artifacts:
-    expire_in: 5 year
-    paths:
-      - build-*/src/hypervisor-x86_64
+  variables:
+    VARIANT: 'default'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_builddeps
+    - .build_variant
+    - .only_for_releases
+
+# Test Job Descriptions
+
+unit_test:fedora:
+  dependencies:
+    - build:fedora
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_testdeps
+    - .unit_test_variant
+    - .except_for_releases
+
+unit_test:bionic:
+  dependencies:
+    - build:bionic
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .unit_test_variant
+    - .except_for_releases
+
+unit_test:release:
+  dependencies:
+    - build:release
+  variables:
+    VARIANT: 'default'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .unit_test_variant
+    - .only_for_releases
+
+# Integration Test Decriptions
+
+integration_test:fedora:
+  dependencies:
+    - build:fedora
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_testdeps
+    - .integration_test_variant
+    - .except_for_releases
+
+integration_test:bionic:
+  dependencies:
+    - build:bionic
+  variables:
+    VARIANT: 'gcc-werror'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .integration_test_variant
+    - .except_for_releases
+
+integration_test:release:
+  dependencies:
+    - build:release
+  variables:
+    VARIANT: 'default'
+  extends:
+    - .in_ubuntu_bionic
+    - .with_ubuntu_testdeps
+    - .integration_test_variant
+    - .only_for_releases

@@ -1,5 +1,5 @@
 /*
- * Bit Scan Functions
+ * Math Helper Functions
  *
  * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
  * Economic rights: Technische Universitaet Dresden (Germany)
@@ -20,10 +20,22 @@
 
 #pragma once
 
+#include "compiler.hpp"
 #include "types.hpp"
-#include "util.hpp"
 
-inline long int bit_scan_reverse (mword val)
+template <typename T>
+constexpr T min (T v1, T v2)
+{
+    return v1 < v2 ? v1 : v2;
+}
+
+template <typename T>
+constexpr T max (T v1, T v2)
+{
+    return v1 > v2 ? v1 : v2;
+}
+
+constexpr inline long int bit_scan_reverse (mword val)
 {
     if (EXPECT_FALSE (!val))
         return -1;
@@ -32,7 +44,7 @@ inline long int bit_scan_reverse (mword val)
     return __builtin_ia32_bsrdi(val);
 }
 
-inline long int bit_scan_forward (mword val)
+constexpr inline long int bit_scan_forward (mword val)
 {
     if (EXPECT_FALSE (!val))
         return -1;
@@ -41,7 +53,7 @@ inline long int bit_scan_forward (mword val)
     return __builtin_ctzl(val);
 }
 
-inline unsigned long max_order (mword base, size_t size)
+constexpr inline unsigned long max_order (mword base, size_t size)
 {
     long int o = bit_scan_reverse (size);
 
@@ -51,21 +63,13 @@ inline unsigned long max_order (mword base, size_t size)
     return o;
 }
 
-inline uint64 div64 (uint64 n, uint32 d, uint32 *r)
-{
-    uint64 q;
-     q = n / d;
-    *r = static_cast<uint32>(n % d);
-    return q;
-}
-
-static inline mword align_dn (mword val, mword align)
+constexpr inline mword align_dn (mword val, mword align)
 {
     val &= ~(align - 1);                // Expect power-of-2
     return val;
 }
 
-static inline mword align_up (mword val, mword align)
+constexpr inline mword align_up (mword val, mword align)
 {
     val += (align - 1);                 // Expect power-of-2
     return align_dn (val, align);

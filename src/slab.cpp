@@ -19,8 +19,8 @@
  */
 
 #include "assert.hpp"
-#include "bits.hpp"
 #include "lock_guard.hpp"
+#include "math.hpp"
 #include "slab.hpp"
 #include "stdio.hpp"
 

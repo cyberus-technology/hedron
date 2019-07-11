@@ -39,7 +39,7 @@ The virtualization features are available on:
 Building from source code
 -------------------------
 
-You need the following tools to compile the source code:
+You need the following tools to compile the hypervisor:
 
 - tup 0.7.8 or higher,
   available from http://gittup.org/tup/
@@ -50,6 +50,11 @@ You need the following tools to compile the source code:
 - gcc, available from http://gcc.gnu.org/
   - for x86_64: gcc 7.4.0 or higher
 
+To build and run the unit tests, you need:
+
+- pkg-config, available from https://github.com/pkgconf/pkgconf
+
+- Catch2, available from https://github.com/catchorg/Catch2
 
 You can build a microhypervisor binary as follows:
 
