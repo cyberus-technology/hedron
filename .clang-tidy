@@ -1,0 +1,6 @@
+---
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+FormatStyle: none
+Checks: bugprone-assert-side-effect,
+        readability-misleading-indentation
