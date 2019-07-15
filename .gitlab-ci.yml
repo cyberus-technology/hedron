@@ -1,6 +1,5 @@
 stages:
   - build
-  - unit_test
   - integration_test
 
 # Job description helpers
@@ -15,9 +14,10 @@ stages:
     CATCH_VERSION: 'v2.9.1'
   before_script:
     - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
-    - apt-get update && apt-get -y install build-essential tup g++ pkg-config git cmake
-    - git clone --depth=1 --single-branch -b $CATCH_VERSION https://github.com/catchorg/Catch2.git
-    - ( cd Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && cmake --build build/ --target install ) ; rm -rf Catch2
+    - apt-get update && apt-get -y install gcc g++ pkg-config git python-pip ninja-build tup
+    - pip install --upgrade cmake
+    - rm -rf ../Catch2 && git clone --depth=1 --single-branch -b $CATCH_VERSION https://github.com/catchorg/Catch2.git ../Catch2
+    - ( cd ../Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && make -C build && make -C build install )
 
 .with_ubuntu_testdeps:
   before_script:
@@ -28,8 +28,7 @@ stages:
 
 .with_fedora_builddeps:
   before_script:
-    - dnf -y update && dnf -y install 'dnf-command(copr)' && dnf -y copr enable boelthorn/tup
-    - dnf -y update && dnf -y install clang gcc gcc-c++ tup catch-devel libasan libubsan
+    - dnf -y update && dnf -y install clang gcc gcc-c++ cmake catch-devel libasan libubsan ninja-build
 
 .with_fedora_testdeps:
   before_script:
@@ -49,120 +48,121 @@ stages:
   artifacts:
     expire_in: 1 week
 
-.build_variant:
+.build_variant_with_ninja:
   stage: build
   script:
-    - tup init
-    - tup variant configs/$VARIANT.config
-    - tup
+    - cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    - ninja -C build
+    - ninja -C build test
   artifacts:
     expire_in: 1 week
     paths:
-      - build-$VARIANT/src/hypervisor-x86_64
-      - build-$VARIANT/src/hypervisor-x86_64.elf32
-      - build-$VARIANT/test/unit/unit
+      - build/src/hypervisor
+      - build/src/hypervisor.elf32
 
-.unit_test_variant:
-  stage: unit_test
+.build_variant_with_make:
+  stage: build
   script:
-    - ./build-$VARIANT/test/unit/unit
+    - cmake -B build -S . -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    - make -C build
+    - make -C build test
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - build/src/hypervisor
+      - build/src/hypervisor.elf32
+
+.build_release:
+  variables:
+    BUILD_TYPE: 'Release'
+  extends:
+    - .build_variant_with_ninja
+
+.build_debug:
+  variables:
+    BUILD_TYPE: 'Debug'
+  extends:
+    - .build_variant_with_ninja
 
 .integration_test_variant:
   stage: integration_test
   script:
-    - ./test/integration/qemu-boot ./build-$VARIANT/src/hypervisor-x86_64.elf32
+    - ./test/integration/qemu-boot ./build/src/hypervisor.elf32
 
 # Build Job descriptions
 
-build:fedora:
-  variables:
-    VARIANT: 'gcc-werror'
+build:fedora-release:
   extends:
     - .in_latest_fedora
     - .with_fedora_builddeps
-    - .build_variant
+    - .build_release
+    - .except_for_releases
+
+build:fedora-debug:
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_builddeps
+    - .build_debug
     - .except_for_releases
 
 build:fedora-clang:
   variables:
-    VARIANT: 'clang'
+    CXX: 'clang++'
+    CC: 'clang'
   extends:
     - .in_latest_fedora
     - .with_fedora_builddeps
-    - .build_variant
+    - .build_debug
     - .except_for_releases
 
 build:bionic:
-  variables:
-    VARIANT: 'gcc-werror'
   extends:
     - .in_ubuntu_bionic
     - .with_ubuntu_builddeps
-    - .build_variant
+    - .build_release
     - .except_for_releases
 
-build:release:
-  variables:
-    VARIANT: 'default'
+build:bionic-tup:
+  stage: build
+  script:
+    - tup init
+    - tup variant configs/gcc-werror.config
+    - tup
+    - ./build-gcc-werror/test/unit/unit
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - build-gcc-werror/src/hypervisor-x86_64
+      - build-gcc-werror/src/hypervisor-x86_64.elf32
   extends:
     - .in_ubuntu_bionic
     - .with_ubuntu_builddeps
-    - .build_variant
-    - .only_for_releases
-
-# Test Job Descriptions
-
-unit_test:fedora:
-  dependencies:
-    - build:fedora
-  variables:
-    VARIANT: 'gcc-werror'
-  extends:
-    - .in_latest_fedora
-    - .with_fedora_testdeps
-    - .unit_test_variant
     - .except_for_releases
 
-unit_test:fedora-clang:
-  dependencies:
-    - build:fedora-clang
+build:bionic-make:
+  stage: build
   variables:
-    VARIANT: 'clang'
-  extends:
-    - .in_latest_fedora
-    - .with_fedora_testdeps
-    - .unit_test_variant
-    - .except_for_releases
-
-unit_test:bionic:
-  dependencies:
-    - build:bionic
-  variables:
-    VARIANT: 'gcc-werror'
+      BUILD_TYPE: 'Debug'
   extends:
     - .in_ubuntu_bionic
-    - .with_ubuntu_testdeps
-    - .unit_test_variant
+    - .with_ubuntu_builddeps
+    - .build_variant_with_make
     - .except_for_releases
-
-unit_test:release:
-  dependencies:
-    - build:release
-  variables:
-    VARIANT: 'default'
-  extends:
-    - .in_ubuntu_bionic
-    - .with_ubuntu_testdeps
-    - .unit_test_variant
-    - .only_for_releases
 
 # Integration Test Decriptions
 
-integration_test:fedora:
+integration_test:fedora-release:
   dependencies:
-    - build:fedora
-  variables:
-    VARIANT: 'gcc-werror'
+    - build:fedora-release
+  extends:
+    - .in_latest_fedora
+    - .with_fedora_testdeps
+    - .integration_test_variant
+    - .except_for_releases
+
+integration_test:fedora-debug:
+  dependencies:
+    - build:fedora-debug
   extends:
     - .in_latest_fedora
     - .with_fedora_testdeps
@@ -172,8 +172,6 @@ integration_test:fedora:
 integration_test:fedora-clang:
   dependencies:
     - build:fedora-clang
-  variables:
-    VARIANT: 'clang'
   extends:
     - .in_latest_fedora
     - .with_fedora_testdeps
@@ -183,21 +181,8 @@ integration_test:fedora-clang:
 integration_test:bionic:
   dependencies:
     - build:bionic
-  variables:
-    VARIANT: 'gcc-werror'
   extends:
     - .in_ubuntu_bionic
     - .with_ubuntu_testdeps
     - .integration_test_variant
     - .except_for_releases
-
-integration_test:release:
-  dependencies:
-    - build:release
-  variables:
-    VARIANT: 'default'
-  extends:
-    - .in_ubuntu_bionic
-    - .with_ubuntu_testdeps
-    - .integration_test_variant
-    - .only_for_releases
