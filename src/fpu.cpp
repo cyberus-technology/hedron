@@ -105,7 +105,7 @@ static bool is_valid_xcr0 (uint64 xsave_scb, uint64 xcr0)
     mword sanitized {xcr0};
 
     sanitized &= xsave_scb;
-    sanitized |= Cpu::XCR0_X87;
+    sanitized |= required_xsave_state;
 
     if (xcr0 & Cpu::XCR0_AVX) {
         sanitized |= Cpu::XCR0_SSE;
