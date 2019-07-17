@@ -8,10 +8,10 @@ PFLAGS  = -I../include
 # Optimization options
 DFLAGS  = -pipe
 OFLAGS  = -Os
-AFLAGS  = -m64 -march=core2 -mpreferred-stack-boundary=4 -mcmodel=kernel -mno-red-zone -fno-PIC
+AFLAGS  = -m64 -march=core2 -mcmodel=kernel -mno-red-zone -fno-PIC
 
 # Language options
-FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer -freg-struct-return
+FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer
 FFLAGS += -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threadsafe-statics
 FFLAGS += -fno-stack-protector
 FFLAGS += -fvisibility-inlines-hidden
@@ -21,15 +21,32 @@ FFLAGS += -mno-sse
 FFLAGS += -mno-mmx
 FFLAGS += -mno-3dnow
 
+ifdef WITH_CLANG
+FFLAGS += -no-integrated-as
+endif
+
 # Warning options
 WFLAGS  = -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion -Wdisabled-optimization -Wformat=2 -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
 WFLAGS += -Wctor-dtor-privacy -Wno-non-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wsign-promo
-WFLAGS += -Wframe-larger-than=128
-WFLAGS += -Wlogical-op
-WFLAGS += -Wstrict-null-sentinel
 WFLAGS += -Wstrict-overflow=5
 WFLAGS += -Wvolatile-register-var
 WFLAGS += -Wzero-as-null-pointer-constant
+
+ifdef WITH_CLANG
+WFLAGS += -Wno-unused-private-field
+WFLAGS += -Wno-sign-conversion
+WFLAGS += -Wno-implicit-int-conversion
+WFLAGS += -Wno-missing-declarations
+WFLAGS += -Wno-static-self-init
+
+# See include/compiler.h NORETURN_GCC for rationale.
+WFLAGS += -Wno-missing-noreturn
+
+else
+WFLAGS += -Wframe-larger-than=128
+WFLAGS += -Wlogical-op
+WFLAGS += -Wstrict-null-sentinel
+endif
 
 ifeq (@(WERROR),y)
 WFLAGS += -Werror
@@ -46,7 +63,7 @@ LFLAGS  = -static -nostdlib -Wl,--defsym=GIT_VER=0x$(GITVER),--gc-sections,--war
 : foreach *.S |> $(CC) $(SFLAGS) -c %f -o %o |> %B.o
 : foreach *.cpp |> $(CXX) $(CFLAGS) $(LTO_FLAGS) -c %f -o %o |> %B.o
 : hypervisor.ld |> $(CC) $(SFLAGS) -xc -E -P %f -o %o |> hypervisor-x86_64.ld
-: *.o | hypervisor-x86_64.ld |> $(CXX) $(LFLAGS) $(LTO_FLAGS) -T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
+: *.o | hypervisor-x86_64.ld |> $(CXX) $(LFLAGS) $(LTO_FLAGS) -Wl,-T hypervisor-x86_64.ld %f -o %o |> hypervisor-x86_64
 : hypervisor-x86_64 |> objcopy -SO elf32-i386 %f %o |> hypervisor-x86_64.elf32
 
 endif
