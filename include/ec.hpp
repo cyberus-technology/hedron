@@ -296,16 +296,16 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         HOT NORETURN
         static void ret_user_sysexit();
 
-        HOT NORETURN
+        HOT NORETURN_GCC
         static void ret_user_iret() asm ("ret_user_iret");
 
         HOT
         static void chk_kern_preempt() asm ("chk_kern_preempt");
 
-        NORETURN
+        NORETURN_GCC
         static void ret_user_vmresume();
 
-        NORETURN
+        NORETURN_GCC
         static void ret_user_vmrun();
 
         NORETURN
