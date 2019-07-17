@@ -126,7 +126,7 @@ class Utcb : public Utcb_head, private Utcb_data
         NONNULL
         inline void save (Utcb *dst)
         {
-            register mword n = ui();
+            mword n = ui();
 
             dst->items = items;
             for (mword i = 0; i < n; i++) {
