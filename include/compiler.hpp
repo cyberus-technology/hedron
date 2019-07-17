@@ -27,62 +27,59 @@
 
 #if defined(__GNUC__)
 
-        #define COMPILER            "gcc " __VERSION__
+    #if defined(__clang__)
 
-    #if defined(__GNUC_PATCHLEVEL__)
-        #define COMPILER_STRING     "gcc " EXPAND (__GNUC__) "." EXPAND (__GNUC_MINOR__) "." EXPAND (__GNUC_PATCHLEVEL__)
-        #define COMPILER_VERSION    (__GNUC__ * 100 + __GNUC_MINOR__ * 10 + __GNUC_PATCHLEVEL__)
-    #else
-        #define COMPILER_STRING     "gcc " EXPAND (__GNUC__) "." EXPAND (__GNUC_MINOR__)
-        #define COMPILER_VERSION    (__GNUC__ * 100 + __GNUC_MINOR__ * 10)
+        #define COMPILER_STRING     "clang " __clang_version__
+        #define COMPILER_VERSION    (__clang_major__ * 100 + __clang_minor__ * 10 + __clang_patchlevel__)
+
+        #if (COMPILER_VERSION < 700)
+            #error "Please upgrade clang to a supported version"
+        #endif
+
+    #else  // GCC
+
+        #define COMPILER_STRING     "gcc " __VERSION__
+
+        #if defined(__GNUC_PATCHLEVEL__)
+            #define COMPILER_VERSION    (__GNUC__ * 100 + __GNUC_MINOR__ * 10 + __GNUC_PATCHLEVEL__)
+        #else
+            #define COMPILER_VERSION    (__GNUC__ * 100 + __GNUC_MINOR__ * 10)
+        #endif
+
+        #if (COMPILER_VERSION < 700)
+            #error "Please upgrade GCC to a supported version"
+        #endif
+
     #endif
 
-    #if (COMPILER_VERSION < 430)
-        #define COLD
-        #define HOT
-    #else
-        #define COLD                __attribute__((cold))
-        #define HOT                 __attribute__((hot))
-    #endif
+    #define COLD                __attribute__((cold))
+    #define HOT                 __attribute__((hot))
+    #define UNREACHED           __builtin_unreachable()
+    #define FALL_THROUGH        __attribute__((fallthrough))
 
-    #if (COMPILER_VERSION < 450)
-        #define UNREACHED           __builtin_trap()
-    #else
-        #define UNREACHED           __builtin_unreachable()
-    #endif
+    #define ALIGNED(X)          __attribute__((aligned(X)))
+    #define CPULOCAL            __attribute__((section (".cpulocal,\"w\",@nobits#")))
+    #define CPULOCAL_HOT        __attribute__((section (".cpulocal.hot,\"w\",@nobits#")))
+    #define FORMAT(X,Y)         __attribute__((format (printf, (X),(Y))))
+    #define INIT                __attribute__((section (".init")))
+    #define INITDATA            __attribute__((section (".initdata")))
+    #define INIT_PRIORITY(X)    __attribute__((init_priority((X))))
+    #define NOINLINE            __attribute__((noinline))
+    #define NONNULL             __attribute__((nonnull))
+    #define NORETURN            __attribute__((noreturn))
+    #define PACKED              __attribute__((packed))
+    #define REGPARM(X)          __attribute__((regparm(X)))
+    #define WARN_UNUSED_RESULT  __attribute__((warn_unused_result))
+    #define USED                __attribute__((used))
 
-    #if (COMPILER_VERSION < 460) || !defined(__GXX_EXPERIMENTAL_CXX0X__)
-        #define nullptr             0
-    #endif
+    #define EXPECT_FALSE(X)     __builtin_expect(!!(X), 0)
+    #define EXPECT_TRUE(X)      __builtin_expect(!!(X), 1)
 
-    #if (COMPILER_VERSION < 700)
-        #define FALL_THROUGH
-    #else
-        #define FALL_THROUGH        __attribute__((fallthrough))
-    #endif
+    #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
+                                ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
 
-        #define ALIGNED(X)          __attribute__((aligned(X)))
-        #define FORMAT(X,Y)         __attribute__((format (printf, (X),(Y))))
-        #define INIT                __attribute__((section (".init")))
-        #define INITDATA            __attribute__((section (".initdata")))
-        #define INIT_PRIORITY(X)    __attribute__((init_priority((X))))
-        #define NOINLINE            __attribute__((noinline))
-        #define NONNULL             __attribute__((nonnull))
-        #define NORETURN            __attribute__((noreturn))
-        #define PACKED              __attribute__((packed))
-        #define REGPARM(X)          __attribute__((regparm(X)))
-        #define WARN_UNUSED_RESULT  __attribute__((warn_unused_result))
-        #define USED                __attribute__((used))
-
-        #define EXPECT_FALSE(X)     __builtin_expect(!!(X), 0)
-        #define EXPECT_TRUE(X)      __builtin_expect(!!(X), 1)
-
-        #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
-                                    ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
-
-        #define OFFSETOF(type, m)   __builtin_offsetof (type, m)
+    #define OFFSETOF(type, m)   __builtin_offsetof (type, m)
 
 #else
-        #define COMPILER            "unknown compiler"
-        #define COMPILER_VERSION    0
+        #error "Unknown compiler"
 #endif
