@@ -52,7 +52,8 @@ class Gdt : public Descriptor
 
         static inline void load()
         {
-            asm volatile ("lgdt %0" : : "m" (Pseudo_descriptor (sizeof (Gdt_array) - 1, reinterpret_cast<mword>(&gdt(0)))));
+            Pseudo_descriptor desc {sizeof (Gdt_array) - 1, reinterpret_cast<mword>(&gdt(0))};
+            asm volatile ("lgdt %0" : : "m" (desc));
         }
 
         static inline void unbusy_tss()
