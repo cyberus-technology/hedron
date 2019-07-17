@@ -28,6 +28,11 @@ class List
     public:
         explicit inline List (T *&list) : next (nullptr)
         {
-            T **ptr; for (ptr = &list; *ptr; ptr = &(*ptr)->next) ; *ptr = static_cast<T *>(this);
+            T **ptr;
+
+            for (ptr = &list; *ptr; ptr = &(*ptr)->next) {
+            }
+
+            *ptr = static_cast<T *>(this);
         }
 };
