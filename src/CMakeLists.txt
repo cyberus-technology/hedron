@@ -78,7 +78,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-unused-private-field
     -Wno-missing-noreturn	# See NORETURN_GCC in include/compiler.h
     -Wno-implicit-int-conversion
-    -Wno-missing-declarations
     -Wno-static-self-init
     )
 endif()
