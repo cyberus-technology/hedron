@@ -46,6 +46,8 @@ P *Pte<P,E,L,B,F>::walk (E v, unsigned long to_level, bool alloc)
             if (!e->set (0, Buddy::ptr_to_phys (p = new P) | (l == L ? 0 : P::PTE_N)))
                 delete p;
         }
+
+        assert (!e->super());
     }
 }
 
@@ -62,7 +64,7 @@ size_t Pte<P,E,L,B,F>::lookup (E v, Paddr &p, mword &attr)
         if (EXPECT_FALSE (l && !e->super()))
             continue;
 
-        size_t s = 1UL << (l * B + e->order());
+        size_t s = 1UL << (l * B + PAGE_BITS);
 
         p = static_cast<Paddr>(e->addr() | (v & (s - 1)));
 
@@ -83,7 +85,7 @@ bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword attr, Type t)
         return false;
 
     if (attr) {
-        p |= P::order (o % B) | (l ? P::PTE_S : 0) | attr;
+        p |= (l ? P::PTE_S : 0) | attr;
         s = 1UL << (l * B + PAGE_BITS);
     } else
         p = s = 0;
@@ -98,17 +100,15 @@ bool Pte<P,E,L,B,F>::update (E v, mword o, E p, mword attr, Type t)
         if (!e[i].val)
             continue;
 
-        if (t == TYPE_DF)
-            continue;
-
         if (l && !e[i].super()) {
             delete static_cast<P *>(Buddy::phys_to_ptr (e[i].addr()));
             flush_tlb = true;
         }
     }
 
-    if (F)
-        flush (e, n * sizeof (E));
+    if (F) {
+        clflush (e, n * sizeof (E));
+    }
 
     return flush_tlb;
 }

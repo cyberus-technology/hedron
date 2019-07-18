@@ -63,9 +63,9 @@ class Dmar_ctx
 
         inline Paddr addr() const { return static_cast<Paddr>(lo) & ~PAGE_MASK; }
 
-        inline void set (uint64 h, uint64 l) { hi = h; lo = l; flush (this); }
+        inline void set (uint64 h, uint64 l) { hi = h; lo = l; clflush (this); }
 
-        static inline void *operator new (size_t) { return flush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
+        static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
 class Dmar_irt
@@ -74,9 +74,9 @@ class Dmar_irt
         uint64 lo, hi;
 
     public:
-        inline void set (uint64 h, uint64 l) { hi = h; lo = l; flush (this); }
+        inline void set (uint64 h, uint64 l) { hi = h; lo = l; clflush (this); }
 
-        static inline void *operator new (size_t) { return flush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
+        static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
 class Dmar : public List<Dmar>

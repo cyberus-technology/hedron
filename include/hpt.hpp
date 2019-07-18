@@ -92,9 +92,6 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
             return l >= 2 || (l == 1 && v >= SPC_LOCAL_OBJ);
         }
 
-        static bool dest_loc (Paddr, mword v, unsigned l) { return v >= USER_ADDR && l >= 3; }
-        static bool iter_loc_lev(unsigned l, mword) { return l > 3; }
-
         // Performs a deep copy of the page table structures referenced from
         // this page table entry.
         Hpt copy (unsigned lvl = 0) const;

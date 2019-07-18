@@ -39,18 +39,14 @@ class Pte
 
         inline mword attr() const { return static_cast<mword>(val) & PAGE_MASK; }
 
-        inline Paddr addr() const { return static_cast<Paddr>(val) & ~((1UL << order()) - 1); }
-
-        inline mword order() const { return PAGE_BITS; }
-
-        static inline mword order (mword) { return 0; }
+        inline Paddr addr() const { return static_cast<Paddr>(val) & ~((1UL << PAGE_BITS) - 1); }
 
         inline bool set (E o, E v)
         {
             bool b = Atomic::cmp_swap (val, o, v);
 
             if (F && b)
-                flush (this);
+                clflush (this);
 
             return b;
         }
@@ -60,7 +56,7 @@ class Pte
             void *p = Buddy::allocator.alloc (0, Buddy::FILL_0);
 
             if (F)
-                flush (p, PAGE_SIZE);
+                clflush (p, PAGE_SIZE);
 
             return p;
         }
@@ -84,7 +80,6 @@ class Pte
         {
             TYPE_UP,
             TYPE_DN,
-            TYPE_DF,
         };
 
         // Returns the number of linear address bits that are used to index into the page table.
