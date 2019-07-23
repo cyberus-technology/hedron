@@ -129,7 +129,7 @@ class Vmcb
 
         inline Vmcb()
         {
-            asm volatile ("vmsave" : : "a" (Buddy::ptr_to_phys (this)) : "memory");
+            asm volatile ("vmsave %0" : : "a" (Buddy::ptr_to_phys (this)) : "memory");
         }
 
         inline void adjust_rip (mword len)
