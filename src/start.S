@@ -29,7 +29,7 @@
 /*
  * Initialization Code
  */
-.section .init.multiboot
+.section .init.multiboot, "ax"
 
 .globl                  __start_bsp
 

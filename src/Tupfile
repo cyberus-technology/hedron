@@ -29,6 +29,8 @@ WFLAGS += -Wvolatile-register-var
 WFLAGS += -Wzero-as-null-pointer-constant
 
 ifdef WITH_CLANG
+AFLAGS += -target x86_64-pc-linux-elf
+
 WFLAGS += -Wno-unused-private-field
 WFLAGS += -Wno-sign-conversion
 WFLAGS += -Wno-implicit-int-conversion
