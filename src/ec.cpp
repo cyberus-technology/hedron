@@ -288,13 +288,13 @@ void Ec::ret_user_vmrun()
     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
                   "clgi;"
                   "sti;"
-                  "vmload;"
-                  "vmrun;"
-                  "vmsave;"
+                  "vmload " EXPAND (PREG(ax);)
+                  "vmrun " EXPAND (PREG(ax);)
+                  "vmsave " EXPAND (PREG(ax);)
                   EXPAND (SAVE_GPR)
                   "mov %1," EXPAND (PREG(ax);)
                   "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
-                  "vmload;"
+                  "vmload " EXPAND (PREG(ax);)
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"

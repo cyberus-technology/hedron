@@ -41,7 +41,11 @@ constexpr inline long int bit_scan_reverse (mword val)
         return -1;
 
     static_assert(sizeof(mword) == sizeof(long long), "builtin call has wrong size");
+#ifdef __clang__
+    return sizeof(long long)*8 - __builtin_clzll(val) - 1;
+#else
     return __builtin_ia32_bsrdi(val);
+#endif
 }
 
 constexpr inline long int bit_scan_forward (mword val)

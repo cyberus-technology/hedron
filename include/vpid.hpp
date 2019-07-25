@@ -42,6 +42,7 @@ class Vpid
 
         static inline void flush (Type t, unsigned long vpid, mword addr = 0)
         {
-            asm volatile ("invvpid %0, %1" : : "m" (Invvpid (vpid, addr)), "r" (static_cast<mword>(t)) : "cc");
+            Invvpid desc {vpid, addr};
+            asm volatile ("invvpid %0, %1" : : "m" (desc), "r" (static_cast<mword>(t)) : "cc");
         }
 };

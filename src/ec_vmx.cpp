@@ -70,6 +70,7 @@ void Ec::vmx_extint()
         Gsi::vector (vector);
 
     ret_user_vmresume();
+    UNREACHED;
 }
 
 void Ec::handle_vmx()

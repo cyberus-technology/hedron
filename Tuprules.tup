@@ -1,7 +1,15 @@
 ifeq ($(CC),)
+ifdef WITH_CLANG
+CC=clang
+else
 CC=gcc
+endif
 endif
 
 ifeq ($(CXX),)
+ifdef WITH_CLANG
+CXX=clang++
+else
 CXX=g++
+endif
 endif
