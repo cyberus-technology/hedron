@@ -22,7 +22,10 @@
 
 #pragma once
 
-#include "acpi_gas.hpp"
+#include "compiler.hpp"
+#include "types.hpp"
+
+class Acpi_gas;
 
 class Acpi
 {

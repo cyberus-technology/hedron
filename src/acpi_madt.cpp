@@ -21,11 +21,11 @@
 
 #include "acpi.hpp"
 #include "acpi_madt.hpp"
+#include "config.hpp"
 #include "cpu.hpp"
 #include "gsi.hpp"
 #include "io.hpp"
 #include "ioapic.hpp"
-#include "lapic.hpp"
 #include "vectors.hpp"
 
 void Acpi_table_madt::parse() const

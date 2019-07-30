@@ -21,6 +21,7 @@
 #include "cmdline.hpp"
 #include "console_serial.hpp"
 #include "hpt.hpp"
+#include "initprio.hpp"
 #include "x86.hpp"
 
 INIT_PRIORITY (PRIO_CONSOLE) Console_serial Console_serial::con;

@@ -21,8 +21,10 @@
 #pragma once
 
 #include <stdarg.h>
-#include "initprio.hpp"
-#include "spinlock.hpp"
+#include "compiler.hpp"
+#include "types.hpp"
+
+class Spinlock;
 
 class Console
 {

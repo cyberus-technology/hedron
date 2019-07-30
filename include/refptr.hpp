@@ -21,6 +21,7 @@
 #pragma once
 
 #include "atomic.hpp"
+#include "rcu.hpp"
 
 class Refcount
 {

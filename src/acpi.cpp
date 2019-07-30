@@ -26,7 +26,6 @@
 #include "acpi_mcfg.hpp"
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
-#include "assert.hpp"
 #include "gsi.hpp"
 #include "hpt.hpp"
 #include "io.hpp"

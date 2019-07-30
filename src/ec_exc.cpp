@@ -19,11 +19,9 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "assert.hpp"
 #include "ec.hpp"
 #include "gdt.hpp"
 #include "mca.hpp"
-#include "stdio.hpp"
 
 void Ec::load_fpu()
 {

@@ -19,6 +19,7 @@
 #pragma once
 
 #include "acpi_table.hpp"
+#include "acpi_gas.hpp"
 
 #pragma pack(1)
 

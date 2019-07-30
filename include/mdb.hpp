@@ -22,9 +22,8 @@
 
 #include "avl.hpp"
 #include "math.hpp"
-#include "rcu.hpp"
+#include "rcu_list.hpp"
 #include "slab.hpp"
-#include "util.hpp"
 
 class Space;
 

@@ -27,7 +27,6 @@
 #include "buddy.hpp"
 #include "crd.hpp"
 #include "math.hpp"
-#include "util.hpp"
 
 class Cpu_regs;
 

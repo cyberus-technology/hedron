@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include "compiler.hpp"
 #include "config.hpp"
 #include "cpuinfo.hpp"
 #include "types.hpp"

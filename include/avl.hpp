@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "compiler.hpp"
-
 class Avl
 {
     protected:

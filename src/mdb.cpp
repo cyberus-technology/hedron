@@ -16,7 +16,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "assert.hpp"
 #include "lock_guard.hpp"
 #include "mdb.hpp"
 
