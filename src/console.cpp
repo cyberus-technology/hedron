@@ -22,7 +22,6 @@
 
 #include "console.hpp"
 #include "lock_guard.hpp"
-#include "math.hpp"
 #include "x86.hpp"
 
 Console *Console::list;

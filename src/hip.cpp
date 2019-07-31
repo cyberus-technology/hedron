@@ -23,7 +23,6 @@
  */
 
 #include "acpi.hpp"
-#include "cmdline.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"

@@ -23,7 +23,6 @@
 #include "acpi.hpp"
 #include "cmdline.hpp"
 #include "compiler.hpp"
-#include "console_serial.hpp"
 #include "console_vga.hpp"
 #include "gsi.hpp"
 #include "hip.hpp"

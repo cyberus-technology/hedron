@@ -27,6 +27,7 @@
 
 #include "cmdline.hpp"
 #include "cpu.hpp"
+#include "compiler.hpp"
 #include "counter.hpp"
 #include "fpu.hpp"
 #include "gdt.hpp"

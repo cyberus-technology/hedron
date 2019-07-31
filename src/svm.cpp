@@ -21,7 +21,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "cmdline.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
 #include "msr.hpp"

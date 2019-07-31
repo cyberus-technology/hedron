@@ -26,7 +26,6 @@
 #include "list.hpp"
 #include "lock_guard.hpp"
 #include "slab.hpp"
-#include "stdio.hpp"
 
 class Ioapic : public List<Ioapic>
 {
