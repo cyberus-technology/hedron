@@ -80,10 +80,11 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         regs.xcr0 = Cpu::XCR0_X87;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
+            mword host_cr3 = pd->hpt.root() | (Cpu::feature (Cpu::FEAT_PCID) ? pd->did : 0);
 
             regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
                                   pd->Space_pio::walk(),
-                                  pd->hpt.root(),
+                                  host_cr3,
                                   pd->ept.root(),
                                   c);
 
