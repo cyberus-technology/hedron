@@ -1,10 +1,22 @@
 cmake_minimum_required(VERSION 3.13)
 project(NOVA CXX ASM)
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Globally enable additional debugging goodies, if we are compiling with clang.
+set(default_build_type "Debug")
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+      STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release")
+endif()
+
+# Globally enable additional goodies, if we are compiling with clang.
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 
   # Optionally enable clang-tidy for the whole project.
@@ -22,5 +34,7 @@ include_directories(include)
 
 add_subdirectory(src)
 
-enable_testing()
-add_subdirectory(test/unit)
+if(BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(test/unit)
+endif()

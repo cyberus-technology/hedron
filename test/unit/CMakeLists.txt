@@ -7,7 +7,6 @@ if(Catch2_FOUND)
     )
   target_link_libraries(test_unit Catch2::Catch2)
 
-  include(CTest)
   include(Catch)
   catch_discover_tests(test_unit)
 
