@@ -41,16 +41,17 @@ Building from source code
 
 You need the following tools to compile the hypervisor:
 
-- tup 0.7.8 or higher,
-  available from http://gittup.org/tup/
+- cmake 3.13 or higher,
+  available from https://cmake.org/
 
 - binutils 2.30 or higher,
   available from http://www.kernel.org/pub/linux/devel/binutils/
 
-- gcc, available from http://gcc.gnu.org/
-  - for x86_64: gcc 7.4.0 or higher
+- gcc 7.4.0 or higher, available from http://gcc.gnu.org/
 
-To build and run the unit tests, you need:
+- or alternatively, clang 8.0 or higher, available from http://clang.llvm.org/
+
+To build and run the unit tests (optional), you need:
 
 - pkg-config, available from https://github.com/pkgconf/pkgconf
 
@@ -59,10 +60,12 @@ To build and run the unit tests, you need:
 You can build a microhypervisor binary as follows:
 
     # Only needs to be done once
-    tup init && tup variant configs/default.config
+    mkdir -p build
+    cd build ; cmake ..
     
-    tup
-
+    # Build the hypervisor and execute unit tests
+    make
+    make test
 
 Booting
 -------
