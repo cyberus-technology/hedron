@@ -7,6 +7,11 @@ if(Catch2_FOUND)
     )
   target_link_libraries(test_unit Catch2::Catch2)
 
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(test_unit PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_link_options(test_unit PRIVATE -fsanitize=address -fsanitize=undefined)
+  endif()
+
   include(Catch)
   catch_discover_tests(test_unit)
 
