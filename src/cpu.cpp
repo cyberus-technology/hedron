@@ -166,7 +166,10 @@ void Cpu::setup_sysenter()
 {
     Msr::write<mword>(Msr::IA32_STAR,  static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE) << 32);
     Msr::write<mword>(Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
-    Msr::write<mword>(Msr::IA32_FMASK, Cpu::EFL_DF | Cpu::EFL_IF);
+
+    // RFLAGS bits TF, NT, DF, and IF need to be disabled when entering the kernel. Clearing everything else is not
+    // harmful, so don't be picky here.
+    Msr::write<mword>(Msr::IA32_FMASK, ~static_cast<mword>(0));
 }
 
 void Cpu::init()
