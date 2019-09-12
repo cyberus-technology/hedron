@@ -36,10 +36,10 @@ class Atomic
         static inline void store (T &ptr, T n) { __atomic_store_n (&ptr, n, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline T add (T &ptr, T v) { return __atomic_fetch_add (&ptr, v, __ATOMIC_SEQ_CST); }
+        static inline T add (T &ptr, T v) { return __atomic_add_fetch (&ptr, v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
-        static inline T sub (T &ptr, T v) { return __atomic_fetch_sub (&ptr, v, __ATOMIC_SEQ_CST); }
+        static inline T sub (T &ptr, T v) { return __atomic_sub_fetch (&ptr, v, __ATOMIC_SEQ_CST); }
 
         template <typename T>
         static inline void set_mask (T &ptr, T v) { __atomic_fetch_or (&ptr, v, __ATOMIC_SEQ_CST); }
