@@ -12,6 +12,12 @@ set kernel [lindex $argv 0]
 spawn qemu-system-x86_64 -kernel "$kernel" -append "$kernel_args" \
     -smp $cpus -machine q35,accel=tcg -cpu Westmere -m 2048 -serial stdio -display none -net none
 
+# Consider timeouts and early EOFs as failure.
+expect_before {
+    timeout { puts "Failed: Timeout";   exit 1 }
+    eof     { puts "Failed: Early EOF"; exit 2 }
+}
+
 # Qemu might take some time to come up.
 set timeout 60
 expect "NOVA Microhypervisor"
