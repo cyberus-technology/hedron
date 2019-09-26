@@ -26,9 +26,9 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
 
-ALIGNED(32) No_destruct<Pd> Pd::kern (&Pd::kern);
+ALIGNED(32) No_destruct<Pd> Pd::kern (nullptr);
 
-Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own))
+Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own ? own : this))
 {
     hpt = Hptp (reinterpret_cast<mword>(&PDBR));
 
