@@ -1,7 +1,8 @@
 NOVA Microhypervisor
 ====================
 
-This is the source code for the NOVA microhypervisor.
+This is the source code for the NOVA microhypervisor fork of Cyberus
+Technology.
 
 The NOVA microhypervisor combines microkernel and hypervisor functionality
 and provides an extremely small trusted computing base for user applications
