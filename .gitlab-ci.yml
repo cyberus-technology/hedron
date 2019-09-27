@@ -14,7 +14,9 @@ stages:
     CATCH_VERSION: 'v2.9.1'
   before_script:
     - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
-    - apt-get update && apt-get -y install gcc g++ pkg-config git python-pip ninja-build tup
+    - apt-get update && apt-get -y install gcc g++ pkg-config python3 python3-distutils git ninja-build tup curl
+    - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    - python3 get-pip.py
     - pip install --upgrade cmake
     - rm -rf ../Catch2 && git clone --depth=1 --single-branch -b $CATCH_VERSION https://github.com/catchorg/Catch2.git ../Catch2
     - ( cd ../Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && make -C build && make -C build install )
