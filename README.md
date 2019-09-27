@@ -68,6 +68,19 @@ You can build a microhypervisor binary as follows:
     make
     make test
 
+Building from source code with Nix
+----------------------------------
+
+As an alternative to manually installing depenencies, NOVA can also be
+built using [Nix](https://nixos.org/nix/). After installing Nix, build
+NOVA using:
+
+    nix-build
+
+The hypervisor is then found in `result/`. With Nix available, other
+build options for developers become available. See the documentation
+in `nix/release.nix` for details.
+
 Booting
 -------
 
