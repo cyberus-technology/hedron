@@ -39,6 +39,7 @@
         // Certain functions cannot be marked noreturn, because of this clang issue:
         // https://bugs.llvm.org/show_bug.cgi?id=42651
         #define NORETURN_GCC
+        #define FALL_THROUGH [[clang::fallthrough]]
 
     #else  // GCC
 
@@ -55,13 +56,13 @@
         #endif
 
         #define NORETURN_GCC NORETURN
+        #define FALL_THROUGH [[gnu::fallthrough]]
 
     #endif
 
     #define COLD                __attribute__((cold))
     #define HOT                 __attribute__((hot))
     #define UNREACHED           __builtin_unreachable()
-    #define FALL_THROUGH        __attribute__((fallthrough))
 
     #define ALIGNED(X)          __attribute__((aligned(X)))
     #define CPULOCAL            __attribute__((section (".cpulocal,\"w\",@nobits#")))

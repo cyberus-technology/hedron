@@ -1,4 +1,4 @@
-#!/usr/bin/expect -f
+#!/usr/bin/env expect 
 
 if { $argc != 1 } {
     puts "Usage: expect -f qemu-boot.tcl <nova_binary.elf32>"

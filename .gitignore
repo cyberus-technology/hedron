@@ -1,2 +1,5 @@
 /.tup
 /build-*/
+/build
+/result-*
+/result
