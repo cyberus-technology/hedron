@@ -68,6 +68,10 @@ You can build a microhypervisor binary as follows:
     make
     make test
 
+Building unit tests can be avoided by passing `-DBUILD_TESTING=OFF` to
+`cmake`.
+
+
 Building from source code with Nix
 ----------------------------------
 
@@ -80,6 +84,7 @@ NOVA using:
 The hypervisor is then found in `result/`. With Nix available, other
 build options for developers become available. See the documentation
 in `nix/release.nix` for details.
+
 
 Booting
 -------
