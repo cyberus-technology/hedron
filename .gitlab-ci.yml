@@ -23,7 +23,7 @@ stages:
 
 .with_ubuntu_testdeps:
   before_script:
-    - apt-get update && apt-get -y install build-essential qemu-system-x86 expect
+    - apt-get update && apt-get -y install build-essential qemu-system-x86 expect grub2-common grub-pc-bin xorriso
 
 .in_latest_fedora:
   image: fedora:latest
@@ -34,7 +34,7 @@ stages:
 
 .with_fedora_testdeps:
   before_script:
-    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 expect
+    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 expect grub2-tools grub2-tools-extra xorriso
 
 .only_for_releases:
   only:
@@ -90,6 +90,7 @@ stages:
   stage: integration_test
   script:
     - ./test/integration/qemu-boot ./build/src/hypervisor.elf32
+    - ./tools/gen_usb.sh ./grub_image.iso ./build/src/hypervisor.elf32 ./tools/grub.cfg.tmpl && ./test/integration/qemu-boot ./grub_image.iso -g
 
 # Build Job descriptions
 
