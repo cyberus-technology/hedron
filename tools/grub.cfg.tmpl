@@ -1,0 +1,6 @@
+set timeout=0
+
+menuentry 'Load NOVA' {
+    insmod part_msdos
+    multiboot  /boot/hypervisor-x86_64 serial novga
+}
