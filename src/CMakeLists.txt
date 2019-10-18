@@ -45,6 +45,7 @@ target_compile_options(hypervisor PRIVATE
   -m64 -march=core2 -mcmodel=kernel -mno-red-zone -fno-PIC
 
   # Language
+  -nostdinc++
   -fdata-sections -ffunction-sections -fomit-frame-pointer
   -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threadsafe-statics
   -fno-stack-protector
