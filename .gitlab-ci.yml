@@ -89,8 +89,8 @@ stages:
 .integration_test_variant:
   stage: integration_test
   script:
-    - ./test/integration/qemu-boot ./build/src/hypervisor.elf32
-    - ./tools/gen_usb.sh ./grub_image.iso ./build/src/hypervisor.elf32 ./tools/grub.cfg.tmpl && ./test/integration/qemu-boot ./grub_image.iso -i
+    - ./test/integration/qemu-boot build/src/hypervisor.elf32
+    - ./tools/gen_usb.sh grub_image.iso build/src/hypervisor.elf32 tools/grub.cfg.tmpl && ./test/integration/qemu-boot grub_image.iso -i
 
 # Build Job descriptions
 
