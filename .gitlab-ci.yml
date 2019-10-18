@@ -34,7 +34,7 @@ stages:
 
 .with_fedora_testdeps:
   before_script:
-    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 expect grub2-tools grub2-tools-extra xorriso
+    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 expect grub2-tools grub2-tools-extra grub2-pc-modules xorriso
 
 .only_for_releases:
   only:
