@@ -4,7 +4,7 @@ if { $argc < 1 || $argc > 2 } {
     puts "Usage: expect -f qemu-boot.tcl <file> \[OPTION\]"
     puts "Boot NOVA using qemu. FILE is expected to be <hypervisor.elf32> unless specified different by an option."
     puts "Options:"
-    puts "  -g FILE is a grub image"
+    puts "  -i FILE is a disk image"
     exit 1
 }
 
@@ -12,7 +12,7 @@ set cpus 4
 set boot_file [lindex $argv 0]
 set common_args "-smp $cpus -machine q35,accel=tcg -cpu Westmere -m 2048 -serial stdio -display none -net none"
 
-if { $argc == 2 && [lindex $argv 1] == "-g" } {
+if { $argc == 2 && [lindex $argv 1] == "-i" } {
     set args "-drive format=raw,file=$boot_file"
 } else {
     set kernel_args serial
