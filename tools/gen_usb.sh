@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e -u
 
@@ -33,7 +33,7 @@ else
 fi
 
 tmp_dir=$(mktemp -d -t filesystem.XXXXXX) || die "unable to create temp directory."
-trap 'rm -r $tmp_dir' EXIT
+trap 'rm -r "$tmp_dir"' EXIT
 
 echo "======== Build details ========"
 echo "Image:       $img_filename"
