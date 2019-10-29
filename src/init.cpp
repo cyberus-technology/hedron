@@ -33,7 +33,7 @@
 #include "multiboot2.hpp"
 #include "tss.hpp"
 
-char const * get_boot_type(mword magic)
+char const *get_boot_type (mword magic)
 {
     switch (magic) {
         case Multiboot::MAGIC: return "MB1";
@@ -51,9 +51,19 @@ void init (mword magic, mword mbi)
 
     for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
 
-    Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
-    if (mbi_->flags & Multiboot::CMDLINE)
-        Cmdline::init (static_cast<char const *>(Hpt::remap (mbi_->cmdline)));
+    if (magic == Multiboot::MAGIC) {
+        Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
+        if (mbi_->flags & Multiboot::CMDLINE)
+            Cmdline::init (static_cast<char const *>(Hpt::remap (mbi_->cmdline)));
+    }
+
+    if (magic == Multiboot2::MAGIC) {
+        Multiboot2::Header const *mbi_ = static_cast<Multiboot2::Header const *>(Hpt::remap (mbi));
+        mbi_->for_each_tag ([&](Multiboot2::Tag const *tag) {
+            if (tag->type == Multiboot2::TAG_CMDLINE)
+                Cmdline::init (tag->cmdline());
+        });
+    }
 
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 

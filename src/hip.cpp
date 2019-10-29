@@ -24,7 +24,6 @@
 
 #include "acpi.hpp"
 #include "acpi_rsdp.hpp"
-#include "cmdline.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
@@ -114,9 +113,6 @@ void Hip::build_mbi2 (Hip_mem *&mem, mword addr)
     Multiboot2::Header const *mbi = static_cast<Multiboot2::Header const *>(Hpt::remap (addr));
 
     mbi->for_each_tag ([&mem, mbi, addr](Multiboot2::Tag const * tag) {
-        if (tag->type == Multiboot2::TAG_CMDLINE)
-            Cmdline::init (reinterpret_cast<mword>(tag->cmdline()));
-
         if (tag->type == Multiboot2::TAG_MEMORY)
             tag->for_each_mem([&mem] (Multiboot2::Memory_map const * mmap) { Hip::add_mem (mem, mmap); });
 
