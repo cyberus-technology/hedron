@@ -4,7 +4,7 @@ if { $argc < 1 || $argc > 2 } {
     puts "Usage: qemu-boot <file> \[OPTION\]"
     puts "Boot NOVA using qemu. FILE is expected to be <hypervisor.elf32> unless specified different by an option."
     puts "Options:"
-    puts "  -i FILE is a disk image"
+    puts "  -i FILE is a disk image using multiboot2 to boot NOVA"
     exit 1
 }
 
@@ -29,7 +29,11 @@ expect_before {
 
 # Qemu might take some time to come up.
 set timeout 60
-expect "NOVA Microhypervisor"
+if { $argc == 2 && [lindex $argv 1] == "-i" } {
+    expect -re "NOVA Microhypervisor.*\[MBI2\]"
+} else {
+    expect -re "NOVA Microhypervisor.*\[MBI\]"
+}
 
 # After NOVA has checked in, everything is very quick.
 set timeout 5
