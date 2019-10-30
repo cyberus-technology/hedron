@@ -1,7 +1,7 @@
 #!/usr/bin/env expect
 
 if { $argc < 1 || $argc > 2 } {
-    puts "Usage: expect -f qemu-boot.tcl <file> \[OPTION\]"
+    puts "Usage: qemu-boot <file> \[OPTION\]"
     puts "Boot NOVA using qemu. FILE is expected to be <hypervisor.elf32> unless specified different by an option."
     puts "Options:"
     puts "  -i FILE is a disk image"
