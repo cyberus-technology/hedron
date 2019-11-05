@@ -67,7 +67,7 @@ __boot_gdt__:
 .macro                  INIT_PAGING
                         mov     $0xc0000080, %ecx
                         rdmsr
-                        or      $0x101, %eax
+                        or      $0x901, %eax
                         wrmsr
                         mov     $0x6b8, %edx
                         mov     %edx, %cr4
