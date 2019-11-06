@@ -16,8 +16,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release")
 endif()
 
+option(ENABLE_CLANG_TIDY "Enable clang-tidy analysis." OFF)
+
 # Globally enable additional goodies, if we are compiling with clang.
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND ENABLE_CLANG_TIDY)
 
   # Optionally enable clang-tidy for the whole project.
   find_program(CLANG_TIDY_EXE NAMES "clang-tidy" DOC "Path to clang-tidy executable")
@@ -25,7 +27,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND CMAKE_BUILD_TYPE STREQUAL "De
   if(CLANG_TIDY_EXE)
     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
   else()
-    message(STATUS "clang-tidy not found. Please install for automatic static analysis.")
+    message(FATAL_ERROR "clang-tidy not found. Please install for automatic static analysis.")
   endif()
 
 endif()
