@@ -2,7 +2,7 @@ message(STATUS "Building tests: Check the README file for instructions on disabl
 find_package(Catch2 REQUIRED)
 
 add_executable(test_unit
-  atomic.cpp main.cpp math.cpp
+  atomic.cpp main.cpp math.cpp page_table.cpp
   )
 target_link_libraries(test_unit Catch2::Catch2)
 

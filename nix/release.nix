@@ -41,6 +41,7 @@ in
       cmakeFlags = [
         "-DCOVERAGE=true"
         "-DCMAKE_MODULE_PATH=${cmake-modules}"
+        "-DCMAKE_BUILD_TYPE=Debug"
       ];
       nativeBuildInputs = old.nativeBuildInputs ++
         (with pkgs; [ gcovr python3 ]);
