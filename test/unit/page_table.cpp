@@ -170,7 +170,7 @@ class Fake_memory
             memory_.emplace_front (ptr, e);
         }
 
-        bool compare_exchange(pointer ptr, entry old, entry desired)
+        bool cmp_swap(pointer ptr, entry old, entry desired)
         {
             if (read (ptr) != old) {
                 return false;

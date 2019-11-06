@@ -197,7 +197,7 @@ class Generic_page_table
                 // If we fail to install a pointer to the new page, we can
                 // reclaim it immediately, because no other CPU holds a
                 // reference.
-                if (not memory_.compare_exchange (entry_p, entry, new_entry)) {
+                if (not memory_.cmp_swap (entry_p, entry, new_entry)) {
                     page_alloc_.free_page (new_page);
                     goto retry;
                 }
@@ -290,7 +290,7 @@ class Generic_page_table
                         auto  const zero_page {page_alloc_.alloc_zeroed_page()};
                         pte_t const new_pte {page_alloc_.pointer_to_phys (zero_page) | ATTR::all_rights};
 
-                        if (not memory_.compare_exchange (pte_p, old_pte, new_pte)) {
+                        if (not memory_.cmp_swap (pte_p, old_pte, new_pte)) {
                             page_alloc_.free_page (zero_page);
                             goto retry;
                         }
@@ -424,7 +424,7 @@ class Generic_page_table
             pte_t old_pte {memory_.read(pte_p)};
 
             if (old_pte != new_pte and (old_pte & ATTR::PTE_W) == 0) {
-                if (not memory_.compare_exchange(pte_p, old_pte, new_pte)) {
+                if (not memory_.cmp_swap (pte_p, old_pte, new_pte)) {
                     goto retry;
                 }
 
