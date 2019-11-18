@@ -85,7 +85,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
                                   pd->Space_pio::walk(),
                                   host_cr3,
-                                  pd->ept.root(),
+                                  pd->ept,
                                   c);
 
             regs.nst_ctrl<Vmcs>();

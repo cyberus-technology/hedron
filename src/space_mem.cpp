@@ -60,9 +60,7 @@ Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
         if (Vmcb::has_npt()) {
             npt.update (cleanup, {b, p, Hpt_new::hw_attr (a), static_cast<Hpt_new::ord_t>(o + PAGE_BITS)});
         } else {
-            mword ord = min (o, Ept::ord);
-            for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-                ept.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Ept::hw_attr (a, mdb->node_type), r ? Ept::TYPE_DN : Ept::TYPE_UP);
+            ept.update(cleanup, {b, p, Ept_new::hw_attr (a, mdb->node_type), static_cast<Ept_new::ord_t>(o + PAGE_BITS) });
         }
         if (r)
             gtlb.merge (cpus);
