@@ -23,20 +23,21 @@
 #include "config.hpp"
 #include "cpu.hpp"
 #include "cpuset.hpp"
+#include "hpt_new.hpp"
 #include "dpt.hpp"
 #include "ept.hpp"
-#include "hpt.hpp"
 #include "space.hpp"
+#include "tlb_cleanup.hpp"
 
 class Space_mem : public Space
 {
     public:
-        Hpt hpt;
+        Hpt_new hpt;
+
         Dpt dpt;
-        union {
-            Ept ept;
-            Hpt npt;
-        };
+
+        Ept ept;
+        Hpt_new npt;
 
         mword did;
 
@@ -46,17 +47,19 @@ class Space_mem : public Space
 
         static unsigned did_ctr;
 
-        inline Space_mem() : did (Atomic::add (did_ctr, 1U)) {}
+        inline Space_mem(mword *boot_pt) : hpt (boot_pt), did (Atomic::add (did_ctr, 1U)) {}
+        inline Space_mem(Hpt_new &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
 
         inline size_t lookup (mword virt, Paddr &phys)
         {
-            mword attr;
-            return hpt.lookup (virt, phys, attr);
+            auto m {hpt.lookup (virt)};
+            phys = m.paddr | (virt & PAGE_MASK);
+            return m.present() ? m.size() : 0;
         }
 
         inline void insert (mword virt, unsigned o, mword attr, Paddr phys)
         {
-            hpt.update (virt, o, phys, attr);
+            hpt.update ({virt, phys, attr, static_cast<Hpt_new::ord_t>(o + PAGE_BITS)});
         }
 
         inline Paddr replace (mword v, Paddr p)
@@ -71,7 +74,7 @@ class Space_mem : public Space
 
         bool remove_utcb (mword);
 
-        bool update (Mdb *, mword = 0);
+        Tlb_cleanup update (Mdb *, mword = 0);
 
         static void shootdown();
 

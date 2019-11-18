@@ -21,6 +21,7 @@
 #pragma once
 
 #include "space.hpp"
+#include "tlb_cleanup.hpp"
 
 class Space_mem;
 
@@ -49,7 +50,7 @@ class Space_pio : public Space
 
         Paddr walk (bool = false, mword = 0);
 
-        bool update (Mdb *, mword = 0);
+        Tlb_cleanup update (Mdb *, mword = 0);
 
         static void page_fault (mword, mword);
 };

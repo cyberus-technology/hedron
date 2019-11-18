@@ -27,7 +27,7 @@
 #include "cpu.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
@@ -65,7 +65,7 @@ void Hip::build (mword addr)
         Console::panic("Could not add all I/O APICs to Hip!");
     }
 
-    Multiboot *mbi = static_cast<Multiboot *>(Hpt::remap (addr));
+    Multiboot *mbi = static_cast<Multiboot *>(Hpt_new::remap (addr));
 
     uint32 flags       = mbi->flags;
     uint32 mmap_addr   = mbi->mmap_addr;
@@ -88,7 +88,7 @@ void Hip::build (mword addr)
 
 void Hip::add_mem (Hip_mem *&mem, mword addr, size_t len)
 {
-    char *mmap_addr = static_cast<char *>(Hpt::remap (addr));
+    char *mmap_addr = static_cast<char *>(Hpt_new::remap (addr));
 
     for (char *ptr = mmap_addr; ptr < mmap_addr + len; mem++) {
 
@@ -105,7 +105,7 @@ void Hip::add_mem (Hip_mem *&mem, mword addr, size_t len)
 
 void Hip::add_mod (Hip_mem *&mem, mword addr, size_t count)
 {
-    Multiboot_module *mod = static_cast<Multiboot_module *>(Hpt::remap (addr));
+    Multiboot_module *mod = static_cast<Multiboot_module *>(Hpt_new::remap (addr));
 
     if (count) {
         root_addr = mod->s_addr;

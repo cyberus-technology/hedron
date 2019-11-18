@@ -73,8 +73,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
 
         void *get_access_page();
 
-        INIT
-        Pd (Pd *);
+        INIT Pd();
         ~Pd();
 
         Pd (Pd *own, mword sel, mword a, bool priv = false);
@@ -123,7 +122,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         }
 
         template <typename>
-        bool delegate (Pd *, mword, mword, mword, mword, mword = 0, char const * = nullptr);
+        Tlb_cleanup delegate (Pd *, mword, mword, mword, mword, mword = 0, char const * = nullptr);
 
         template <typename>
         void revoke (mword, mword, mword, bool);

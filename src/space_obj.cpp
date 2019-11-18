@@ -31,12 +31,11 @@ Paddr Space_obj::walk (mword idx, bool &shootdown)
     mword virt = idx_to_virt (idx); Paddr phys; void *ptr;
 
     if (!space_mem()->lookup (virt, phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0)) {
-
         shootdown = (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0);
 
         Paddr p = Buddy::ptr_to_phys (ptr = Buddy::allocator.alloc (0, Buddy::FILL_0));
 
-        if ((phys = space_mem()->replace (virt, p | Hpt::HPT_NX | Hpt::HPT_D | Hpt::HPT_A | Hpt::HPT_W | Hpt::HPT_P)) != p)
+        if ((phys = space_mem()->replace (virt, p | Hpt_new::PTE_NX | Hpt_new::PTE_D | Hpt_new::PTE_A | Hpt_new::PTE_W | Hpt_new::PTE_P)) != p)
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
 
         phys |= virt & PAGE_MASK;
@@ -45,11 +44,11 @@ Paddr Space_obj::walk (mword idx, bool &shootdown)
     return phys;
 }
 
-bool Space_obj::update (mword idx, Capability cap)
+Tlb_cleanup Space_obj::update (mword idx, Capability cap)
 {
     bool shootdown = false;
     *static_cast<Capability *>(Buddy::phys_to_ptr (walk (idx, shootdown))) = cap;
-    return shootdown;
+    return Tlb_cleanup { shootdown };
 }
 
 size_t Space_obj::lookup (mword idx, Capability &cap)
@@ -63,7 +62,7 @@ size_t Space_obj::lookup (mword idx, Capability &cap)
     return 1;
 }
 
-bool Space_obj::update (Mdb *mdb, mword r)
+Tlb_cleanup Space_obj::update (Mdb *mdb, mword r)
 {
     assert (this == mdb->space && this != &Pd::kern);
     Lock_guard <Spinlock> guard (mdb->node_lock);
@@ -83,6 +82,6 @@ bool Space_obj::insert_root (Kobject *obj)
 
 void Space_obj::page_fault (mword addr, mword error)
 {
-    assert (!(error & Hpt::ERR_W));
-    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt::HPT_NX | Hpt::HPT_A | Hpt::HPT_P);
+    assert (!(error & Hpt_new::ERR_W));
+    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt_new::PTE_NX | Hpt_new::PTE_A | Hpt_new::PTE_P);
 }

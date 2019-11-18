@@ -26,7 +26,7 @@
 #include "console_vga.hpp"
 #include "gsi.hpp"
 #include "hip.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "idt.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
@@ -41,7 +41,7 @@ void init (mword mbi)
 
     for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
 
-    Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
+    Multiboot *mbi_ = static_cast<Multiboot *>(Hpt_new::remap (mbi));
     if (mbi_->flags & Multiboot::CMDLINE)
         Cmdline::init (mbi_->cmdline);
 

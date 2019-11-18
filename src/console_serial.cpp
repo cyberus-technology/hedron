@@ -20,7 +20,7 @@
 
 #include "cmdline.hpp"
 #include "console_serial.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "initprio.hpp"
 #include "x86.hpp"
 
@@ -31,7 +31,7 @@ Console_serial::Console_serial()
     if (!Cmdline::serial)
         return;
 
-    char *mem = static_cast<char *>(Hpt::remap (0));
+    char *mem = static_cast<char *>(Hpt_new::remap (0));
     if (!(base = *reinterpret_cast<uint16 *>(mem + 0x400)) &&
         !(base = *reinterpret_cast<uint16 *>(mem + 0x402)))
         return;

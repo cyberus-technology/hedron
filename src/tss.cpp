@@ -21,7 +21,7 @@
 
 #include "cpulocal.hpp"
 #include "cpu.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "tss.hpp"
 
 static_assert((TSS_AREA_E - TSS_AREA) / sizeof (Tss) >= NUM_CPU, "TSS area too small to fit TSSs for all CPUs");
@@ -41,11 +41,12 @@ Tss &Tss::local()
 
 void Tss::setup()
 {
-    Hptp hptp {reinterpret_cast<mword>(&PDBR)};
-
     for (mword page = TSS_AREA; page < TSS_AREA_E; page += PAGE_SIZE) {
-        hptp.update (page, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_W | Hpt::HPT_P,
-                     Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0)));
+        mword page_p {Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0))};
+
+        Hpt_new::boot_hpt().update({page, page_p,
+                                    Hpt_new::PTE_NX | Hpt_new::PTE_G | Hpt_new::PTE_W | Hpt_new::PTE_P,
+                                    PAGE_BITS});
     }
 }
 

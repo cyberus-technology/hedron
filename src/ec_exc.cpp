@@ -70,7 +70,7 @@ bool Ec::handle_exc_pf (Exc_regs *r)
 {
     mword addr = r->cr2;
 
-    if (r->err & Hpt::ERR_U)
+    if (r->err & Hpt_new::ERR_U)
         return false;
 
     // Kernel fault in I/O space

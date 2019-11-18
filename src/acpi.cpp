@@ -27,7 +27,7 @@
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
 #include "gsi.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "io.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
@@ -65,20 +65,20 @@ void Acpi::setup()
     Acpi_rsdp::parse();
 
     if (xsdt)
-        static_cast<Acpi_table_rsdt *>(Hpt::remap (xsdt))->parse (xsdt, sizeof (uint64));
+        static_cast<Acpi_table_rsdt *>(Hpt_new::remap (xsdt))->parse (xsdt, sizeof (uint64));
     else if (rsdt)
-        static_cast<Acpi_table_rsdt *>(Hpt::remap (rsdt))->parse (rsdt, sizeof (uint32));
+        static_cast<Acpi_table_rsdt *>(Hpt_new::remap (rsdt))->parse (rsdt, sizeof (uint32));
 
     if (fadt)
-        static_cast<Acpi_table_fadt *>(Hpt::remap (fadt))->parse();
+        static_cast<Acpi_table_fadt *>(Hpt_new::remap (fadt))->parse();
     if (hpet)
-        static_cast<Acpi_table_hpet *>(Hpt::remap (hpet))->parse();
+        static_cast<Acpi_table_hpet *>(Hpt_new::remap (hpet))->parse();
     if (madt)
-        static_cast<Acpi_table_madt *>(Hpt::remap (madt))->parse();
+        static_cast<Acpi_table_madt *>(Hpt_new::remap (madt))->parse();
     if (mcfg)
-        static_cast<Acpi_table_mcfg *>(Hpt::remap (mcfg))->parse();
+        static_cast<Acpi_table_mcfg *>(Hpt_new::remap (mcfg))->parse();
     if (dmar)
-        static_cast<Acpi_table_dmar *>(Hpt::remap (dmar))->parse();
+        static_cast<Acpi_table_dmar *>(Hpt_new::remap (dmar))->parse();
 
     if (!Acpi_table_madt::sci_overridden) {
         Acpi_intr sci_override;

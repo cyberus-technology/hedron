@@ -20,7 +20,7 @@
  */
 
 #include "cmdline.hpp"
-#include "hpt.hpp"
+#include "hpt_new.hpp"
 #include "string.hpp"
 
 bool Cmdline::iommu;
@@ -64,7 +64,7 @@ char *Cmdline::get_arg (char **line)
 
 void Cmdline::init (mword addr)
 {
-    char *arg, *line = static_cast<char *>(Hpt::remap (addr));
+    char *arg, *line = static_cast<char *>(Hpt_new::remap (addr));
 
     while ((arg = get_arg (&line)))
         for (unsigned i = 0; i < sizeof map / sizeof *map; i++)

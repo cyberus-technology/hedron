@@ -36,9 +36,11 @@ void Space_mem::init (unsigned cpu)
     cpus.set (cpu);
 }
 
-bool Space_mem::update (Mdb *mdb, mword r)
+Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
 {
     assert (this == mdb->space && this != &Pd::kern);
+
+    Tlb_cleanup cleanup { r != 0 };
 
     Lock_guard <Spinlock> guard (mdb->node_lock);
 
@@ -56,9 +58,7 @@ bool Space_mem::update (Mdb *mdb, mword r)
 
     if (s & 2) {
         if (Vmcb::has_npt()) {
-            mword ord = min (o, Hpt::ord);
-            for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-                npt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), r ? Hpt::TYPE_DN : Hpt::TYPE_UP);
+            npt.update (cleanup, {b, p, Hpt_new::hw_attr (a), static_cast<Hpt_new::ord_t>(o + PAGE_BITS)});
         } else {
             mword ord = min (o, Ept::ord);
             for (unsigned long i = 0; i < 1UL << (o - ord); i++)
@@ -69,19 +69,15 @@ bool Space_mem::update (Mdb *mdb, mword r)
     }
 
     if (mdb->node_base + (1UL << o) > USER_ADDR >> PAGE_BITS)
-        return false;
+        return Tlb_cleanup::tlb_flush (false);
 
-    mword ord = min (o, Hpt::ord);
-    bool f = false;
+    hpt.update(cleanup, {b, p, Hpt_new::hw_attr (a), static_cast<Hpt_new::ord_t>(o + PAGE_BITS) });
 
-    for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-        f |= hpt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (ord + PAGE_BITS)), Hpt::hw_attr (a), r ? Hpt::TYPE_DN : Hpt::TYPE_UP);
-
-    if (r || f) {
+    if (cleanup.need_tlb_flush()) {
         htlb.merge (cpus);
     }
 
-    return (r || f);
+    return cleanup;
 }
 
 void Space_mem::shootdown()
