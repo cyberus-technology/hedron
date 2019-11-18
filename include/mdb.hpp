@@ -55,6 +55,12 @@ class Mdb : public Avl, public Rcu_elem
         mword     const node_type;
         mword     const node_sub;
 
+        enum Mdb_mem_attr {
+            MEM_R = 1U << 0,
+            MEM_W = 1U << 1,
+            MEM_X = 1U << 2,
+        };
+
         inline bool larger (Mdb *x) const { return  node_base > x->node_base; }
 
         inline bool equal  (Mdb *x) const { return (node_base ^ x->node_base) >> max (node_order, x->node_order) == 0; }
