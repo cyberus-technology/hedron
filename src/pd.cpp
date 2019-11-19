@@ -365,6 +365,4 @@ Pd::~Pd()
         Buddy::allocator.free(reinterpret_cast<mword>(apic_access_page));
         apic_access_page = nullptr;
     }
-
-    Space_mem::dpt.clear();
 }

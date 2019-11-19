@@ -50,10 +50,8 @@ Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
     mword a = mdb->node_attr & ~r;
     mword s = mdb->node_sub;
 
-    if (s & 1 && Dpt::ord != ~0UL) {
-        mword ord = min (o, Dpt::ord);
-        for (unsigned long i = 0; i < 1UL << (o - ord); i++)
-            dpt.update (b + i * (1UL << (ord + PAGE_BITS)), ord, p + i * (1UL << (Dpt::ord + PAGE_BITS)), a, r ? Dpt::TYPE_DN : Dpt::TYPE_UP);
+    if (s & 1) {
+        dpt.update (cleanup, {b, p, Dpt_new::hw_attr (a), static_cast<Dpt_new::ord_t>(o + PAGE_BITS)});
     }
 
     if (s & 2) {

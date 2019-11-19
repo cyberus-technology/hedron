@@ -24,7 +24,7 @@
 #include "cpu.hpp"
 #include "cpuset.hpp"
 #include "hpt_new.hpp"
-#include "dpt.hpp"
+#include "dpt_new.hpp"
 #include "ept_new.hpp"
 #include "space.hpp"
 #include "tlb_cleanup.hpp"
@@ -34,7 +34,7 @@ class Space_mem : public Space
     public:
         Hpt_new hpt;
 
-        Dpt dpt;
+        Dpt_new dpt;
 
         Ept_new ept;
         Hpt_new npt;
