@@ -21,9 +21,14 @@
 
 #pragma once
 
+#if __STDC_HOSTED__
+#include "assert.h"
+#else
 #include "console.hpp"
 
 #define assert(X)   do {                                                                                    \
                         if (EXPECT_FALSE (!(X)))                                                            \
                             Console::panic ("Assertion \"%s\" failed at %s:%d:%s", #X, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
                     } while (0)
+
+#endif  // __STDC_HOSTED__

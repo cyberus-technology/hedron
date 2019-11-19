@@ -11,7 +11,8 @@ OFLAGS  = -Os
 AFLAGS  = -m64 -march=core2 -mcmodel=kernel -mno-red-zone -fno-PIC
 
 # Language options
-FFLAGS  = -fdata-sections -ffunction-sections -fomit-frame-pointer
+FFLAGS  = -nostdinc++ -ffreestanding
+FFLAGS += -fdata-sections -ffunction-sections -fomit-frame-pointer
 FFLAGS += -fno-asynchronous-unwind-tables -fno-exceptions -fno-rtti -fno-threadsafe-statics
 FFLAGS += -fno-stack-protector
 FFLAGS += -fvisibility-inlines-hidden

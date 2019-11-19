@@ -30,6 +30,12 @@ class Atomic
         }
 
         template <typename T>
+        static inline T exchange (T &ptr, T n)
+        {
+            return __atomic_exchange_n (&ptr, n, __ATOMIC_SEQ_CST);
+        }
+
+        template <typename T>
         static inline T load (T &ptr) { return __atomic_load_n (&ptr, __ATOMIC_SEQ_CST); }
 
         template <typename T>

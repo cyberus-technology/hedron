@@ -30,7 +30,7 @@ stages:
 
 .with_fedora_builddeps:
   before_script:
-    - dnf -y update && dnf -y install clang gcc gcc-c++ cmake catch-devel libasan libubsan ninja-build
+    - dnf -y update && dnf -y install clang gcc gcc-c++ cmake catch-devel libasan libasan-static libubsan libubsan-static ninja-build
 
 .with_fedora_testdeps:
   before_script:
