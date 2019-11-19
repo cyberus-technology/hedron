@@ -266,7 +266,7 @@ class Generic_page_table
             // Track special case where we only want to unmap memory.
             bool const clear_mappings {not map.present()};
 
-            // We've hit the page table leafs.
+            // We've hit the page table leaves.
             bool const is_leaf {cur_level == 0 or create_superpages or clear_mappings};
 
             for (size_t i = 0; i < (static_cast<size_t>(1) << updated_order); i++) {
