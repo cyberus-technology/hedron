@@ -53,16 +53,23 @@ class Hpt : public Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>
             HPT_D   = 1UL << 6,
             HPT_S   = 1UL << 7,
             HPT_G   = 1UL << 8,
-            HPT_NX  = 0,
+            HPT_NX  = 1UL << 63,
 
             PTE_P   = HPT_P,
             PTE_S   = HPT_S,
             PTE_N   = HPT_A | HPT_U | HPT_W | HPT_P,
         };
 
-        inline Paddr addr() const { return static_cast<Paddr>(val) & ~PAGE_MASK; }
+        inline Paddr addr() const { return static_cast<Paddr>(val) & ~(PAGE_MASK | HPT_NX); }
 
-        static inline mword hw_attr (mword a) { return a ? a | HPT_D | HPT_A | HPT_U | HPT_P : 0; }
+        static inline mword hw_attr (mword a)
+        {
+            if (a) {
+                a |= HPT_D | HPT_A | HPT_U | HPT_P | (a & 4 ? 0 : static_cast<mword>(HPT_NX));
+            }
+
+            return a;
+        }
 
         static inline mword current()
         {
