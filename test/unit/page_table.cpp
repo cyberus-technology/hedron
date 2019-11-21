@@ -15,7 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "generic_page_table.hpp"
+#include <generic_page_table.hpp>
 #include <compiler.hpp>
 
 #include <algorithm>
@@ -306,7 +306,13 @@ class Fake_attr
         static constexpr uint64_t all_rights {PTE_P | PTE_W | PTE_U};
 };
 
-using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory,
+class Fake_flush
+{
+    public:
+        static void clflush (pointer, size_t) {};
+};
+
+using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush,
                                     Fake_page_alloc, Fake_deferred_cleanup, Fake_attr>;
 
 Fake_hpt::ord_t const twomb_order {PAGE_BITS +   BITS_PER_LEVEL_64BIT};
