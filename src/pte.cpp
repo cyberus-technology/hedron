@@ -20,10 +20,7 @@
  */
 
 #include "assert.hpp"
-#include "dpt.hpp"
 #include "pte.hpp"
-
-mword Dpt::ord = ~0UL;
 
 template <typename P, typename E, unsigned L, unsigned B, bool F>
 P *Pte<P,E,L,B,F>::walk (E v, unsigned long to_level, bool alloc)
@@ -143,5 +140,3 @@ void Pte<P,E,L,B,F>::free_up (unsigned l, P * e, mword v, bool (*d)(Paddr, mword
                 delete p;
     }
 }
-
-template class Pte<Dpt, uint64, 4, 9, true>;
