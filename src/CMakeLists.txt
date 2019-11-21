@@ -61,7 +61,7 @@ target_compile_options(hypervisor PRIVATE
   -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls
   -Wshadow -Wwrite-strings -Wctor-dtor-privacy -Wno-non-virtual-dtor
   -Wold-style-cast -Woverloaded-virtual -Wsign-promo
-  -Wstrict-overflow=5 -Wvolatile-register-var
+  -Wstrict-overflow -Wvolatile-register-var
   -Wzero-as-null-pointer-constant
   )
 
@@ -70,7 +70,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     $<$<CONFIG:Debug>:-Werror>
     -Wlogical-op
     -Wstrict-null-sentinel
-    -Wframe-larger-than=128
+    -Wframe-larger-than=256
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_options(hypervisor PRIVATE
