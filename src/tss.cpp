@@ -21,7 +21,7 @@
 
 #include "cpulocal.hpp"
 #include "cpu.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "tss.hpp"
 
 static_assert((TSS_AREA_E - TSS_AREA) / sizeof (Tss) >= NUM_CPU, "TSS area too small to fit TSSs for all CPUs");

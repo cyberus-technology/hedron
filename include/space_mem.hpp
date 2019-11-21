@@ -23,7 +23,7 @@
 #include "config.hpp"
 #include "cpu.hpp"
 #include "cpuset.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "dpt_new.hpp"
 #include "ept_new.hpp"
 #include "space.hpp"

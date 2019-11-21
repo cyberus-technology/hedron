@@ -26,7 +26,7 @@
 #include "console_vga.hpp"
 #include "gsi.hpp"
 #include "hip.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "idt.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"

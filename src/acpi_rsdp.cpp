@@ -18,7 +18,7 @@
 
 #include "acpi.hpp"
 #include "acpi_rsdp.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 
 Acpi_rsdp *Acpi_rsdp::find (mword start, unsigned len)
 {

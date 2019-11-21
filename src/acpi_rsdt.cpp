@@ -20,7 +20,7 @@
 
 #include "acpi.hpp"
 #include "acpi_rsdt.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 
 struct Acpi_table_rsdt::table_map Acpi_table_rsdt::map[] INITDATA =
 {

@@ -20,7 +20,7 @@
 
 #include "cmdline.hpp"
 #include "console_serial.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "initprio.hpp"
 #include "x86.hpp"
 

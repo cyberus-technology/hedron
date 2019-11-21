@@ -27,7 +27,7 @@
 #include "cpu.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"

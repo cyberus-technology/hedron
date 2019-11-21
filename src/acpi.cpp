@@ -27,7 +27,7 @@
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
 #include "gsi.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "io.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"

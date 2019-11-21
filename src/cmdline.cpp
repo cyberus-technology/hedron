@@ -20,7 +20,7 @@
  */
 
 #include "cmdline.hpp"
-#include "hpt_new.hpp"
+#include "hpt.hpp"
 #include "string.hpp"
 
 bool Cmdline::iommu;
