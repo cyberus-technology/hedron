@@ -21,12 +21,10 @@
 
 #include "dpt.hpp"
 #include "ept.hpp"
-#include "hpt.hpp"
 #include "pte.hpp"
 
 mword Dpt::ord = ~0UL;
 mword Ept::ord = ~0UL;
-mword Hpt::ord = ~0UL;
 
 template <typename P, typename E, unsigned L, unsigned B, bool F>
 P *Pte<P,E,L,B,F>::walk (E v, unsigned long to_level, bool alloc)
@@ -149,4 +147,3 @@ void Pte<P,E,L,B,F>::free_up (unsigned l, P * e, mword v, bool (*d)(Paddr, mword
 
 template class Pte<Dpt, uint64, 4, 9, true>;
 template class Pte<Ept, uint64, 4, 9, false>;
-template class Pte<Hpt, mword, PTE_LEV, PTE_BPL, false>;
