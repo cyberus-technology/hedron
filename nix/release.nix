@@ -26,7 +26,7 @@ let
   nova = import ./build.nix;
   itest = import ./integration-test.nix;
   cmake-modules = pkgs.callPackage ./cmake-modules.nix {};
-  compilers = { inherit (pkgs) clang_8 gcc7 gcc8 gcc9; };
+  compilers = { inherit (pkgs) clang_8 clang_9 gcc7 gcc8 gcc9; };
   novaBuilds = with pkgs; lib.mapAttrs (_: v: callPackage nova {
     stdenv = overrideCC stdenv v;
     inherit buildType;
@@ -40,13 +40,15 @@ in
 
     coverage = nova.gcc9.overrideAttrs (old: {
       name = "nova-coverage";
+      cmakeBuildType = "Debug";
       cmakeFlags = [
         "-DCOVERAGE=true"
         "-DCMAKE_MODULE_PATH=${cmake-modules}"
         "-DCMAKE_BUILD_TYPE=Debug"
       ];
-      nativeBuildInputs = old.nativeBuildInputs ++
-        (with pkgs; [ gcovr python3 ]);
+
+      checkInputs = old.checkInputs ++ (with pkgs; [ gcovr python3 python3Packages.setuptools ]);
+
       makeFlags = [ "test_unit_coverage" ];
       installPhase = ''
         mkdir -p $out/nix-support

@@ -1,6 +1,6 @@
 let
-  rev = "b8f84b24deeccdcd7938d1dca0b347232a4aa022";
-  sha256 = "163xban5igwdvay1iqj5kncsym4p099syq2vkpn05a19z6yhp41i";
+  rev = "82af060040c4e127cd6819cc1c24afbf33b20c91";
+  sha256 = "0w8m70fq0imz07x0g1kjb81i0whga3gqmcnq5fz2119d2f9yllhc";
   url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
 in
   builtins.fetchTarball { inherit url sha256; }

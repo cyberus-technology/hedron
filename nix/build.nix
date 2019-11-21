@@ -16,7 +16,7 @@ stdenv.mkDerivation {
   src = nix-gitignore.gitignoreSourcePure (["nix\n"] ++ gitIgnores) ./..;
 
   nativeBuildInputs = [ cmake ] ++ (lib.optional (builtins.isNull clang-tools-wrapper) clang-tools-wrapper);
-  buildInputs = [ catch2 ];
+  checkInputs = [ catch2 ];
 
   cmakeBuildType = buildType;
   hardeningDisable = [ "all" ];
