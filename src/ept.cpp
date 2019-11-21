@@ -15,7 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "ept_new.hpp"
+#include "ept.hpp"
 #include "mdb.hpp"
 
 Ept_new::level_t Ept_new::supported_leaf_levels {1};

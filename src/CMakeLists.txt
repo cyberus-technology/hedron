@@ -19,7 +19,7 @@ add_executable(hypervisor hypervisor-x86_64.ld
   acpi_mcfg.cpp acpi_rsdp.cpp acpi_rsdt.cpp acpi_table.cpp avl.cpp
   bootstrap.cpp buddy.cpp cmdline.cpp console.cpp console_serial.cpp
   console_vga.cpp counter.cpp cpu.cpp cpulocal.cpp dmar.cpp dpt_new.cpp ec.cpp
-  ec_exc.cpp ec_svm.cpp ec_vmx.cpp ept_new.cpp fpu.cpp gdt.cpp gsi.cpp hip.cpp
+  ec_exc.cpp ec_svm.cpp ec_vmx.cpp ept.cpp fpu.cpp gdt.cpp gsi.cpp hip.cpp
   hpet.cpp hpt.cpp idt.cpp init.cpp ioapic.cpp lapic.cpp
   mca.cpp mdb.cpp memory.cpp mtrr.cpp pci.cpp pd.cpp pt.cpp
   rcu.cpp regs.cpp sc.cpp si.cpp slab.cpp sm.cpp space.cpp

@@ -23,7 +23,7 @@
 
 #include "cmdline.hpp"
 #include "cpulocal.hpp"
-#include "ept_new.hpp"
+#include "ept.hpp"
 #include "hip.hpp"
 #include "idt.hpp"
 #include "math.hpp"
