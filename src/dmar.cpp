@@ -20,7 +20,7 @@
  */
 
 #include "dmar.hpp"
-#include "dpt_new.hpp"
+#include "dpt.hpp"
 #include "lapic.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"

@@ -15,7 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "dpt_new.hpp"
+#include "dpt.hpp"
 #include "mdb.hpp"
 
 Dpt_new::level_t Dpt_new::supported_leaf_levels {-1};

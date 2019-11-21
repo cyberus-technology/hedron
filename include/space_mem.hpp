@@ -24,7 +24,7 @@
 #include "cpu.hpp"
 #include "cpuset.hpp"
 #include "hpt.hpp"
-#include "dpt_new.hpp"
+#include "dpt.hpp"
 #include "ept.hpp"
 #include "space.hpp"
 #include "tlb_cleanup.hpp"
