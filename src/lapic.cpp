@@ -42,8 +42,8 @@ void Lapic::setup()
     Paddr apic_base = Msr::read<Paddr>(Msr::IA32_APIC_BASE);
 
     Pd::kern->Space_mem::delreg (apic_base & ~PAGE_MASK);
-    Hpt_new::boot_hpt().update({CPU_LOCAL_APIC, apic_base & ~PAGE_MASK,
-                                Hpt_new::PTE_NX | Hpt_new::PTE_G | Hpt_new::PTE_UC | Hpt_new::PTE_W | Hpt_new::PTE_P, PAGE_BITS});
+    Hpt::boot_hpt().update({CPU_LOCAL_APIC, apic_base & ~PAGE_MASK,
+                                Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, PAGE_BITS});
 }
 
 void Lapic::init()

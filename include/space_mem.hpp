@@ -32,12 +32,12 @@
 class Space_mem : public Space
 {
     public:
-        Hpt_new hpt;
+        Hpt hpt;
 
         Dpt_new dpt;
 
         Ept_new ept;
-        Hpt_new npt;
+        Hpt npt;
 
         mword did;
 
@@ -48,7 +48,7 @@ class Space_mem : public Space
         static unsigned did_ctr;
 
         inline Space_mem(mword *boot_pt) : hpt (boot_pt), did (Atomic::add (did_ctr, 1U)) {}
-        inline Space_mem(Hpt_new &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
+        inline Space_mem(Hpt &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
 
         inline size_t lookup (mword virt, Paddr &phys)
         {
@@ -59,7 +59,7 @@ class Space_mem : public Space
 
         inline void insert (mword virt, unsigned o, mword attr, Paddr phys)
         {
-            hpt.update ({virt, phys, attr, static_cast<Hpt_new::ord_t>(o + PAGE_BITS)});
+            hpt.update ({virt, phys, attr, static_cast<Hpt::ord_t>(o + PAGE_BITS)});
         }
 
         inline Paddr replace (mword v, Paddr p)

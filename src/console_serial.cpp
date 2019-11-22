@@ -31,7 +31,7 @@ Console_serial::Console_serial()
     if (!Cmdline::serial)
         return;
 
-    char *mem = static_cast<char *>(Hpt_new::remap (0));
+    char *mem = static_cast<char *>(Hpt::remap (0));
     if (!(base = *reinterpret_cast<uint16 *>(mem + 0x400)) &&
         !(base = *reinterpret_cast<uint16 *>(mem + 0x402)))
         return;

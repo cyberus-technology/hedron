@@ -20,12 +20,12 @@
 #include "mdb.hpp"
 #include "pd.hpp"
 
-Hpt_new::level_t Hpt_new::supported_leaf_levels {2};
+Hpt::level_t Hpt::supported_leaf_levels {2};
 
-Hpt_new Hpt_new::deep_copy(mword vaddr_start, mword vaddr_end)
+Hpt Hpt::deep_copy(mword vaddr_start, mword vaddr_end)
 {
-    Hpt_new::Mapping map;
-    Hpt_new dst;
+    Hpt::Mapping map;
+    Hpt dst;
     Tlb_cleanup cleanup;
 
     for (mword vaddr {vaddr_start}; vaddr < vaddr_end; vaddr += map.size()) {
@@ -47,14 +47,14 @@ Hpt_new Hpt_new::deep_copy(mword vaddr_start, mword vaddr_end)
     return dst;
 }
 
-Hpt_new &Hpt_new::boot_hpt()
+Hpt &Hpt::boot_hpt()
 {
-    static No_destruct<Hpt_new> boot_hpt {reinterpret_cast<mword *>(&PDBRV)};
+    static No_destruct<Hpt> boot_hpt {reinterpret_cast<mword *>(&PDBRV)};
 
     return *&boot_hpt;
 }
 
-void *Hpt_new::remap (Paddr phys, bool use_boot_hpt)
+void *Hpt::remap (Paddr phys, bool use_boot_hpt)
 {
     Tlb_cleanup cleanup;
 
@@ -68,11 +68,11 @@ void *Hpt_new::remap (Paddr phys, bool use_boot_hpt)
 
     phys &= ~page_mask;
 
-    mword attr {Hpt_new::PTE_W | Hpt_new::PTE_P | Hpt_new::PTE_NX};
+    mword attr {Hpt::PTE_W | Hpt::PTE_P | Hpt::PTE_NX};
 
     // This manual distinction is unfortunate, but when creating the roottask
     // the current PD is not the boot page table anymore.
-    Hpt_new &hpt {use_boot_hpt ? boot_hpt() : Pd::current()->hpt};
+    Hpt &hpt {use_boot_hpt ? boot_hpt() : Pd::current()->hpt};
 
     hpt.update(cleanup, {SPC_LOCAL_REMAP,        phys,        attr, order});
     hpt.update(cleanup, {SPC_LOCAL_REMAP + size, phys + size, attr, order});
@@ -83,24 +83,24 @@ void *Hpt_new::remap (Paddr phys, bool use_boot_hpt)
     return reinterpret_cast<void *>(SPC_LOCAL_REMAP + offset);
 }
 
-Paddr Hpt_new::replace (mword vaddr, mword paddr)
+Paddr Hpt::replace (mword vaddr, mword paddr)
 {
     Tlb_cleanup cleanup;
-    return replace_readonly_page (cleanup, vaddr, paddr & ~Hpt_new::mask, paddr & Hpt_new::mask);
+    return replace_readonly_page (cleanup, vaddr, paddr & ~Hpt::mask, paddr & Hpt::mask);
 }
 
-Hpt_new::pte_t Hpt_new::hw_attr(mword a)
+Hpt::pte_t Hpt::hw_attr(mword a)
 {
     if (a) {
-        return Hpt_new::PTE_P | Hpt_new::PTE_U | Hpt_new::PTE_A | Hpt_new::PTE_D
-            | (a & Mdb::MEM_W ? static_cast<mword>(Hpt_new::PTE_W) : 0)
-            | (a & Mdb::MEM_X ? 0 : static_cast<mword>(Hpt_new::PTE_NX));
+        return Hpt::PTE_P | Hpt::PTE_U | Hpt::PTE_A | Hpt::PTE_D
+            | (a & Mdb::MEM_W ? static_cast<mword>(Hpt::PTE_W) : 0)
+            | (a & Mdb::MEM_X ? 0 : static_cast<mword>(Hpt::PTE_NX));
     }
 
     return 0;
 }
 
-void Hpt_new::set_supported_leaf_levels(Hpt_new::level_t level)
+void Hpt::set_supported_leaf_levels(Hpt::level_t level)
 {
     assert (level > 0);
     supported_leaf_levels = level;

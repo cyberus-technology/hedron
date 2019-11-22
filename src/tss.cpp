@@ -44,8 +44,8 @@ void Tss::setup()
     for (mword page = TSS_AREA; page < TSS_AREA_E; page += PAGE_SIZE) {
         mword page_p {Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0))};
 
-        Hpt_new::boot_hpt().update({page, page_p,
-                                    Hpt_new::PTE_NX | Hpt_new::PTE_G | Hpt_new::PTE_W | Hpt_new::PTE_P,
+        Hpt::boot_hpt().update({page, page_p,
+                                    Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_W | Hpt::PTE_P,
                                     PAGE_BITS});
     }
 }

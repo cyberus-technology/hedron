@@ -21,11 +21,11 @@
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 
-class Hpt_new;
+class Hpt;
 using Hpt_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_clflush_policy,
-                                          Page_alloc_policy<>, Tlb_cleanup, Hpt_new>;
+                                          Page_alloc_policy<>, Tlb_cleanup, Hpt>;
 
-class Hpt_new : public Hpt_page_table
+class Hpt : public Hpt_page_table
 {
     private:
 
@@ -66,7 +66,7 @@ class Hpt_new : public Hpt_page_table
 
         // Return a structural copy of this page table for the given virtual
         // address range.
-        Hpt_new deep_copy(mword vaddr_start, mword vaddr_end);
+        Hpt deep_copy(mword vaddr_start, mword vaddr_end);
 
         void make_current (mword pcid)
         {
@@ -94,14 +94,14 @@ class Hpt_new : public Hpt_page_table
         Paddr replace (mword vaddr, mword paddr);
 
         // Create a page table from existing page table structures.
-        Hpt_new(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
+        Hpt(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
 
         // Create a page table from scratch.
-        Hpt_new() : Hpt_page_table(4, supported_leaf_levels) {}
+        Hpt() : Hpt_page_table(4, supported_leaf_levels) {}
 
         // Convert mapping database attributes to page table attributes.
         static pte_t hw_attr(mword a);
 
         // The boot page table as constructed in start.S.
-        static Hpt_new &boot_hpt();
+        static Hpt &boot_hpt();
 };

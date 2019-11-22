@@ -56,7 +56,7 @@ Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
 
     if (s & 2) {
         if (Vmcb::has_npt()) {
-            npt.update (cleanup, {b, p, Hpt_new::hw_attr (a), static_cast<Hpt_new::ord_t>(o + PAGE_BITS)});
+            npt.update (cleanup, {b, p, Hpt::hw_attr (a), static_cast<Hpt::ord_t>(o + PAGE_BITS)});
         } else {
             ept.update(cleanup, {b, p, Ept_new::hw_attr (a, mdb->node_type), static_cast<Ept_new::ord_t>(o + PAGE_BITS) });
         }
@@ -67,7 +67,7 @@ Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
     if (mdb->node_base + (1UL << o) > USER_ADDR >> PAGE_BITS)
         return Tlb_cleanup::tlb_flush (false);
 
-    hpt.update(cleanup, {b, p, Hpt_new::hw_attr (a), static_cast<Hpt_new::ord_t>(o + PAGE_BITS) });
+    hpt.update(cleanup, {b, p, Hpt::hw_attr (a), static_cast<Hpt::ord_t>(o + PAGE_BITS) });
 
     if (cleanup.need_tlb_flush()) {
         htlb.merge (cpus);

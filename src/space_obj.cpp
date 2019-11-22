@@ -35,7 +35,7 @@ Paddr Space_obj::walk (mword idx, bool &shootdown)
 
         Paddr p = Buddy::ptr_to_phys (ptr = Buddy::allocator.alloc (0, Buddy::FILL_0));
 
-        if ((phys = space_mem()->replace (virt, p | Hpt_new::PTE_NX | Hpt_new::PTE_D | Hpt_new::PTE_A | Hpt_new::PTE_W | Hpt_new::PTE_P)) != p)
+        if ((phys = space_mem()->replace (virt, p | Hpt::PTE_NX | Hpt::PTE_D | Hpt::PTE_A | Hpt::PTE_W | Hpt::PTE_P)) != p)
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
 
         phys |= virt & PAGE_MASK;
@@ -82,6 +82,6 @@ bool Space_obj::insert_root (Kobject *obj)
 
 void Space_obj::page_fault (mword addr, mword error)
 {
-    assert (!(error & Hpt_new::ERR_W));
-    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt_new::PTE_NX | Hpt_new::PTE_A | Hpt_new::PTE_P);
+    assert (!(error & Hpt::ERR_W));
+    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
 }

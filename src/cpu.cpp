@@ -190,7 +190,7 @@ void Cpu::init()
     if (Cpu::bsp()) {
         Fpu::probe();
 
-        Hpt_new::set_supported_leaf_levels (feature (FEAT_1GB_PAGES) ? 3 : 2);
+        Hpt::set_supported_leaf_levels (feature (FEAT_1GB_PAGES) ? 3 : 2);
     }
 
     row() = Console_vga::con.spinner (id());

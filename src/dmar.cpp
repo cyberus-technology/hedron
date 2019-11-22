@@ -37,7 +37,7 @@ uint32      Dmar::gcmd = GCMD_TE;
 Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), invq (static_cast<Dmar_qi *>(Buddy::allocator.alloc (ord, Buddy::FILL_0))), invq_idx (0)
 {
     Pd::kern->Space_mem::delreg (p & ~PAGE_MASK);
-    Pd::kern->Space_mem::insert (reg_base, 0, Hpt_new::PTE_NX | Hpt_new::PTE_G | Hpt_new::PTE_UC | Hpt_new::PTE_W | Hpt_new::PTE_P, p & ~PAGE_MASK);
+    Pd::kern->Space_mem::insert (reg_base, 0, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, p & ~PAGE_MASK);
 
     cap  = read<uint64>(REG_CAP);
     ecap = read<uint64>(REG_ECAP);
