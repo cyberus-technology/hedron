@@ -18,23 +18,23 @@
 #include "ept.hpp"
 #include "mdb.hpp"
 
-Ept_new::level_t Ept_new::supported_leaf_levels {1};
+Ept::level_t Ept::supported_leaf_levels {1};
 
-Ept_new::pte_t Ept_new::hw_attr(mword a, mword mtrr_type)
+Ept::pte_t Ept::hw_attr(mword a, mword mtrr_type)
 {
-    auto const none {static_cast<decltype(Ept_new::PTE_R)>(0)};
+    auto const none {static_cast<decltype(Ept::PTE_R)>(0)};
 
     if (a) {
         return mtrr_type << 3
-            | (a & Mdb::MEM_R ? Ept_new::PTE_R : none)
-            | (a & Mdb::MEM_W ? Ept_new::PTE_W : none)
-            | (a & Mdb::MEM_X ? Ept_new::PTE_X : none);
+            | (a & Mdb::MEM_R ? Ept::PTE_R : none)
+            | (a & Mdb::MEM_W ? Ept::PTE_W : none)
+            | (a & Mdb::MEM_X ? Ept::PTE_X : none);
     }
 
     return 0;
 }
 
-void Ept_new::set_supported_leaf_levels(Ept_new::level_t level)
+void Ept::set_supported_leaf_levels(Ept::level_t level)
 {
     assert (level > 0);
     supported_leaf_levels = level;

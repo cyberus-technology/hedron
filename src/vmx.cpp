@@ -33,7 +33,7 @@
 #include "vmx.hpp"
 #include "x86.hpp"
 
-Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept_new const &ept, unsigned cpu) : rev (basic().revision)
+Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev (basic().revision)
 {
     make_current();
 
@@ -125,8 +125,8 @@ void Vmcs::init()
 
     // Bit n in this mask means that n can be a leaf level.
     mword const leaf_bit_mask {1U /* 4K */ | (ept_vpid().super << 1)};
-    auto  const leaf_levels {static_cast<Ept_new::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
-    Ept_new::set_supported_leaf_levels (leaf_levels);
+    auto  const leaf_levels {static_cast<Ept::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
+    Ept::set_supported_leaf_levels (leaf_levels);
 
     fix_cr0_set() &= ~(Cpu::CR0_PG | Cpu::CR0_PE);
 

@@ -29,7 +29,7 @@
 #include "msr.hpp"
 #include "vmx_types.hpp"
 
-class Ept_new;
+class Ept;
 
 class Vmcs
 {
@@ -342,7 +342,7 @@ class Vmcs
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
         }
 
-        Vmcs (mword, mword, mword, Ept_new const &, unsigned);
+        Vmcs (mword, mword, mword, Ept const &, unsigned);
 
         inline Vmcs() : rev (basic().revision)
         {

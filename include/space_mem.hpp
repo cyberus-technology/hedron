@@ -36,7 +36,7 @@ class Space_mem : public Space
 
         Dpt dpt;
 
-        Ept_new ept;
+        Ept ept;
         Hpt npt;
 
         mword did;

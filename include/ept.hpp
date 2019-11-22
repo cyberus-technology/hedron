@@ -21,11 +21,11 @@
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 
-class Ept_new;
+class Ept;
 using Ept_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_clflush_policy,
-                                          Page_alloc_policy<>, Tlb_cleanup, Ept_new>;
+                                          Page_alloc_policy<>, Tlb_cleanup, Ept>;
 
-class Ept_new : public Ept_page_table
+class Ept : public Ept_page_table
 {
     private:
 
@@ -63,7 +63,7 @@ class Ept_new : public Ept_page_table
         static void set_supported_leaf_levels(level_t level);
 
         // Create a page table from scratch.
-        Ept_new() : Ept_page_table(4, supported_leaf_levels) {}
+        Ept() : Ept_page_table(4, supported_leaf_levels) {}
 
         // Convert mapping database attributes to page table attributes.
         static pte_t hw_attr(mword a, mword mtrr_type);
