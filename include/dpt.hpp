@@ -21,11 +21,11 @@
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 
-class Dpt_new;
+class Dpt;
 using Dpt_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, Clflush_policy,
-                                          Page_alloc_policy<>, Tlb_cleanup, Dpt_new>;
+                                          Page_alloc_policy<>, Tlb_cleanup, Dpt>;
 
-class Dpt_new : public Dpt_page_table
+class Dpt : public Dpt_page_table
 {
     private:
 
@@ -68,7 +68,7 @@ class Dpt_new : public Dpt_page_table
         }
 
         // Create a page table from scratch.
-        Dpt_new() : Dpt_page_table(4, supported_leaf_levels < 0 ? 1 : supported_leaf_levels) {}
+        Dpt() : Dpt_page_table(4, supported_leaf_levels < 0 ? 1 : supported_leaf_levels) {}
 
         // Convert mapping database attributes to page table attributes.
         static pte_t hw_attr(mword a);

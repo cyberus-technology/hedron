@@ -44,10 +44,10 @@ Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | 
 
     // Bit n in this mask means that n can be a leaf level.
     mword const leaf_bit_mask {1U /* 4K */ | ((static_cast<mword>(cap >> 34) & 0b11) << 1)};
-    auto  const leaf_levels {static_cast<Dpt_new::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
+    auto  const leaf_levels {static_cast<Dpt::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
 
     assert (page_table_levels() >= leaf_levels);
-    Dpt_new::lower_supported_leaf_levels (leaf_levels);
+    Dpt::lower_supported_leaf_levels (leaf_levels);
 
     write<uint32>(REG_FEADDR, 0xfee00000 | Cpu::apic_id[0] << 12);
     write<uint32>(REG_FEDATA, VEC_MSI_DMAR);

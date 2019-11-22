@@ -51,7 +51,7 @@ Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
     mword s = mdb->node_sub;
 
     if (s & 1) {
-        dpt.update (cleanup, {b, p, Dpt_new::hw_attr (a), static_cast<Dpt_new::ord_t>(o + PAGE_BITS)});
+        dpt.update (cleanup, {b, p, Dpt::hw_attr (a), static_cast<Dpt::ord_t>(o + PAGE_BITS)});
     }
 
     if (s & 2) {

@@ -34,7 +34,7 @@ class Space_mem : public Space
     public:
         Hpt hpt;
 
-        Dpt_new dpt;
+        Dpt dpt;
 
         Ept_new ept;
         Hpt npt;

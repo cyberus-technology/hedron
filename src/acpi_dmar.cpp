@@ -54,7 +54,7 @@ void Acpi_dmar::parse() const
 void Acpi_rmrr::parse() const
 {
     for (uint64 hpa = base & ~PAGE_MASK; hpa < limit; hpa += PAGE_SIZE) {
-        Pd::kern->dpt.update ({hpa, hpa, Dpt_new::PTE_R | Dpt_new::PTE_W, PAGE_BITS});
+        Pd::kern->dpt.update ({hpa, hpa, Dpt::PTE_R | Dpt::PTE_W, PAGE_BITS});
     }
 
     for (Acpi_scope const *s = scope; s < reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(this) + length); s = reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(s) + s->length)) {

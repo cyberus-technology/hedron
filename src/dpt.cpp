@@ -18,22 +18,22 @@
 #include "dpt.hpp"
 #include "mdb.hpp"
 
-Dpt_new::level_t Dpt_new::supported_leaf_levels {-1};
+Dpt::level_t Dpt::supported_leaf_levels {-1};
 
-Dpt_new::pte_t Dpt_new::hw_attr(mword a)
+Dpt::pte_t Dpt::hw_attr(mword a)
 {
-    auto const none {static_cast<decltype(Dpt_new::PTE_R)>(0)};
+    auto const none {static_cast<decltype(Dpt::PTE_R)>(0)};
 
     if (a) {
         return
-              (a & Mdb::MEM_R ? Dpt_new::PTE_R : none)
-            | (a & Mdb::MEM_W ? Dpt_new::PTE_W : none);
+              (a & Mdb::MEM_R ? Dpt::PTE_R : none)
+            | (a & Mdb::MEM_W ? Dpt::PTE_W : none);
     }
 
     return 0;
 }
 
-void Dpt_new::lower_supported_leaf_levels(Dpt_new::level_t level)
+void Dpt::lower_supported_leaf_levels(Dpt::level_t level)
 {
     assert (level > 0);
 
