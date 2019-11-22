@@ -101,9 +101,6 @@ class Generic_page_table
         // The root of the page table hierarchy.
         pte_pointer_t root_;
 
-        // The maximum possible mapping order.
-        ord_t max_order() const { return max_levels_ * BITS_PER_LEVEL + PAGE_BITS; }
-
         // Return the order that an entry at a specific page table level has.
         ord_t level_order(level_t level) const { return level * BITS_PER_LEVEL + PAGE_BITS; }
 
@@ -328,6 +325,9 @@ class Generic_page_table
         }
 
     public:
+
+        // The maximum possible mapping order.
+        ord_t max_order() const { return max_levels_ * BITS_PER_LEVEL + PAGE_BITS; }
 
         // Return the memory abstraction as a unit testing aid.
         MEMORY const &memory() const { return memory_; }
