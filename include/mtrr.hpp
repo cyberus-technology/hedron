@@ -21,39 +21,12 @@
 
 #pragma once
 
-#include "math.hpp"
-#include "static_vector.hpp"
+#include "generic_mtrr.hpp"
+#include "msr.hpp"
 
-class Mtrr
+class Mtrr_state : public Generic_mtrr_state<Msr>
 {
     public:
-        uint64 const base;
-        uint64 const mask;
-
-        uint64 size() const
-        {
-            return 1ULL << (static_cast<mword>(mask) ? bit_scan_forward (static_cast<mword>(mask >> 12)) + 12 :
-                                                       bit_scan_forward (static_cast<mword>(mask >> 32)) + 32);
-        }
-
-    public:
-        Mtrr (uint64 b, uint64 m) : base (b), mask (m) {}
-};
-
-class Mtrr_state
-{
-    private:
-
-        static constexpr size_t MAX_VMTRR {16};
-        Static_vector<Mtrr, MAX_VMTRR> vmtrr;
-
-        // The default memory type.
-        unsigned dtype;
-
-    public:
-        INIT void init();
-        INIT unsigned memtype (uint64 paddr, uint64 &next);
-
         // Return a singleton instance.
         static Mtrr_state &get();
 };
