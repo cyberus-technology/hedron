@@ -57,7 +57,7 @@ constexpr inline long int bit_scan_forward (mword val)
     return __builtin_ctzl(val);
 }
 
-constexpr inline unsigned long max_order (mword base, size_t size)
+constexpr inline long int max_order (mword base, size_t size)
 {
     long int o = bit_scan_reverse (size);
 
