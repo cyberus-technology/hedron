@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -18,27 +19,32 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "nodestruct.hpp"
+#include "memory.hpp"
 #include "msr.hpp"
 #include "mtrr.hpp"
+#include "stdio.hpp"
 
-unsigned Mtrr::count;
-unsigned Mtrr::dtype;
-Mtrr *   Mtrr::list;
+static No_destruct<Mtrr_state> global_mtrr_state;
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Mtrr::cache (sizeof (Mtrr), 8);
-
-void Mtrr::init()
+Mtrr_state &Mtrr_state::get()
 {
-    count = Msr::read<uint32>(Msr::IA32_MTRR_CAP) & 0xff;
-    dtype = Msr::read<uint32>(Msr::IA32_MTRR_DEF_TYPE) & 0xff;
-
-    for (unsigned i = 0; i < count; i++)
-        new Mtrr (Msr::read<uint64>(Msr::Register (Msr::IA32_MTRR_PHYS_BASE + 2 * i)),
-                  Msr::read<uint64>(Msr::Register (Msr::IA32_MTRR_PHYS_MASK + 2 * i)));
+    return *&global_mtrr_state;
 }
 
-unsigned Mtrr::memtype (uint64 phys, uint64 &next)
+void Mtrr_state::init()
+{
+    size_t const count {Msr::read<uint32>(Msr::IA32_MTRR_CAP) & 0xff};
+
+    dtype = Msr::read<uint32>(Msr::IA32_MTRR_DEF_TYPE) & 0xff;
+
+    for (size_t i = 0; i < count; i++) {
+        vmtrr.emplace_back (Msr::read<uint64>(Msr::Register (Msr::IA32_MTRR_PHYS_BASE + 2 * i)),
+                            Msr::read<uint64>(Msr::Register (Msr::IA32_MTRR_PHYS_MASK + 2 * i)));
+    }
+}
+
+unsigned Mtrr_state::memtype (uint64 phys, uint64 &next)
 {
     if (phys < 0x80000) {
         next = 1 + (phys | 0xffff);
@@ -60,19 +66,18 @@ unsigned Mtrr::memtype (uint64 phys, uint64 &next)
 
     unsigned type = ~0U; next = ~0ULL;
 
-    for (Mtrr *mtrr = list; mtrr; mtrr = mtrr->next) {
-
-        if (!(mtrr->mask & 0x800))
+    for (Mtrr &mtrr : vmtrr) {
+        if (!(mtrr.mask & 0x800))
             continue;
 
-        uint64 base = mtrr->base & ~PAGE_MASK;
+        uint64 base = mtrr.base & ~PAGE_MASK;
 
         if (phys < base)
             next = min (next, base);
 
-        else if (((phys ^ mtrr->base) & mtrr->mask) >> PAGE_BITS == 0) {
-            next = min (next, base + mtrr->size());
-            type = min (type, static_cast<unsigned>(mtrr->base) & 0xff);
+        else if (((phys ^ mtrr.base) & mtrr.mask) >> PAGE_BITS == 0) {
+            next = min (next, base + mtrr.size());
+            type = min (type, static_cast<unsigned>(mtrr.base) & 0xff);
         }
     }
 

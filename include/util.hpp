@@ -19,6 +19,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
 
 template <typename T, T v>
 struct integral_constant

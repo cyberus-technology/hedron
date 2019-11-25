@@ -5,6 +5,7 @@
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -20,21 +21,14 @@
 
 #pragma once
 
-#include "list.hpp"
 #include "math.hpp"
-#include "slab.hpp"
+#include "static_vector.hpp"
 
-class Mtrr : public List<Mtrr>
+class Mtrr
 {
-    private:
-        uint64 const        base;
-        uint64 const        mask;
-
-        static unsigned     count;
-        static unsigned     dtype;
-
-        static Mtrr *       list;
-        static Slab_cache   cache;
+    public:
+        uint64 const base;
+        uint64 const mask;
 
         uint64 size() const
         {
@@ -43,13 +37,23 @@ class Mtrr : public List<Mtrr>
         }
 
     public:
-        explicit inline Mtrr (uint64 b, uint64 m) : List<Mtrr> (list), base (b), mask (m) {}
+        Mtrr (uint64 b, uint64 m) : base (b), mask (m) {}
+};
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
+class Mtrr_state
+{
+    private:
 
-        INIT
-        static void init();
+        static constexpr size_t MAX_VMTRR {16};
+        Static_vector<Mtrr, MAX_VMTRR> vmtrr;
 
-        INIT
-        static unsigned memtype (uint64, uint64 &);
+        // The default memory type.
+        unsigned dtype;
+
+    public:
+        INIT void init();
+        INIT unsigned memtype (uint64 paddr, uint64 &next);
+
+        // Return a singleton instance.
+        static Mtrr_state &get();
 };
