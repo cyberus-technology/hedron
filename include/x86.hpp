@@ -23,6 +23,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
 
 template <typename T>
 inline void clflush (T *t)
@@ -47,77 +48,72 @@ inline void shutdown()
         asm volatile ("cli; hlt");
 }
 
-static inline void wbinvd()
-{
-    asm volatile ("wbinvd" : : : "memory");
-}
-
-static inline void pause()
+inline void pause()
 {
     asm volatile ("pause" : : : "memory");
 }
 
-static inline uint64 rdtsc()
+inline uint64 rdtsc()
 {
     mword h, l;
     asm volatile ("rdtsc" : "=a" (l), "=d" (h));
     return static_cast<uint64>(h) << 32 | l;
 }
 
-static inline void cpuid (unsigned leaf, unsigned subleaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
+inline void cpuid (unsigned leaf, unsigned subleaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
 {
     asm volatile ("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (leaf), "c" (subleaf));
 }
 
-static inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
+inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 &edx)
 {
     cpuid (leaf, 0, eax, ebx, ecx, edx);
 }
 
-static inline mword get_cr0()
+inline mword get_cr0()
 {
     mword cr0;
     asm volatile ("mov %%cr0, %0" : "=r" (cr0));
     return cr0;
 }
 
-static inline void set_cr0 (mword cr0)
+inline void set_cr0 (mword cr0)
 {
     asm volatile ("mov %0, %%cr0" : : "r" (cr0));
 }
 
-static inline mword get_cr2()
+inline mword get_cr2()
 {
     mword cr2;
     asm volatile ("mov %%cr2, %0" : "=r" (cr2));
     return cr2;
 }
 
-static inline void set_cr2 (mword cr2)
+inline void set_cr2 (mword cr2)
 {
     asm volatile ("mov %0, %%cr2" : : "r" (cr2));
 }
 
-static inline mword get_cr4()
+inline mword get_cr4()
 {
     mword cr4;
     asm volatile ("mov %%cr4, %0" : "=r" (cr4));
     return cr4;
 }
 
-static inline void set_cr4 (mword cr4)
+inline void set_cr4 (mword cr4)
 {
     asm volatile ("mov %0, %%cr4" : : "r" (cr4));
 }
 
-static inline mword get_xcr(uint32 n)
+inline mword get_xcr(uint32 n)
 {
     mword h {0}, l {0};
     asm volatile ("xgetbv" : "=a" (l), "=d" (h) : "c"(n));
     return static_cast<uint64>(h) << 32 | l;
 }
 
-static inline void set_xcr(uint32 n, mword val)
+inline void set_xcr(uint32 n, mword val)
 {
     asm volatile ("xsetbv" :: "c" (n), "a" (static_cast<uint32>(val)), "d" (val >> 32));
 }
