@@ -39,6 +39,15 @@ class Hpt : public Hpt_page_table
         }
 
     public:
+
+        enum : mword {
+              // The bitmask covers legal memory type values as we get them from
+              // the MTRRs.
+              MT_MASK = 0b111UL,
+
+              PTE_MT_SHIFT = 53,
+        };
+
         enum : pte_t {
             PTE_P  = 1ULL << 0,
             PTE_W  = 1ULL << 1,
@@ -50,6 +59,14 @@ class Hpt : public Hpt_page_table
             PTE_A  = 1ULL << 5,
             PTE_D  = 1ULL << 6,
 
+            // We encode memory types in available bits.
+            PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
+
+            // Prevent pages from being delegated. This is useful for pages that
+            // the kernel needs to be able to reclaim from userspace (e.g. UTCBs,
+            // vLAPIC pages).
+            PTE_NODELEG = 1ULL << 56,
+
             PTE_NX = 1ULL << 63,
         };
 
@@ -58,7 +75,7 @@ class Hpt : public Hpt_page_table
             ERR_U = 1U << 2,
         };
 
-        static constexpr pte_t mask {PTE_NX | 0xFFF};
+        static constexpr pte_t mask {PTE_NX | PTE_MT_MASK | PTE_NODELEG | 0xFFF};
         static constexpr pte_t all_rights {PTE_P | PTE_W | PTE_U | PTE_A | PTE_D};
 
         // Adjust the number of leaf levels to the given value.
