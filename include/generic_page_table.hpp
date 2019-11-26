@@ -369,7 +369,7 @@ class Generic_page_table
         // Walk down the page table to the indicated level and return a pointer
         // to the beginning of the page table. Splits any superpages and creates
         // missing page table structures (if desired).
-        pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup,  virt_t vaddr,
+        pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup, virt_t vaddr,
                                           level_t to_level, bool create = true)
         {
             assert (root_ != nullptr);
@@ -382,6 +382,7 @@ class Generic_page_table
         {
             assert (root_ != nullptr);
             assert (map.order >= PAGE_BITS and map.order <= max_order());
+            assert ((map.attr & ~ATTR::mask) == 0);
 
             ENTRY const align_mask {(static_cast<ENTRY>(1) << map.order) - 1};
             assert ((map.vaddr & align_mask) == 0);
