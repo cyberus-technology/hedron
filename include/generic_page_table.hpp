@@ -19,6 +19,7 @@
 
 #include "assert.hpp"
 #include "compiler.hpp"
+#include "math.hpp"
 #include "memory.hpp"
 #include "types.hpp"
 
@@ -79,6 +80,39 @@ class Generic_page_table
                 bool operator==(Mapping const &rhs) const
                 {
                     return vaddr == rhs.vaddr and paddr == rhs.paddr and attr == rhs.attr and order == rhs.order;
+                }
+
+                // Return a new mapping derived from this mapping that fits into
+                // the given clamp region.
+                WARN_UNUSED_RESULT Mapping clamp(virt_t snd_base, ord_t snd_order) const
+                {
+                    // The send order and this mapping need to be naturally aligned.
+                    assert (is_aligned_by_order (snd_base, snd_order));
+                    assert (is_aligned_by_order (vaddr,    order));
+
+                    // snd_base must be inside the mapping or cover the mapping.
+                    assert ((snd_base ^ vaddr) >> max (order, snd_order) == 0);
+
+                    // We know that both vaddr and snd_base are naturally aligned and we
+                    // know that the region to clamp to is inside this mapping.
+                    virt_t const clamp_vaddr {vaddr | snd_base};
+                    virt_t const clamp_offset {clamp_vaddr - vaddr};
+
+                    return {clamp_vaddr, paddr + clamp_offset, attr, min (order, snd_order)};
+                }
+
+                // Move a mapping by a specific offset.
+                //
+                // Moving may shrink a mapping, because of alignment issues. The
+                // resulting mapping will always start at the same address,
+                // though.
+                WARN_UNUSED_RESULT Mapping move_by(virt_t offset) const
+                {
+                    if (offset == 0) {
+                        return *this;
+                    }
+
+                    return {vaddr + offset, paddr, attr, min<ord_t> (order, static_cast<ord_t>(::max_order (0, offset)))};
                 }
         };
 

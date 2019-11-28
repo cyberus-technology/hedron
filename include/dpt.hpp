@@ -18,6 +18,7 @@
 #pragma once
 
 #include "generic_page_table.hpp"
+#include "hpt.hpp"
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 
@@ -42,7 +43,7 @@ class Dpt : public Dpt_page_table
             PTE_P = PTE_R | PTE_W,
         };
 
-        static constexpr pte_t mask {0xFFF};
+        static constexpr pte_t mask {PTE_R | PTE_W};
         static constexpr pte_t all_rights {PTE_R | PTE_W};
 
         // Adjust the number of leaf levels.
@@ -70,6 +71,6 @@ class Dpt : public Dpt_page_table
         // Create a page table from scratch.
         Dpt() : Dpt_page_table(4, supported_leaf_levels < 0 ? 1 : supported_leaf_levels) {}
 
-        // Convert mapping database attributes to page table attributes.
-        static pte_t hw_attr(mword a);
+        // Convert a HPT mapping into a mapping for the DPT.
+        static Mapping convert_mapping(Hpt::Mapping const &hpt_mapping);
 };

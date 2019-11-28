@@ -21,6 +21,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "memory.hpp"
 #include "types.hpp"
 
 template <typename T>
@@ -77,4 +78,16 @@ constexpr inline mword align_up (mword val, mword align)
 {
     val += (align - 1);                 // Expect power-of-2
     return align_dn (val, align);
+}
+
+template <typename T>
+constexpr inline bool is_aligned_by_order (T val, long int order)
+{
+    return (val & ((static_cast<T>(1) << order) - 1)) == 0;
+}
+
+template <typename T>
+constexpr inline bool is_page_aligned (T val)
+{
+    return is_aligned_by_order<T> (val, PAGE_BITS);
 }

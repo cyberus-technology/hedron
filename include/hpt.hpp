@@ -25,6 +25,11 @@ class Hpt;
 using Hpt_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_clflush_policy,
                                           Page_alloc_policy<>, Tlb_cleanup, Hpt>;
 
+// Host Page Table
+//
+// Besides using this class to manage all normal CPU page tables, we also use it
+// to store metainformation about memory type of each page (PTE_MT_MASK) and
+// whether pages can be delegated (PTE_NODELEG).
 class Hpt : public Hpt_page_table
 {
     private:
@@ -38,14 +43,18 @@ class Hpt : public Hpt_page_table
             asm volatile ("mov %%cr3, %0; mov %0, %%cr3" : "=&r" (cr3));
         }
 
+        using Hpt_page_table::Hpt_page_table;
+
     public:
 
         enum : mword {
-              // The bitmask covers legal memory type values as we get them from
-              // the MTRRs.
-              MT_MASK = 0b111UL,
+            // The bitmask covers legal memory type values as we get them from
+            // the MTRRs.
+            MT_MASK = 0b111UL,
+        };
 
-              PTE_MT_SHIFT = 53,
+        enum : ord_t {
+            PTE_MT_SHIFT = 53,
         };
 
         enum : pte_t {
@@ -75,8 +84,8 @@ class Hpt : public Hpt_page_table
             ERR_U = 1U << 2,
         };
 
-        static constexpr pte_t mask {PTE_NX | PTE_MT_MASK | PTE_NODELEG | 0xFFF};
         static constexpr pte_t all_rights {PTE_P | PTE_W | PTE_U | PTE_A | PTE_D};
+        static constexpr pte_t mask {PTE_NX | PTE_MT_MASK | PTE_NODELEG | PTE_UC | PTE_G | all_rights};
 
         // Adjust the number of leaf levels to the given value.
         static void set_supported_leaf_levels(level_t level);
@@ -89,7 +98,9 @@ class Hpt : public Hpt_page_table
         {
             mword phys_root {root()};
 
+            assert (leaf_levels() <= supported_leaf_levels);
             assert ((phys_root & PAGE_MASK) == 0);
+
             asm volatile ("mov %0, %%cr3" : : "r" (phys_root | pcid) : "memory");
         }
 
@@ -111,13 +122,24 @@ class Hpt : public Hpt_page_table
         Paddr replace (mword vaddr, mword paddr);
 
         // Create a page table from existing page table structures.
-        Hpt(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
+        explicit Hpt(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
 
         // Create a page table from scratch.
         Hpt() : Hpt_page_table(4, supported_leaf_levels) {}
 
+        // Create the page table that is (ab)used as physical memory
+        // database. This is never actually used as a page table by the CPU, so
+        // we can pretend to have really large pages to save valuable kernel
+        // memory.
+        static Hpt make_golden_hpt() { return Hpt (4, 4); }
+
         // Convert mapping database attributes to page table attributes.
         static pte_t hw_attr(mword a);
+
+        // Return the intersection of rights from source and
+        // desired. Metainformation (memory type) is carried forward from
+        // source.
+        static pte_t merge_hw_attr(pte_t source, pte_t desired);
 
         // The boot page table as constructed in start.S.
         static Hpt &boot_hpt();

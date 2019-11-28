@@ -71,8 +71,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
         trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
-        pd->insert_utcb (u, Buddy::ptr_to_phys(utcb) >> 12);
-
     } else {
 
         utcb = nullptr;

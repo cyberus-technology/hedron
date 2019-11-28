@@ -731,3 +731,80 @@ TEST_CASE("Replacing read-only pages works", "[page_table]")
                         0x2000, 0x3000);
     }
 }
+
+TEST_CASE("Clamping mappings works", "[page_table]")
+{
+    using Mapping = Fake_hpt::Mapping;
+
+    // A 4MB "page" at 20MB.
+    auto const attr {Fake_attr::PTE_P | Fake_attr::PTE_W};
+    Mapping const source {5 << 22, 0, attr, 22};
+
+    SECTION("Clamp is idempotent") {
+        CHECK(source.clamp (source.vaddr, source.order) == source);
+    }
+
+    SECTION("Clamp preserves attributes") {
+        CHECK(source.clamp (source.vaddr, source.order).attr == attr);
+    }
+
+    SECTION("Clamp into larger region is no-op") {
+        // Clamp into 16MB page at 16MB.
+        auto const clamped {source.clamp (4 << 22, 24)};
+
+        CHECK (clamped == source);
+    }
+
+    SECTION("Clamp into smaller region returns smaller region") {
+        // Clamp into 2MB page at 22MB;
+        auto const clamped {source.clamp (22 << 20, 21)};
+
+        CHECK (clamped.vaddr == 22 << 20);
+        CHECK (clamped.paddr == 2 << 20);
+        CHECK (clamped.order == 21);
+    }
+}
+
+TEST_CASE("Moving mappings works", "[page_table]")
+{
+    using Mapping = Fake_hpt::Mapping;
+
+    // A 4MB "page" at 20MB.
+    Mapping const source {5 << 22, 0, Fake_attr::PTE_P, 22};
+
+    SECTION("Moving by zero is a no-op") {
+        CHECK(source.move_by (0) == source);
+    }
+
+    SECTION("Moving doesn't change start or attributes") {
+        auto const moved {source.move_by (PAGE_SIZE)};
+
+        CHECK(moved.vaddr == source.vaddr + PAGE_SIZE);
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.attr == source.attr);
+    }
+
+    SECTION("Moving by small amount decreases mapping size") {
+        auto const moved {source.move_by (PAGE_SIZE)};
+
+        CHECK(moved.vaddr == source.vaddr + PAGE_SIZE);
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == PAGE_BITS);
+    }
+
+    SECTION("Moving by matching offset doesn't change mapping size") {
+        auto const moved {source.move_by (1UL << source.order)};
+
+        CHECK(moved.vaddr == source.vaddr + (1UL << source.order));
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == source.order);
+    }
+
+    SECTION("Moving by large amount doesn't change mapping size") {
+        auto const moved {source.move_by (1UL << 30)};
+
+        CHECK(moved.vaddr == source.vaddr + (1UL << 30));
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == source.order);
+    }
+}

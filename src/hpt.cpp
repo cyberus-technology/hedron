@@ -100,6 +100,21 @@ Hpt::pte_t Hpt::hw_attr(mword a)
     return 0;
 }
 
+NOINLINE Hpt::pte_t Hpt::merge_hw_attr(Hpt::pte_t source, Hpt::pte_t desired)
+{
+    if (not (desired & source & Hpt::PTE_P)) {
+        return 0;
+    }
+
+    pte_t const changeable {PTE_P | PTE_W | PTE_NX};
+
+    // Invert NX bit to a positive permission bit that can be combined via AND.
+    source ^= PTE_NX;
+    desired ^= PTE_NX;
+
+    return PTE_NX ^ ((source & ~changeable) | (source & desired & changeable));
+}
+
 void Hpt::set_supported_leaf_levels(Hpt::level_t level)
 {
     assert (level > 0);

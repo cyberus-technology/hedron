@@ -16,21 +16,30 @@
  */
 
 #include "dpt.hpp"
+#include "hpt.hpp"
 #include "mdb.hpp"
 
 Dpt::level_t Dpt::supported_leaf_levels {-1};
 
-Dpt::pte_t Dpt::hw_attr(mword a)
+static Dpt::pte_t attr_from_hpt(mword a)
 {
     auto const none {static_cast<decltype(Dpt::PTE_R)>(0)};
 
-    if (a) {
-        return
-              (a & Mdb::MEM_R ? Dpt::PTE_R : none)
-            | (a & Mdb::MEM_W ? Dpt::PTE_W : none);
+    if (a & Hpt::PTE_P) {
+        // Only user accessible and delegatable mappings should ever end up in
+        // the DPT.
+        assert ((a & Hpt::PTE_U)       != 0);
+        assert ((a & Hpt::PTE_NODELEG) == 0);
+
+        return Dpt::PTE_R | (a & Hpt::PTE_W ? Dpt::PTE_W : none);
     }
 
-    return 0;
+    return none;
+}
+
+Dpt::Mapping Dpt::convert_mapping(Hpt::Mapping const &hpt_mapping)
+{
+    return {hpt_mapping.vaddr, hpt_mapping.paddr, attr_from_hpt (hpt_mapping.attr), hpt_mapping.order};
 }
 
 void Dpt::lower_supported_leaf_levels(Dpt::level_t level)

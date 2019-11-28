@@ -44,10 +44,7 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         {
             Pd * pd = static_cast <Pd *>(a);
 
-            Crd crd(Crd::MEM);
-            pd->revoke<Space_mem>(crd.base(), crd.order(), crd.attr(), true);
-
-            crd = Crd(Crd::PIO);
+            Crd crd(Crd::PIO);
             pd->revoke<Space_pio>(crd.base(), crd.order(), crd.attr(), true);
 
             crd = Crd(Crd::OBJ);
@@ -102,7 +99,11 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
             bool ok = current()->add_ref();
             assert (ok);
 
-            hpt.make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
+            // When we schedule the idle EC, we switch to Pd::kern. Pd::kern's
+            // host page table is actually all the physical memory that
+            // userspace can use, so we cannot use it as a page table here.
+            Hpt &target_hpt {EXPECT_FALSE (this == &Pd::kern) ? Hpt::boot_hpt() : hpt};
+            target_hpt.make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
         }
 
         static inline Pd *remote (unsigned c)
@@ -113,7 +114,9 @@ class Pd : public Kobject, public Refcount, public Space_mem, public Space_pio, 
         inline Space *subspace (Crd::Type t)
         {
             switch (t) {
-                case Crd::MEM:  return static_cast<Space_mem *>(this);
+                // Memory is not handled as a Mdb-managed space anymore.
+                case Crd::MEM:  return nullptr;
+
                 case Crd::PIO:  return static_cast<Space_pio *>(this);
                 case Crd::OBJ:  return static_cast<Space_obj *>(this);
             }
