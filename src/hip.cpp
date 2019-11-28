@@ -116,8 +116,13 @@ void Hip::build_mbi2 (Hip_mem *&mem, mword addr)
         if (tag->type == Multiboot2::TAG_MEMORY)
             tag->for_each_mem([&mem] (Multiboot2::Memory_map const * mmap) { Hip::add_mem (mem, mmap); });
 
-        if (tag->type == Multiboot2::TAG_MODULE)
-            Hip::add_mod(mem, tag->module(), 0); /* XXX cmdline */
+        if (tag->type == Multiboot2::TAG_MODULE) {
+            // MBI2 embeds command line directly without the indirection of a pointer, so
+            // we need to calculate the physical address.
+            auto cmdline_offset = reinterpret_cast<mword>(tag->module()->string) - reinterpret_cast<mword>(mbi);
+            auto cmdline_phys_addr = static_cast<uint32>(addr + cmdline_offset);
+            Hip::add_mod (mem, tag->module(), cmdline_phys_addr);
+        }
 
         if (tag->type == Multiboot2::TAG_ACPI_2)
             Acpi_rsdp::parse (tag->rsdp());
