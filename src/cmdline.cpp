@@ -70,7 +70,7 @@ void Cmdline::init (char const *line)
 
     while ((arg = get_arg (&line, len)))
         for (size_t i = 0; i < sizeof map / sizeof *map; i++) {
-            if (strmatch (map[i].arg, arg, len))
+            if (strnmatch (map[i].arg, arg, len))
                 *map[i].ptr = true;
         }
 }
