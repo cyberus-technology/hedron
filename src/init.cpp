@@ -29,7 +29,6 @@
 #include "hpt.hpp"
 #include "idt.hpp"
 #include "lapic.hpp"
-#include "keyb.hpp"
 #include "multiboot.hpp"
 #include "tss.hpp"
 
@@ -59,6 +58,4 @@ void init (mword mbi)
     Hip::build (mbi);
 
     Console_vga::con.setup();
-
-    Keyb::init();
 }

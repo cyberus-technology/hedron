@@ -24,7 +24,6 @@
 #include "string.hpp"
 
 bool Cmdline::iommu;
-bool Cmdline::keyb;
 bool Cmdline::serial;
 bool Cmdline::spinner;
 bool Cmdline::nodl;
@@ -36,7 +35,6 @@ bool Cmdline::noxsave;
 struct Cmdline::param_map Cmdline::map[] INITDATA =
 {
     { "iommu",      &Cmdline::iommu     },
-    { "keyb",       &Cmdline::keyb      },
     { "serial",     &Cmdline::serial    },
     { "spinner",    &Cmdline::spinner   },
     { "nodl",       &Cmdline::nodl      },

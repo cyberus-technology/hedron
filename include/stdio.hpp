@@ -41,7 +41,6 @@ enum {
     TRACE_CPU       = 1UL << 0,
     TRACE_IOMMU     = 1UL << 1,
     TRACE_APIC      = 1UL << 2,
-    TRACE_KEYB      = 1UL << 3,
     TRACE_VMX       = 1UL << 4,
     TRACE_SVM       = 1UL << 5,
     TRACE_ACPI      = 1UL << 8,
@@ -63,7 +62,6 @@ unsigned const trace_mask =
                             TRACE_IOMMU     |
 #ifdef DEBUG
 //                            TRACE_APIC      |
-//                            TRACE_KEYB      |
                             TRACE_VMX       |
                             TRACE_SVM       |
 //                            TRACE_ACPI      |
