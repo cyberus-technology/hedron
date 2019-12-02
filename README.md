@@ -115,7 +115,6 @@ The following command-line parameters are supported for the microhypervisor.
 They must be separated by spaces.
 
 - *iommu*	- Enables DMA and interrupt remapping.
-- *keyb*	- Enables the microhypervisor to drive the keyboard.
 - *serial*	- Enables the microhypervisor to drive the serial console.
 - *spinner*	- Enables event spinners.
 - *nopcid*	- Disables TLB tags for address spaces.
