@@ -267,11 +267,8 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
     }
 }
 
-void Pd::rev_crd (Crd crd, bool self, bool preempt)
+void Pd::rev_crd (Crd crd, bool self)
 {
-    if (preempt)
-        Cpu::preempt_enable();
-
     switch (crd.type()) {
 
         case Crd::MEM:
@@ -289,9 +286,6 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
             revoke<Space_obj>(crd.base(), crd.order(), crd.attr(), self);
             break;
     }
-
-    if (preempt)
-        Cpu::preempt_disable();
 
     if (crd.type() == Crd::MEM)
         shootdown();
