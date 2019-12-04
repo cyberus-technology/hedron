@@ -26,12 +26,11 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
 
-ALIGNED(32) No_destruct<Pd> Pd::kern (nullptr);
+ALIGNED(32) No_destruct<Pd> Pd::kern;
 
-Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own ? own : this))
+Pd::Pd ()
+    : Kobject (PD, static_cast<Space_obj *>(this)), Space_mem (reinterpret_cast<mword *>(&PDBRV))
 {
-    hpt = Hptp (reinterpret_cast<mword>(&PDBR));
-
     Mtrr::init();
 
     Space_mem::insert_root (0, reinterpret_cast<mword>(&LINK_P));
@@ -44,16 +43,17 @@ Pd::Pd (Pd *own) : Kobject (PD, static_cast<Space_obj *>(own ? own : this))
     Space_pio::addreg (0, 1UL << 16, 7);
 }
 
-Pd::Pd (Pd *own, mword sel, mword a, bool priv) : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free), is_priv(priv)
+Pd::Pd (Pd *own, mword sel, mword a, bool priv)
+    : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free),
+      Space_mem (Pd::kern->hpt), is_priv(priv)
 {
-    Hptp const root_pt {reinterpret_cast<mword>(&PDBR)};
-    hpt = root_pt.copy();
 }
 
 template <typename S>
-bool Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord, mword const attr, mword const sub, char const * deltype)
+Tlb_cleanup Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord,
+                          mword const attr, mword const sub, char const * deltype)
 {
-    bool s = false;
+    Tlb_cleanup cleanup;
 
     Mdb *mdb;
     for (mword addr = snd_base; (mdb = snd->S::tree_lookup (addr, true)); addr = mdb->node_base + (1UL << mdb->node_order)) {
@@ -81,10 +81,10 @@ bool Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword co
             continue;
         }
 
-        s |= S::update (node);
+        cleanup.merge (S::update (node));
     }
 
-    return s;
+    return cleanup;
 }
 
 template <typename S>
@@ -225,7 +225,7 @@ void Pd::xlt_crd (Pd *pd, Crd xlt, Crd &crd)
 void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
 {
     Crd::Type st = crd.type(), rt = del.type();
-    bool s = false;
+    Tlb_cleanup cleanup;
 
     mword a = crd.attr() & del.attr(), sb = crd.base(), so = crd.order(), rb = del.base(), ro = del.order(), o = 0;
 
@@ -239,30 +239,32 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
         case Crd::MEM:
             o = clamp (sb, rb, so, ro, hot);
             trace (TRACE_DEL, "DEL MEM PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-            s = delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
+            cleanup = delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
             break;
 
         case Crd::PIO:
             o = clamp (sb, rb, so, ro);
             trace (TRACE_DEL, "DEL I/O PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, rb, rb, o, a);
-            delegate<Space_pio>(pd, rb, rb, o, a, sub, "PIO");
+            cleanup = delegate<Space_pio>(pd, rb, rb, o, a, sub, "PIO");
             break;
 
         case Crd::OBJ:
             o = clamp (sb, rb, so, ro, hot);
             trace (TRACE_DEL, "DEL OBJ PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-            s = delegate<Space_obj>(pd, sb, rb, o, a, 0, "OBJ");
+            cleanup = delegate<Space_obj>(pd, sb, rb, o, a, 0, "OBJ");
             break;
     }
 
     crd = Crd (rt, rb, o, a);
 
-    if (s && rt == Crd::OBJ)
+    if (cleanup.need_tlb_flush() && rt == Crd::OBJ)
         /* if FRAME_0 got replaced by real pages we have to tell all cpus, done below by shootdown */
         this->htlb.merge (cpus);
 
-    if (s)
+    if (cleanup.need_tlb_flush()) {
         shootdown();
+        cleanup.ignore_tlb_flush(); // because it is done.
+    }
 }
 
 void Pd::rev_crd (Crd crd, bool self, bool preempt)
@@ -363,8 +365,4 @@ Pd::~Pd()
         Buddy::allocator.free(reinterpret_cast<mword>(apic_access_page));
         apic_access_page = nullptr;
     }
-
-    Space_mem::hpt.clear(Space_mem::hpt.dest_hpt, Space_mem::hpt.iter_hpt_lev);
-    Space_mem::dpt.clear();
-    Space_mem::npt.clear();
 }

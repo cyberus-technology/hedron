@@ -33,10 +33,11 @@
 #include "vmx.hpp"
 #include "x86.hpp"
 
-Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp, unsigned cpu) : rev (basic().revision)
+Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev (basic().revision)
 {
     make_current();
 
+    uint64 eptp = ept.vmcs_eptp();
     uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI;
     uint32 exi = EXI_INTA;
     uint32 ent = 0;
@@ -50,7 +51,7 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp, unsigned cpu) : rev (b
 
     write (VPID, ++vpid_ctr());
 
-    write (EPTP,    static_cast<mword>(eptp) | (Ept::max() - 1) << 3 | 6);
+    write (EPTP,    static_cast<mword>(eptp));
     write (EPTP_HI, static_cast<mword>(eptp >> 32));
 
     write (IO_BITMAP_A, bmp);
@@ -121,7 +122,12 @@ void Vmcs::init()
     }
 
     ept_vpid().val = Msr::read<uint64>(Msr::IA32_VMX_EPT_VPID);
-    Ept::ord = min (Ept::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(ept_vpid().super)) + 2) * Ept::bits_per_level() - 1);
+
+    // Bit n in this mask means that n can be a leaf level.
+    mword const leaf_bit_mask {1U /* 4K */ | (ept_vpid().super << 1)};
+    auto  const leaf_levels {static_cast<Ept::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
+    Ept::set_supported_leaf_levels (leaf_levels);
+
     fix_cr0_set() &= ~(Cpu::CR0_PG | Cpu::CR0_PE);
 
     fix_cr0_clr() |= Cpu::CR0_CD | Cpu::CR0_NW;

@@ -24,9 +24,12 @@
 #pragma once
 
 #include "assert.hpp"
+#include "buddy.hpp"
 #include "cpulocal.hpp"
 #include "msr.hpp"
 #include "vmx_types.hpp"
+
+class Ept;
 
 class Vmcs
 {
@@ -339,7 +342,7 @@ class Vmcs
             Buddy::allocator.free (reinterpret_cast<mword>(ptr));
         }
 
-        Vmcs (mword, mword, mword, uint64, unsigned);
+        Vmcs (mword, mword, mword, Ept const &, unsigned);
 
         inline Vmcs() : rev (basic().revision)
         {

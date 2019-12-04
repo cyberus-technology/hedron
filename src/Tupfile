@@ -25,7 +25,7 @@ FFLAGS += -mno-3dnow
 # Warning options
 WFLAGS  = -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion -Wdisabled-optimization -Wformat=2 -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls -Wshadow -Wwrite-strings
 WFLAGS += -Wctor-dtor-privacy -Wno-non-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wsign-promo
-WFLAGS += -Wstrict-overflow=5
+WFLAGS += -Wstrict-overflow
 WFLAGS += -Wvolatile-register-var
 WFLAGS += -Wzero-as-null-pointer-constant
 
@@ -42,7 +42,7 @@ WFLAGS += -Wno-static-self-init
 WFLAGS += -Wno-missing-noreturn
 
 else
-WFLAGS += -Wframe-larger-than=128
+WFLAGS += -Wframe-larger-than=256
 WFLAGS += -Wlogical-op
 WFLAGS += -Wstrict-null-sentinel
 endif

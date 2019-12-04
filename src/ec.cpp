@@ -64,7 +64,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
         utcb = new Utcb;
 
-        pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, Buddy::ptr_to_phys (utcb));
+        pd->Space_mem::insert (u, 0, Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P, Buddy::ptr_to_phys (utcb));
 
         regs.dst_portal = NUM_EXC - 2;
 
@@ -85,7 +85,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
                                   pd->Space_pio::walk(),
                                   host_cr3,
-                                  pd->ept.root(),
+                                  pd->ept,
                                   c);
 
             regs.nst_ctrl<Vmcs>();
@@ -107,7 +107,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page_p);
+                pd->Space_mem::insert (u, 0, Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P, vlapic_page_p);
 
                 if (use_apic_access_page) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
@@ -322,7 +322,7 @@ void Ec::idle()
 
 void Ec::root_invoke()
 {
-    Eh *e = static_cast<Eh *>(Hpt::remap (Hip::root_addr));
+    Eh *e = static_cast<Eh *>(Hpt::remap (Hip::root_addr, false));
     if (!Hip::root_addr || e->ei_magic != 0x464c457f || e->ei_class != ELF_CLASS || e->ei_data != 1 || e->type != 2 || e->machine != ELF_MACHINE)
         die ("No ELF");
 
@@ -331,7 +331,7 @@ void Ec::root_invoke()
     current()->regs.set_ip (e->entry);
     current()->regs.set_sp (USER_ADDR - PAGE_SIZE);
 
-    ELF_PHDR *p = static_cast<ELF_PHDR *>(Hpt::remap (Hip::root_addr + e->ph_offset));
+    ELF_PHDR *p = static_cast<ELF_PHDR *>(Hpt::remap (Hip::root_addr + e->ph_offset, false));
 
     for (unsigned i = 0; i < count; i++, p++) {
 

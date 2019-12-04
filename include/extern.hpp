@@ -33,6 +33,7 @@ extern char FRAME_0;
 extern char FRAME_1;
 extern char FRAME_H;
 
+extern char PDBRV;
 extern char PDBR;
 
 extern char LINK_P;

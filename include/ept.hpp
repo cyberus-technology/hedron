@@ -1,10 +1,7 @@
 /*
- * Extended Page Table (EPT)
+ * Intel VT Extended page table (EPT) modification
  *
- * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
- * Economic rights: Technische Universitaet Dresden (Germany)
- *
- * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
+ * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -20,35 +17,72 @@
 
 #pragma once
 
-#include "assert.hpp"
-#include "pte.hpp"
+#include "generic_page_table.hpp"
+#include "page_table_policies.hpp"
+#include "tlb_cleanup.hpp"
 
-class Ept : public Pte<Ept, uint64, 4, 9, false>
+class Ept;
+using Ept_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_clflush_policy,
+                                          Page_alloc_policy<>, Tlb_cleanup, Ept>;
+
+class Ept : public Ept_page_table
 {
-    public:
-        static mword ord;
+    private:
 
-        enum
-        {
-            EPT_R   = 1UL << 0,
-            EPT_W   = 1UL << 1,
-            EPT_X   = 1UL << 2,
-            EPT_I   = 1UL << 6,
-            EPT_S   = 1UL << 7,
+        // The number of leaf levels we support. This is adjusted by
+        // set_supported_leaf_levels.
+        static level_t supported_leaf_levels;
 
-            PTE_P   = EPT_R | EPT_W | EPT_X,
-            PTE_S   = EPT_S,
-            PTE_N   = EPT_R | EPT_W | EPT_X,
+        // EPT invalidation types
+        enum : mword {
+            INVEPT_SINGLE_CONTEXT = 1,
         };
 
-        static inline mword hw_attr (mword a, mword t) { return a ? t << 3 | a | EPT_R : 0; }
+        // EPTP constants
+        enum {
+            EPTP_WB = 6,
+            EPTP_WALK_LENGTH_SHIFT = 3,
+        };
 
-        inline void flush()
+    public:
+        enum : pte_t {
+            PTE_R = 1UL << 0,
+            PTE_W = 1UL << 1,
+            PTE_X = 1UL << 2,
+
+            PTE_P = PTE_R | PTE_W | PTE_X,
+
+            PTE_I = 1UL << 6,
+            PTE_S = 1UL << 7,
+        };
+
+        static constexpr pte_t mask {0xFFF};
+        static constexpr pte_t all_rights {PTE_R | PTE_W | PTE_X};
+
+        // Adjust the number of leaf levels to the given value.
+        static void set_supported_leaf_levels(level_t level);
+
+        // Create a page table from scratch.
+        Ept() : Ept_page_table(4, supported_leaf_levels) {}
+
+        // Convert mapping database attributes to page table attributes.
+        static pte_t hw_attr(mword a, mword mtrr_type);
+
+        // Do a single-context invalidation for this EPT.
+        void flush()
         {
-            struct { uint64 eptp, rsvd; } desc = { addr() | (max() - 1) << 3 | 6, 0 };
+            struct { uint64 eptp, rsvd; } const desc { vmcs_eptp(), 0 };
+            static_assert(sizeof(desc) == 16, "INVEPT descriptor layout is broken");
 
             bool ret;
-            asm volatile ("invept %1, %2; seta %0" : "=q" (ret) : "m" (desc), "r" (1UL) : "cc", "memory");
+            asm volatile ("invept %1, %2; seta %0" : "=q" (ret) : "m" (desc), "r" (INVEPT_SINGLE_CONTEXT) : "cc", "memory");
             assert (ret);
+        }
+
+        // Return a VMCS EPT pointer to this EPT.
+        uint64 vmcs_eptp() const
+        {
+            return static_cast<uint64>(root())
+                | (max_levels() - 1) << EPTP_WALK_LENGTH_SHIFT | EPTP_WB;
         }
 };

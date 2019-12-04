@@ -535,8 +535,8 @@ void Ec::sys_pd_ctrl_map_access_page()
         sys_finish<Sys_regs::BAD_PAR>();
     }
 
-    bool shootdown = pd->Space_mem::update(mdb);
-    assert(not shootdown);
+    Tlb_cleanup cleanup {pd->Space_mem::update(mdb)};
+    assert(not cleanup.need_tlb_flush());
 
     sys_finish<Sys_regs::SUCCESS>();
 }

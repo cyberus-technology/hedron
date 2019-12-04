@@ -1,10 +1,5 @@
 /*
- * Host Page Table (HPT)
- *
- * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
- * Economic rights: Technische Universitaet Dresden (Germany)
- *
- * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
+ * Host page table modification
  *
  * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
@@ -21,63 +16,92 @@
  */
 
 #include "hpt.hpp"
+#include "nodestruct.hpp"
+#include "mdb.hpp"
+#include "pd.hpp"
 
-// Perform a recursive page table copy. No page table structures are shared and
-// a full set of new page tables are allocated.
-Hpt Hpt::copy (unsigned lvl) const
+Hpt::level_t Hpt::supported_leaf_levels {2};
+
+Hpt Hpt::deep_copy(mword vaddr_start, mword vaddr_end)
 {
-    size_t pt_entries {1UL << bits_per_level()};
+    Hpt::Mapping map;
+    Hpt dst;
+    Tlb_cleanup cleanup;
 
-    // Copy terminal entries. The root entry has no present bit.
-    if ((lvl + 1 == max()) or (lvl != 0 and not present()) or super()) {
-        return *this;
+    for (mword vaddr {vaddr_start}; vaddr < vaddr_end; vaddr += map.size()) {
+        map = lookup (vaddr);
+
+        if (not (map.present())) {
+            continue;
+        }
+
+        // We don't handle the case where vaddr_start and vaddr_end point into
+        // the middle mappings, but this case should also never happen.
+        assert (map.vaddr >= vaddr_start and map.vaddr + map.size() <= vaddr_end);
+        dst.update (cleanup, map);
     }
 
-    // Recurse for entries that reference further tables.
-    Hpt *dst_pt {new Hpt};
-    auto *src_pt {static_cast<Hpt const *>(Buddy::phys_to_ptr (addr()))};
+    // We populate an empty page table that is also not yet used anywhere.
+    assert (not cleanup.need_tlb_flush());
 
-    for (size_t i = 0; i < pt_entries; i++) {
-        // The low half of the address space contains kernel bootstrap code
-        // and should never be copied to new page tables.
-        bool user_mapping {lvl == 0 and i < (pt_entries / 2)};
-
-        dst_pt[i] = user_mapping ? Hpt {} : src_pt[i].copy (lvl + 1);
-    }
-
-    Hpt copied;
-
-    copied.val = Buddy::ptr_to_phys (dst_pt) | attr();
-    return copied;
+    return dst;
 }
 
-Paddr Hpt::replace (mword v, mword p)
+Hpt &Hpt::boot_hpt()
 {
-    Hpt o, *e = walk (v, 0); assert (e);
+    static No_destruct<Hpt> boot_hpt {reinterpret_cast<mword *>(&PDBRV)};
 
-    do o = *e; while (o.val != p && !(o.attr() & HPT_W) && !e->set (o.val, p));
-
-    return e->addr();
+    return *&boot_hpt;
 }
 
-void *Hpt::remap (Paddr phys)
+void *Hpt::remap (Paddr phys, bool use_boot_hpt)
 {
-    Hptp hpt (current());
+    Tlb_cleanup cleanup;
 
-    size_t size = 1UL << (bits_per_level() + PAGE_BITS);
+    // We map 4MB in total: First the 2MB page where phys lands in and the next
+    // one. This means the user of this function can safely access memory up to
+    // 2MB.
+    ord_t  const order {21};
+    size_t const size {1UL << order};
+    size_t const page_mask {size - 1};
+    mword  const offset = phys & page_mask;
 
-    mword offset = phys & (size - 1);
+    phys &= ~page_mask;
 
-    phys &= ~offset;
+    mword attr {Hpt::PTE_W | Hpt::PTE_P | Hpt::PTE_NX};
 
-    Paddr old; mword attr;
-    if (hpt.lookup (SPC_LOCAL_REMAP, old, attr)) {
-        hpt.update (SPC_LOCAL_REMAP,        bits_per_level(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP);
-        hpt.update (SPC_LOCAL_REMAP + size, bits_per_level(), 0, 0, Hpt::TYPE_DN); flush (SPC_LOCAL_REMAP + size);
-    }
+    // This manual distinction is unfortunate, but when creating the roottask
+    // the current PD is not the boot page table anymore.
+    Hpt &hpt {use_boot_hpt ? boot_hpt() : Pd::current()->hpt};
 
-    hpt.update (SPC_LOCAL_REMAP,        bits_per_level(), phys,        HPT_W | HPT_P);
-    hpt.update (SPC_LOCAL_REMAP + size, bits_per_level(), phys + size, HPT_W | HPT_P);
+    hpt.update(cleanup, {SPC_LOCAL_REMAP,        phys,        attr, order});
+    hpt.update(cleanup, {SPC_LOCAL_REMAP + size, phys + size, attr, order});
+
+    // We always need to flush the TLB.
+    hpt.flush();
 
     return reinterpret_cast<void *>(SPC_LOCAL_REMAP + offset);
+}
+
+Paddr Hpt::replace (mword vaddr, mword paddr)
+{
+    Tlb_cleanup cleanup;
+    return replace_readonly_page (cleanup, vaddr, paddr & ~Hpt::mask, paddr & Hpt::mask);
+}
+
+Hpt::pte_t Hpt::hw_attr(mword a)
+{
+    if (a) {
+        return Hpt::PTE_P | Hpt::PTE_U | Hpt::PTE_A | Hpt::PTE_D
+            | (a & Mdb::MEM_W ? static_cast<mword>(Hpt::PTE_W) : 0)
+            | (a & Mdb::MEM_X ? 0 : static_cast<mword>(Hpt::PTE_NX));
+    }
+
+    return 0;
+}
+
+void Hpt::set_supported_leaf_levels(Hpt::level_t level)
+{
+    assert (level > 0);
+    supported_leaf_levels = level;
 }

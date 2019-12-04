@@ -91,6 +91,7 @@ SECTIONS
         PROVIDE (PAGE_1 = .); PROVIDE (FRAME_1 = . - OFFSET); . += 4K;
         PROVIDE (PAGE_H = .); PROVIDE (FRAME_H = . - OFFSET); . += 4K;
 
+        PROVIDE (PDBRV = .);
         PROVIDE (PDBR  = . - OFFSET);
         PROVIDE (LVL4  = . - OFFSET); . += 4K;
         PROVIDE (LVL3L = . - OFFSET); . += 4K;

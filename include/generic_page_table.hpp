@@ -220,7 +220,7 @@ class Generic_page_table
         //
         // Assumes that the given page table entry is already removed from the
         // page table.
-        void cleanup(DEFERRED_CLEANUP &cleanup_state, pte_t pte, level_t cur_level)
+        NOINLINE void cleanup(DEFERRED_CLEANUP &cleanup_state, pte_t pte, level_t cur_level)
         {
             assert (cur_level >= 0 and cur_level < max_levels_);
 
@@ -259,8 +259,8 @@ class Generic_page_table
         }
 
         // Recursively update page table structures with new mappings.
-        void fill_entries(DEFERRED_CLEANUP &cleanup_state, pte_pointer_t table, level_t cur_level,
-                          Mapping const &map)
+        NOINLINE void fill_entries(DEFERRED_CLEANUP &cleanup_state, pte_pointer_t table, level_t cur_level,
+                                   Mapping const &map)
         {
             assert (table != nullptr);
             assert (cur_level >= 0 and cur_level < max_levels_);
@@ -378,7 +378,7 @@ class Generic_page_table
 
         // Creates mappings in the page table. Returns true, if a TLB shootdown
         // is necessary.
-        void update(DEFERRED_CLEANUP &cleanup, Mapping const &map)
+        NOINLINE void update(DEFERRED_CLEANUP &cleanup, Mapping const &map)
         {
             assert (root_ != nullptr);
             assert (map.order >= PAGE_BITS and map.order <= max_order());
@@ -472,7 +472,7 @@ class Generic_page_table
               leaf_levels_ {leaf_levels}, root_ {root}
         {
             assert (leaf_levels_ > 0 and leaf_levels_ <= max_levels_);
-            assert (max_levels_ > 0 and sizeof (virt_t) * 8 >= static_cast<size_t>(max_order()));
+            assert (max_levels_ > 0 and static_cast<ord_t>(sizeof (virt_t) * 8) >= max_order());
         }
 
         // Create an empty page table and allocate the root page table entry.

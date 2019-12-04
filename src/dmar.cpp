@@ -20,6 +20,7 @@
  */
 
 #include "dmar.hpp"
+#include "dpt.hpp"
 #include "lapic.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
@@ -36,12 +37,17 @@ uint32      Dmar::gcmd = GCMD_TE;
 Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), invq (static_cast<Dmar_qi *>(Buddy::allocator.alloc (ord, Buddy::FILL_0))), invq_idx (0)
 {
     Pd::kern->Space_mem::delreg (p & ~PAGE_MASK);
-    Pd::kern->Space_mem::insert (reg_base, 0, Hpt::HPT_NX | Hpt::HPT_G | Hpt::HPT_UC | Hpt::HPT_W | Hpt::HPT_P, p & ~PAGE_MASK);
+    Pd::kern->Space_mem::insert (reg_base, 0, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, p & ~PAGE_MASK);
 
     cap  = read<uint64>(REG_CAP);
     ecap = read<uint64>(REG_ECAP);
 
-    Dpt::ord = min (Dpt::ord, static_cast<mword>(bit_scan_reverse (static_cast<mword>(cap >> 34) & 0xf) + 2) * Dpt::bits_per_level() - 1);
+    // Bit n in this mask means that n can be a leaf level.
+    mword const leaf_bit_mask {1U /* 4K */ | ((static_cast<mword>(cap >> 34) & 0b11) << 1)};
+    auto  const leaf_levels {static_cast<Dpt::level_t>(bit_scan_reverse (leaf_bit_mask) + 1)};
+
+    assert (page_table_levels() >= leaf_levels);
+    Dpt::lower_supported_leaf_levels (leaf_levels);
 
     write<uint32>(REG_FEADDR, 0xfee00000 | Cpu::apic_id[0] << 12);
     write<uint32>(REG_FEDATA, VEC_MSI_DMAR);
@@ -64,11 +70,19 @@ Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | 
     }
 }
 
+int Dmar::page_table_levels() const
+{
+    long const lev {2 + bit_scan_reverse ((cap >> 8) & 0b00110)};
+    assert (lev >= 3);
+
+    return static_cast<int>(lev);
+}
+
 void Dmar::assign (unsigned long rid, Pd *p)
 {
-    mword lev = bit_scan_reverse (read<mword>(REG_CAP) >> 8 & 0x1f);
-
     Dmar_ctx *r = ctx + (rid >> 8);
+    int const lev {page_table_levels()};
+
     if (!r->present())
         r->set (0, Buddy::ptr_to_phys (new Dmar_ctx) | 1);
 
@@ -78,7 +92,10 @@ void Dmar::assign (unsigned long rid, Pd *p)
 
     flush_ctx();
 
-    c->set (lev | p->did << 8, p->dpt.root (lev + 1) | 1);
+    auto const root {p->dpt.root (lev)};
+    auto const address_width {static_cast<mword> (lev) - 2};
+
+    c->set (address_width | p->did << 8, root | 1);
 }
 
 void Dmar::fault_handler()

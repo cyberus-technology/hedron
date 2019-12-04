@@ -18,10 +18,10 @@ add_executable(hypervisor hypervisor-x86_64.ld
   acpi.cpp acpi_dmar.cpp acpi_fadt.cpp acpi_hpet.cpp acpi_madt.cpp
   acpi_mcfg.cpp acpi_rsdp.cpp acpi_rsdt.cpp acpi_table.cpp avl.cpp
   bootstrap.cpp buddy.cpp cmdline.cpp console.cpp console_serial.cpp
-  console_vga.cpp counter.cpp cpu.cpp cpulocal.cpp dmar.cpp ec.cpp
-  ec_exc.cpp ec_svm.cpp ec_vmx.cpp fpu.cpp gdt.cpp gsi.cpp hip.cpp
+  console_vga.cpp counter.cpp cpu.cpp cpulocal.cpp dmar.cpp dpt.cpp ec.cpp
+  ec_exc.cpp ec_svm.cpp ec_vmx.cpp ept.cpp fpu.cpp gdt.cpp gsi.cpp hip.cpp
   hpet.cpp hpt.cpp idt.cpp init.cpp ioapic.cpp lapic.cpp
-  mca.cpp mdb.cpp memory.cpp mtrr.cpp pci.cpp pd.cpp pt.cpp pte.cpp
+  mca.cpp mdb.cpp memory.cpp mtrr.cpp pci.cpp pd.cpp pt.cpp
   rcu.cpp regs.cpp sc.cpp si.cpp slab.cpp sm.cpp space.cpp
   space_mem.cpp space_obj.cpp space_pio.cpp string.cpp svm.cpp
   syscall.cpp timeout_budget.cpp timeout.cpp timeout_hypercall.cpp
@@ -61,7 +61,7 @@ target_compile_options(hypervisor PRIVATE
   -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls
   -Wshadow -Wwrite-strings -Wctor-dtor-privacy -Wno-non-virtual-dtor
   -Wold-style-cast -Woverloaded-virtual -Wsign-promo
-  -Wstrict-overflow=5 -Wvolatile-register-var
+  -Wstrict-overflow -Wvolatile-register-var
   -Wzero-as-null-pointer-constant
   )
 
@@ -70,7 +70,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     $<$<CONFIG:Debug>:-Werror>
     -Wlogical-op
     -Wstrict-null-sentinel
-    -Wframe-larger-than=128
+    -Wframe-larger-than=256
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_options(hypervisor PRIVATE

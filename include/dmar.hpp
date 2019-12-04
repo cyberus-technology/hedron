@@ -142,6 +142,9 @@ class Dmar : public List<Dmar>
 
         inline unsigned qi() const { return static_cast<unsigned>(ecap) & 0x2; }
 
+        // Return the number of supported page table levels.
+        int page_table_levels() const;
+
         template <typename T>
         inline T read (Reg reg)
         {

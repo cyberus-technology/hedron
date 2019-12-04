@@ -22,6 +22,7 @@
 
 #include "capability.hpp"
 #include "space.hpp"
+#include "tlb_cleanup.hpp"
 
 class Space_mem;
 
@@ -35,7 +36,7 @@ class Space_obj : public Space
 
         inline Space_mem *space_mem();
 
-        bool update (mword, Capability);
+        Tlb_cleanup update (mword, Capability);
 
     public:
         static unsigned const caps = (END_SPACE_LIM - SPC_LOCAL_OBJ) / sizeof (Capability);
@@ -49,7 +50,7 @@ class Space_obj : public Space
 
         Paddr walk (mword, bool &);
 
-        bool update (Mdb *, mword = 0);
+        Tlb_cleanup update (Mdb *, mword = 0);
 
         static void page_fault (mword, mword);
 
