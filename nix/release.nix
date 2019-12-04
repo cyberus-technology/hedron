@@ -18,7 +18,8 @@
   nixpkgs ? import ./nixpkgs.nix,
   nurpkgs ? import ./nur-packages.nix,
   pkgs ? import nixpkgs {},
-  nur ? import nurpkgs { inherit pkgs; }
+  nur ? import nurpkgs { inherit pkgs; },
+  buildType ? "Debug"
 }:
 
 let
@@ -27,8 +28,9 @@ let
   cmake-modules = pkgs.callPackage ./cmake-modules.nix {};
   compilers = { inherit (pkgs) clang_8 gcc7 gcc8 gcc9; };
   novaBuilds = with pkgs; lib.mapAttrs (_: v: callPackage nova {
-      stdenv = overrideCC stdenv v;
-    }) compilers;
+    stdenv = overrideCC stdenv v;
+    inherit buildType;
+  }) compilers;
   testBuilds = with pkgs; lib.mapAttrs (_: v: callPackage itest { nova = v; })
     novaBuilds;
 in

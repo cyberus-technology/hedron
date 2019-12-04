@@ -4,7 +4,8 @@
   cmake,
   nix-gitignore,
   lib,
-  clang-tools-wrapper ? null
+  buildType ? "Debug",
+  clang-tools-wrapper ? null,
 }:
 
 let
@@ -17,6 +18,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ cmake ] ++ (lib.optional (builtins.isNull clang-tools-wrapper) clang-tools-wrapper);
   buildInputs = [ catch2 ];
 
+  cmakeBuildType = buildType;
   hardeningDisable = [ "all" ];
   enableParallelBuilding = true;
   doCheck = true;
