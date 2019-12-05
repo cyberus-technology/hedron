@@ -337,9 +337,10 @@ void Ec::root_invoke()
 
         if (p->type == 1) {
 
-            unsigned attr = !!(p->flags & 0x4) << 0 |   // R
-                            !!(p->flags & 0x2) << 1 |   // W
-                            !!(p->flags & 0x1) << 2;    // X
+            unsigned attr =
+                ((p->flags & 0x4) ? Mdb::MEM_R : 0) |
+                ((p->flags & 0x2) ? Mdb::MEM_W : 0) |
+                ((p->flags & 0x1) ? Mdb::MEM_X : 0);
 
             if (p->f_size != p->m_size || p->v_addr % PAGE_SIZE != p->f_offs % PAGE_SIZE)
                 die ("Bad ELF");
@@ -354,7 +355,7 @@ void Ec::root_invoke()
     }
 
     // Map hypervisor information page
-    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
+    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R);
 
     Space_obj::insert_root (Pd::current());
     Space_obj::insert_root (Ec::current());
