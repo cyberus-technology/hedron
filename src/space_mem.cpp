@@ -25,6 +25,7 @@
 #include "lock_guard.hpp"
 #include "mtrr.hpp"
 #include "pd.hpp"
+#include "space.hpp"
 #include "stdio.hpp"
 #include "svm.hpp"
 #include "vectors.hpp"
@@ -87,11 +88,11 @@ Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base,
         auto const target_mapping {clamped.move_by (rcv_base - snd_base)};
         assert (Hpt::attr_to_pat (target_mapping.attr) == 0);
 
-        if (sub & SUBSPACE_DEVICE) {
+        if (sub & Space::SUBSPACE_DEVICE) {
             dpt.update (cleanup, Dpt::convert_mapping (target_mapping));
         }
 
-        if (sub & SUBSPACE_GUEST) {
+        if (sub & Space::SUBSPACE_GUEST) {
             if (Vmcb::has_npt()) {
                 npt.update (cleanup, target_mapping);
             } else {
@@ -99,15 +100,17 @@ Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base,
             }
         }
 
-        hpt.update (cleanup, target_mapping);
+        if (sub & Space::SUBSPACE_HOST) {
+            hpt.update (cleanup, target_mapping);
+        }
 
         assert (clamped.size() >= target_mapping.size());
         snd_cur = clamped.vaddr + target_mapping.size();
     }
 
     if (cleanup.need_tlb_flush()) {
-        if (sub & SUBSPACE_GUEST) { gtlb.merge (cpus); }
-        htlb.merge (cpus);
+        if (sub & Space::SUBSPACE_GUEST) { gtlb.merge (cpus); }
+        if (sub & Space::SUBSPACE_HOST)  { htlb.merge (cpus); }
     }
 
     return cleanup;
@@ -122,7 +125,7 @@ Tlb_cleanup Space_mem::revoke (mword vaddr, mword ord, mword attr)
                vaddr, ord, attr);
     }
 
-    return delegate (this, vaddr, vaddr, ord, 0, SUBSPACE_DEVICE | SUBSPACE_GUEST);
+    return delegate (this, vaddr, vaddr, ord, 0, Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST);
 }
 
 void Space_mem::shootdown()

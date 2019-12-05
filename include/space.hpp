@@ -32,6 +32,12 @@ class Space
         Avl *       tree {nullptr};
 
     public:
+        enum Subspace : mword {
+            SUBSPACE_HOST   = 1U << 0,
+            SUBSPACE_DEVICE = 1U << 1,
+            SUBSPACE_GUEST  = 1U << 2,
+        };
+
         Mdb *tree_lookup (mword idx, bool next = false);
 
         static bool tree_insert (Mdb *node);

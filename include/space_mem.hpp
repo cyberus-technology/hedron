@@ -85,11 +85,6 @@ class Space_mem
         // Convenience wrapper around claim() for single MMIO pages.
         void claim_mmio_page (mword virt, Paddr phys, bool exclusive = true);
 
-        enum Subspace : mword {
-            SUBSPACE_DEVICE = 1U << 0,
-            SUBSPACE_GUEST  = 1U << 1,
-        };
-
         // Delegate memory from one memory space to another.
         Tlb_cleanup delegate (Space_mem *snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub);
 
