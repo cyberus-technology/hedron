@@ -23,6 +23,7 @@
  */
 
 #include "acpi.hpp"
+#include "acpi_rsdp.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
@@ -31,13 +32,14 @@
 #include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
+#include "multiboot2.hpp"
 #include "pci.hpp"
 #include "space_obj.hpp"
 
 mword Hip::root_addr;
 mword Hip::root_size;
 
-void Hip::build (mword addr)
+void Hip::build (mword magic, mword addr)
 {
     Hip *h = hip();
 
@@ -65,7 +67,28 @@ void Hip::build (mword addr)
         Console::panic("Could not add all I/O APICs to Hip!");
     }
 
-    Multiboot *mbi = static_cast<Multiboot *>(Hpt::remap (addr));
+    Hip_mem *mem = h->mem_desc;
+
+    switch (magic) {
+        case Multiboot::MAGIC:
+            build_mbi1 (mem, addr);
+            break;
+        case Multiboot2::MAGIC:
+            build_mbi2 (mem, addr);
+            break;
+        default:
+            Console::panic ("Unknown multiboot magic number");
+            break;
+    }
+
+    add_mhv (mem);
+
+    h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
+}
+
+void Hip::build_mbi1 (Hip_mem *&mem, mword addr)
+{
+    Multiboot const *mbi = static_cast<Multiboot const *>(Hpt::remap (addr));
 
     uint32 flags       = mbi->flags;
     uint32 mmap_addr   = mbi->mmap_addr;
@@ -73,51 +96,62 @@ void Hip::build (mword addr)
     uint32 mods_addr   = mbi->mods_addr;
     uint32 mods_count  = mbi->mods_count;
 
-    Hip_mem *mem = h->mem_desc;
+    if (flags & Multiboot::MEMORY_MAP) {
+        char const *remap = static_cast<char const *>(Hpt::remap (mmap_addr));
+        mbi->for_each_mem (remap, mmap_len, [&mem] (Multiboot_mmap const * mmap) { Hip::add_mem (mem, mmap); });
+    }
 
-    if (flags & Multiboot::MEMORY_MAP)
-        add_mem (mem, mmap_addr, mmap_len);
-
-    if (flags & Multiboot::MODULES)
-        add_mod (mem, mods_addr, mods_count);
-
-    add_mhv (mem);
-
-    h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
-}
-
-void Hip::add_mem (Hip_mem *&mem, mword addr, size_t len)
-{
-    char *mmap_addr = static_cast<char *>(Hpt::remap (addr));
-
-    for (char *ptr = mmap_addr; ptr < mmap_addr + len; mem++) {
-
-        Multiboot_mmap *map = reinterpret_cast<Multiboot_mmap *>(ptr);
-
-        mem->addr = map->addr;
-        mem->size = map->len;
-        mem->type = map->type;
-        mem->aux  = 0;
-
-        ptr += map->size + 4;
+    if (flags & Multiboot::MODULES) {
+        Multiboot_module *mod = static_cast<Multiboot_module *>(Hpt::remap (mods_addr));
+        for (unsigned i = 0; i < mods_count; i++, mod++)
+            add_mod (mem, mod, mod->cmdline);
     }
 }
 
-void Hip::add_mod (Hip_mem *&mem, mword addr, size_t count)
+void Hip::build_mbi2 (Hip_mem *&mem, mword addr)
 {
-    Multiboot_module *mod = static_cast<Multiboot_module *>(Hpt::remap (addr));
+    Multiboot2::Header const *mbi = static_cast<Multiboot2::Header const *>(Hpt::remap (addr));
 
-    if (count) {
+    mbi->for_each_tag ([&mem, mbi, addr](Multiboot2::Tag const * tag) {
+        if (tag->type == Multiboot2::TAG_MEMORY)
+            tag->for_each_mem([&mem] (Multiboot2::Memory_map const * mmap) { Hip::add_mem (mem, mmap); });
+
+        if (tag->type == Multiboot2::TAG_MODULE) {
+            // MBI2 embeds command line directly without the indirection of a pointer, so
+            // we need to calculate the physical address.
+            auto cmdline_offset = reinterpret_cast<mword>(tag->module()->string) - reinterpret_cast<mword>(mbi);
+            auto cmdline_phys_addr = static_cast<uint32>(addr + cmdline_offset);
+            Hip::add_mod (mem, tag->module(), cmdline_phys_addr);
+        }
+
+        if (tag->type == Multiboot2::TAG_ACPI_2)
+            Acpi_rsdp::parse (tag->rsdp());
+    });
+}
+
+template <typename T>
+void Hip::add_mod (Hip_mem *&mem, T const * mod, uint32 aux)
+{
+    if (!root_addr) {
         root_addr = mod->s_addr;
         root_size = mod->e_addr - mod->s_addr;
     }
 
-    for (unsigned i = 0; i < count; i++, mod++, mem++) {
-        mem->addr = mod->s_addr;
-        mem->size = mod->e_addr - mod->s_addr;
-        mem->type = Hip_mem::MB_MODULE;
-        mem->aux  = mod->cmdline;
-    }
+    mem->addr = mod->s_addr;
+    mem->size = mod->e_addr - mod->s_addr;
+    mem->type = Hip_mem::MB_MODULE;
+    mem->aux  = aux;
+    mem++;
+}
+
+template<typename T>
+void Hip::add_mem (Hip_mem *&mem, T const *map)
+{
+    mem->addr = map->addr;
+    mem->size = map->len;
+    mem->type = map->type;
+    mem->aux  = 0;
+    mem++;
 }
 
 void Hip::add_mhv (Hip_mem *&mem)

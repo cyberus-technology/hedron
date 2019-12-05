@@ -4,6 +4,8 @@
  * Copyright (C) 2009-2011 Udo Steinberg <udo@hypervisor.org>
  * Economic rights: Technische Universitaet Dresden (Germany)
  *
+ * Copyright (C) 2017 Alexander Boettcher, Genode Labs GmbH
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -19,6 +21,20 @@
 #pragma once
 
 #include "compiler.hpp"
+
+/*
+ * Multiboot Memory Map
+ */
+#pragma pack(1)
+class Multiboot_mmap
+{
+    public:
+        uint32  size;
+        uint64  addr;
+        uint64  len;
+        uint32  type;
+};
+#pragma pack()
 
 /*
  * Multiboot Information Structure
@@ -56,6 +72,16 @@ class Multiboot
         uint32  drives_addr;        // 56
         uint32  config_table;       // 60
         uint32  loader_name;        // 64
+
+        template <typename FUNC>
+        void for_each_mem (char const *mmap_virt, size_t len, FUNC const &fn) const
+        {
+            for (char const *ptr = mmap_virt; ptr < mmap_virt + len;) {
+                Multiboot_mmap const *map = reinterpret_cast<Multiboot_mmap const *>(ptr);
+                fn (map);
+                ptr += map->size + 4;
+            }
+        }
 };
 
 /*
@@ -69,17 +95,3 @@ class Multiboot_module
         uint32  cmdline;
         uint32  reserved;
 };
-
-/*
- * Multiboot Memory Map
- */
-#pragma pack(1)
-class Multiboot_mmap
-{
-    public:
-        uint32  size;
-        uint64  addr;
-        uint64  len;
-        uint32  type;
-};
-#pragma pack()

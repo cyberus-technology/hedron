@@ -154,13 +154,21 @@ class Hip
         }
 
         INIT
-        static void build (mword);
+        static void build (mword, mword);
 
         INIT
-        static void add_mem (Hip_mem *&, mword, size_t);
+        static void build_mbi1 (Hip_mem *&, mword);
 
         INIT
-        static void add_mod (Hip_mem *&, mword, size_t);
+        static void build_mbi2 (Hip_mem *&, mword);
+
+        template <typename T>
+        INIT
+        static void add_mem (Hip_mem *&, T const *);
+
+        template <typename T>
+        INIT
+        static void add_mod (Hip_mem *&, T const *, uint32);
 
         INIT
         static void add_mhv (Hip_mem *&);

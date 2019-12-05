@@ -43,11 +43,11 @@ inline void *memset (void *d, int c, size_t n)
     return d;
 }
 
-extern "C" NONNULL
-inline int strcmp (char const *s1, char const *s2)
+// Check whether the first n bytes in two strings match.
+inline bool strnmatch (char const *s1, char const *s2, size_t n)
 {
-    while (*s1 && *s1 == *s2)
-        s1++, s2++;
+    while (n && *s1 == *s2)
+        s1++, s2++, n--;
 
-    return *s1 - *s2;
+    return n == 0;
 }

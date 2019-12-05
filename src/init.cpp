@@ -30,10 +30,20 @@
 #include "idt.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
+#include "multiboot2.hpp"
 #include "tss.hpp"
 
-extern "C" INIT REGPARM (1)
-void init (mword mbi)
+char const *get_boot_type (mword magic)
+{
+    switch (magic) {
+        case Multiboot::MAGIC: return "MB1";
+        case Multiboot2::MAGIC: return "MB2";
+        default: return "UNKNOWN";
+    }
+}
+
+extern "C" INIT REGPARM (2)
+void init (mword magic, mword mbi)
 {
     // Setup 0-page and 1-page
     memset (PAGE_0,  0,  PAGE_SIZE);
@@ -41,9 +51,19 @@ void init (mword mbi)
 
     for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
 
-    Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
-    if (mbi_->flags & Multiboot::CMDLINE)
-        Cmdline::init (mbi_->cmdline);
+    if (magic == Multiboot::MAGIC) {
+        Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
+        if (mbi_->flags & Multiboot::CMDLINE)
+            Cmdline::init (static_cast<char const *>(Hpt::remap (mbi_->cmdline)));
+    }
+
+    if (magic == Multiboot2::MAGIC) {
+        Multiboot2::Header const *mbi_ = static_cast<Multiboot2::Header const *>(Hpt::remap (mbi));
+        mbi_->for_each_tag ([&](Multiboot2::Tag const *tag) {
+            if (tag->type == Multiboot2::TAG_CMDLINE)
+                Cmdline::init (tag->cmdline());
+        });
+    }
 
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 
@@ -54,14 +74,14 @@ void init (mword mbi)
 #else
                      "DEBUG"
 #endif
-                     " " ARCH "): " COMPILER_STRING "\n", reinterpret_cast<mword>(&GIT_VER));
+                     " " ARCH "): " COMPILER_STRING " [%s] \n", reinterpret_cast<mword>(&GIT_VER), get_boot_type(magic));
 
     Idt::build();
     Gsi::setup();
     Acpi::setup();
     Tss::setup();
     Lapic::setup();
-    Hip::build (mbi);
+    Hip::build (magic, mbi);
 
     Console_vga::con.setup();
 }

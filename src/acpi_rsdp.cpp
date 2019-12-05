@@ -31,14 +31,21 @@ Acpi_rsdp *Acpi_rsdp::find (mword start, unsigned len)
     return nullptr;
 }
 
-void Acpi_rsdp::parse()
+void Acpi_rsdp::parse (mword rdsp_addr)
 {
     Acpi_rsdp *rsdp;
-    mword map = reinterpret_cast<mword>(Hpt::remap (0));
 
-    if (!(rsdp = Acpi_rsdp::find (map + (*reinterpret_cast<uint16 *>(map + 0x40e) << 4), 0x400)) &&
-        !(rsdp = Acpi_rsdp::find (map + 0xe0000, 0x20000)))
-        return;
+    if (rdsp_addr) {
+        rsdp = reinterpret_cast<Acpi_rsdp *>(rdsp_addr);
+        if (not (rsdp->good_signature() and rsdp->good_checksum()))
+            return;
+    } else {
+        mword map = reinterpret_cast<mword>(Hpt::remap (rdsp_addr));
+
+        if (!(rsdp = Acpi_rsdp::find (map + (*reinterpret_cast<uint16 *>(map + 0x40e) << 4), 0x400)) &&
+            !(rsdp = Acpi_rsdp::find (map + 0xe0000, 0x20000)))
+            return;
+    }
 
     Acpi::rsdt = rsdp->rsdt_addr;
 

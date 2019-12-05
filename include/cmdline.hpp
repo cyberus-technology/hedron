@@ -36,7 +36,7 @@ class Cmdline
         } map[];
 
         INIT
-        static char *get_arg (char **line);
+        static char const *get_arg (char const **, unsigned &);
 
     public:
         static bool iommu;
@@ -49,5 +49,5 @@ class Cmdline
         static bool noxsave;
 
         INIT
-        static void init (mword);
+        static void init (char const *);
 };
