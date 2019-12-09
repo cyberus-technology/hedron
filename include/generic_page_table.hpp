@@ -146,7 +146,10 @@ class Generic_page_table
 
         bool is_superpage(level_t level, pte_t entry) const
         {
+            static_assert ((ATTR::PTE_S & ATTR::mask) == 0,
+                           "Can't have superpage bit in user configurable page table bits");
             assert (not ((level == 0 or level >= leaf_levels_) and (entry & ATTR::PTE_S)));
+
             return (entry & ATTR::PTE_P) and level < leaf_levels_ and (entry & ATTR::PTE_S);
         }
 
