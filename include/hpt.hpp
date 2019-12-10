@@ -71,6 +71,10 @@ class Hpt : public Hpt_page_table
             // We encode memory types in available bits.
             PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
 
+            PTE_PAT0 = 1ULL << 3,
+            PTE_PAT1 = 1ULL << 4,
+            PTE_PAT2 = 1ULL << 7, // Only valid in leaf level (otherwise it's bit 12)
+
             // Prevent pages from being delegated. This is useful for pages that
             // the kernel needs to be able to reclaim from userspace (e.g. UTCBs,
             // vLAPIC pages).
@@ -140,6 +144,15 @@ class Hpt : public Hpt_page_table
         // desired. Metainformation (memory type) is carried forward from
         // source.
         static pte_t merge_hw_attr(pte_t source, pte_t desired);
+
+        // Return the PAT memory type of a HPT page table entry.
+        static mword attr_to_pat(pte_t source)
+        {
+            return
+                ((source & PTE_PAT0) ? 1U << 0 : 0) |
+                ((source & PTE_PAT1) ? 1U << 1 : 0) |
+                ((source & PTE_PAT2) ? 1U << 2 : 0);
+        }
 
         // The boot page table as constructed in start.S.
         static Hpt &boot_hpt();

@@ -85,6 +85,7 @@ Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base,
 
         // The mapping as we want to put it into the destination page tables.
         auto const target_mapping {clamped.move_by (rcv_base - snd_base)};
+        assert (Hpt::attr_to_pat (target_mapping.attr) == 0);
 
         if (sub & SUBSPACE_DEVICE) {
             dpt.update (cleanup, Dpt::convert_mapping (target_mapping));
