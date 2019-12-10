@@ -64,13 +64,12 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
         utcb = new Utcb;
 
-        pd->Space_mem::insert (u, 0, Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P, Buddy::ptr_to_phys (utcb));
+        pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                               Buddy::ptr_to_phys (utcb));
 
         regs.dst_portal = NUM_EXC - 2;
 
         trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
-
-        pd->insert_utcb (u, Buddy::ptr_to_phys(utcb) >> 12);
 
     } else {
 
@@ -107,7 +106,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd->Space_mem::insert (u, 0, Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P, vlapic_page_p);
+                pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                                       vlapic_page_p);
 
                 if (use_apic_access_page) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));

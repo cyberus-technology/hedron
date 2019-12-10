@@ -120,7 +120,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
             // remove mapping in page table
             if (e->user_utcb) {
-                e->pd->remove_utcb(e->user_utcb);
                 e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
                 e->user_utcb = 0;
             }

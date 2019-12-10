@@ -36,44 +36,93 @@ void Space_mem::init (unsigned cpu)
     cpus.set (cpu);
 }
 
-Tlb_cleanup Space_mem::update (Mdb *mdb, mword r)
+// Valid user mappings are below the canonical boundary and naturally aligned.
+static bool is_valid_user_mapping (mword vaddr, mword ord)
 {
-    assert (this == mdb->space && this != &Pd::kern);
+    return vaddr < USER_ADDR
+        and ord <= static_cast<mword>(max_order (vaddr, USER_ADDR))
+        and (vaddr & ((1UL << ord) - 1)) == 0;
+}
 
-    Tlb_cleanup cleanup { r != 0 };
+// Find the source mapping at snd_cur in the given position.
+static Hpt::Mapping lookup_and_adjust_rights (Space_mem *snd, mword snd_cur, mword snd_end, mword hw_attr)
+{
+    bool const is_unmap {(hw_attr & Hpt::PTE_P) == 0};
+    Hpt::Mapping const empty_mapping {snd_cur, 0, 0, static_cast<Hpt::ord_t>(max_order (snd_cur, snd_end))};
+    Hpt::Mapping mapping {is_unmap ? empty_mapping : snd->Space_mem::hpt.lookup (snd_cur)};
 
-    Lock_guard <Spinlock> guard (mdb->node_lock);
-
-    Paddr p = mdb->node_phys << PAGE_BITS;
-    mword b = mdb->node_base << PAGE_BITS;
-    mword o = mdb->node_order;
-    mword a = mdb->node_attr & ~r;
-    mword s = mdb->node_sub;
-
-    if (s & 1) {
-        dpt.update (cleanup, {b, p, Dpt::hw_attr (a), static_cast<Dpt::ord_t>(o + PAGE_BITS)});
+    if (mapping.present() and ((mapping.attr & Hpt::PTE_NODELEG) or not (mapping.attr & Hpt::PTE_U))) {
+        trace (TRACE_ERROR, "Refusing to map region %#016lx ord %d", mapping.vaddr, mapping.order);
+        mapping = empty_mapping;
     }
 
-    if (s & 2) {
-        if (Vmcb::has_npt()) {
-            npt.update (cleanup, {b, p, Hpt::hw_attr (a), static_cast<Hpt::ord_t>(o + PAGE_BITS)});
-        } else {
-            ept.update(cleanup, {b, p, Ept::hw_attr (a, mdb->node_type), static_cast<Ept::ord_t>(o + PAGE_BITS) });
+    mapping.attr = Hpt::merge_hw_attr (mapping.attr, hw_attr);
+    return mapping;
+}
+
+// Addresses are in byte-granularity.
+Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub)
+{
+    Tlb_cleanup cleanup;
+
+    assert (ord >= PAGE_BITS);
+
+    if (EXPECT_FALSE (not is_valid_user_mapping (snd_base, ord) or
+                      not is_valid_user_mapping (rcv_base, ord))) {
+        trace (TRACE_ERROR, "INVALID MEM SB:%#016lx RB:%#016lx O:%#04lx A:%#lx S:%#lx", snd_base, rcv_base, ord, attr, sub);
+        return cleanup;
+    }
+
+    Hpt::pte_t const hw_attr {Hpt::hw_attr (attr)};
+    mword      const snd_end {snd_base + (1ULL << ord)};
+
+    for (mword snd_cur {snd_base}; snd_cur < snd_end;) {
+        // The source mapping with the correct downgraded rights.
+        auto const mapping {lookup_and_adjust_rights (snd, snd_cur, snd_end, hw_attr)};
+
+        // The source mapping chopped down to fit in the send window.
+        auto const clamped {mapping.clamp (snd_base, static_cast<Hpt::ord_t>(ord))};
+
+        // The mapping as we want to put it into the destination page tables.
+        auto const target_mapping {clamped.move_by (rcv_base - snd_base)};
+        assert (Hpt::attr_to_pat (target_mapping.attr) == 0);
+
+        if (sub & SUBSPACE_DEVICE) {
+            dpt.update (cleanup, Dpt::convert_mapping (target_mapping));
         }
-        if (r)
-            gtlb.merge (cpus);
+
+        if (sub & SUBSPACE_GUEST) {
+            if (Vmcb::has_npt()) {
+                npt.update (cleanup, target_mapping);
+            } else {
+                ept.update (cleanup, Ept::convert_mapping (target_mapping));
+            }
+        }
+
+        hpt.update (cleanup, target_mapping);
+
+        assert (clamped.size() >= target_mapping.size());
+        snd_cur = clamped.vaddr + target_mapping.size();
     }
-
-    if (mdb->node_base + (1UL << o) > USER_ADDR >> PAGE_BITS)
-        return Tlb_cleanup::tlb_flush (false);
-
-    hpt.update(cleanup, {b, p, Hpt::hw_attr (a), static_cast<Hpt::ord_t>(o + PAGE_BITS) });
 
     if (cleanup.need_tlb_flush()) {
+        if (sub & SUBSPACE_GUEST) { gtlb.merge (cpus); }
         htlb.merge (cpus);
     }
 
     return cleanup;
+}
+
+Tlb_cleanup Space_mem::revoke (mword vaddr, mword ord, mword attr)
+{
+    auto const all_mem_rights {Mdb::MEM_R | Mdb::MEM_W | Mdb::MEM_X};
+
+    if ((attr & all_mem_rights) != all_mem_rights) {
+        trace (TRACE_ERROR, "Partial memory rights revocation is not supported: Revoking everything! (%#lx %ld %#lx)",
+               vaddr, ord, attr);
+    }
+
+    return delegate (this, vaddr, vaddr, ord, 0, SUBSPACE_DEVICE | SUBSPACE_GUEST);
 }
 
 void Space_mem::shootdown()
@@ -108,56 +157,56 @@ void Space_mem::shootdown()
     }
 }
 
-void Space_mem::insert_root (uint64 s, uint64 e, mword a)
+static void map_typed_range (Hpt &hpt, Paddr start, Paddr end, Hpt::pte_t attr, unsigned t)
 {
-    for (uint64 p = s; p < e; s = p) {
+    assert ((t    & ~Hpt::MT_MASK)     == 0);
+    assert ((attr &  Hpt::PTE_MT_MASK) == 0);
 
-        unsigned t = Mtrr::memtype (s, p);
+    Hpt::pte_t const combined_attr {attr | (static_cast<Hpt::pte_t>(t) << Hpt::PTE_MT_SHIFT)};
+    Paddr size;
 
-        for (uint64 n; p < e; p = n)
-            if (Mtrr::memtype (p, n) != t)
-                break;
+    for (Paddr cur {start}; cur < end; cur += size) {
+        auto order {min<Hpt::ord_t> (hpt.max_order(), static_cast<Hpt::ord_t> (max_order (cur, end - cur)))};
+        assert (order >= PAGE_BITS);
 
-        if (s > ~0UL)
-            break;
+        size = static_cast<Paddr>(1) << order;
 
-        if ((p = min (p, e)) > ~0UL)
-            p = static_cast<uint64>(~0UL) + 1;
-
-        addreg (static_cast<mword>(s >> PAGE_BITS), static_cast<mword>(p - s) >> PAGE_BITS, a, t);
+        hpt.update ({cur, cur, combined_attr, order}).ignore_tlb_flush();
     }
 }
 
-bool Space_mem::insert_utcb (mword b, mword phys)
+void Space_mem::insert_root (uint64 start, uint64 end, mword attr)
 {
-    if (!b)
-        return true;
+    assert (static_cast<Pd *>(this) == &Pd::kern);
 
-    Mdb *mdb = new Mdb (this, phys, b >> PAGE_BITS, 0, 0x3);
+    start <<= PAGE_BITS;
+    end   <<= PAGE_BITS;
 
-    if (tree_insert (mdb))
-        return true;
+    for (Paddr cur {start}; cur < end;) {
+        uint64 next;
+        unsigned t = Mtrr::memtype (cur, next);
 
-    delete mdb;
-
-    return false;
+        map_typed_range (hpt, cur, min <uint64> (next, end), Hpt::hw_attr (attr), t);
+        cur = next;
+    }
 }
 
-bool Space_mem::remove_utcb (mword b)
+INIT void Space_mem::claim (mword virt, unsigned o, mword attr, Paddr phys, bool exclusive)
 {
-    if (!b)
-        return false;
+    assert (static_cast<Pd *>(this) == &Pd::kern);
+    assert (&Hpt::boot_hpt() != &hpt);
+    assert (is_page_aligned (virt));
+    assert (is_page_aligned (phys));
+    assert (o >= PAGE_BITS);
 
-    Mdb *mdb = tree_lookup(b >> PAGE_BITS, false);
-    if (!mdb)
-        return false;
+    Hpt::boot_hpt().update ({virt, phys, attr, static_cast<Hpt::ord_t>(o)});
 
-    mdb->demote_node(0x3);
-
-    if (mdb->remove_node() && tree_remove(mdb)) {
-        Rcu::call (mdb);
-        return true;
+    if (exclusive) {
+        hpt.update ({virt, phys, 0, static_cast<Hpt::ord_t>(o)});
     }
+}
 
-    return false;
+INIT void Space_mem::claim_mmio_page (mword virt, Paddr phys, bool exclusive)
+{
+    claim (virt, PAGE_BITS, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, phys, exclusive);
 }

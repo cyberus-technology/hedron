@@ -302,7 +302,7 @@ class Fake_attr
             PTE_NX = 1ULL << 63,
         };
 
-        static constexpr uint64_t mask {PTE_NX | 0xFFF};
+        static constexpr uint64_t mask {PTE_NX | PTE_P | PTE_W | PTE_U};
         static constexpr uint64_t all_rights {PTE_P | PTE_W | PTE_U};
 };
 
@@ -362,7 +362,7 @@ TEST_CASE("Basic page table walk works", "[page_table]")
         auto const mapping0 {hpt.lookup (superpage_addr)};
         auto const mapping1 {hpt.lookup (superpage_addr + PAGE_SIZE)};
 
-        CHECK(mapping0.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_S));
+        CHECK(mapping0.attr  == Fake_attr::PTE_P);
         CHECK(mapping0.vaddr == superpage_addr);
         CHECK(mapping0.paddr == 0x10000000);
         CHECK(mapping0.order == PAGE_BITS + BITS_PER_LEVEL_64BIT);
@@ -442,12 +442,12 @@ TEST_CASE("Can split 1GB pages into 2MB pages", "[page_table]")
 
     CHECK(mapping0.vaddr == 0);
     CHECK(mapping0.paddr == 0x80000000);
-    CHECK(mapping0.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_S));
+    CHECK(mapping0.attr  == Fake_attr::PTE_P);
     CHECK(mapping0.order == twomb_order);
 
     CHECK(mapping1.vaddr == 1U << twomb_order);
     CHECK(mapping1.paddr == 0x80000000 + (1U << twomb_order));
-    CHECK(mapping1.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_S));
+    CHECK(mapping1.attr  == Fake_attr::PTE_P);
     CHECK(mapping1.order == twomb_order);
 }
 
@@ -465,8 +465,7 @@ TEST_CASE("Update creates new mappings in empty page table", "[page_table]")
 
                                 CHECK(mapping.vaddr == vaddr);
                                 CHECK(mapping.paddr == paddr);
-                                CHECK(mapping.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_W
-                                                        | (order > PAGE_BITS) * Fake_attr::PTE_S));
+                                CHECK(mapping.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_W));
                                 CHECK(mapping.order == order);
                             };
     SECTION("Can create new 4K mapping") {
@@ -537,7 +536,7 @@ TEST_CASE("Update splits superpages when unmapping", "[page_table]")
     // The adjacent 2M region.
     auto const mapping2 {hpt.lookup (1UL << twomb_order)};
     CHECK(mapping2.order == twomb_order);
-    CHECK(mapping2.attr  == (Fake_attr::PTE_P | Fake_attr::PTE_S));
+    CHECK(mapping2.attr  == (Fake_attr::PTE_P));
     CHECK(mapping2.vaddr == 1UL << twomb_order);
     CHECK(mapping2.paddr == (0x80000000 + (1UL << twomb_order)));
 }
@@ -568,8 +567,8 @@ TEST_CASE("Updates are atomic", "[page_table]")
     SECTION("Superpage splitting is atomic") {
         Fake_hpt hpt {4, 3};
 
-        Fake_hpt::Mapping const old_gigabyte_mapping {0, 0x80000000, Fake_attr::PTE_P | Fake_attr::PTE_S, onegb_order};
-        Fake_hpt::Mapping const old_twomb_mapping {0, 0x80000000, Fake_attr::PTE_P | Fake_attr::PTE_S, twomb_order};
+        Fake_hpt::Mapping const old_gigabyte_mapping {0, 0x80000000, Fake_attr::PTE_P, onegb_order};
+        Fake_hpt::Mapping const old_twomb_mapping {0, 0x80000000, Fake_attr::PTE_P, twomb_order};
         Fake_hpt::Mapping const old_page_mapping {0, 0x80000000, Fake_attr::PTE_P, PAGE_BITS};
 
         Fake_hpt::Mapping const page_mapping {0, 0xC0000000, Fake_attr::PTE_P | Fake_attr::PTE_W, PAGE_BITS};
@@ -729,5 +728,82 @@ TEST_CASE("Replacing read-only pages works", "[page_table]")
     SECTION("Existing writable mapping is left as-is") {
         verify_mapping (hpt.replace_readonly_page (cleanup, 0x2000, 0x3000, Fake_attr::PTE_P | Fake_attr::PTE_W),
                         0x2000, 0x3000);
+    }
+}
+
+TEST_CASE("Clamping mappings works", "[page_table]")
+{
+    using Mapping = Fake_hpt::Mapping;
+
+    // A 4MB "page" at 20MB.
+    auto const attr {Fake_attr::PTE_P | Fake_attr::PTE_W};
+    Mapping const source {5 << 22, 0, attr, 22};
+
+    SECTION("Clamp is idempotent") {
+        CHECK(source.clamp (source.vaddr, source.order) == source);
+    }
+
+    SECTION("Clamp preserves attributes") {
+        CHECK(source.clamp (source.vaddr, source.order).attr == attr);
+    }
+
+    SECTION("Clamp into larger region is no-op") {
+        // Clamp into 16MB page at 16MB.
+        auto const clamped {source.clamp (4 << 22, 24)};
+
+        CHECK (clamped == source);
+    }
+
+    SECTION("Clamp into smaller region returns smaller region") {
+        // Clamp into 2MB page at 22MB;
+        auto const clamped {source.clamp (22 << 20, 21)};
+
+        CHECK (clamped.vaddr == 22 << 20);
+        CHECK (clamped.paddr == 2 << 20);
+        CHECK (clamped.order == 21);
+    }
+}
+
+TEST_CASE("Moving mappings works", "[page_table]")
+{
+    using Mapping = Fake_hpt::Mapping;
+
+    // A 4MB "page" at 20MB.
+    Mapping const source {5 << 22, 0, Fake_attr::PTE_P, 22};
+
+    SECTION("Moving by zero is a no-op") {
+        CHECK(source.move_by (0) == source);
+    }
+
+    SECTION("Moving doesn't change start or attributes") {
+        auto const moved {source.move_by (PAGE_SIZE)};
+
+        CHECK(moved.vaddr == source.vaddr + PAGE_SIZE);
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.attr == source.attr);
+    }
+
+    SECTION("Moving by small amount decreases mapping size") {
+        auto const moved {source.move_by (PAGE_SIZE)};
+
+        CHECK(moved.vaddr == source.vaddr + PAGE_SIZE);
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == PAGE_BITS);
+    }
+
+    SECTION("Moving by matching offset doesn't change mapping size") {
+        auto const moved {source.move_by (1UL << source.order)};
+
+        CHECK(moved.vaddr == source.vaddr + (1UL << source.order));
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == source.order);
+    }
+
+    SECTION("Moving by large amount doesn't change mapping size") {
+        auto const moved {source.move_by (1UL << 30)};
+
+        CHECK(moved.vaddr == source.vaddr + (1UL << 30));
+        CHECK(moved.paddr == source.paddr);
+        CHECK(moved.order == source.order);
     }
 }

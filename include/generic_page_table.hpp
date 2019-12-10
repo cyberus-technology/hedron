@@ -19,6 +19,7 @@
 
 #include "assert.hpp"
 #include "compiler.hpp"
+#include "math.hpp"
 #include "memory.hpp"
 #include "types.hpp"
 
@@ -80,6 +81,39 @@ class Generic_page_table
                 {
                     return vaddr == rhs.vaddr and paddr == rhs.paddr and attr == rhs.attr and order == rhs.order;
                 }
+
+                // Return a new mapping derived from this mapping that fits into
+                // the given clamp region.
+                WARN_UNUSED_RESULT Mapping clamp(virt_t snd_base, ord_t snd_order) const
+                {
+                    // The send order and this mapping need to be naturally aligned.
+                    assert (is_aligned_by_order (snd_base, snd_order));
+                    assert (is_aligned_by_order (vaddr,    order));
+
+                    // snd_base must be inside the mapping or cover the mapping.
+                    assert ((snd_base ^ vaddr) >> max (order, snd_order) == 0);
+
+                    // We know that both vaddr and snd_base are naturally aligned and we
+                    // know that the region to clamp to is inside this mapping.
+                    virt_t const clamp_vaddr {vaddr | snd_base};
+                    virt_t const clamp_offset {clamp_vaddr - vaddr};
+
+                    return {clamp_vaddr, paddr + clamp_offset, attr, min (order, snd_order)};
+                }
+
+                // Move a mapping by a specific offset.
+                //
+                // Moving may shrink a mapping, because of alignment issues. The
+                // resulting mapping will always start at the same address,
+                // though.
+                WARN_UNUSED_RESULT Mapping move_by(virt_t offset) const
+                {
+                    if (offset == 0) {
+                        return *this;
+                    }
+
+                    return {vaddr + offset, paddr, attr, min<ord_t> (order, static_cast<ord_t>(::max_order (0, offset)))};
+                }
         };
 
     private:
@@ -101,9 +135,6 @@ class Generic_page_table
         // The root of the page table hierarchy.
         pte_pointer_t root_;
 
-        // The maximum possible mapping order.
-        ord_t max_order() const { return max_levels_ * BITS_PER_LEVEL + PAGE_BITS; }
-
         // Return the order that an entry at a specific page table level has.
         ord_t level_order(level_t level) const { return level * BITS_PER_LEVEL + PAGE_BITS; }
 
@@ -115,7 +146,10 @@ class Generic_page_table
 
         bool is_superpage(level_t level, pte_t entry) const
         {
+            static_assert ((ATTR::PTE_S & ATTR::mask) == 0,
+                           "Can't have superpage bit in user configurable page table bits");
             assert (not ((level == 0 or level >= leaf_levels_) and (entry & ATTR::PTE_S)));
+
             return (entry & ATTR::PTE_P) and level < leaf_levels_ and (entry & ATTR::PTE_S);
         }
 
@@ -329,6 +363,9 @@ class Generic_page_table
 
     public:
 
+        // The maximum possible mapping order.
+        ord_t max_order() const { return max_levels_ * BITS_PER_LEVEL + PAGE_BITS; }
+
         // Return the memory abstraction as a unit testing aid.
         MEMORY const &memory() const { return memory_; }
 
@@ -369,7 +406,7 @@ class Generic_page_table
         // Walk down the page table to the indicated level and return a pointer
         // to the beginning of the page table. Splits any superpages and creates
         // missing page table structures (if desired).
-        pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup,  virt_t vaddr,
+        pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup, virt_t vaddr,
                                           level_t to_level, bool create = true)
         {
             assert (root_ != nullptr);
@@ -382,6 +419,7 @@ class Generic_page_table
         {
             assert (root_ != nullptr);
             assert (map.order >= PAGE_BITS and map.order <= max_order());
+            assert ((map.attr & ~ATTR::mask) == 0);
 
             ENTRY const align_mask {(static_cast<ENTRY>(1) << map.order) - 1};
             assert ((map.vaddr & align_mask) == 0);

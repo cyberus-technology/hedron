@@ -18,6 +18,7 @@
 #pragma once
 
 #include "generic_page_table.hpp"
+#include "hpt.hpp"
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 
@@ -45,6 +46,16 @@ class Ept : public Ept_page_table
         };
 
     public:
+        enum : mword {
+            // The bitmask covers legal memory type values as we get them from
+            // the MTRRs.
+            MT_MASK = 0b111UL,
+        };
+
+        enum : ord_t {
+            PTE_MT_SHIFT = 3,
+        };
+
         enum : pte_t {
             PTE_R = 1UL << 0,
             PTE_W = 1UL << 1,
@@ -52,11 +63,13 @@ class Ept : public Ept_page_table
 
             PTE_P = PTE_R | PTE_W | PTE_X,
 
+            PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
+
             PTE_I = 1UL << 6,
             PTE_S = 1UL << 7,
         };
 
-        static constexpr pte_t mask {0xFFF};
+        static constexpr pte_t mask {PTE_R | PTE_W | PTE_X | PTE_I | PTE_MT_MASK};
         static constexpr pte_t all_rights {PTE_R | PTE_W | PTE_X};
 
         // Adjust the number of leaf levels to the given value.
@@ -65,8 +78,8 @@ class Ept : public Ept_page_table
         // Create a page table from scratch.
         Ept() : Ept_page_table(4, supported_leaf_levels) {}
 
-        // Convert mapping database attributes to page table attributes.
-        static pte_t hw_attr(mword a, mword mtrr_type);
+        // Convert a HPT mapping into a mapping for the EPT.
+        static Mapping convert_mapping(Hpt::Mapping const &hpt_mapping);
 
         // Do a single-context invalidation for this EPT.
         void flush()

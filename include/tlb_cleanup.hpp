@@ -18,6 +18,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "buddy.hpp"
 #include "compiler.hpp"
 #include "types.hpp"
 #include "util.hpp"
@@ -57,11 +58,15 @@ class Tlb_cleanup
         //
         // It is safe to be read from and written to until the TLB flush
         // actually happens.
-        void free_later([[maybe_unused]] pointer page)
+        void free_later(pointer page)
         {
             tlb_flush_ = true;
 
-            // Not implemented yet.
+            // This is not correct, because we need to defer freeing this page
+            // until the TLB flush has happened. As the broken behavior was
+            // already in the kernel, continue to live in the danger zone until
+            // we fix this issue for good.
+            Buddy::allocator.free (reinterpret_cast<mword>(page));
         }
 
         // Merge two Tlb_cleanup objects.

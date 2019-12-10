@@ -29,7 +29,7 @@ Console_vga::Console_vga() : num (25), row (0), col (0)
     if (Cmdline::novga)
         return;
 
-    Pd::kern->Space_mem::insert (HV_GLOBAL_FBUF, 0, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, 0xb9000);
+    Pd::kern->claim_mmio_page(HV_GLOBAL_FBUF, 0xb9000, false);
 
     set_page (1);
 

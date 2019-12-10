@@ -288,7 +288,7 @@ Pd *Ec::sanitize_syscall_params(Sys_create_ec *r)
 
     Pd *pd = static_cast<Pd *>(cap.obj());
 
-    if (EXPECT_FALSE (r->utcb() >= USER_ADDR || r->utcb() & PAGE_MASK || !pd->insert_utcb (r->utcb()))) {
+    if (EXPECT_FALSE (r->utcb() >= USER_ADDR || r->utcb() & PAGE_MASK)) {
         trace (TRACE_ERROR, "%s: Invalid UTCB address (%#lx)", __func__, r->utcb());
         sys_finish<Sys_regs::BAD_PAR>();
     }
@@ -319,8 +319,6 @@ void Ec::sys_create_ec()
 
     if (!Space_obj::insert_root (ec)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
-        if (!pd->remove_utcb(r->utcb()))
-        	trace (TRACE_ERROR, "%s: Cannot remove UTCB", __func__);
         delete ec;
         sys_finish<Sys_regs::BAD_CAP>();
     }
@@ -517,10 +515,8 @@ void Ec::sys_pd_ctrl_map_access_page()
 
     assert(pd and access_addr);
 
-    static constexpr mword ord      {0};
-    static constexpr mword rights   {0x3}; // R+W
-    static constexpr mword mem_type {0xe}; // WB + IPAT
-    static constexpr mword sub      {2};   // HPT + EPT
+    static constexpr mword ord {0};
+    static constexpr mword rights {0x3}; // R+W
 
     if (crd.type() != Crd::MEM or crd.attr() != rights or crd.order() != ord) {
         sys_finish<Sys_regs::BAD_PAR>();
@@ -528,15 +524,11 @@ void Ec::sys_pd_ctrl_map_access_page()
 
     mword access_addr_phys = Buddy::ptr_to_phys(access_addr);
 
-    Mdb *mdb = new Mdb (static_cast<Space_mem*>(pd), access_addr_phys >> PAGE_BITS, crd.base(), ord, rights, mem_type, sub);
+    auto cleanup {pd->ept.update({crd.base() << PAGE_BITS, access_addr_phys,
+                                  Ept::PTE_R | Ept::PTE_W | Ept::PTE_I | (6 /* WB */ << Ept::PTE_MT_SHIFT), PAGE_BITS})};
 
-    if (not pd->Space_mem::tree_insert (mdb)) {
-        delete mdb;
-        sys_finish<Sys_regs::BAD_PAR>();
-    }
-
-    Tlb_cleanup cleanup {pd->Space_mem::update(mdb)};
-    assert(not cleanup.need_tlb_flush());
+    // XXX Check whether TLB needs to be invalidated.
+    cleanup.ignore_tlb_flush();
 
     sys_finish<Sys_regs::SUCCESS>();
 }

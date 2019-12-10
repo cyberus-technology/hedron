@@ -18,18 +18,20 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "hip.hpp"
 #include "mtrr.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
-#include "hip.hpp"
+#include "svm.hpp"
 
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Pd::cache (sizeof (Pd), 32);
 
 ALIGNED(32) No_destruct<Pd> Pd::kern;
 
+// Constructor for the initial kernel PD.
 Pd::Pd ()
-    : Kobject (PD, static_cast<Space_obj *>(this)), Space_mem (reinterpret_cast<mword *>(&PDBRV))
+    : Kobject (PD, static_cast<Space_obj *>(this))
 {
     Mtrr::init();
 
@@ -45,7 +47,7 @@ Pd::Pd ()
 
 Pd::Pd (Pd *own, mword sel, mword a, bool priv)
     : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free),
-      Space_mem (Pd::kern->hpt), is_priv(priv)
+      Space_mem (Hpt::boot_hpt()), is_priv(priv)
 {
 }
 
@@ -85,6 +87,13 @@ Tlb_cleanup Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, m
     }
 
     return cleanup;
+}
+
+template <>
+Tlb_cleanup Pd::delegate<Space_mem> (Pd *snd, mword const snd_base, mword const rcv_base, mword const ord,
+                                     mword const attr, mword const sub, [[maybe_unused]] char const *deltype)
+{
+    return Space_mem::delegate (snd, snd_base << PAGE_BITS, rcv_base << PAGE_BITS, ord + PAGE_BITS, attr, sub);
 }
 
 template <typename S>
@@ -147,6 +156,19 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
     }
 }
 
+template <>
+void Pd::revoke<Space_mem> (mword const base, mword const ord, mword const attr, bool self)
+{
+    if (not self) {
+        trace (TRACE_ERROR, "Non-self revocation is not supported: Revoking everything!");
+    }
+
+    Tlb_cleanup cleanup {Space_mem::revoke(base << PAGE_BITS, ord + PAGE_BITS, attr)};
+
+    shootdown();
+    cleanup.ignore_tlb_flush();
+}
+
 mword Pd::clamp (mword snd_base, mword &rcv_base, mword snd_ord, mword rcv_ord)
 {
     if ((snd_base ^ rcv_base) >> max (snd_ord, rcv_ord))
@@ -181,11 +203,19 @@ void Pd::xlt_crd (Pd *pd, Crd xlt, Crd &crd)
 {
     Crd::Type t = xlt.type();
 
+    if (EXPECT_FALSE (t == Crd::MEM)) {
+        trace (TRACE_ERROR, "Memory translation is not supported anymore");
+        return;
+    }
+
     if (t && t == crd.type()) {
 
         Space *snd = pd->subspace (t), *rcv = subspace (t);
         mword sb = crd.base(), so = crd.order(), rb = xlt.base(), ro = xlt.order();
         Mdb *mdb, *node;
+
+        assert (snd);
+        assert (rcv);
 
         for (node = mdb = snd->tree_lookup (sb); node; node = node->prnt)
             if (node->space == rcv && node != mdb)
@@ -229,7 +259,7 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
 
     mword a = crd.attr() & del.attr(), sb = crd.base(), so = crd.order(), rb = del.base(), ro = del.order(), o = 0;
 
-    if (EXPECT_FALSE (st != rt || !a)) {
+    if (st != rt or (not a and rt != Crd::MEM)) {
         crd = Crd (0);
         return;
     }
@@ -267,11 +297,8 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
     }
 }
 
-void Pd::rev_crd (Crd crd, bool self, bool preempt)
+void Pd::rev_crd (Crd crd, bool self)
 {
-    if (preempt)
-        Cpu::preempt_enable();
-
     switch (crd.type()) {
 
         case Crd::MEM:
@@ -289,12 +316,6 @@ void Pd::rev_crd (Crd crd, bool self, bool preempt)
             revoke<Space_obj>(crd.base(), crd.order(), crd.attr(), self);
             break;
     }
-
-    if (preempt)
-        Cpu::preempt_disable();
-
-    if (crd.type() == Crd::MEM)
-        shootdown();
 }
 
 Xfer Pd::xfer_item (Pd *src_pd, Crd xlt, Crd del, Xfer s_ti)

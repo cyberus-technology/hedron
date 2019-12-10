@@ -29,7 +29,7 @@
 #include "space.hpp"
 #include "tlb_cleanup.hpp"
 
-class Space_mem : public Space
+class Space_mem
 {
     public:
         Hpt hpt;
@@ -47,8 +47,13 @@ class Space_mem : public Space
 
         static unsigned did_ctr;
 
-        inline Space_mem(mword *boot_pt) : hpt (boot_pt), did (Atomic::add (did_ctr, 1U)) {}
-        inline Space_mem(Hpt &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
+        // Constructor for the initial kernel memory space. The HPT doubles as
+        // database, which memory is safe to give to userspace.
+        Space_mem() : hpt (Hpt::make_golden_hpt()), did (Atomic::add (did_ctr, 1U)) {}
+
+        // Constructor for normal memory spaces. The hpt parameter is the source
+        // page table to populate kernel mappings.
+        explicit Space_mem(Hpt &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
 
         inline size_t lookup (mword virt, Paddr &phys)
         {
@@ -70,11 +75,26 @@ class Space_mem : public Space
         INIT
         void insert_root (uint64, uint64, mword = 0x7);
 
-        bool insert_utcb (mword, mword = 0);
+        // Claim a page for kernel use.
+        //
+        // Create a mapping for a physical memory region in the kernel page
+        // tables and, if exclusive is true, prevent userspace from mapping this
+        // page. order is given as byte order.
+        void claim (mword virt, unsigned o, mword attr, Paddr phys, bool exclusive);
 
-        bool remove_utcb (mword);
+        // Convenience wrapper around claim() for single MMIO pages.
+        void claim_mmio_page (mword virt, Paddr phys, bool exclusive = true);
 
-        Tlb_cleanup update (Mdb *, mword = 0);
+        enum Subspace : mword {
+            SUBSPACE_DEVICE = 1U << 0,
+            SUBSPACE_GUEST  = 1U << 1,
+        };
+
+        // Delegate memory from one memory space to another.
+        Tlb_cleanup delegate (Space_mem *snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub);
+
+        // Revoke specific rights from a region of memory.
+        Tlb_cleanup revoke (mword vaddr, mword ord, mword attr);
 
         static void shootdown();
 
