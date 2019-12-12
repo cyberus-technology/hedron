@@ -38,5 +38,4 @@ class Space
         static bool tree_remove (Mdb *node);
 
         void addreg (mword addr, size_t size, mword attr, mword type = 0);
-        void delreg (mword addr);
 };
