@@ -337,9 +337,10 @@ void Ec::root_invoke()
 
         if (p->type == 1) {
 
-            unsigned attr = !!(p->flags & 0x4) << 0 |   // R
-                            !!(p->flags & 0x2) << 1 |   // W
-                            !!(p->flags & 0x1) << 2;    // X
+            unsigned attr =
+                ((p->flags & 0x4) ? Mdb::MEM_R : 0) |
+                ((p->flags & 0x2) ? Mdb::MEM_W : 0) |
+                ((p->flags & 0x1) ? Mdb::MEM_X : 0);
 
             if (p->f_size != p->m_size || p->v_addr % PAGE_SIZE != p->f_offs % PAGE_SIZE)
                 die ("Bad ELF");
@@ -348,13 +349,14 @@ void Ec::root_invoke()
             mword virt = align_dn (p->v_addr, PAGE_SIZE);
             mword size = align_up (p->f_size, PAGE_SIZE);
 
-            for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o)
-                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr);
+            for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o) {
+                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr, Space::SUBSPACE_HOST);
+            }
         }
     }
 
     // Map hypervisor information page
-    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, 1);
+    Pd::current()->delegate<Space_mem>(&Pd::kern, reinterpret_cast<Paddr>(&FRAME_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R, Space::SUBSPACE_HOST);
 
     Space_obj::insert_root (Pd::current());
     Space_obj::insert_root (Ec::current());

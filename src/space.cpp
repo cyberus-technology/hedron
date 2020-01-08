@@ -48,23 +48,3 @@ void Space::addreg (mword addr, size_t size, mword attr, mword type)
     for (mword o; size; size -= 1UL << o, addr += 1UL << o)
         Mdb::insert<Mdb> (&tree, new Mdb (nullptr, addr, addr, (o = max_order (addr, size)), attr, type));
 }
-
-void Space::delreg (mword addr)
-{
-    Mdb *node;
-
-    {   Lock_guard <Spinlock> guard (lock);
-
-        if (!(node = Mdb::lookup (tree, addr >>= PAGE_BITS, false)))
-            return;
-
-        Mdb::remove<Mdb> (&tree, node);
-    }
-
-    mword next = addr + 1, base = node->node_base, last = base + (1UL << node->node_order);
-
-    addreg (base, addr - base, node->node_attr, node->node_type);
-    addreg (next, last - next, node->node_attr, node->node_type);
-
-    delete node;
-}

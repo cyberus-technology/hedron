@@ -56,12 +56,15 @@ Tlb_cleanup Space_pio::update (Mdb *mdb, mword r)
 
     Lock_guard <Spinlock> guard (mdb->node_lock);
 
-    if (mdb->node_sub & 2)
-        for (unsigned long i = 0; i < (1UL << mdb->node_order); i++)
-            update (false, mdb->node_base + i, mdb->node_attr & ~r);
+    for (unsigned long i = 0; i < (1UL << mdb->node_order); i++) {
+        if (mdb->node_sub & SUBSPACE_HOST) {
+            update (true, mdb->node_base + i, mdb->node_attr & ~r);
+        }
 
-    for (unsigned long i = 0; i < (1UL << mdb->node_order); i++)
-        update (true, mdb->node_base + i, mdb->node_attr & ~r);
+        if (mdb->node_sub & SUBSPACE_GUEST) {
+            update (false, mdb->node_base + i, mdb->node_attr & ~r);
+        }
+    }
 
     return {};
 }
