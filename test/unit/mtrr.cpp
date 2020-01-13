@@ -96,6 +96,35 @@ uint64 megabyte (size_t n)
 
 } // anonymous namespace
 
+TEST_CASE ("NUC Fixed-range MTRRs are parsed correctly", "[mtrr]")
+{
+    using Mtrr_state = Generic_mtrr_state<Fake_sdm_msr>;
+
+    Mtrr_state state;
+    state.init();
+
+    unsigned type;
+    uint64 next;
+
+    SECTION ("Address 0 is RAM") {
+        type = state.memtype (0, next);
+
+        CHECK (type == 0x06);
+    }
+
+    SECTION ("Video ROM is write-protected") {
+        type = state.memtype (0xC0000, next);
+
+        CHECK (type == 0x05);
+    }
+
+    SECTION ("Legacy video memory is uncacheable") {
+        type = state.memtype (0xB8000, next);
+
+        CHECK (type == 0x00);
+    }
+}
+
 TEST_CASE ("NUC Variable-range MTRRs are parsed correctly in the SDM example", "[mtrr]")
 {
     using Mtrr_state = Generic_mtrr_state<Fake_sdm_msr>;
