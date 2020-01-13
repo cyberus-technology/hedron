@@ -36,10 +36,17 @@ class Mtrr
         uint64 const base;
         uint64 const mask;
 
+        enum : uint64 {
+            MTRR_MASK_VALID = 0x800U,
+        };
+
+        bool valid() const { return mask & MTRR_MASK_VALID; }
+
+        // Returns the size of the MTRR region in bytes.
         uint64 size() const
         {
-            return 1ULL << (static_cast<mword>(mask) ? bit_scan_forward (static_cast<mword>(mask >> 12)) + 12 :
-                                                       bit_scan_forward (static_cast<mword>(mask >> 32)) + 32);
+            static_assert(sizeof(uint64) == sizeof(mword), "bit_scan_forward argument width mismatch");
+            return 1ULL << (bit_scan_forward (static_cast<mword>(mask >> 12)) + 12);
         }
 
         Mtrr (uint64 b, uint64 m) : base (b), mask (m) {}
@@ -66,8 +73,12 @@ class Generic_mtrr_state
             default_type = read<uint32>(MSR::IA32_MTRR_DEF_TYPE) & 0xff;
 
             for (size_t i = 0; i < count; i++) {
-                var_mtrr.emplace_back (read<uint64> (MSR::IA32_MTRR_PHYS_BASE + 2 * i),
-                                       read<uint64> (MSR::IA32_MTRR_PHYS_MASK + 2 * i));
+                Mtrr const mtrr {read<uint64> (MSR::IA32_MTRR_PHYS_BASE + 2 * i),
+                                 read<uint64> (MSR::IA32_MTRR_PHYS_MASK + 2 * i)};
+
+                if (mtrr.valid()) {
+                    var_mtrr.emplace_back (mtrr);
+                }
             }
         }
 
@@ -94,9 +105,6 @@ class Generic_mtrr_state
             unsigned type = ~0U; next = ~0ULL;
 
             for (Mtrr &mtrr : var_mtrr) {
-                if (!(mtrr.mask & 0x800))
-                    continue;
-
                 uint64 base = mtrr.base & ~PAGE_MASK;
 
                 if (phys < base)
