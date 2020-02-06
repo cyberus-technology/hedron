@@ -107,7 +107,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page_p);
+                Pd::current()->Space_mem::insert (u, 0, Hpt::HPT_U | Hpt::HPT_W | Hpt::HPT_P, vlapic_page_p);
 
                 if (use_apic_access_page) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
