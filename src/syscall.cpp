@@ -543,6 +543,27 @@ void Ec::sys_pd_ctrl_delegate()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_pd_ctrl_msr_access()
+{
+    Sys_pd_ctrl_msr_access *s = static_cast<Sys_pd_ctrl_msr_access *>(current()->sys_regs());
+    bool success = false;
+
+    if (s->is_write()) {
+        success = Msr::user_write (Msr::Register (s->msr_index()), s->msr_value());
+    } else {
+        uint64 value = 0;
+
+        success = Msr::user_read (Msr::Register (s->msr_index()), value);
+        s->set_msr_value (value);
+    }
+
+    if (success) {
+        sys_finish<Sys_regs::SUCCESS>();
+    } else {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
 void Ec::sys_pd_ctrl()
 {
     Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current()->sys_regs());
@@ -550,6 +571,7 @@ void Ec::sys_pd_ctrl()
     case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
     case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
     case Sys_pd_ctrl::DELEGATE:        { sys_pd_ctrl_delegate();        }
+    case Sys_pd_ctrl::MSR_ACCESS:      { sys_pd_ctrl_msr_access();      }
     };
 
     sys_finish<Sys_regs::BAD_PAR>();

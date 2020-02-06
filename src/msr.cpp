@@ -42,3 +42,92 @@ void Msr::write_safe (Register msr, uint64 val)
     asm volatile (FIXUP_CALL(wrmsr)
                   : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
 }
+
+// Below is the code for userspace MSR access. It is mostly used for platform
+// thermal and power management, but also for platform discovery and other
+// purposes. Due to the vast amount of MSRs it's impractical to devise safe and
+// generic kernel abstractions and instead we rely on trusted userspace
+// components (PDs with passthrough permissions) to do the right thing and give
+// them direct access to MSRs.
+//
+// That being said, we do not blindly allow access to all MSRs, but make
+// exceptions for MSRs where we know that:
+//
+// - the hypervisor wholly owns them and needs them for correct functionality,
+//
+// - they leak private information about the hypervisor, such as its address
+//   space layout,
+//
+// - have a correct way to get their information from userspace already.
+//
+// The lists below are not complete and will never be. They are expected to
+// change over time (as is our rationale which MSRs to exclude).
+//
+// Most importantly this filtering is not a security boundary and no untrusted
+// component should have access to this API.
+
+static bool is_allowed_to_read (Msr::Register msr)
+{
+    switch (msr) {
+    case Msr::AMD_SVM_HSAVE_PA:
+    case Msr::IA32_APIC_BASE:
+    case Msr::IA32_DS_AREA:
+    case Msr::IA32_EFER:
+    case Msr::IA32_FEATURE_CONTROL:
+    case Msr::IA32_GS_BASE:
+    case Msr::IA32_KERNEL_GS_BASE:
+    case Msr::IA32_SYSENTER_CS:
+    case Msr::IA32_SYSENTER_EIP:
+    case Msr::IA32_SYSENTER_ESP:
+    case Msr::IA32_TSC:
+    case Msr::IA32_TSC_ADJUST:
+    case Msr::IA32_TSC_AUX:
+    case Msr::IA32_TSC_DEADLINE:
+
+    case Msr::IA32_EXT_XAPIC ... Msr::IA32_EXT_XAPIC_END:
+    case Msr::IA32_VMX_BASIC ... Msr::IA32_VMX_VMFUNC:
+        return false;
+
+    default:
+        return true;
+    };
+}
+
+static bool is_allowed_to_write (Msr::Register msr)
+{
+    switch (msr) {
+    case Msr::IA32_MTRR_PHYS_BASE ... Msr::IA32_MTRR_FIX4K_F8000:
+    case Msr::IA32_CR_PAT:
+    case Msr::IA32_MTRR_DEF_TYPE:
+        // The MTRR MSRs are mostly in a convenient block in MSR space. We allow
+        // reading them to pass on the configuration to guests (if so desired),
+        // but writing them would mess up our paging.
+        return false;
+
+    default:
+        // If we don't know anything better and we can't read a MSR, we
+        // shouldn't be able to write it either.
+        return is_allowed_to_read (msr);
+    }
+}
+
+bool Msr::user_write (Register msr, uint64 val)
+{
+    if (not is_allowed_to_write (msr)) {
+        return false;
+    }
+
+    write_safe (msr, val);
+    return true;
+}
+
+bool Msr::user_read (Register msr, uint64 &val)
+{
+    if (not is_allowed_to_read (msr)) {
+        val = 0;
+        return false;
+    }
+
+    val = read_safe (msr);
+    return true;
+}

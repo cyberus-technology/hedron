@@ -398,6 +398,9 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         static void sys_pd_ctrl_delegate();
 
         NORETURN
+        static void sys_pd_ctrl_msr_access();
+
+        NORETURN
         static void sys_ec_ctrl();
 
         NORETURN
