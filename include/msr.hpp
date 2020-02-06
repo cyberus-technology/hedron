@@ -136,4 +136,8 @@ class Msr
             asm volatile (FIXUP_CALL(wrmsr)
                           : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
         }
+
+        // Access MSRs from userspace for privileged PDs.
+        static bool user_write (Register msr, uint64  val);
+        static bool user_read  (Register msr, uint64 &val);
 };
