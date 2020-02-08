@@ -21,6 +21,7 @@
  */
 
 #include "acpi.hpp"
+#include "acpi_rsdp.hpp"
 #include "cmdline.hpp"
 #include "compiler.hpp"
 #include "console_vga.hpp"
@@ -75,6 +76,15 @@ void init (mword magic, mword mbi)
                      "DEBUG"
 #endif
                      " " ARCH "): " COMPILER_STRING " [%s] \n", reinterpret_cast<mword>(&GIT_VER), get_boot_type(magic));
+
+    if (magic == Multiboot2::MAGIC) {
+        Multiboot2::Header const *mbi_ = static_cast<Multiboot2::Header const *>(Hpt::remap (mbi));
+        mbi_->for_each_tag ([&](Multiboot2::Tag const *tag) {
+            if (tag->type == Multiboot2::TAG_ACPI_2) {
+                Acpi_rsdp::parse (tag->rsdp());
+            }
+        });
+    }
 
     Idt::build();
     Gsi::setup();
