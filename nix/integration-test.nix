@@ -1,4 +1,4 @@
-{ expect, nova, qemu, grub2, xorriso, stdenv }:
+{ expect, nova, qemu, grub2, grub2_efi, mtools, OVMF, xorriso, stdenv }:
 let
   grub_image = "grub_image.iso";
 in
@@ -6,7 +6,7 @@ stdenv.mkDerivation {
   name = "nova-integration-tests";
   inherit (nova) src;
 
-  buildInputs = [ expect qemu grub2 xorriso ];
+  buildInputs = [ expect qemu grub2 grub2_efi mtools OVMF xorriso ];
 
   postPatch = ''
     patchShebangs test/integration/qemu-boot
@@ -15,8 +15,9 @@ stdenv.mkDerivation {
 
   buildPhase = ''
     test/integration/qemu-boot ${nova}/hypervisor.elf32 | tee output.log
-    tools/gen_usb.sh ${grub_image} ${nova}/hypervisor.elf32 tools/grub.cfg.tmpl
+    tools/gen_usb.sh ${grub_image} ${nova}/hypervisor.elf32 tools/grub.cfg.tmpl ${grub2_efi}/lib/grub/x86_64-efi
     test/integration/qemu-boot ${grub_image} -i | tee -a output.log
+    test/integration/qemu-boot ${grub_image} -i -e ${OVMF.fd}/FV | tee -a output.log
   '';
 
   installPhase = ''
