@@ -34,7 +34,9 @@ stages:
 
 .with_fedora_testdeps:
   before_script:
-    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 edk2-ovmf expect grub2-tools grub2-tools-extra grub2-pc-modules grub2-efi-modules mtools xorriso
+    - dnf -y update && dnf -y install libasan libubsan qemu-system-x86 edk2-ovmf expect grub2-tools grub2-tools-extra grub2-pc-modules grub2-efi-x64-modules unifont-fonts mtools xorriso
+    # The stock installation of the tools fails with errors about this font
+    - grub2-mkfont -o /usr/share/grub/unicode.pf2 /usr/share/fonts/unifont/unifont.ttf
 
 .only_for_releases:
   only:
