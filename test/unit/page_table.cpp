@@ -340,36 +340,64 @@ TEST_CASE("Empty page table lookup", "[page_table]")
 
 TEST_CASE("Basic page table walk works", "[page_table]")
 {
+    uint64_t const smallpage_vaddr {0x1000};
+    uint64_t const smallpage_paddr {0xCAFE0000};
+
+    uint64_t const superpage_vaddr {1U << (PAGE_BITS + BITS_PER_LEVEL_64BIT)};
+    uint64_t const superpage_paddr {0x10000000};
+
     Fake_memory const mem {{{0x1000, 0x00002000 | Fake_attr::PTE_P},
                             {0x2000, 0x00003000 | Fake_attr::PTE_P},
                             {0x3000, 0x00004000 | Fake_attr::PTE_P},
-                            {0x3008, 0x10000000 | Fake_attr::PTE_P | Fake_attr::PTE_S},
-                            {0x4008, 0xCAFE0000 | Fake_attr::PTE_P}}};
+                            {0x3008, superpage_paddr | Fake_attr::PTE_P | Fake_attr::PTE_S},
+                            {0x4008, smallpage_paddr | Fake_attr::PTE_P}}};
 
     Fake_hpt hpt {4, 2, 0x1000, mem};
 
     SECTION("4K page can be walked") {
-        auto const mapping {hpt.lookup (0x1000)};
+        auto const mapping {hpt.lookup (smallpage_vaddr)};
 
         CHECK(mapping.attr == Fake_attr::PTE_P);
-        CHECK(mapping.vaddr == 0x1000);
-        CHECK(mapping.paddr == 0xCAFE0000);
+        CHECK(mapping.vaddr == smallpage_vaddr);
+        CHECK(mapping.paddr == smallpage_paddr);
         CHECK(mapping.order == PAGE_BITS);
     }
 
     SECTION("2MB superpage can be walked") {
-        uint64_t const superpage_addr {1U << (PAGE_BITS + BITS_PER_LEVEL_64BIT)};
-        auto const mapping0 {hpt.lookup (superpage_addr)};
-        auto const mapping1 {hpt.lookup (superpage_addr + PAGE_SIZE)};
+        auto const mapping0 {hpt.lookup (superpage_vaddr)};
+        auto const mapping1 {hpt.lookup (superpage_vaddr + PAGE_SIZE)};
 
         CHECK(mapping0.attr  == Fake_attr::PTE_P);
-        CHECK(mapping0.vaddr == superpage_addr);
-        CHECK(mapping0.paddr == 0x10000000);
+        CHECK(mapping0.vaddr == superpage_vaddr);
+        CHECK(mapping0.paddr == superpage_paddr);
         CHECK(mapping0.order == PAGE_BITS + BITS_PER_LEVEL_64BIT);
 
         CHECK(mapping0 == mapping1);
     }
+
+    SECTION("lookup_phys handles non-existent mappings") {
+        Fake_hpt::phys_t out {0};
+
+        REQUIRE(not hpt.lookup_phys (smallpage_vaddr + PAGE_SIZE, &out));
+    }
+
+    SECTION("lookup_phys correctly handles 4K pages") {
+        Fake_hpt::phys_t out {0};
+        auto const success {hpt.lookup_phys (smallpage_vaddr + 0x123, &out)};
+
+        REQUIRE(success);
+        CHECK(out == smallpage_paddr + 0x123);
+    }
+
+    SECTION("lookup_phys correctly handles 2M pages") {
+        Fake_hpt::phys_t out {0};
+        auto const success {hpt.lookup_phys (superpage_vaddr + 0x123456, &out)};
+
+        REQUIRE(success);
+        CHECK(out == superpage_paddr + 0x123456);
+    }
 }
+
 
 TEST_CASE("walk_down_and_split creates page table structures", "[page_table]")
 {

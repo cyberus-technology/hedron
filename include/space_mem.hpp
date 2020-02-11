@@ -55,11 +55,9 @@ class Space_mem
         // page table to populate kernel mappings.
         explicit Space_mem(Hpt &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
 
-        inline size_t lookup (mword virt, Paddr &phys)
+        inline bool lookup (mword virt, Paddr *phys)
         {
-            auto m {hpt.lookup (virt)};
-            phys = m.paddr | (virt & PAGE_MASK);
-            return m.present() ? m.size() : 0;
+            return hpt.lookup_phys (virt, phys);
         }
 
         inline void insert (mword virt, unsigned o, mword attr, Paddr phys)

@@ -401,6 +401,21 @@ class Generic_page_table
             return result;
         }
 
+        // Convenience wrapper around the above lookup function, if the caller
+        // is only interested in the resulting physical address.
+        //
+        // Returns true, if the lookup succeeded. In this case, paddr will be
+        // filled with the resulting physical address.
+        WARN_UNUSED_RESULT bool lookup_phys(virt_t vaddr, phys_t *paddr)
+        {
+            assert (paddr != nullptr);
+
+            auto const m {lookup (vaddr)};
+
+            *paddr = m.present() ? ((vaddr & (m.size() - 1)) | m.paddr) : 0;
+            return m.present();
+        }
+
         // Walk down the page table for a given virtual address.
         //
         // Walk down the page table to the indicated level and return a pointer

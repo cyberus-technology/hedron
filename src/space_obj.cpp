@@ -30,7 +30,7 @@ Paddr Space_obj::walk (mword idx, bool &shootdown)
 {
     mword virt = idx_to_virt (idx); Paddr phys; void *ptr;
 
-    if (!space_mem()->lookup (virt, phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0)) {
+    if (!space_mem()->lookup (virt, &phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0)) {
         shootdown = (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0);
 
         Paddr p = Buddy::ptr_to_phys (ptr = Buddy::allocator.alloc (0, Buddy::FILL_0));
@@ -54,7 +54,7 @@ Tlb_cleanup Space_obj::update (mword idx, Capability cap)
 size_t Space_obj::lookup (mword idx, Capability &cap)
 {
     Paddr phys;
-    if (!space_mem()->lookup (idx_to_virt (idx), phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0))
+    if (!space_mem()->lookup (idx_to_virt (idx), &phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0))
         return 0;
 
     cap = *static_cast<Capability *>(Buddy::phys_to_ptr (phys));
