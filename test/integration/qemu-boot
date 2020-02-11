@@ -27,6 +27,9 @@ if { $argc == 4 } {
 }
 
 if { $argc >= 3 && [lindex $argv 2] == "-e" } {
+    if {![file exists $fv/OVMF_CODE.fd] || ![file exists $fv/OVMF_VARS.fd]} {
+        puts "OVMF_CODE.fd or OVMF_VARS.fd not found in $fv"; exit 1;
+    }
     set bios "-drive if=pflash,format=raw,readonly,file=$fv/OVMF_CODE.fd -drive if=pflash,format=raw,readonly,file=$fv/OVMF_VARS.fd"
 }
 
