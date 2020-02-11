@@ -1,4 +1,4 @@
-{ expect, nova, qemu, grub2, grub2_efi, mtools, OVMF, xorriso, stdenv }:
+{ expect, nova, qemu, grub2, mtools, OVMF, xorriso, stdenv }:
 let
   grub_image = "grub_image.iso";
 in
@@ -6,7 +6,7 @@ stdenv.mkDerivation {
   name = "nova-integration-tests";
   inherit (nova) src;
 
-  buildInputs = [ expect qemu grub2 grub2_efi mtools OVMF xorriso ];
+  buildInputs = [ expect qemu grub2 mtools OVMF xorriso ];
 
   postPatch = ''
     patchShebangs test/integration/qemu-boot
