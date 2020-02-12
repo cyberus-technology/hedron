@@ -107,15 +107,15 @@ build:fedora-debug:
     - .build_debug
     - .except_for_releases
 
-build:fedora-clang:
-  variables:
-    CXX: 'clang++'
-    CC: 'clang'
-  extends:
-    - .in_latest_fedora
-    - .with_fedora_builddeps
-    - .build_debug
-    - .except_for_releases
+# build:fedora-clang:
+#   variables:
+#     CXX: 'clang++'
+#     CC: 'clang'
+#   extends:
+#     - .in_latest_fedora
+#     - .with_fedora_builddeps
+#     - .build_debug
+#     - .except_for_releases
 
 build:bionic:
   extends:
@@ -171,14 +171,14 @@ integration_test:fedora-debug:
     - .integration_test_variant
     - .except_for_releases
 
-integration_test:fedora-clang:
-  dependencies:
-    - build:fedora-clang
-  extends:
-    - .in_latest_fedora
-    - .with_fedora_testdeps
-    - .integration_test_variant
-    - .except_for_releases
+# integration_test:fedora-clang:
+#   dependencies:
+#     - build:fedora-clang
+#   extends:
+#     - .in_latest_fedora
+#     - .with_fedora_testdeps
+#     - .integration_test_variant
+#     - .except_for_releases
 
 integration_test:bionic:
   dependencies:
