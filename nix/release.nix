@@ -31,29 +31,38 @@ let
     stdenv = overrideCC stdenv v;
     inherit buildType;
   }) compilers;
-  testBuilds = with pkgs; lib.mapAttrs (_: v: callPackage itest { nova = v; })
+  combinedGrub = pkgs.grub2_efi.overrideAttrs (old: {
+    # This puts BIOS and EFI stuff into the lib/grub folder, which is the simplest
+    # way to convince grub-mkrescue to generate hybrid images, as this search
+    # path is baked into the binaries. Just using the -d parameter forces you
+    # to choose either format. Hybrid images only work with the baked-in path.
+    postInstall = ''
+      cp -r ${pkgs.grub2}/lib/grub/* $out/lib/grub/
+    '';
+  });
+  testBuilds = with pkgs; lib.mapAttrs
+    (_: v: callPackage itest { grub2 = combinedGrub; nova = v; })
     novaBuilds;
-in
-  rec {
-    nova = novaBuilds;
-    integration-test = testBuilds;
+in rec {
+  nova = novaBuilds;
+  integration-test = testBuilds;
 
-    coverage = nova.gcc9.overrideAttrs (old: {
-      name = "nova-coverage";
-      cmakeBuildType = "Debug";
-      cmakeFlags = [
-        "-DCOVERAGE=true"
-        "-DCMAKE_MODULE_PATH=${cmake-modules}"
-        "-DCMAKE_BUILD_TYPE=Debug"
-      ];
+  coverage = nova.gcc9.overrideAttrs (old: {
+    name = "nova-coverage";
+    cmakeBuildType = "Debug";
+    cmakeFlags = [
+      "-DCOVERAGE=true"
+      "-DCMAKE_MODULE_PATH=${cmake-modules}"
+      "-DCMAKE_BUILD_TYPE=Debug"
+    ];
 
-      checkInputs = old.checkInputs ++ (with pkgs; [ gcovr python3 python3Packages.setuptools ]);
+    checkInputs = old.checkInputs ++ (with pkgs; [ gcovr python3 python3Packages.setuptools ]);
 
-      makeFlags = [ "test_unit_coverage" ];
-      installPhase = ''
-        mkdir -p $out/nix-support
-        cp -r test_unit_coverage/* $out/
-        echo "report coverage $out index.html" >> $out/nix-support/hydra-build-products
-      '';
-    });
-  }
+    makeFlags = [ "test_unit_coverage" ];
+    installPhase = ''
+      mkdir -p $out/nix-support
+      cp -r test_unit_coverage/* $out/
+      echo "report coverage $out index.html" >> $out/nix-support/hydra-build-products
+    '';
+  });
+}
