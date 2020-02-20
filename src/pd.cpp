@@ -33,7 +33,7 @@ ALIGNED(32) No_destruct<Pd> Pd::kern;
 Pd::Pd ()
     : Kobject (PD, static_cast<Space_obj *>(this))
 {
-    Mtrr::init();
+    Mtrr_state::get().init();
 
     Space_mem::insert_root (0, reinterpret_cast<mword>(&LINK_P));
     Space_mem::insert_root (reinterpret_cast<mword>(&LINK_E), 1ULL << 52);

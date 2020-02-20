@@ -19,6 +19,7 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
 
 template <typename T, T v>
 struct integral_constant
@@ -52,5 +53,9 @@ constexpr T &&forward (typename remove_reference<T>::type &&arg)
     return static_cast<T &&>(arg);
 }
 
+#if !__STDC_HOSTED__
+
 // Placement new operator
 inline void *operator new (size_t, void *p) { return p; }
+
+#endif

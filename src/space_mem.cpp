@@ -187,7 +187,7 @@ void Space_mem::insert_root (uint64 start, uint64 end, mword attr)
 
     for (Paddr cur {start}; cur < end;) {
         uint64 next;
-        unsigned t = Mtrr::memtype (cur, next);
+        unsigned t = Mtrr_state::get().memtype (cur, next);
 
         map_typed_range (hpt, cur, min <uint64> (next, end), Hpt::hw_attr (attr), t);
         cur = next;
