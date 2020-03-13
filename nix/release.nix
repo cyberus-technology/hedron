@@ -23,7 +23,7 @@
 let
   nova = import ./build.nix;
   itest = import ./integration-test.nix;
-  cmake-modules = pkgs.callPackage ./cmake-modules.nix {};
+  cmake-modules = pkgs.callPackage ./cmake-modules.nix { inherit sources; };
   compilers = { inherit (pkgs) clang_8 clang_9 gcc7 gcc8 gcc9; };
   novaBuilds = with pkgs; lib.mapAttrs (_: v: callPackage nova {
     stdenv = overrideCC stdenv v;

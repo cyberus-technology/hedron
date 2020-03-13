@@ -1,4 +1,16 @@
 {
+    "cmake-modules": {
+        "branch": "master",
+        "description": "Additional CMake functionality. Most of the modules are from Ryan Pavlik (https://github.com/rpavlik/cmake-modules)",
+        "homepage": "",
+        "owner": "bilke",
+        "repo": "cmake-modules",
+        "rev": "3e034039f71c6ce655b3e0ba2d32f2aeb7c8451b",
+        "sha256": "061aj2crza5wjnmq5bfr6dzwxik6az12ic99pzyw23d6izriq3a8",
+        "type": "tarball",
+        "url": "https://github.com/bilke/cmake-modules/archive/3e034039f71c6ce655b3e0ba2d32f2aeb7c8451b.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "nixos-unstable",
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
