@@ -1,4 +1,16 @@
 {
+    "cbspkgs-public": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "cyberus-technology",
+        "repo": "cbspkgs-public",
+        "rev": "a41099e97f492b7fcf916feb114d960bb0ef3707",
+        "sha256": "16qxln5l2i5rs9rjjk841y5f24gs54ziqknnch7yr22fdjhii9mq",
+        "type": "tarball",
+        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/a41099e97f492b7fcf916feb114d960bb0ef3707.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "cmake-modules": {
         "branch": "master",
         "description": "Additional CMake functionality. Most of the modules are from Ryan Pavlik (https://github.com/rpavlik/cmake-modules)",
