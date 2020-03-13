@@ -5,7 +5,6 @@
   nix-gitignore,
   lib,
   buildType ? "Debug",
-  clang-tools-wrapper ? null,
 }:
 
 let
@@ -15,7 +14,7 @@ stdenv.mkDerivation {
   name = "nova";
   src = nix-gitignore.gitignoreSourcePure (["nix\n"] ++ gitIgnores) ./..;
 
-  nativeBuildInputs = [ cmake ] ++ (lib.optional (builtins.isNull clang-tools-wrapper) clang-tools-wrapper);
+  nativeBuildInputs = [ cmake ];
   checkInputs = [ catch2 ];
 
   cmakeBuildType = buildType;
