@@ -14,12 +14,10 @@
 #
 # To build a unit test coverage report, build the coverage attribute:
 #     nix-build nix/release.nix -A coverage
-{
-  nixpkgs ? import ./nixpkgs.nix,
-  nurpkgs ? import ./nur-packages.nix,
-  pkgs ? import nixpkgs {},
-  nur ? import nurpkgs { inherit pkgs; },
-  buildType ? "Debug"
+{ sources ? import ./sources.nix
+, nixpkgs ? sources.nixpkgs
+, pkgs ? import nixpkgs { }
+, buildType ? "Debug"
 }:
 
 let
