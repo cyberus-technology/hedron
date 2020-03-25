@@ -27,7 +27,7 @@ class Cpuset
 {
     private:
         mword val;
-        static_assert(sizeof(val) * 8 <= NUM_CPU, "NUM_CPU is too large");
+        static_assert(NUM_CPU <= sizeof(val) * 8, "NUM_CPU is too large");
 
     public:
         inline explicit Cpuset() : val (0) {}
