@@ -22,8 +22,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   endif()
 endif()
 
-include(Catch)
-catch_discover_tests(test_unit)
+# We consciously don't use catch_discover_tests to auto-discover
+# tests, because this results in no tests being run and success being
+# reported, when the test binary is not able to list its tests.
+add_test(NAME combined_unit_test COMMAND test_unit)
 
 if(COVERAGE)
 
