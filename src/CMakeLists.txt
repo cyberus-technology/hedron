@@ -103,3 +103,5 @@ target_link_options(hypervisor PRIVATE
   -Wl,--defsym=CONFIG_KERNEL_MEMORY=64M
   -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
   )
+
+install(TARGETS hypervisor DESTINATION share/NOVA)
