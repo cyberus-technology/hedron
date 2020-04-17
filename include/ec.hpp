@@ -39,8 +39,7 @@
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "si.hpp"
-
-#include "stdio.hpp"
+#include "vlapic.hpp"
 
 class Utcb;
 
@@ -51,8 +50,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
     private:
         void        (*cont)() ALIGNED (16);
         Cpu_regs    regs;
-        Ec *        rcap;
-        Utcb *      utcb;
+        Ec *        rcap {nullptr};
+        Utcb *      utcb {nullptr};
+        Vlapic *    vlapic {nullptr};
+
         Refptr<Pd>  pd;
         Ec *        partner {nullptr};
         Ec *        prev {nullptr};
@@ -64,11 +65,14 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             };
             uint32  xcpu;
         };
-        unsigned const evt;
+        unsigned const evt {0};
         Timeout_hypercall timeout {this};
-        mword          user_utcb;
 
-        void * vlapic_page {nullptr};
+        // Virtual Address of the UTCB in userspace.
+        mword user_utcb {0};
+
+        // Virtual Address of the vLAPIC page in userspace.
+        mword user_vlapic {0};
 
         Fpu fpu;
 
@@ -115,10 +119,15 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
             assert(e);
 
-            // remove mapping in page table
+            // Cleanup user space mappings of kernel memory.
             if (e->user_utcb) {
                 e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
                 e->user_utcb = 0;
+            }
+
+            if (e->user_vlapic) {
+                e->pd->Space_mem::insert (e->user_vlapic, 0, 0, 0);
+                e->user_vlapic = 0;
             }
         }
 

@@ -25,7 +25,7 @@ add_executable(hypervisor hypervisor-x86_64.ld
   rcu.cpp regs.cpp sc.cpp si.cpp slab.cpp sm.cpp space.cpp
   space_mem.cpp space_obj.cpp space_pio.cpp string.cpp svm.cpp
   syscall.cpp timeout_budget.cpp timeout.cpp timeout_hypercall.cpp
-  tss.cpp utcb.cpp vmx.cpp
+  tss.cpp utcb.cpp vlapic.cpp vmx.cpp
   )
 
 add_custom_command(

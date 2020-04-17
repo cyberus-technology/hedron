@@ -34,7 +34,7 @@ INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
 // Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0)
+Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), pd (own), cpu (static_cast<uint16>(c)), glb (true)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -42,8 +42,11 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e)
 {
+    assert (u < USER_ADDR);
+    assert ((u & PAGE_MASK) == 0);
+
     // Make sure we consider the right CPUs for TLB shootdown
     pd->Space_mem::init (c);
 
@@ -63,8 +66,12 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
         utcb = new Utcb;
 
-        pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                               Buddy::ptr_to_phys (utcb));
+        user_utcb = u;
+
+        if (user_utcb) {
+            pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                                   Buddy::ptr_to_phys (utcb));
+        }
 
         regs.dst_portal = NUM_EXC - 2;
 
@@ -100,9 +107,11 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
 
             if (u) {
-                /* allocate+register the virtual LAPIC page and map it into user space */
-                vlapic_page         = Buddy::allocator.alloc(0, Buddy::FILL_0);
-                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
+                /* Allocate and register the virtual LAPIC page and map it into user space. */
+                user_vlapic    = u;
+                vlapic         = new Vlapic;
+
+                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic);
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
                 pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
@@ -135,11 +144,17 @@ Ec::~Ec()
 
     if (utcb) {
         delete utcb;
+        utcb = nullptr;
+
+        // Everything below is vCPU related. We can't be a vCPU if we have a
+        // UTCB.
+        assert (vlapic == nullptr);
         return;
     }
 
-    if (vlapic_page) {
-        Buddy::allocator.free(reinterpret_cast<mword>(vlapic_page));
+    if (vlapic) {
+        delete vlapic;
+        vlapic = nullptr;
     }
 
     if (Hip::feature() & Hip::FEAT_VMX)
