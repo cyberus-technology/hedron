@@ -11,8 +11,8 @@ This document describes the system call interface for the NOVA microhypervisor.
 
 A CRD is a 64-bit value.
 
-| *Field*   | *Content* | *Description*                                         |
-|-----------|-----------|-------------------------------------------------------|
+| *Field*     | *Content* | *Description*                                         |
+|-------------|-----------|-------------------------------------------------------|
 | `CRD[1:0]`  | Type      | Selects which type of capabilities the CRD refers to. |
 | `CRD[63:2]` | ...       | Depends on capability type.                           |
 
@@ -43,6 +43,26 @@ of mappings as well.
 | `HOT[11]`    | Hypervisor | Source is actually hypervisor PD. Only valid when used by the roottask, silently ignored otherwise.            |
 | `HOT[63:12]` | Hotspot    | The hotspot used to disambiguate send and receive windows.                                                     |
 
+## User Thread Control Block (UTCB)
+
+UTCBs belong to Execution Contexts. Each EC representing an ordinary
+thread (as opposed to a vCPU) always has an associated UTCB. It is
+used to send and receive message data and architectural state via IPC.
+
+The UTCB is 4KiB in size. It's detailed layout is given in
+`include/utcb.hpp`.
+
+## Virtual LAPIC (vLAPIC) Page
+
+vLAPIC pages belong to Execution Contexts. A vCPU may have exactly one
+vLAPIC page. See `create_ec` for their creation.
+
+A vLAPIC page is exactly 4KiB in size. The content of the vLAPIC page
+is given by the Intel Architecture. The Intel Software Development
+Manual Vol. 3 describes its content and layout in the "APIC
+Virtualization and Virtual Interrupts" chapter. In the Intel
+documentation, this page is called "virtual-APIC page".
+
 # System Call Binary Interface for x86_64
 
 ## Register Usage
@@ -64,6 +84,7 @@ Hypercalls are identified by these values.
 
 | *Constant*            | *Value* |
 |-----------------------|---------|
+| `HC_CREATE_EC`        | 3       |
 | `HC_REVOKE`           | 7       |
 | `HC_PD_CTRL`          | 8       |
 | `HC_PD_CTRL_DELEGATE` | 2       |
@@ -86,6 +107,55 @@ Most hypercalls return a status value in OUT1. The following status values are d
 | `BAD_DEV` | 8       | An invalid device ID was passed                                  |
 
 # System Call Reference
+
+## create_ec
+
+`create_ec` creates an EC kernel object and a capability pointing to
+the newly created kernel object.
+
+An EC can be either a normal host EC or a virtual CPU. It does not
+come with scheduling time allocated to it. ECs need scheduling
+contexts (SCs) to be scheduled and thus executed.
+
+ECs can be either _global_ or _local_. A global EC can have a
+dedicated scheduling context (SC) bound to it. When this SC is
+scheduled the EC runs. Global ECs can be both, normal host ECs and
+vCPUs. A normal EC bound to an SC builds what is commonly known as a
+thread.
+
+Local ECs can only be normal ECs and not vCPUs. They cannot have SCs
+bound to them and are used for portal handlers. These handlers never
+execute with their own SC, but borrow the scheduling context from the
+caller.
+
+Each EC has an _event base_. This event base is an offset into the
+capability space of the PD the EC belongs to. Exceptions (for normal
+ECs) and VM exits (for vCPUs) are sent as messages to the portal index
+that results from adding the event reason to the event base. For vCPUs
+the event reason are VM exit reasons, for normal ECs the reasons are
+exception numbers.
+
+### In
+
+| *Register*  | *Content*            | *Description*                                                                                              |
+|-------------|----------------------|------------------------------------------------------------------------------------------------------------|
+| ARG1[3:0]   | System Call Number   | Needs to be `HC_CREATE_EC`.                                                                                |
+| ARG1[4]     | Global EC            | If set, create a global EC, otherwise a local EC.                                                          |
+| ARG1[5]     | vCPU                 | If set, a vCPU is constructed, otherwise a normal EC.                                                      |
+| ARG1[6]     | Use APIC Access Page | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created. |
+| ARG1[7]     |                      | Unused. Needs to be zero.                                                                                  |
+| ARG1[63:8]  | Destination Selector | A capability selector in the current PD that will point to the newly created EC.                           |
+| ARG2        | Parent PD            | A capability selector to a PD domain in which the new EC will execute in.                                  |
+| ARG3[11:0]  |                      | Unused. Needs to be zero.                                                                                  |
+| ARG3[63:12] | UTCB / vLAPIC Page   | A page number where the UTCB / vLAPIC page will be created. vLAPIC page 0 means no vLAPIC page is created. |
+| ARG4        | Stack Pointer        | The initial stack pointer for normal ECs. Ignored for vCPUs.                                               |
+| ARG5        | Event Base           | The Event Base of the newly created EC.                                                                    |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
 
 ## pd_ctrl
 
