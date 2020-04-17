@@ -64,13 +64,13 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         } else
             regs.set_sp (s);
 
-        utcb = new Utcb;
+        utcb = make_unique<Utcb>();
 
         user_utcb = u;
 
         if (user_utcb) {
             pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                                   Buddy::ptr_to_phys (utcb));
+                                   Buddy::ptr_to_phys (utcb.get()));
         }
 
         regs.dst_portal = NUM_EXC - 2;
@@ -109,9 +109,9 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             if (u) {
                 /* Allocate and register the virtual LAPIC page and map it into user space. */
                 user_vlapic    = u;
-                vlapic         = new Vlapic;
+                vlapic         = make_unique<Vlapic>();
 
-                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic);
+                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic.get());
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
                 pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
@@ -142,25 +142,19 @@ Ec::~Ec()
 {
     pre_free(this);
 
-    if (utcb) {
-        delete utcb;
-        utcb = nullptr;
-
-        // Everything below is vCPU related. We can't be a vCPU if we have a
-        // UTCB.
-        assert (vlapic == nullptr);
-        return;
+    // Everything below is vCPU related. We can't be a vCPU if we have a
+    // UTCB. As vLAPIC pages are optional, we can't use the vLAPIC page to check
+    // whether we are a vCPU.
+    if (not utcb) {
+        if (Hip::feature() & Hip::FEAT_VMX) {
+            delete regs.vmcs;
+        } else if (Hip::feature() & Hip::FEAT_SVM) {
+            delete regs.vmcb;
+        }
+    } else {
+        assert (not vlapic);
     }
 
-    if (vlapic) {
-        delete vlapic;
-        vlapic = nullptr;
-    }
-
-    if (Hip::feature() & Hip::FEAT_VMX)
-        delete regs.vmcs;
-    else if (Hip::feature() & Hip::FEAT_SVM)
-        delete regs.vmcb;
 }
 
 void Ec::handle_hazard (mword hzd, void (*func)())

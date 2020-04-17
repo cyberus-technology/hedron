@@ -39,6 +39,7 @@
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "si.hpp"
+#include "unique_ptr.hpp"
 #include "vlapic.hpp"
 
 class Utcb;
@@ -51,8 +52,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         void        (*cont)() ALIGNED (16);
         Cpu_regs    regs;
         Ec *        rcap {nullptr};
-        Utcb *      utcb {nullptr};
-        Vlapic *    vlapic {nullptr};
+
+        Unique_ptr<Utcb>   utcb;
+        Unique_ptr<Vlapic> vlapic;
 
         Refptr<Pd>  pd;
         Ec *        partner {nullptr};

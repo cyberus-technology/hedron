@@ -161,7 +161,7 @@ void Ec::recv_user()
 {
     Ec *ec = current()->rcap;
 
-    ec->utcb->save (current()->utcb);
+    ec->utcb->save (current()->utcb.get());
 
     if (EXPECT_FALSE (ec->utcb->tcnt()))
         delegate<true>();
@@ -213,7 +213,7 @@ void Ec::sys_reply()
             }
         }
 
-        Utcb *src = current()->utcb;
+        Utcb *src = current()->utcb.get();
 
         if (EXPECT_FALSE (src->tcnt()))
             delegate<false>();
@@ -221,7 +221,7 @@ void Ec::sys_reply()
         bool fpu = false;
 
         if (EXPECT_TRUE (ec->cont == ret_user_sysexit))
-            src->save (ec->utcb);
+            src->save (ec->utcb.get());
         else if (ec->cont == ret_user_iret)
             fpu = src->save_exc (&ec->regs);
         else if (ec->cont == ret_user_vmresume)
