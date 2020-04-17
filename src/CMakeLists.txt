@@ -104,4 +104,4 @@ target_link_options(hypervisor PRIVATE
   -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
   )
 
-install(TARGETS hypervisor DESTINATION share/NOVA)
+install(TARGETS hypervisor DESTINATION share/NOVA COMPONENT NOVA_Application)
