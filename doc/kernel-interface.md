@@ -55,13 +55,25 @@ The UTCB is 4KiB in size. It's detailed layout is given in
 ## Virtual LAPIC (vLAPIC) Page
 
 vLAPIC pages belong to Execution Contexts. A vCPU may have exactly one
-vLAPIC page. See `create_ec` for their creation.
+vLAPIC page. A vCPU never has an UTCB. See `create_ec` for the
+creation of vCPUs.
 
 A vLAPIC page is exactly 4KiB in size. The content of the vLAPIC page
 is given by the Intel Architecture. The Intel Software Development
 Manual Vol. 3 describes its content and layout in the "APIC
 Virtualization and Virtual Interrupts" chapter. In the Intel
 documentation, this page is called "virtual-APIC page".
+
+## APIC Access Page
+
+The APIC Access Page is a page of memory that is used to mark the
+location of the Virtual LAPIC in a VM. Use of the APIC Access Page can
+be controlled on a per-vCPU basis (see `create_ec`).
+
+The Intel Software Development Manual Vol. 3 gives further information
+on how the APIC Access Page changes the operation of Intel VT in the
+"APIC Virtualization and Virtual Interrupts" chapter. In the Intel
+documentation, this page is called "APIC-access page".
 
 # System Call Binary Interface for x86_64
 
@@ -137,19 +149,19 @@ exception numbers.
 
 ### In
 
-| *Register*  | *Content*            | *Description*                                                                                              |
-|-------------|----------------------|------------------------------------------------------------------------------------------------------------|
-| ARG1[3:0]   | System Call Number   | Needs to be `HC_CREATE_EC`.                                                                                |
-| ARG1[4]     | Global EC            | If set, create a global EC, otherwise a local EC.                                                          |
-| ARG1[5]     | vCPU                 | If set, a vCPU is constructed, otherwise a normal EC.                                                      |
-| ARG1[6]     | Use APIC Access Page | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created. |
-| ARG1[7]     |                      | Unused. Needs to be zero.                                                                                  |
-| ARG1[63:8]  | Destination Selector | A capability selector in the current PD that will point to the newly created EC.                           |
-| ARG2        | Parent PD            | A capability selector to a PD domain in which the new EC will execute in.                                  |
-| ARG3[11:0]  |                      | Unused. Needs to be zero.                                                                                  |
-| ARG3[63:12] | UTCB / vLAPIC Page   | A page number where the UTCB / vLAPIC page will be created. vLAPIC page 0 means no vLAPIC page is created. |
-| ARG4        | Stack Pointer        | The initial stack pointer for normal ECs. Ignored for vCPUs.                                               |
-| ARG5        | Event Base           | The Event Base of the newly created EC.                                                                    |
+| *Register*  | *Content*            | *Description*                                                                                               |
+|-------------|----------------------|-------------------------------------------------------------------------------------------------------------|
+| ARG1[3:0]   | System Call Number   | Needs to be `HC_CREATE_EC`.                                                                                 |
+| ARG1[4]     | Global EC            | If set, create a global EC, otherwise a local EC.                                                           |
+| ARG1[5]     | vCPU                 | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
+| ARG1[6]     | Use APIC Access Page | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
+| ARG1[7]     |                      | Unused. Needs to be zero.                                                                                   |
+| ARG1[63:8]  | Destination Selector | A capability selector in the current PD that will point to the newly created EC.                            |
+| ARG2        | Parent PD            | A capability selector to a PD domain in which the new EC will execute in.                                   |
+| ARG3[11:0]  |                      | Unused. Needs to be zero.                                                                                   |
+| ARG3[63:12] | UTCB / vLAPIC Page   | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
+| ARG4        | Stack Pointer        | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
+| ARG5        | Event Base           | The Event Base of the newly created EC.                                                                     |
 
 ### Out
 
