@@ -147,12 +147,12 @@ revoking all rights at the same time. It will be removed, use
 
 | *Register* | *Content*          | *Description*                                                                             |
 |------------|--------------------|-------------------------------------------------------------------------------------------|
-| RDI[3:0]   | System Call Number | Needs to be `HC_REVOKE`.                                                                  |
-| RDI[4]     | Self               | If set, the capability is also revoked in the current PD. Ignored for memory revocations. |
-| RDI[5]     | Remote             | If set, the given PD is used instead of the current one.                                  |
-| RDI[63:8]  | Semaphore Selector | **Deprecated**, specify as 0.                                                             |
-| RSI        | CRD                | The capability range descriptor describing the region to be removed.                      |
-| RDX        | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
+| ARG1[3:0]  | System Call Number | Needs to be `HC_REVOKE`.                                                                  |
+| ARG1[4]    | Self               | If set, the capability is also revoked in the current PD. Ignored for memory revocations. |
+| ARG1[5]    | Remote             | If set, the given PD is used instead of the current one.                                  |
+| ARG1[63:8] | Semaphore Selector | **Deprecated**, specify as 0.                                                             |
+| ARG2       | CRD                | The capability range descriptor describing the region to be removed.                      |
+| ARG3       | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
 
 ### Out
 
