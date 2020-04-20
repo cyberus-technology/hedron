@@ -6,7 +6,6 @@
  *
  * Copyright (C) 2012-2013 Udo Steinberg, Intel Corporation.
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
- * Copyright (C) 2013-2014 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2017-2018 Thomas Prescher, Cyberus Technology GmbH.
  *
@@ -35,7 +34,7 @@ INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
 // Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -43,7 +42,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u), xcpu_sm (nullptr)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u)
 {
     // Make sure we consider the right CPUs for TLB shootdown
     pd->Space_mem::init (c);
@@ -129,20 +128,9 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     }
 }
 
-Ec::Ec (Pd *own, Pd *p, void (*f)(), unsigned c, Ec *clone) : Kobject (EC, static_cast<Space_obj *>(own), 0, 0xd, free, pre_free), cont (f), regs (clone->regs), rcap (clone), utcb (clone->utcb), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (clone->evt), user_utcb (0), xcpu_sm (clone->xcpu_sm)
-{
-    regs.vmcs = nullptr;
-    regs.vmcb = nullptr;
-}
-
 //De-constructor
 Ec::~Ec()
 {
-    if (xcpu_sm) {
-        delete xcpu_sm;
-        xcpu_sm = nullptr;
-    }
-
     pre_free(this);
 
     if (utcb) {
@@ -391,27 +379,6 @@ void Ec::die (char const *reason, Exc_regs *r)
         ec->cont = ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
 
     reply (dead);
-}
-
-void Ec::xcpu_return()
-{
-    assert (current()->xcpu_sm);
-    assert (current()->rcap);
-    assert (current()->utcb);
-    assert (Sc::current()->ec == current());
-
-    current()->rcap->regs =  current()->regs;
-
-    current()->xcpu_sm->up (ret_xcpu_reply);
-
-    current()->rcap    = nullptr;
-    current()->utcb    = nullptr;
-    current()->xcpu_sm = nullptr;
-
-    Rcu::call(current());
-    Rcu::call(Sc::current());
-
-    Sc::schedule(true);
 }
 
 void Ec::idl_handler()

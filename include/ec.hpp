@@ -43,7 +43,6 @@
 #include "stdio.hpp"
 
 class Utcb;
-class Sm;
 
 class Ec : public Kobject, public Refcount, public Queue<Sc>
 {
@@ -68,8 +67,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         unsigned const evt;
         Timeout_hypercall timeout {this};
         mword          user_utcb;
-
-        Sm *         xcpu_sm;
 
         void * vlapic_page {nullptr};
 
@@ -186,8 +183,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         Ec (Pd *, void (*)(), unsigned);
         Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
-        Ec (Pd *, Pd *, void (*f)(), unsigned, Ec *);
-
         ~Ec();
 
         inline void add_tsc_offset (uint64 tsc)
@@ -307,11 +302,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         NORETURN_GCC
         static void ret_user_vmrun();
 
-        NORETURN
-        static void ret_xcpu_reply();
-
         template <Sys_regs::Status S, bool T = false>
-
         NOINLINE NORETURN
         static void sys_finish();
 
@@ -386,13 +377,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         static void sys_assign_gsi();
 
         NORETURN
-        static void sys_xcpu_call();
-
-        NORETURN
         static void idle();
-
-        NORETURN
-        static void xcpu_return();
 
         NORETURN
         static void root_invoke();
