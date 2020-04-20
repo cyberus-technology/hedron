@@ -16,6 +16,7 @@
  */
 
 #include <static_vector.hpp>
+#include "construct_counter.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -41,32 +42,11 @@ TEST_CASE ("Array access works", "[static_vector]")
     CHECK(v[1] == 9);
 }
 
-namespace {
-
-// Use a tagged class to replicate counters.
-template <typename TAG>
-class counter {
-    public:
-        static size_t constructed;
-        static size_t destructed;
-
-        counter() { constructed++; }
-        ~counter() { destructed++; }
-};
-
-template <typename TAG>
-size_t counter<TAG>::constructed {0};
-
-template <typename TAG>
-size_t counter<TAG>::destructed {0};
-
-}
-
 TEST_CASE ("Construction and destruction works", "[static_vector]")
 {
     SECTION ("Emplace constructs once") {
         struct local_tag {};
-        using test_counter = counter<local_tag>;
+        using test_counter = construct_counter<local_tag>;
 
         Static_vector<test_counter, 10> v;
 
@@ -77,7 +57,7 @@ TEST_CASE ("Construction and destruction works", "[static_vector]")
 
     SECTION ("Reset destructs") {
         struct local_tag {};
-        using test_counter = counter<local_tag>;
+        using test_counter = construct_counter<local_tag>;
 
         Static_vector<test_counter, 10> v;
 
@@ -90,7 +70,7 @@ TEST_CASE ("Construction and destruction works", "[static_vector]")
 
     SECTION ("Destructor destructs") {
         struct local_tag {};
-        using test_counter = counter<local_tag>;
+        using test_counter = construct_counter<local_tag>;
 
         {
             Static_vector<test_counter, 10> v;
