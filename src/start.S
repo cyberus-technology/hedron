@@ -93,26 +93,11 @@ __boot_gdt__:
 .endm
 
 /*
- * AP Startup Code
- */
-.code16
-
-__start_ap:             INIT_PAGING
-                        lgdtl   %cs:__gdt_desc - __start_ap
-                        ljmpl   $SEL_KERN_CODE, $__start_all
-
-__gdt_desc:             .word   __boot_gdt__ - __boot_gdt - 1
-                        .long   __boot_gdt
-
-/*
  * BSP Startup Code
  */
 .code32
 
-__start_bsp:            mov     $(__start_bsp - __start_ap), %ecx
-                        mov     $__start_ap, %esi
-                        mov     $0x1000, %edi
-                        rep     movsb
+__start_bsp:
                         mov     $(LVL3L + 0x27), %ecx
                         mov     %ecx, LVL4  + PTR_SIZE * (LOAD_ADDR >> (3 * PTE_BPL + PAGE_BITS) & ((1 << PTE_BPL) - 1))
                         mov     $(LVL2L + 0x27), %ecx
@@ -167,3 +152,24 @@ __start_all:            INIT_STATE
 
                         movabs  $(bootstrap), %REG(bx)
                         jmp     *%REG(bx)
+
+.text
+
+/*
+ * AP Startup Code
+ *
+ * This code needs to be position independent. It will be copied by
+ * the LAPIC code that brings up APs to low memory.
+ */
+.code16
+
+.globl __start_ap
+.globl __start_ap_end
+
+__start_ap:             INIT_PAGING
+                        lgdtl   %cs:__gdt_desc - __start_ap
+                        ljmpl   $SEL_KERN_CODE, $__start_all
+
+__gdt_desc:             .word   __boot_gdt__ - __boot_gdt - 1
+                        .long   __boot_gdt
+__start_ap_end:

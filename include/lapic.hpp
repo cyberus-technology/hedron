@@ -149,7 +149,19 @@ class Lapic
         }
 
         static void init();
+
+        INIT
         static void setup();
+
+        // Copy the AP boot code into low-memory.
+        //
+        // This needs to be called before APs are booted.
+        static void prepare_ap_boot();
+
+        // Restore low-memory that was clobbered during AP bringup.
+        //
+        // This needs to be called once all APs have successfully booted.
+        static void restore_low_memory();
 
         static void send_ipi (unsigned, unsigned, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
 
