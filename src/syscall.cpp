@@ -43,9 +43,6 @@ void Ec::sys_finish()
 
     current()->regs.set_status (S);
 
-    if (current()->xcpu_sm)
-        xcpu_return();
-
     ret_user_sysexit();
 }
 
@@ -72,7 +69,7 @@ void Ec::delegate()
     Ec *src = C ? ec : current();
     Ec *dst = C ? current() : ec;
 
-    bool user = C || ((dst->cont == ret_user_sysexit) || (dst->cont == xcpu_return));
+    bool user = C || dst->cont == ret_user_sysexit;
 
     dst->pd->xfer_items (src->pd,
                          user ? dst->utcb->xlt : Crd (0),
@@ -124,10 +121,10 @@ void Ec::sys_call()
     Ec *ec = pt->ec;
 
     if (EXPECT_FALSE (current()->cpu != ec->xcpu))
-        Ec::sys_xcpu_call();
+        sys_finish<Sys_regs::BAD_CPU>();
 
     if (EXPECT_TRUE (!ec->cont)) {
-        current()->cont = current()->xcpu_sm ? xcpu_return : ret_user_sysexit;
+        current()->cont = ret_user_sysexit;
         current()->set_partner (ec);
         ec->cont = recv_user;
         ec->regs.set_pt (pt->id);
@@ -213,8 +210,6 @@ void Ec::sys_reply()
 
                 if (ec->cont == ret_user_sysexit)
                     ec->cont = sys_call;
-                else if (ec->cont == xcpu_return)
-                    ec->regs.set_status (Sys_regs::BAD_HYP, false);
             }
         }
 
@@ -225,9 +220,7 @@ void Ec::sys_reply()
 
         bool fpu = false;
 
-        assert (current()->cont != ret_xcpu_reply);
-
-        if (EXPECT_TRUE ((ec->cont == ret_user_sysexit) || ec->cont == xcpu_return))
+        if (EXPECT_TRUE (ec->cont == ret_user_sysexit))
             src->save (ec->utcb);
         else if (ec->cont == ret_user_iret)
             fpu = src->save_exc (&ec->regs);
@@ -784,53 +777,6 @@ void Ec::sys_assign_gsi()
     r->set_msi (Gsi::set (gsi, r->cpu(), rid));
 
     sys_finish<Sys_regs::SUCCESS>();
-}
-
-void Ec::sys_xcpu_call()
-{
-    Sys_call *s = static_cast<Sys_call *>(current()->sys_regs());
-
-    Capability cap = Space_obj::lookup (s->pt());
-    if (EXPECT_FALSE (sanitize_cap(cap, Kobject::PT))) {
-        trace (TRACE_ERROR, "%s: Bad PT CAP (%#lx)", __func__, s->pt());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    Pt *pt = static_cast<Pt *>(cap.obj());
-    Ec *ec = pt->ec;
-
-    if (EXPECT_FALSE (current()->cpu == ec->cpu || !(cap.prm() & Pt::PERM_XCPU))) {
-        trace (TRACE_ERROR, "%s: Bad CPU", __func__);
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
-
-    enum { UNUSED = 0, CNT = 0 };
-
-    current()->xcpu_sm = new Sm (Pd::current(), UNUSED, CNT);
-
-    Ec *xcpu_ec = new Ec (Pd::current(), Pd::current(), Ec::sys_call, ec->cpu, current());
-    Sc *xcpu_sc = new Sc (Pd::current(), xcpu_ec, xcpu_ec->cpu, Sc::current());
-
-    xcpu_sc->remote_enqueue();
-    current()->xcpu_sm->dn (false, 0);
-
-    ret_xcpu_reply();
-}
-
-void Ec::ret_xcpu_reply()
-{
-    assert (current()->xcpu_sm);
-
-    delete current()->xcpu_sm;
-    current()->xcpu_sm = nullptr;
-
-    if (current()->regs.status() != Sys_regs::SUCCESS) {
-        current()->cont = sys_call;
-        current()->regs.set_status (Sys_regs::SUCCESS, false);
-    } else
-        current()->cont = ret_user_sysexit;
-
-    current()->make_current();
 }
 
 bool Ec::sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask)
