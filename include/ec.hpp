@@ -56,7 +56,12 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         Unique_ptr<Utcb>   utcb;
         Unique_ptr<Vlapic> vlapic;
 
+        // The protection domain the EC will run in.
         Refptr<Pd>  pd;
+
+        // The protection domain that holds the UTCB or vLAPIC page.
+        Refptr<Pd>  pd_user_page;
+
         Ec *        partner {nullptr};
         Ec *        prev {nullptr};
         Ec *        next {nullptr};
@@ -123,12 +128,12 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
             // Cleanup user space mappings of kernel memory.
             if (e->user_utcb) {
-                e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
+                e->pd_user_page->Space_mem::insert (e->user_utcb, 0, 0, 0);
                 e->user_utcb = 0;
             }
 
             if (e->user_vlapic) {
-                e->pd->Space_mem::insert (e->user_vlapic, 0, 0, 0);
+                e->pd_user_page->Space_mem::insert (e->user_vlapic, 0, 0, 0);
                 e->user_vlapic = 0;
             }
         }
