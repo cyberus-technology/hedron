@@ -118,6 +118,7 @@ class Hip
             FEAT_IOMMU  = 1U << 0,
             FEAT_VMX    = 1U << 1,
             FEAT_SVM    = 1U << 2,
+            FEAT_UEFI   = 1U << 3,
         };
 
         static mword root_addr;

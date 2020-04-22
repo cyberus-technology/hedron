@@ -123,6 +123,10 @@ void Hip::build_mbi2 (Hip_mem *&mem, mword addr)
             auto cmdline_phys_addr = static_cast<uint32>(addr + cmdline_offset);
             Hip::add_mod (mem, tag->module(), cmdline_phys_addr);
         }
+
+        if (tag->type == Multiboot2::TAG_EFI_ST) {
+            set_feature(FEAT_UEFI);
+        }
     });
 }
 

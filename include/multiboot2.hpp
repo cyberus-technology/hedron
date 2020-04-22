@@ -29,6 +29,7 @@ enum {
     TAG_CMDLINE = 1,
     TAG_MODULE  = 3,
     TAG_MEMORY  = 6,
+    TAG_EFI_ST  = 12,
     TAG_ACPI_2  = 15,
 };
 
