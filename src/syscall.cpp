@@ -309,6 +309,7 @@ void Ec::sys_create_ec()
                      r->esp(),
                      (r->is_vcpu() ? Ec::CREATE_VCPU : 0)
                      | (r->use_apic_access_page() ? Ec::USE_APIC_ACCESS_PAGE : 0)
+                     | (r->map_user_page_in_owner() ? Ec::MAP_USER_PAGE_IN_OWNER : 0)
                      );
 
     if (!Space_obj::insert_root (ec)) {

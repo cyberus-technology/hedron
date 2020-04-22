@@ -149,19 +149,19 @@ exception numbers.
 
 ### In
 
-| *Register*  | *Content*            | *Description*                                                                                               |
-|-------------|----------------------|-------------------------------------------------------------------------------------------------------------|
-| ARG1[3:0]   | System Call Number   | Needs to be `HC_CREATE_EC`.                                                                                 |
-| ARG1[4]     | Global EC            | If set, create a global EC, otherwise a local EC.                                                           |
-| ARG1[5]     | vCPU                 | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
-| ARG1[6]     | Use APIC Access Page | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
-| ARG1[7]     |                      | Unused. Needs to be zero.                                                                                   |
-| ARG1[63:8]  | Destination Selector | A capability selector in the current PD that will point to the newly created EC.                            |
-| ARG2        | Parent PD            | A capability selector to a PD domain in which the new EC will execute in.                                   |
-| ARG3[11:0]  |                      | Unused. Needs to be zero.                                                                                   |
-| ARG3[63:12] | UTCB / vLAPIC Page   | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
-| ARG4        | Stack Pointer        | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
-| ARG5        | Event Base           | The Event Base of the newly created EC.                                                                     |
+| *Register*  | *Content*             | *Description*                                                                                               |
+|-------------|-----------------------|-------------------------------------------------------------------------------------------------------------|
+| ARG1[3:0]   | System Call Number    | Needs to be `HC_CREATE_EC`.                                                                                 |
+| ARG1[4]     | Global EC             | If set, create a global EC, otherwise a local EC.                                                           |
+| ARG1[5]     | vCPU                  | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
+| ARG1[6]     | Use APIC Access Page  | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
+| ARG1[7]     | User Page Destination | If 0, the UTCB / vLAPIC page will be mapped in the parent PD, otherwise it's mapped in the current PD.      |
+| ARG1[63:8]  | Destination Selector  | A capability selector in the current PD that will point to the newly created EC.                            |
+| ARG2        | Parent PD             | A capability selector to a PD domain in which the new EC will execute in.                                   |
+| ARG3[11:0]  |                       | Unused. Needs to be zero.                                                                                   |
+| ARG3[63:12] | UTCB / vLAPIC Page    | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
+| ARG4        | Stack Pointer         | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
+| ARG5        | Event Base            | The Event Base of the newly created EC.                                                                     |
 
 ### Out
 

@@ -206,6 +206,7 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         enum ec_creation_flags {
               CREATE_VCPU = 1 << 0,
               USE_APIC_ACCESS_PAGE = 1 << 1,
+              MAP_USER_PAGE_IN_OWNER = 1 << 2,
         };
 
         // Construct a normal execution context.
