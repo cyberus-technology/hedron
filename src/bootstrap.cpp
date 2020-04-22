@@ -21,6 +21,7 @@
 #include "compiler.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
+#include "lapic.hpp"
 #include "msr.hpp"
 #include "timeout_budget.hpp"
 
@@ -44,8 +45,11 @@ void bootstrap()
 
     Msr::write<uint64>(Msr::IA32_TSC, 0);
 
-    // Create root task
     if (Cpu::bsp()) {
+        // All CPUs are online.
+        Lapic::restore_low_memory();
+
+        // Create root task
         ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, true);
 
         Hip::add_check();

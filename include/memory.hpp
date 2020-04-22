@@ -63,3 +63,6 @@
 #define SPC_LOCAL_OBJ   (END_SPACE_LIM - 0x20000000)
 
 #define END_SPACE_LIM   (~0UL + 1)
+
+// To boot APs, we need a piece of memory below 1MB to put the AP boot code.
+#define APBOOT_ADDR     0x1000

@@ -37,11 +37,31 @@ unsigned    Lapic::freq_tsc;
 unsigned    Lapic::freq_bus;
 bool        Lapic::use_tsc_timer {false};
 
+static char __start_ap_backup[128];
+
+extern "C" char __start_ap[];
+extern "C" char __start_ap_end[];
+
 void Lapic::setup()
 {
     Paddr apic_base = Msr::read<Paddr>(Msr::IA32_APIC_BASE);
 
     Pd::kern->claim_mmio_page (CPU_LOCAL_APIC, apic_base & ~PAGE_MASK);
+}
+
+void Lapic::prepare_ap_boot()
+{
+    assert (static_cast<size_t>(__start_ap_end - __start_ap) < sizeof(__start_ap_backup));
+
+    void * const low_memory {Hpt::remap (APBOOT_ADDR)};
+
+    memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
+    memcpy(low_memory,        __start_ap, sizeof(__start_ap_backup));
+}
+
+void Lapic::restore_low_memory()
+{
+    memcpy(Hpt::remap (APBOOT_ADDR), __start_ap_backup, sizeof(__start_ap_backup));
 }
 
 void Lapic::init()
@@ -93,6 +113,7 @@ void Lapic::init()
     write (LAPIC_TMR_DCR, 0xb);
 
     if ((Cpu::bsp() = apic_base & 0x100)) {
+        prepare_ap_boot();
 
         send_ipi (0, 0, DLV_INIT, DSH_EXC_SELF);
 
@@ -109,9 +130,12 @@ void Lapic::init()
 
         trace (TRACE_APIC, "TSC:%u kHz BUS:%u kHz", freq_tsc, freq_bus);
 
-        send_ipi (0, 1, DLV_SIPI, DSH_EXC_SELF);
+        static_assert((APBOOT_ADDR & PAGE_MASK) == 0 and APBOOT_ADDR < (1 << 20),
+                      "The AP boot code needs to lie at a page boundary below 1 MB.");
+
+        send_ipi (0, APBOOT_ADDR >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
         Acpi::delay (1);
-        send_ipi (0, 1, DLV_SIPI, DSH_EXC_SELF);
+        send_ipi (0, APBOOT_ADDR >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
     set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, use_tsc_timer ? 2U << 17 : 0);

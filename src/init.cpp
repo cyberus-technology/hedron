@@ -34,7 +34,7 @@
 #include "multiboot2.hpp"
 #include "tss.hpp"
 
-char const *get_boot_type (mword magic)
+static char const *get_boot_type (mword magic)
 {
     switch (magic) {
         case Multiboot::MAGIC: return "MB1";
