@@ -34,7 +34,7 @@ void bootstrap()
 
     // Create idle EC
     Timeout_budget::init();
-    Ec::current() = new Ec (Pd::current() = &Pd::kern, Ec::idle, Cpu::id());
+    Ec::current() = new Ec (Pd::current() = &Pd::kern, Cpu::id());
     Ec::current()->add_ref();
     Pd::current()->add_ref();
     Space_obj::insert_root (Sc::current() = new Sc (&Pd::kern, Cpu::id(), Ec::current()));
@@ -53,7 +53,7 @@ void bootstrap()
         ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, true);
 
         Hip::add_check();
-        Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, false, false);
+        Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
         Sc *root_sc = new Sc (&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
         root_sc->remote_enqueue();
     }

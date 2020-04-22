@@ -33,9 +33,8 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
-// Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c)
-    : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
+Ec::Ec (Pd *own, unsigned c)
+    : Kobject (EC, static_cast<Space_obj *>(own)), cont (Ec::idle), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -43,7 +42,7 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c)
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
     : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), pd_user_page (p),
       cpu (static_cast<uint16>(c)), glb (!!f), evt (e)
 {
@@ -56,7 +55,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 
-    if (not vcpu) {
+    if (not (creation_flags & CREATE_VCPU)) {
         if (glb) {
             regs.cs  = SEL_USER_CODE;
             regs.ds  = SEL_USER_DATA;
@@ -120,7 +119,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 pd_user_page->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
                                                  vlapic_page_p);
 
-                if (use_apic_access_page) {
+                if (creation_flags & USE_APIC_ACCESS_PAGE) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
                 }
             }

@@ -194,11 +194,25 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         static Pd *sanitize_syscall_params(Sys_create_ec *);
 
+        NORETURN
+        static void idle();
+
     public:
         CPULOCAL_ACCESSOR(ec, current);
 
-        Ec (Pd *, void (*)(), unsigned);
-        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
+        // Special constructor for the idle thread.
+        Ec (Pd *own, unsigned c);
+
+        enum ec_creation_flags {
+              CREATE_VCPU = 1 << 0,
+              USE_APIC_ACCESS_PAGE = 1 << 1,
+        };
+
+        // Construct a normal execution context.
+        //
+        // creation_flags is a bit field of ec_creation_flags.
+        Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags);
+
         ~Ec();
 
         inline void add_tsc_offset (uint64 tsc)
@@ -391,9 +405,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         NORETURN
         static void sys_assign_gsi();
-
-        NORETURN
-        static void idle();
 
         NORETURN
         static void root_invoke();
