@@ -13,8 +13,7 @@ stages:
   variables:
     CATCH_VERSION: 'v2.9.1'
   before_script:
-    - apt-get update && apt-get -y install software-properties-common && add-apt-repository -y ppa:js-alien8/tup
-    - apt-get update && apt-get -y install gcc g++ pkg-config python3 python3-distutils git ninja-build tup curl
+    - apt-get update && apt-get -y install gcc g++ pkg-config python3 python3-distutils git ninja-build curl
     - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     - python3 get-pip.py
     - pip install --upgrade cmake
@@ -127,23 +126,6 @@ build:bionic:
     - .in_ubuntu_bionic
     - .with_ubuntu_builddeps
     - .build_release
-    - .except_for_releases
-
-build:bionic-tup:
-  stage: build
-  script:
-    - tup init
-    - tup variant configs/gcc-werror.config
-    - tup
-    - ./build-gcc-werror/test/unit/unit
-  artifacts:
-    expire_in: 1 week
-    paths:
-      - build-gcc-werror/src/hypervisor-x86_64
-      - build-gcc-werror/src/hypervisor-x86_64.elf32
-  extends:
-    - .in_ubuntu_bionic
-    - .with_ubuntu_builddeps
     - .except_for_releases
 
 build:bionic-make:
