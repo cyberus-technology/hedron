@@ -138,7 +138,9 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             }
         }
 
-        inline bool is_idle_ec() { return cont == idle; }
+        inline bool is_idle_ec() const { return cont == idle; }
+
+        inline bool is_vcpu() const { return not utcb; }
 
         static void free (Rcu_elem * a)
         {

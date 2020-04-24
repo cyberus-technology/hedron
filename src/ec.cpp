@@ -138,6 +138,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
+
+    assert (is_vcpu() == !!(creation_flags & CREATE_VCPU));
 }
 
 //De-constructor
@@ -145,10 +147,7 @@ Ec::~Ec()
 {
     pre_free(this);
 
-    // Everything below is vCPU related. We can't be a vCPU if we have a
-    // UTCB. As vLAPIC pages are optional, we can't use the vLAPIC page to check
-    // whether we are a vCPU.
-    if (not utcb) {
+    if (is_vcpu()) {
         if (Hip::feature() & Hip::FEAT_VMX) {
             delete regs.vmcs;
         } else if (Hip::feature() & Hip::FEAT_SVM) {
@@ -378,7 +377,7 @@ bool Ec::fixup (mword &eip)
 
 void Ec::die (char const *reason, Exc_regs *r)
 {
-    if (current()->utcb || current()->pd == &Pd::kern) {
+    if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else
