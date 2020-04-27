@@ -81,9 +81,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
     } else {
-
-        utcb = nullptr;
-
         regs.dst_portal = NUM_VMI - 2;
         regs.xcr0 = Cpu::XCR0_X87;
 
