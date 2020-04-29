@@ -161,7 +161,7 @@ void Ec::recv_user()
 {
     Ec *ec = current()->rcap;
 
-    ec->utcb->save (current()->utcb);
+    ec->utcb->save (current()->utcb.get());
 
     if (EXPECT_FALSE (ec->utcb->tcnt()))
         delegate<true>();
@@ -213,7 +213,7 @@ void Ec::sys_reply()
             }
         }
 
-        Utcb *src = current()->utcb;
+        Utcb *src = current()->utcb.get();
 
         if (EXPECT_FALSE (src->tcnt()))
             delegate<false>();
@@ -221,7 +221,7 @@ void Ec::sys_reply()
         bool fpu = false;
 
         if (EXPECT_TRUE (ec->cont == ret_user_sysexit))
-            src->save (ec->utcb);
+            src->save (ec->utcb.get());
         else if (ec->cont == ret_user_iret)
             fpu = src->save_exc (&ec->regs);
         else if (ec->cont == ret_user_vmresume)
@@ -307,8 +307,10 @@ void Ec::sys_create_ec()
                      r->evt(),
                      r->is_vcpu() ? r->vlapic_page() : r->utcb(),
                      r->esp(),
-                     r->is_vcpu(),
-                     r->use_apic_access_page());
+                     (r->is_vcpu() ? Ec::CREATE_VCPU : 0)
+                     | (r->use_apic_access_page() ? Ec::USE_APIC_ACCESS_PAGE : 0)
+                     | (r->map_user_page_in_owner() ? Ec::MAP_USER_PAGE_IN_OWNER : 0)
+                     );
 
     if (!Space_obj::insert_root (ec)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());

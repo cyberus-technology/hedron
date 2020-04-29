@@ -3,6 +3,7 @@ find_package(Catch2 REQUIRED)
 
 add_executable(test_unit
   atomic.cpp main.cpp math.cpp mtrr.cpp page_table.cpp static_vector.cpp string.cpp
+  unique_ptr.cpp
   )
 target_link_libraries(test_unit Catch2::Catch2)
 

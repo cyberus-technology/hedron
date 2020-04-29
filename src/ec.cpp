@@ -33,8 +33,8 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
-// Constructors
-Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *>(own)), cont (f), utcb (nullptr), pd (own), cpu (static_cast<uint16>(c)), glb (true), evt (0), user_utcb (0)
+Ec::Ec (Pd *own, unsigned c)
+    : Kobject (EC, static_cast<Space_obj *>(own)), cont (Ec::idle), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -42,15 +42,21 @@ Ec::Ec (Pd *own, void (*f)(), unsigned c) : Kobject (EC, static_cast<Space_obj *
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, bool vcpu, bool use_apic_access_page) : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p), cpu (static_cast<uint16>(c)), glb (!!f), evt (e), user_utcb (u)
+Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
+    : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p),
+      pd_user_page ((creation_flags & MAP_USER_PAGE_IN_OWNER) ? own : p),
+      cpu (static_cast<uint16>(c)), glb (!!f), evt (e)
 {
+    assert (u < USER_ADDR);
+    assert ((u & PAGE_MASK) == 0);
+
     // Make sure we consider the right CPUs for TLB shootdown
     pd->Space_mem::init (c);
 
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 
-    if (not vcpu) {
+    if (not (creation_flags & CREATE_VCPU)) {
         if (glb) {
             regs.cs  = SEL_USER_CODE;
             regs.ds  = SEL_USER_DATA;
@@ -61,19 +67,20 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         } else
             regs.set_sp (s);
 
-        utcb = new Utcb;
+        utcb = make_unique<Utcb>();
 
-        pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                               Buddy::ptr_to_phys (utcb));
+        user_utcb = u;
+
+        if (user_utcb) {
+            pd_user_page->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                                             Buddy::ptr_to_phys (utcb.get()));
+        }
 
         regs.dst_portal = NUM_EXC - 2;
 
         trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
     } else {
-
-        utcb = nullptr;
-
         regs.dst_portal = NUM_VMI - 2;
         regs.xcr0 = Cpu::XCR0_X87;
 
@@ -100,15 +107,17 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
 
             if (u) {
-                /* allocate+register the virtual LAPIC page and map it into user space */
-                vlapic_page         = Buddy::allocator.alloc(0, Buddy::FILL_0);
-                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic_page);
+                /* Allocate and register the virtual LAPIC page and map it into user space. */
+                user_vlapic    = u;
+                vlapic         = make_unique<Vlapic>();
+
+                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic.get());
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                                       vlapic_page_p);
+                pd_user_page->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                                                 vlapic_page_p);
 
-                if (use_apic_access_page) {
+                if (creation_flags & USE_APIC_ACCESS_PAGE) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
                 }
             }
@@ -126,6 +135,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
+
+    assert (is_vcpu() == !!(creation_flags & CREATE_VCPU));
 }
 
 //De-constructor
@@ -133,19 +144,16 @@ Ec::~Ec()
 {
     pre_free(this);
 
-    if (utcb) {
-        delete utcb;
-        return;
+    if (is_vcpu()) {
+        if (Hip::feature() & Hip::FEAT_VMX) {
+            delete regs.vmcs;
+        } else if (Hip::feature() & Hip::FEAT_SVM) {
+            delete regs.vmcb;
+        }
+    } else {
+        assert (not vlapic);
     }
 
-    if (vlapic_page) {
-        Buddy::allocator.free(reinterpret_cast<mword>(vlapic_page));
-    }
-
-    if (Hip::feature() & Hip::FEAT_VMX)
-        delete regs.vmcs;
-    else if (Hip::feature() & Hip::FEAT_SVM)
-        delete regs.vmcb;
 }
 
 void Ec::handle_hazard (mword hzd, void (*func)())
@@ -366,7 +374,7 @@ bool Ec::fixup (mword &eip)
 
 void Ec::die (char const *reason, Exc_regs *r)
 {
-    if (current()->utcb || current()->pd == &Pd::kern) {
+    if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
         trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
     } else

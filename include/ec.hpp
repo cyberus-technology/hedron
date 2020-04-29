@@ -39,8 +39,8 @@
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "si.hpp"
-
-#include "stdio.hpp"
+#include "unique_ptr.hpp"
+#include "vlapic.hpp"
 
 class Utcb;
 
@@ -51,9 +51,17 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
     private:
         void        (*cont)() ALIGNED (16);
         Cpu_regs    regs;
-        Ec *        rcap;
-        Utcb *      utcb;
+        Ec *        rcap {nullptr};
+
+        Unique_ptr<Utcb>   utcb;
+        Unique_ptr<Vlapic> vlapic;
+
+        // The protection domain the EC will run in.
         Refptr<Pd>  pd;
+
+        // The protection domain that holds the UTCB or vLAPIC page.
+        Refptr<Pd>  pd_user_page;
+
         Ec *        partner {nullptr};
         Ec *        prev {nullptr};
         Ec *        next {nullptr};
@@ -64,11 +72,14 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
             };
             uint32  xcpu;
         };
-        unsigned const evt;
+        unsigned const evt {0};
         Timeout_hypercall timeout {this};
-        mword          user_utcb;
 
-        void * vlapic_page {nullptr};
+        // Virtual Address of the UTCB in userspace.
+        mword user_utcb {0};
+
+        // Virtual Address of the vLAPIC page in userspace.
+        mword user_vlapic {0};
 
         Fpu fpu;
 
@@ -115,14 +126,21 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
             assert(e);
 
-            // remove mapping in page table
+            // Cleanup user space mappings of kernel memory.
             if (e->user_utcb) {
-                e->pd->Space_mem::insert (e->user_utcb, 0, 0, 0);
+                e->pd_user_page->Space_mem::insert (e->user_utcb, 0, 0, 0);
                 e->user_utcb = 0;
+            }
+
+            if (e->user_vlapic) {
+                e->pd_user_page->Space_mem::insert (e->user_vlapic, 0, 0, 0);
+                e->user_vlapic = 0;
             }
         }
 
-        inline bool is_idle_ec() { return cont == idle; }
+        inline bool is_idle_ec() const { return cont == idle; }
+
+        inline bool is_vcpu() const { return not utcb; }
 
         static void free (Rcu_elem * a)
         {
@@ -178,11 +196,26 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         static Pd *sanitize_syscall_params(Sys_create_ec *);
 
+        NORETURN
+        static void idle();
+
     public:
         CPULOCAL_ACCESSOR(ec, current);
 
-        Ec (Pd *, void (*)(), unsigned);
-        Ec (Pd *, mword, Pd *, void (*)(), unsigned, unsigned, mword, mword, bool, bool);
+        // Special constructor for the idle thread.
+        Ec (Pd *own, unsigned c);
+
+        enum ec_creation_flags {
+              CREATE_VCPU = 1 << 0,
+              USE_APIC_ACCESS_PAGE = 1 << 1,
+              MAP_USER_PAGE_IN_OWNER = 1 << 2,
+        };
+
+        // Construct a normal execution context.
+        //
+        // creation_flags is a bit field of ec_creation_flags.
+        Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags);
+
         ~Ec();
 
         inline void add_tsc_offset (uint64 tsc)
@@ -375,9 +408,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
 
         NORETURN
         static void sys_assign_gsi();
-
-        NORETURN
-        static void idle();
 
         NORETURN
         static void root_invoke();

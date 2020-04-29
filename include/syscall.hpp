@@ -60,6 +60,8 @@ class Sys_create_ec : public Sys_regs
 
         inline bool is_vcpu() const { return flags() & 0x2; }
 
+        inline bool map_user_page_in_owner() const { return flags() & 0x8; }
+
         inline mword utcb() const { return is_vcpu() ? 0 : ARG_3 & ~0xfff; }
 
         inline mword vlapic_page() const { return is_vcpu() ? ARG_3 & ~0xfff : 0; }
