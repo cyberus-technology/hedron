@@ -7,25 +7,150 @@ This document describes the system call interface for the NOVA microhypervisor.
 
 # Data Structures
 
+## Capabilities
+
+A capability is a reference to a kernel object plus associated access
+permissions. Capabilities are opaque and immutable to the user. They
+cannot be inspected, modified or addressed directly. Instead user
+programs access a capability via a capability selector.
+
+There are three different kinds of capabilities:
+
+- memory capabilites,
+- port I/O capabilites, and
+- object capabilities.
+
+Each kind of capability has unique capability selectors that form the
+respective capability _space_ for this kind. Which kind of
+capabilities a selector refers to depends on context.
+
+Memory and port I/O capabilities are created by the
+microhypervisor. Object capabilities can be created using `create_*`
+system calls, see below. When capabilities are created they hold all
+permissions. When capabilities are delegated their permissions can be
+downgraded, but never upgraded.
+
+## Capability Permissions
+
+Each type of object capability has a different set of permission
+bits. There are five permission bits in total. Permissions marked with
+0 are unused and should be specified as zero.
+
+### Memory Capabilities
+
+| 4 | 3 | 2 | 1 | 0 |
+|---|---|---|---|---|
+| 0 | 0 | x | w | r |
+
+Memory capabilities can control eXecute, Write, and Read
+permissions. Depending on the platform execute permissions may imply
+read permissions.
+
+### Port I/O Capabilities
+
+| 4 | 3 | 2 | 1 | 0 |
+|---|---|---|---|---|
+| 0 | 0 | 0 | 0 | a |
+
+I/O port capabilities only have a single permission that allows
+reading and writing the I/O port.
+
+### Protection Domain (PD) Object Capability
+
+| 4  | 3  | 2  | 1  | 0  |
+|----|----|----|----|----|
+| sm | pt | sc | ec | pd |
+
+A Protection Domain capability has a permission bit for each object
+capability. If the bit is set, only then can this PD be used to create
+the corresponding object capability type with a `create_*` system call.
+
+### Execution Context (EC) Object Capability
+
+| 4 | 3  | 2  | 1 | 0  |
+|---|----|----|---|----|
+| 0 | pt | sc | 0 | ct |
+
+If `ct` is set, the `ec_ctrl` system call is permitted.
+
+If `sc` is set, `create_sc` is allowed to bind a scheduling context.
+
+if `pt` is set, `create_pt` can bind a portal.
+
+### Scheduling Context (SC) Object Capability
+
+| 4 | 3 | 2 | 1 | 0  |
+|---|---|---|---|----|
+| 0 | 0 | 0 | 0 | ct |
+
+If `ct` is set, the `sc_ctrl` system call is permitted.
+
+### Portal (PT) Object Capability
+
+| 4 | 3 | 2 | 1    | 0  |
+|---|---|---|------|----|
+| 0 | 0 | 0 | call | ct |
+
+If `ct` is set, the `pt_ctrl` system call is permitted.
+
+If `call` is set, the portal can be traversed using `call`.
+
+### Semaphore (SM) Object Capability
+
+| 4 | 3 | 2 | 1    | 0  |
+|---|---|---|------|----|
+| 0 | 0 | 0 | down | up |
+
+If `up` is set, the `sm_ctrl` system call is permitted to do an "up" operation.
+
+If `down` is set, the `sm_ctrl` system call is permitted to do a "down" operation.
+
 ## Capability Range Descriptor (CRD)
 
-A CRD is a 64-bit value.
+A CRD is a 64-bit value that describes a range of capabilities of a
+specific kind. The three kinds of capabilities have slightly different
+layouts for their CRDs.
 
-| *Field*     | *Content* | *Description*                                         |
-|-------------|-----------|-------------------------------------------------------|
-| `CRD[1:0]`  | Type      | Selects which type of capabilities the CRD refers to. |
-| `CRD[63:2]` | ...       | Depends on capability type.                           |
+### Null CRD
+
+A null CRD does not refer to any capabilites.
+
+| *Field*     | *Content* | *Description*                   |
+|-------------|-----------|---------------------------------|
+| `CRD[1:0]`  | Kind      | Needs to be `0` for a Null CRD. |
+| `CRD[63:2]` | Ignored   | Should be set to zero.          |
 
 ### Memory CRD
 
-| *Field*      | *Content*          | *Description*                                                                                    |
-|--------------|--------------------|--------------------------------------------------------------------------------------------------|
-| `CRD[1:0]`   | Type               | Needs to be `1` for memory capbilities.                                                          |
-| `CRD[2]`     | Read Permission    |                                                                                                  |
-| `CRD[3]`     | Write Permission   |                                                                                                  |
-| `CRD[4]`     | Execute Permission |                                                                                                  |
-| `CRD[11:7]`  | Order              | Describes the size of this memory region as power-of-two of pages of memory.                     |
-| `CRD[63:12]` | Base               | The page number of the first page in the region. This number must be naturally aligned by order. |
+A memory CRD refers to pages of address space.
+
+| *Field*      | *Content*   | *Description*                                                                                    |
+|--------------|-------------|--------------------------------------------------------------------------------------------------|
+| `CRD[1:0]`   | Kind        | Needs to be `1` for memory capabilities.                                                         |
+| `CRD[6:2]`   | Permissions | See memory capability permissions above.                                                         |
+| `CRD[11:7]`  | Order       | Describes the size of this memory region as power-of-two of pages of memory.                     |
+| `CRD[63:12]` | Base        | The page number of the first page in the region. This number must be naturally aligned by order. |
+
+### Port I/O CRD
+
+A port I/O CRD refers to a range of x86 I/O ports.
+
+| *Field*      | *Content*   | *Description*                                                             |
+|--------------|-------------|---------------------------------------------------------------------------|
+| `CRD[1:0]`   | Kind        | Needs to be `2` for port I/O capabilities.                                |
+| `CRD[6:2]`   | Permissions | See I/O port capability permissions above.                                |
+| `CRD[11:7]`  | Order       | Describes the size of the range as power-of-two of individual I/O ports.  |
+| `CRD[63:12]` | Base        | The address of the first I/O port. It must be naturally aligned by order. |
+|              |             |                                                                           |
+
+### Object CRD
+
+| *Field*      | *Content*   | *Description*                                                                            |
+|--------------|-------------|------------------------------------------------------------------------------------------|
+| `CRD[1:0]`   | Kind        | Needs to be `3` for object capabilities.                                                 |
+| `CRD[6:2]`   | Permissions | Permissions are specific to each object capability type. See the relevant section above. |
+| `CRD[11:7]`  | Order       | Describes the size of this region as power-of-two of individual capabilities.            |
+| `CRD[63:12]` | Base        | The first capability selector. This number must be naturally aligned by order.           |
 
 ## Hotspot
 
