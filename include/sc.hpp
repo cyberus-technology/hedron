@@ -26,7 +26,7 @@
 
 class Ec;
 
-class Sc : public Kobject, public Refcount
+class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
 {
     friend class Queue<Sc>;
 

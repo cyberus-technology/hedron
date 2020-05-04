@@ -25,7 +25,7 @@
 
 class Ec;
 
-class Pt : public Kobject
+class Pt : public Typed_kobject<Kobject::Type::PT>
 {
     private:
         static Slab_cache cache;

@@ -25,7 +25,7 @@
 #include "ec.hpp"
 #include "si.hpp"
 
-class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, public Si
+class Sm : public Typed_kobject<Kobject::Type::SM>, public Refcount, public Queue<Ec>, public Queue<Si>, public Si
 {
     private:
         mword counter;

@@ -44,7 +44,7 @@
 
 class Utcb;
 
-class Ec : public Kobject, public Refcount, public Queue<Sc>
+class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queue<Sc>
 {
     friend class Queue<Ec>;
 
@@ -191,10 +191,6 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
         void save_fpu();
 
         void transfer_fpu (Ec *);
-
-        static bool sanitize_cap(Capability &cap, Kobject::Type expected_type, mword perm_mask = 0);
-
-        static Pd *sanitize_syscall_params(Sys_create_ec *);
 
         NORETURN
         static void idle();
