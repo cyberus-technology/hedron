@@ -204,10 +204,9 @@ void Ec::reply (void (*c)(), Sm * sm)
 
 void Ec::sys_reply()
 {
-    Ec *ec = current()->rcap;
     Sm *sm = nullptr;
 
-    if (EXPECT_TRUE (ec)) {
+    if (Ec *ec = current()->rcap; EXPECT_TRUE (ec)) {
 
         Sys_reply *r = static_cast<Sys_reply *>(current()->sys_regs());
         if (EXPECT_FALSE (r->sm())) {
@@ -323,10 +322,8 @@ void Ec::sys_create_sc()
     Sys_create_sc *r = static_cast<Sys_create_sc *>(current()->sys_regs());
 
     trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SC:%#lx EC:%#lx P:%#x Q:%#x", current(), r->sel(), r->ec(), r->qpd().prio(), r->qpd().quantum());
-
-    Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::SC));
-
-    if (EXPECT_FALSE (not pd_parent)) {
+    if (Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::SC));
+        EXPECT_FALSE (not pd_parent)) {
         trace (TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
     }
@@ -366,9 +363,8 @@ void Ec::sys_create_pt()
 
     trace (TRACE_SYSCALL, "EC:%p SYS_CREATE PT:%#lx EC:%#lx EIP:%#lx", current(), r->sel(), r->ec(), r->eip());
 
-    Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::PT));
-
-    if (EXPECT_FALSE (not pd_parent)) {
+    if (Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::PT));
+        EXPECT_FALSE (not pd_parent)) {
         trace (TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
     }
@@ -401,9 +397,8 @@ void Ec::sys_create_sm()
 
     trace (TRACE_SYSCALL, "EC:%p SYS_CREATE SM:%#lx CNT:%lu", current(), r->sel(), r->cnt());
 
-    Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::SM));
-
-    if (EXPECT_FALSE (not pd_parent)) {
+    if (Pd *pd_parent = capability_cast<Pd>(Space_obj::lookup (r->pd()), perm_for_obj_creation (Type::SM));
+        EXPECT_FALSE (not pd_parent)) {
         trace (TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
     }
@@ -473,9 +468,7 @@ void Ec::sys_revoke()
         Rcu::call(pd);
 
     if (EXPECT_FALSE (r->sm())) {
-        Sm *sm = capability_cast<Sm>(Space_obj::lookup (r->sm()), 1);
-
-        if (EXPECT_FALSE (sm)) {
+        if (Sm *sm = capability_cast<Sm>(Space_obj::lookup (r->sm()), 1); sm) {
             sm->add_to_rcu();
         }
     }
