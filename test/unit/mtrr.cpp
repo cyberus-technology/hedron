@@ -53,7 +53,7 @@ struct Fake_sdm_msr : public Fake_msr_base
 {
     public:
 
-        template <typename T> static T read (Register r)
+        static uint64 read (Register r)
         {
             uint64 res = 0;
 
@@ -85,7 +85,7 @@ struct Fake_sdm_msr : public Fake_msr_base
             case 0x20B: res = 0x0000000FFF800800ULL; break;
             }
 
-            return static_cast<T>(res);
+            return res;
         }
 };
 

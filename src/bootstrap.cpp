@@ -43,7 +43,7 @@ void bootstrap()
     // Barrier: wait for all ECs to arrive here
     for (Atomic::add (barrier, 1UL); barrier != Cpu::online; pause()) ;
 
-    Msr::write<uint64>(Msr::IA32_TSC, 0);
+    Msr::write (Msr::IA32_TSC, 0);
 
     if (Cpu::bsp()) {
         // All CPUs are online.

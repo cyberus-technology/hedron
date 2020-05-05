@@ -32,18 +32,18 @@ void Mca::init(Cpu_info const &cpu_info)
     if (EXPECT_FALSE (!Cpu::feature (Cpu::FEAT_MCA)))
         return;
 
-    uint32 cap = Msr::read<uint32>(Msr::IA32_MCG_CAP);
+    mword cap = Msr::read (Msr::IA32_MCG_CAP);
 
-    Msr::write<uint32>(Msr::IA32_MCG_STATUS, 0);
+    Msr::write (Msr::IA32_MCG_STATUS, 0);
 
     if (cap & 0x100)
-        Msr::write<uint64>(Msr::IA32_MCG_CTL, ~0ULL);
+        Msr::write (Msr::IA32_MCG_CTL, ~0ULL);
 
     Cpulocal::get().mca_banks = cap & 0xff;
 
     for (unsigned i = (cpu_info.vendor == Cpu_vendor::INTEL and cpu_info.family == 6 and cpu_info.model < 0x1a); i < banks(); i++) {
-        Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_CTL), ~0ULL);
-        Msr::write<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_STATUS), 0);
+        Msr::write (Msr::Register (4 * i + Msr::IA32_MCI_CTL), ~0ULL);
+        Msr::write (Msr::Register (4 * i + Msr::IA32_MCI_STATUS), 0);
     }
 }
 
@@ -52,6 +52,6 @@ void Mca::vector()
     uint64 sts;
 
     for (unsigned i = 0; i < banks(); i++)
-        if ((sts = Msr::read<uint64>(Msr::Register (4 * i + Msr::IA32_MCI_STATUS))) & 1ULL << 63)
+        if ((sts = Msr::read (Msr::Register (4 * i + Msr::IA32_MCI_STATUS))) & 1ULL << 63)
             trace (TRACE_ERROR, "Machine Check B%u: %#018llx", i, sts);
 }

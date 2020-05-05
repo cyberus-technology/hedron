@@ -39,8 +39,8 @@ mword Cpulocal::setup_cpulocal()
     local.cpu_id = cpu_id;
 
     mword gs_base {reinterpret_cast<mword>(&local.self)};
-    Msr::write<mword> (Msr::IA32_GS_BASE, gs_base);
-    Msr::write<mword> (Msr::IA32_KERNEL_GS_BASE, 0);
+    Msr::write (Msr::IA32_GS_BASE, gs_base);
+    Msr::write (Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
 }

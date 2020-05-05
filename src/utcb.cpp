@@ -232,7 +232,7 @@ bool Utcb::load_vmx (Cpu_regs *regs)
     if (m & Mtd::TSC) {
         tsc_val = rdtsc();
         tsc_off = Vmcs::read (Vmcs::TSC_OFFSET);
-        tsc_aux = Msr::read<uint32>(Msr::IA32_TSC_AUX);
+        tsc_aux = static_cast<uint32>(Msr::read (Msr::IA32_TSC_AUX));
     }
 
     if (m & Mtd::EFER_PAT) {
@@ -428,7 +428,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
 
     if (mtd & Mtd::TSC) {
         Vmcs::write (Vmcs::TSC_OFFSET, tsc_off);
-        Msr::write<uint32>(Msr::IA32_TSC_AUX, tsc_aux);
+        Msr::write (Msr::IA32_TSC_AUX, tsc_aux);
     }
 
     if (mtd & Mtd::EFER_PAT) {

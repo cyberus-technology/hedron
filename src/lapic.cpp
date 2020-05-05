@@ -44,7 +44,7 @@ extern "C" char __start_ap_end[];
 
 void Lapic::setup()
 {
-    Paddr apic_base = Msr::read<Paddr>(Msr::IA32_APIC_BASE);
+    Paddr apic_base = Msr::read (Msr::IA32_APIC_BASE);
 
     Pd::kern->claim_mmio_page (CPU_LOCAL_APIC, apic_base & ~PAGE_MASK);
 }
@@ -66,7 +66,7 @@ void Lapic::restore_low_memory()
 
 void Lapic::init()
 {
-    Paddr apic_base = Msr::read<Paddr>(Msr::IA32_APIC_BASE);
+    Paddr apic_base = Msr::read (Msr::IA32_APIC_BASE);
 
     Msr::write (Msr::IA32_APIC_BASE, apic_base | 0x800);
 
@@ -166,7 +166,7 @@ void Lapic::error_handler()
 
 void Lapic::timer_handler()
 {
-    bool expired = (use_tsc_timer ? Msr::read<uint64>(Msr::IA32_TSC_DEADLINE) : read (LAPIC_TMR_CCR)) == 0;
+    bool expired = (use_tsc_timer ? Msr::read (Msr::IA32_TSC_DEADLINE) : read (LAPIC_TMR_CCR)) == 0;
     if (expired)
         Timeout::check();
 

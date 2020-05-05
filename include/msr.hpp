@@ -107,33 +107,11 @@ class Msr
             FEATURE_VMX_O_SMX       = 1ul << 2
         };
 
-        template <typename T>
-        static inline T read (Register msr)
-        {
-            mword h, l;
-            asm volatile ("rdmsr" : "=a" (l), "=d" (h) : "c" (msr));
-            return static_cast<T>(static_cast<uint64>(h) << 32 | l);
-        }
+        // Access MSRs without safety net, if the MSR access causes #GP.
+        static uint64 read (Register msr);
+        static void write (Register msr, uint64 val);
 
-        template <typename T>
-        static inline T read_safe (Register msr)
-        {
-            mword h {0}, l {0};
-            asm volatile (FIXUP_CALL(rdmsr)
-                          : "+a" (l), "+d" (h) : "c" (msr));
-            return static_cast<T>(static_cast<uint64>(h) << 32 | l);
-        }
-
-        template <typename T>
-        static inline void write (Register msr, T val)
-        {
-            asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
-        }
-
-        template <typename T>
-        static inline void write_safe (Register msr, T val)
-        {
-            asm volatile (FIXUP_CALL(wrmsr)
-                          : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
-        }
+        // Access MSRs with safety net, when the MSR causes #GP.
+        static uint64 read_safe (Register msr);
+        static void write_safe (Register msr, uint64 val);
 };
