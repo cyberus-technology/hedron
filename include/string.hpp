@@ -21,7 +21,7 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
-extern "C" NONNULL
+extern "C" USED NONNULL
 inline void *memcpy (void *d, void const *s, size_t n)
 {
     mword dummy;
@@ -32,7 +32,7 @@ inline void *memcpy (void *d, void const *s, size_t n)
     return d;
 }
 
-extern "C" NONNULL
+extern "C" USED NONNULL
 inline void *memset (void *d, int c, size_t n)
 {
     mword dummy;
