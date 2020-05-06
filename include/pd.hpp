@@ -68,6 +68,11 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
         // is not claimed by the hypervisor.
         bool const is_priv = false;
 
+        // When PDs have this property, they are allowed to access certain
+        // hardware properties in a potentially unsafe way. In particular, this
+        // grants partial MSR access.
+        bool const is_passthrough = false;
+
         void *get_access_page();
 
         INIT Pd();
@@ -75,6 +80,7 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
 
         enum pd_creation_flags {
             IS_PRIVILEGED = 1 << 0,
+            IS_PASSTHROUGH = 1 << 1,
         };
 
         // Construct a protection domain.

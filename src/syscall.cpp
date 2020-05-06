@@ -548,6 +548,11 @@ void Ec::sys_pd_ctrl_msr_access()
     Sys_pd_ctrl_msr_access *s = static_cast<Sys_pd_ctrl_msr_access *>(current()->sys_regs());
     bool success = false;
 
+    if (EXPECT_FALSE (not Pd::current()->is_passthrough)) {
+        trace (TRACE_ERROR, "%s: PD without passthrough permission accessed MSRs", __func__);
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
     if (s->is_write()) {
         success = Msr::user_write (Msr::Register (s->msr_index()), s->msr_value());
     } else {
