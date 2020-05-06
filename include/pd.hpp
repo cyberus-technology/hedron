@@ -73,7 +73,14 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
         INIT Pd();
         ~Pd();
 
-        Pd (Pd *own, mword sel, mword a, bool priv = false);
+        enum pd_creation_flags {
+            IS_PRIVILEGED = 1 << 0,
+        };
+
+        // Construct a protection domain.
+        //
+        // creation_flags is a bit field of pd_creation_flags.
+        Pd (Pd *own, mword sel, mword a, int creation_flags);
 
         HOT
         inline void make_current()

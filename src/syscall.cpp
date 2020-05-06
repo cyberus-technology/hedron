@@ -254,7 +254,7 @@ void Ec::sys_create_pd()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Pd *pd = new Pd (Pd::current(), r->sel(), parent_pd_cap.prm());
+    Pd *pd = new Pd (Pd::current(), r->sel(), parent_pd_cap.prm(), 0);
     if (!Space_obj::insert_root (pd)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete pd;

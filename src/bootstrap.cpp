@@ -50,7 +50,7 @@ void bootstrap()
         Lapic::restore_low_memory();
 
         // Create root task
-        ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, true);
+        ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED);
 
         Hip::add_check();
         Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
