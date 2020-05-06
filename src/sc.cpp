@@ -28,12 +28,12 @@
 INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Sc::cache (sizeof (Sc), 32);
 
-Sc::Sc (Pd *own, mword sel, Ec *e) : Typed_kobject (static_cast<Space_obj *>(own), sel, 0x1, free), ec (e), cpu (static_cast<unsigned>(sel)), prio (0), budget (Lapic::freq_tsc * 1000), left (0), prev (nullptr), next (nullptr)
+Sc::Sc (Pd *own, mword sel, Ec *e) : Typed_kobject (static_cast<Space_obj *>(own), sel, Sc::PERM_ALL, free), ec (e), cpu (static_cast<unsigned>(sel)), prio (0), budget (Lapic::freq_tsc * 1000), left (0), prev (nullptr), next (nullptr)
 {
     trace (TRACE_SYSCALL, "SC:%p created (PD:%p Kernel)", this, own);
 }
 
-Sc::Sc (Pd *own, mword sel, Ec *e, unsigned c, unsigned p, unsigned q) : Typed_kobject (static_cast<Space_obj *>(own), sel, 0x1, free), ec (e), cpu (c), prio (p), budget (Lapic::freq_tsc / 1000 * q), left (0), prev (nullptr), next (nullptr)
+Sc::Sc (Pd *own, mword sel, Ec *e, unsigned c, unsigned p, unsigned q) : Typed_kobject (static_cast<Space_obj *>(own), sel, Sc::PERM_ALL, free), ec (e), cpu (c), prio (p), budget (Lapic::freq_tsc / 1000 * q), left (0), prev (nullptr), next (nullptr)
 {
     trace (TRACE_SYSCALL, "SC:%p created (EC:%p CPU:%#x P:%#x Q:%#x)", this, e, c, p, q);
 }

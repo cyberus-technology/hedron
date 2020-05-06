@@ -328,7 +328,7 @@ void Ec::sys_create_sc()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), 1U << static_cast<int>(Type::SC));
+    Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), Ec::PERM_CREATE_SC);
 
     if (EXPECT_FALSE (not ec)) {
         trace (TRACE_ERROR, "%s: Non-EC CAP (%#lx)", __func__, r->ec());
@@ -369,7 +369,7 @@ void Ec::sys_create_pt()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), 1U << static_cast<int>(Type::PT));
+    Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), Ec::PERM_CREATE_PT);
 
     if (EXPECT_FALSE (not ec)) {
         trace (TRACE_ERROR, "%s: Non-EC CAP (%#lx)", __func__, r->ec());
@@ -406,7 +406,7 @@ void Ec::sys_create_sm()
     Sm *sm;
 
     if (r->sm()) {
-        Sm *si = capability_cast<Sm>(Space_obj::lookup (r->sm()), 0x1);
+        Sm *si = capability_cast<Sm>(Space_obj::lookup (r->sm()), Sm::PERM_UP);
 
         if (EXPECT_FALSE (not si)) {
             trace (TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
@@ -468,7 +468,7 @@ void Ec::sys_revoke()
         Rcu::call(pd);
 
     if (EXPECT_FALSE (r->sm())) {
-        if (Sm *sm = capability_cast<Sm>(Space_obj::lookup (r->sm()), 1); sm) {
+        if (Sm *sm = capability_cast<Sm>(Space_obj::lookup (r->sm()), Sm::PERM_UP); sm) {
             sm->add_to_rcu();
         }
     }
@@ -562,7 +562,7 @@ void Ec::sys_ec_ctrl()
     switch (r->op()) {
         case 0:
         {
-            Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), 1U << 0);
+            Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), Ec::PERM_EC_CTRL);
 
             if (EXPECT_FALSE (not ec)) {
                 trace (TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
@@ -620,7 +620,7 @@ void Ec::sys_ec_ctrl()
 void Ec::sys_sc_ctrl()
 {
     Sys_sc_ctrl *r = static_cast<Sys_sc_ctrl *>(current()->sys_regs());
-    Sc *sc = capability_cast<Sc>(Space_obj::lookup (r->sc()), 1U << 0);
+    Sc *sc = capability_cast<Sc>(Space_obj::lookup (r->sc()), Sc::PERM_SC_CTRL);
 
     if (EXPECT_FALSE (not sc)) {
         trace (TRACE_ERROR, "%s: Bad SC CAP (%#lx)", __func__, r->sc());

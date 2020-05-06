@@ -196,6 +196,16 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         static void idle();
 
     public:
+
+        // Capability permission bitmask.
+        enum {
+            PERM_EC_CTRL = 1U << 0,
+            PERM_CREATE_SC = 1U << 2,
+            PERM_CREATE_PT = 1U << 3,
+
+            PERM_ALL = PERM_EC_CTRL | PERM_CREATE_SC | PERM_CREATE_PT,
+        };
+
         CPULOCAL_ACCESSOR(ec, current);
 
         // Special constructor for the idle thread.

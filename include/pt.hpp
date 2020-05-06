@@ -36,7 +36,11 @@ class Pt : public Typed_kobject<Kobject::Type::PT>
 
     public:
 
-        enum { PERM_CTRL = 1, PERM_CALL = 2 };
+        // Capability permission bitmask.
+        enum {
+            PERM_CTRL = 1U << 0,
+            PERM_CALL = 1U << 1,
+        };
 
         Refptr<Ec> const ec;
         Mtd        const mtd;

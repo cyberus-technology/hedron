@@ -44,6 +44,14 @@ class Sm : public Typed_kobject<Kobject::Type::SM>, public Refcount, public Queu
 
     public:
 
+        // Capability permission bitmask.
+        enum {
+            PERM_UP = 1U << 0,
+            PERM_DOWN = 1U << 1,
+
+            PERM_ALL = PERM_UP | PERM_DOWN,
+        };
+
         mword reset(bool l = false) {
             if (l) lock.lock();
             mword c = counter;
