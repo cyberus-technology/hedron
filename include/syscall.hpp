@@ -45,6 +45,8 @@ class Sys_create_pd : public Sys_regs
         inline unsigned long pd() const { return ARG_2; }
 
         inline Crd crd() const { return Crd (ARG_3); }
+
+        inline bool is_passthrough() const { return flags() & 0x1; }
 };
 
 class Sys_create_ec : public Sys_regs
