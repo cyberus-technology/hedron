@@ -34,7 +34,7 @@ INIT_PRIORITY (PRIO_SLAB)
 Slab_cache Ec::cache (sizeof (Ec), 32);
 
 Ec::Ec (Pd *own, unsigned c)
-    : Kobject (EC, static_cast<Space_obj *>(own)), cont (Ec::idle), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
+    : Typed_kobject (static_cast<Space_obj *>(own)), cont (Ec::idle), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
 {
     trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
@@ -43,7 +43,7 @@ Ec::Ec (Pd *own, unsigned c)
 }
 
 Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
-    : Kobject (EC, static_cast<Space_obj *>(own), sel, 0xd, free, pre_free), cont (f), pd (p),
+    : Typed_kobject (static_cast<Space_obj *>(own), sel, Ec::PERM_ALL, free, pre_free), cont (f), pd (p),
       pd_user_page ((creation_flags & MAP_USER_PAGE_IN_OWNER) ? own : p),
       cpu (static_cast<uint16>(c)), glb (!!f), evt (e)
 {

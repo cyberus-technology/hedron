@@ -31,7 +31,7 @@ ALIGNED(32) No_destruct<Pd> Pd::kern;
 
 // Constructor for the initial kernel PD.
 Pd::Pd ()
-    : Kobject (PD, static_cast<Space_obj *>(this))
+    : Typed_kobject (static_cast<Space_obj *>(this))
 {
     Mtrr_state::get().init();
 
@@ -46,7 +46,7 @@ Pd::Pd ()
 }
 
 Pd::Pd (Pd *own, mword sel, mword a, bool priv)
-    : Kobject (PD, static_cast<Space_obj *>(own), sel, a, free, pre_free),
+    : Typed_kobject (static_cast<Space_obj *>(own), sel, a, free, pre_free),
       Space_mem (Hpt::boot_hpt()), is_priv(priv)
 {
 }

@@ -26,7 +26,7 @@
 
 class Ec;
 
-class Sc : public Kobject, public Refcount
+class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
 {
     friend class Queue<Sc>;
 
@@ -62,6 +62,14 @@ class Sc : public Kobject, public Refcount
         }
 
     public:
+
+        // Capability permission bitmask.
+        enum {
+            PERM_SC_CTRL = 1U << 0,
+
+            PERM_ALL = PERM_SC_CTRL,
+        };
+
         CPULOCAL_ACCESSOR(sc, current);
         CPULOCAL_ACCESSOR(sc, ctr_link);
         CPULOCAL_ACCESSOR(sc, ctr_loop);

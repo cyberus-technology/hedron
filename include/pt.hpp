@@ -25,7 +25,7 @@
 
 class Ec;
 
-class Pt : public Kobject
+class Pt : public Typed_kobject<Kobject::Type::PT>
 {
     private:
         static Slab_cache cache;
@@ -36,7 +36,11 @@ class Pt : public Kobject
 
     public:
 
-        enum { PERM_CTRL = 1, PERM_CALL = 2 };
+        // Capability permission bitmask.
+        enum {
+            PERM_CTRL = 1U << 0,
+            PERM_CALL = 1U << 1,
+        };
 
         Refptr<Ec> const ec;
         Mtd        const mtd;

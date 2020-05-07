@@ -27,15 +27,8 @@
 
 class Kobject : public Mdb
 {
-    private:
-        uint8 objtype;
-
-        static void free (Rcu_elem *) {}
-
-    protected:
-        Spinlock lock;
-
-        enum Type
+    public:
+        enum class Type : uint8
         {
             PD,
             EC,
@@ -44,11 +37,28 @@ class Kobject : public Mdb
             SM,
         };
 
-        explicit Kobject (Type t, Space *s, mword b = 0, mword a = 0, void (*f)(Rcu_elem *) = free, void (*pref)(Rcu_elem *) = nullptr ) : Mdb (s, reinterpret_cast<mword>(this), b, a, f, pref), objtype (t) {}
-
-    public:
         inline Type type() const
         {
-            return Type (objtype);
+            return objtype;
         }
+
+    private:
+        Type objtype;
+
+    protected:
+        Spinlock lock;
+
+        explicit Kobject (Type t, Space *s, mword b, mword a, void (*f)(Rcu_elem *), void (*pref)(Rcu_elem *)) : Mdb (s, reinterpret_cast<mword>(this), b, a, f, pref), objtype (t) {}
+};
+
+template <Kobject::Type static_type>
+class Typed_kobject : public Kobject
+{
+    public:
+        // This member makes capability_cast work.
+        static constexpr Type kobject_type {static_type};
+
+        Typed_kobject(Space *s, mword b = 0, mword a = 0, void (*f)(Rcu_elem *) = [] (Rcu_elem *) {}, void (*pref)(Rcu_elem *) = nullptr)
+            : Kobject (static_type, s, b, a, f, pref)
+        {}
 };

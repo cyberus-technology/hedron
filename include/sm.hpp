@@ -25,7 +25,7 @@
 #include "ec.hpp"
 #include "si.hpp"
 
-class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, public Si
+class Sm : public Typed_kobject<Kobject::Type::SM>, public Refcount, public Queue<Ec>, public Queue<Si>, public Si
 {
     private:
         mword counter;
@@ -43,6 +43,14 @@ class Sm : public Kobject, public Refcount, public Queue<Ec>, public Queue<Si>, 
         }
 
     public:
+
+        // Capability permission bitmask.
+        enum {
+            PERM_UP = 1U << 0,
+            PERM_DOWN = 1U << 1,
+
+            PERM_ALL = PERM_UP | PERM_DOWN,
+        };
 
         mword reset(bool l = false) {
             if (l) lock.lock();
