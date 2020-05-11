@@ -14,7 +14,7 @@ set boot_file [lindex $argv 0]
 set common_args "-smp $cpus -machine q35,accel=tcg -cpu Westmere -m 2048 -serial stdio -net none -display none"
 
 if { $argc >= 2 && [lindex $argv 1] == "-i" } {
-    set args "-drive format=raw,file=$boot_file"
+    set args "-drive format=raw,snapshot=on,file=$boot_file"
 } else {
     set kernel_args serial
     set args "-kernel $boot_file -append $kernel_args"
