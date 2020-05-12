@@ -1,3 +1,5 @@
+set(HEAP_SIZE_MB 64 CACHE STRING "The amount of hypervisor heap space in MiB.")
+
 # Preprocess the linker script
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
@@ -100,7 +102,7 @@ target_link_options(hypervisor PRIVATE
   -static
   -nostdlib
   -Wl,--defsym=GIT_VER=0x${GIT_VER},--gc-sections,--warn-common,-n,--build-id=none
-  -Wl,--defsym=CONFIG_KERNEL_MEMORY=64M
+  -Wl,--defsym=CONFIG_KERNEL_MEMORY=${HEAP_SIZE_MB}M
   -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
   )
 
