@@ -1,5 +1,5 @@
-NOVA Microhypervisor
-====================
+NOVA Microhypervisor (Cyberus Fork)
+===================================
 
 This is the source code for the NOVA microhypervisor fork of Cyberus
 Technology.
@@ -17,8 +17,8 @@ stacks, and policies. On machines with hardware virtualization features,
 multiple unmodified guest operating systems can run concurrently on top of
 the microhypervisor.
 
-**This code is experimental and not feature complete. If it breaks, you get
-  to keep both pieces.**
+**Please talk to us before using it in any production system, because
+there are important caveats for some use cases.**
 
 
 Supported platforms
