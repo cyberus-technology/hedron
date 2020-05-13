@@ -45,6 +45,8 @@ class Sys_create_pd : public Sys_regs
         inline unsigned long pd() const { return ARG_2; }
 
         inline Crd crd() const { return Crd (ARG_3); }
+
+        inline bool is_passthrough() const { return flags() & 0x1; }
 };
 
 class Sys_create_ec : public Sys_regs
@@ -62,9 +64,7 @@ class Sys_create_ec : public Sys_regs
 
         inline bool map_user_page_in_owner() const { return flags() & 0x8; }
 
-        inline mword utcb() const { return is_vcpu() ? 0 : ARG_3 & ~0xfff; }
-
-        inline mword vlapic_page() const { return is_vcpu() ? ARG_3 & ~0xfff : 0; }
+        inline mword user_page() const { return ARG_3 & ~0xfff; }
 
         inline mword esp() const { return ARG_4; }
 
@@ -133,6 +133,7 @@ class Sys_pd_ctrl : public Sys_regs
             LOOKUP,
             MAP_ACCESS_PAGE,
             DELEGATE,
+            MSR_ACCESS,
         };
 
         ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
@@ -166,6 +167,16 @@ class Sys_pd_ctrl_delegate : public Sys_regs
         }
 
         inline Crd dst_crd() const { return Crd {ARG_5}; }
+};
+
+class Sys_pd_ctrl_msr_access : public Sys_regs
+{
+    public:
+        inline uint32 msr_index() const { return static_cast<uint32>(ARG_1 >> 8); }
+        inline uint64 msr_value() const { return ARG_2; }
+        inline bool   is_write()  const { return flags() & 4; }
+
+        inline void set_msr_value(uint64 v) { ARG_2 = v; }
 };
 
 class Sys_reply : public Sys_regs

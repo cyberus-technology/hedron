@@ -77,8 +77,8 @@ Cpu_info Cpu::check_features()
     cpu_info.vendor = Cpu_vendor (v);
 
     if (cpu_info.vendor == Cpu_vendor::INTEL) {
-        Msr::write<uint64>(Msr::IA32_BIOS_SIGN_ID, 0);
-        cpu_info.platform = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_PLATFORM_ID) >> 50) & 7;
+        Msr::write (Msr::IA32_BIOS_SIGN_ID, 0);
+        cpu_info.platform = static_cast<unsigned>(Msr::read (Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
     switch (static_cast<uint8>(eax)) {
@@ -108,7 +108,7 @@ Cpu_info Cpu::check_features()
             break;
     }
 
-    cpu_info.patch = static_cast<unsigned>(Msr::read<uint64>(Msr::IA32_BIOS_SIGN_ID) >> 32);
+    cpu_info.patch = static_cast<unsigned>(Msr::read (Msr::IA32_BIOS_SIGN_ID) >> 32);
 
     cpuid (0x80000000, eax, ebx, ecx, edx);
 
@@ -148,7 +148,7 @@ Cpu_info Cpu::check_features()
     // Disable C1E on AMD Rev.F and beyond because it stops LAPIC clock
     if (cpu_info.vendor == Cpu_vendor::AMD)
         if (cpu_info.family > 0xf || (cpu_info.family == 0xf && cpu_info.model >= 0x40))
-            Msr::write (Msr::AMD_IPMR, Msr::read<uint32>(Msr::AMD_IPMR) & ~(3ul << 27));
+            Msr::write (Msr::AMD_IPMR, Msr::read (Msr::AMD_IPMR) & ~(3ul << 27));
 
     // Disable features based on command line arguments
     if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
@@ -164,12 +164,12 @@ void Cpu::setup_thermal()
 
 void Cpu::setup_sysenter()
 {
-    Msr::write<mword>(Msr::IA32_STAR,  static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE) << 32);
-    Msr::write<mword>(Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
+    Msr::write (Msr::IA32_STAR,  static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE) << 32);
+    Msr::write (Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
 
     // RFLAGS bits TF, NT, DF, and IF need to be disabled when entering the kernel. Clearing everything else is not
     // harmful, so don't be picky here.
-    Msr::write<mword>(Msr::IA32_FMASK, ~static_cast<mword>(0));
+    Msr::write (Msr::IA32_FMASK, ~static_cast<mword>(0));
 }
 
 void Cpu::init()
@@ -210,9 +210,9 @@ void Cpu::init()
     set_cr4 (cr4);
 
     // Some BIOSes don't enable VMX and lock the feature control MSR
-    auto feature_ctrl = Msr::read<uint32>(Msr::IA32_FEATURE_CONTROL);
+    auto feature_ctrl = Msr::read (Msr::IA32_FEATURE_CONTROL);
     if (!(feature_ctrl & Msr::FEATURE_LOCKED)) {
-        Msr::write<uint32>(Msr::IA32_FEATURE_CONTROL, feature_ctrl | Msr::FEATURE_VMX_O_SMX | Msr::FEATURE_LOCKED);
+        Msr::write (Msr::IA32_FEATURE_CONTROL, feature_ctrl | Msr::FEATURE_VMX_O_SMX | Msr::FEATURE_LOCKED);
     }
 
     Vmcs::init();

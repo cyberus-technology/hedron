@@ -62,19 +62,18 @@ class Generic_mtrr_state
 
         unsigned default_type;
 
-        template <typename T>
-        T read (size_t index) { return MSR::template read<T> (typename MSR::Register (index)); }
+        uint64 read (size_t index) { return MSR::read (typename MSR::Register (index)); }
 
     public:
         INIT void init()
         {
-            size_t const count {read<uint32>(MSR::IA32_MTRR_CAP) & 0xff};
+            size_t const count {read (MSR::IA32_MTRR_CAP) & 0xff};
 
-            default_type = read<uint32>(MSR::IA32_MTRR_DEF_TYPE) & 0xff;
+            default_type = read (MSR::IA32_MTRR_DEF_TYPE) & 0xff;
 
             for (size_t i = 0; i < count; i++) {
-                Mtrr const mtrr {read<uint64> (MSR::IA32_MTRR_PHYS_BASE + 2 * i),
-                                 read<uint64> (MSR::IA32_MTRR_PHYS_MASK + 2 * i)};
+                Mtrr const mtrr {read (MSR::IA32_MTRR_PHYS_BASE + 2 * i),
+                                 read (MSR::IA32_MTRR_PHYS_MASK + 2 * i)};
 
                 if (mtrr.valid()) {
                     var_mtrr.emplace_back (mtrr);
@@ -86,19 +85,19 @@ class Generic_mtrr_state
         {
             if (phys < 0x80000) {
                 next = 1 + (phys | 0xffff);
-                return static_cast<unsigned>(read<uint64>(MSR::IA32_MTRR_FIX64K_BASE) >>
+                return static_cast<unsigned>(read (MSR::IA32_MTRR_FIX64K_BASE) >>
                                              (phys >> 13 & 0x38)) & 0xff;
             }
 
             if (phys < 0xc0000) {
                 next = 1 + (phys | 0x3fff);
-                return static_cast<unsigned>(read<uint64>(MSR::IA32_MTRR_FIX16K_BASE + (phys >> 17 & 0x1)) >>
+                return static_cast<unsigned>(read (MSR::IA32_MTRR_FIX16K_BASE + (phys >> 17 & 0x1)) >>
                                              (phys >> 11 & 0x38)) & 0xff;
             }
 
             if (phys < 0x100000) {
                 next = 1 + (phys | 0xfff);
-                return static_cast<unsigned>(read<uint64>(MSR::IA32_MTRR_FIX4K_BASE  + (phys >> 15 & 0x7)) >>
+                return static_cast<unsigned>(read (MSR::IA32_MTRR_FIX4K_BASE  + (phys >> 15 & 0x7)) >>
                                              (phys >>  9 & 0x38)) & 0xff;
             }
 

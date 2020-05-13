@@ -38,6 +38,7 @@ class Msr
             IA32_PLATFORM_ID        = 0x17,
             IA32_APIC_BASE          = 0x1b,
             IA32_FEATURE_CONTROL    = 0x3a,
+            IA32_TSC_ADJUST         = 0x3b,
             IA32_BIOS_SIGN_ID       = 0x8b,
             IA32_SMM_MONITOR_CTL    = 0x9b,
             IA32_MTRR_CAP           = 0xfe,
@@ -56,6 +57,7 @@ class Msr
             IA32_MTRR_FIX64K_BASE   = 0x250,
             IA32_MTRR_FIX16K_BASE   = 0x258,
             IA32_MTRR_FIX4K_BASE    = 0x268,
+            IA32_MTRR_FIX4K_F8000   = 0x26f,
             IA32_CR_PAT             = 0x277,
             IA32_MTRR_DEF_TYPE      = 0x2ff,
 
@@ -80,10 +82,12 @@ class Msr
             IA32_VMX_TRUE_CPU0      = 0x48e,
             IA32_VMX_TRUE_EXIT      = 0x48f,
             IA32_VMX_TRUE_ENTRY     = 0x490,
+            IA32_VMX_VMFUNC         = 0x491,
 
             IA32_DS_AREA            = 0x600,
             IA32_TSC_DEADLINE       = 0x6e0,
             IA32_EXT_XAPIC          = 0x800,
+            IA32_EXT_XAPIC_END      = 0x8ff,
             IA32_EFER               = 0xc0000080,
             IA32_STAR               = 0xc0000081,
             IA32_LSTAR              = 0xc0000082,
@@ -107,33 +111,21 @@ class Msr
             FEATURE_VMX_O_SMX       = 1ul << 2
         };
 
-        template <typename T>
-        static inline T read (Register msr)
-        {
-            mword h, l;
-            asm volatile ("rdmsr" : "=a" (l), "=d" (h) : "c" (msr));
-            return static_cast<T>(static_cast<uint64>(h) << 32 | l);
-        }
+        // Access MSRs without safety net.
+        //
+        // Care must be taken to ensure that the MSR actually exists and the
+        // value that is written is sane, because there is no error handling and
+        // the kernel will panic with a #GP in case something invalid is
+        // accessed.
+        static uint64 read (Register msr);
+        static void write (Register msr, uint64 val);
 
-        template <typename T>
-        static inline T read_safe (Register msr)
-        {
-            mword h {0}, l {0};
-            asm volatile (FIXUP_CALL(rdmsr)
-                          : "+a" (l), "+d" (h) : "c" (msr));
-            return static_cast<T>(static_cast<uint64>(h) << 32 | l);
-        }
+        // Same as read/write above, but any access that causes #GP is
+        // ignored. That means writes are dropped and reads return 0.
+        static uint64 read_safe (Register msr);
+        static void write_safe (Register msr, uint64 val);
 
-        template <typename T>
-        static inline void write (Register msr, T val)
-        {
-            asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
-        }
-
-        template <typename T>
-        static inline void write_safe (Register msr, T val)
-        {
-            asm volatile (FIXUP_CALL(wrmsr)
-                          : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(static_cast<uint64>(val) >> 32)), "c" (msr));
-        }
+        // Access MSRs from userspace for passthrough PDs.
+        static bool user_write (Register msr, uint64  val);
+        static bool user_read  (Register msr, uint64 &val);
 };

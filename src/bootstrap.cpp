@@ -43,14 +43,14 @@ void bootstrap()
     // Barrier: wait for all ECs to arrive here
     for (Atomic::add (barrier, 1UL); barrier != Cpu::online; pause()) ;
 
-    Msr::write<uint64>(Msr::IA32_TSC, 0);
+    Msr::write (Msr::IA32_TSC, 0);
 
     if (Cpu::bsp()) {
         // All CPUs are online.
         Lapic::restore_low_memory();
 
         // Create root task
-        ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, true);
+        ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
 
         Hip::add_check();
         Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);

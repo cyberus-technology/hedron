@@ -213,19 +213,23 @@ System call parameters are passed in registers. The following register names are
 | `ARG3`         | `RDX`             |
 | `ARG4`         | `RAX`             |
 | `ARG5`         | `R8`              |
+|----------------|-------------------|
 | `OUT1`         | `RDI`             |
+| `OUT2`         | `RSI`             |
 
 ## Hypercall Numbers
 
 Hypercalls are identified by these values.
 
-| *Constant*            | *Value* |
-|-----------------------|---------|
-| `HC_CREATE_EC`        | 3       |
-| `HC_REVOKE`           | 7       |
-| `HC_PD_CTRL`          | 8       |
-| `HC_PD_CTRL_DELEGATE` | 2       |
-
+| *Constant*              | *Value* |
+|-------------------------|---------|
+| `HC_CREATE_PD`          | 2       |
+| `HC_CREATE_EC`          | 3       |
+| `HC_REVOKE`             | 7       |
+| `HC_PD_CTRL`            | 8       |
+|-------------------------|---------|
+| `HC_PD_CTRL_DELEGATE`   | 2       |
+| `HC_PD_CTRL_MSR_ACCESS` | 3       |
 
 ## Hypercall Status
 
@@ -294,6 +298,47 @@ exception numbers.
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
+## create_pd
+
+`create_pd` creates a PD kernel object and a capability pointing to
+the newly created kernel object. Protection domains are security
+boundaries. They consist of several capability spaces. The host,
+guest, and DMA capability spaces are the address spaces that are used
+for ECs belonging to this PD or DMA from assigned devices. Similarly,
+port I/O from ECs in this PD is checked against the port I/O
+capability space.
+
+PDs are roughly analogous to processes.
+
+There are two special kinds of PDs. The PD (roottask) initially
+created by the microhypervisor is privileged in that it directly
+delegates arbitrary physical memory, I/O ports, and interrupts. This
+property cannot be passed on.
+
+The other special kind of PD is a _passthrough_ PD that has special
+hardware access. The roottask is such a passthrough PD and can pass
+this right on via the corresponding flag.
+
+**Passthrough access is inherently insecure and should not be granted to
+untrusted userspace PDs.**
+
+### In
+
+| *Register* | *Content*            | *Description*                                                                                                      |
+|------------|----------------------|--------------------------------------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number   | Needs to be `HC_CREATE_PD`.                                                                                        |
+| ARG1[4]    | Passthrough Access   | If set and calling PD has the same right, create a PD with special passthrough permissions. See above for details. |
+| ARG1[7:5]  | Ignored              | Should be set to zero.                                                                                             |
+| ARG1[63:8] | Destination Selector | A capability selector in the current PD that will point to the newly created PD.                                   |
+| ARG2       | Parent PD            | A capability selector to the parent PD.                                                                            |
+| ARG3       | CRD                  | A capability range descriptor. If this is not empty, the capabilities will be delegated from parent to new PD.     |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
 ## pd_ctrl
 
 The `pd_ctrl` system call allows modification of protection domain
@@ -338,6 +383,33 @@ page table.
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## pd_ctrl_msr_access
+
+`pd_ctrl_msr_access` allows access to MSRs from passthrough PDs (see
+`create_pd`). Several MSRs that are critical to the operation of the
+microhypervisor are not accessible.
+
+**MSR access is inherently insecure and should not be granted to
+untrusted userspace PDs.**
+
+### In
+
+| *Register* | *Content*          | *Description*                                                         |
+|------------|--------------------|-----------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_PD_CTRL`.                                             |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_PD_CTRL_MSR_ACCESS`.                                  |
+| ARG1[6]    | Write              | If set, the access is a write to the MSR. Otherwise, the MSR is read. |
+| ARG1[7]    | Ignored            | Should be set to zero.                                                |
+| ARG1[63:8] | MSR Index          | The MSR to read or write.                                             |
+| ARG2       | MSR Value          | If the operation is a write, the value to write, otherwise ignored.   |
+
+### Out
+
+| *Register* | *Content* | *Description*                                |
+|------------|-----------|----------------------------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
+| OUT2       | MSR Value | MSR value when the operation is a read. |
 
 ## revoke
 

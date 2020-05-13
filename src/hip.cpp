@@ -58,8 +58,8 @@ void Hip::build (mword magic, mword addr)
     h->sel_vmi           = NUM_VMI;
     h->cfg_page          = PAGE_SIZE;
     h->cfg_utcb          = PAGE_SIZE;
-    h->initial_pat       = Msr::read<uint64> (Msr::IA32_CR_PAT);
-    h->msr_platform_info = Msr::read_safe<uint64> (Msr::MSR_PLATFORM_INFO);
+    h->initial_pat       = Msr::read (Msr::IA32_CR_PAT);
+    h->msr_platform_info = Msr::read_safe (Msr::MSR_PLATFORM_INFO);
 
     Hip_ioapic *ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);

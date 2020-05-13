@@ -45,9 +45,10 @@ Pd::Pd ()
     Space_pio::addreg (0, 1UL << 16, 7);
 }
 
-Pd::Pd (Pd *own, mword sel, mword a, bool priv)
+Pd::Pd (Pd *own, mword sel, mword a, int creation_flags)
     : Typed_kobject (static_cast<Space_obj *>(own), sel, a, free, pre_free),
-      Space_mem (Hpt::boot_hpt()), is_priv(priv)
+      Space_mem (Hpt::boot_hpt()), is_priv(creation_flags & IS_PRIVILEGED),
+      is_passthrough(creation_flags & IS_PASSTHROUGH)
 {
 }
 

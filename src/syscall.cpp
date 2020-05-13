@@ -254,7 +254,8 @@ void Ec::sys_create_pd()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Pd *pd = new Pd (Pd::current(), r->sel(), parent_pd_cap.prm());
+    Pd *pd = new Pd (Pd::current(), r->sel(), parent_pd_cap.prm(),
+                     (r->is_passthrough() and parent_pd->is_passthrough) ? Pd::IS_PASSTHROUGH : 0);
     if (!Space_obj::insert_root (pd)) {
         trace (TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete pd;
@@ -271,14 +272,14 @@ void Ec::sys_create_ec()
 {
     Sys_create_ec *r = static_cast<Sys_create_ec *>(current()->sys_regs());
 
-    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UTCB:%#lx ESP:%#lx EVT:%#x", current(), r->sel(), r->cpu(), r->utcb(), r->esp(), r->evt());
+    trace (TRACE_SYSCALL, "EC:%p SYS_CREATE EC:%#lx CPU:%#x UPAGE:%#lx ESP:%#lx EVT:%#x", current(), r->sel(), r->cpu(), r->user_page(), r->esp(), r->evt());
 
     if (EXPECT_FALSE (!Hip::cpu_online (r->cpu()))) {
         trace (TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
         sys_finish<Sys_regs::BAD_CPU>();
     }
 
-    if (EXPECT_FALSE (!r->utcb() && !(Hip::feature() & (Hip::FEAT_VMX | Hip::FEAT_SVM)))) {
+    if (EXPECT_FALSE (r->is_vcpu() && !(Hip::feature() & (Hip::FEAT_VMX | Hip::FEAT_SVM)))) {
         trace (TRACE_ERROR, "%s: VCPUs not supported", __func__);
         sys_finish<Sys_regs::BAD_FTR>();
     }
@@ -290,8 +291,8 @@ void Ec::sys_create_ec()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    if (EXPECT_FALSE (r->utcb() >= USER_ADDR || r->utcb() & PAGE_MASK)) {
-        trace (TRACE_ERROR, "%s: Invalid UTCB address (%#lx)", __func__, r->utcb());
+    if (EXPECT_FALSE (r->user_page() >= USER_ADDR || r->user_page() & PAGE_MASK)) {
+        trace (TRACE_ERROR, "%s: Invalid UPAGE address (%#lx)", __func__, r->user_page());
         sys_finish<Sys_regs::BAD_PAR>();
     }
 
@@ -301,7 +302,7 @@ void Ec::sys_create_ec()
                      r->flags() & 1 ? static_cast<void (*)()>(send_msg<ret_user_iret>) : nullptr,
                      r->cpu(),
                      r->evt(),
-                     r->is_vcpu() ? r->vlapic_page() : r->utcb(),
+                     r->user_page(),
                      r->esp(),
                      (r->is_vcpu() ? Ec::CREATE_VCPU : 0)
                      | (r->use_apic_access_page() ? Ec::USE_APIC_ACCESS_PAGE : 0)
@@ -543,6 +544,32 @@ void Ec::sys_pd_ctrl_delegate()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_pd_ctrl_msr_access()
+{
+    Sys_pd_ctrl_msr_access *s = static_cast<Sys_pd_ctrl_msr_access *>(current()->sys_regs());
+    bool success = false;
+
+    if (EXPECT_FALSE (not Pd::current()->is_passthrough)) {
+        trace (TRACE_ERROR, "%s: PD without passthrough permission accessed MSRs", __func__);
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (s->is_write()) {
+        success = Msr::user_write (Msr::Register (s->msr_index()), s->msr_value());
+    } else {
+        uint64 value = 0;
+
+        success = Msr::user_read (Msr::Register (s->msr_index()), value);
+        s->set_msr_value (value);
+    }
+
+    if (success) {
+        sys_finish<Sys_regs::SUCCESS>();
+    } else {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
 void Ec::sys_pd_ctrl()
 {
     Sys_pd_ctrl *s = static_cast<Sys_pd_ctrl *>(current()->sys_regs());
@@ -550,6 +577,7 @@ void Ec::sys_pd_ctrl()
     case Sys_pd_ctrl::LOOKUP:          { sys_pd_ctrl_lookup();          }
     case Sys_pd_ctrl::MAP_ACCESS_PAGE: { sys_pd_ctrl_map_access_page(); }
     case Sys_pd_ctrl::DELEGATE:        { sys_pd_ctrl_delegate();        }
+    case Sys_pd_ctrl::MSR_ACCESS:      { sys_pd_ctrl_msr_access();      }
     };
 
     sys_finish<Sys_regs::BAD_PAR>();
