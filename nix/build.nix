@@ -5,6 +5,9 @@
   nix-gitignore,
   lib,
   buildType ? "Debug",
+  # Specify a kernel heap size in MiB. This overrides the default and
+  # is advisable for more sophisticated workloads.
+  heapSizeMiB ? null
 }:
 
 let
@@ -18,6 +21,8 @@ stdenv.mkDerivation {
   checkInputs = [ catch2 ];
 
   cmakeBuildType = buildType;
+  cmakeFlags = lib.optional (heapSizeMiB != null) "-DHEAP_SIZE_MB=${toString heapSizeMiB}";
+
   hardeningDisable = [ "all" ];
   enableParallelBuilding = true;
   doCheck = true;
