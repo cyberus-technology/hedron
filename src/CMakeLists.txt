@@ -1,18 +1,6 @@
 set(HEAP_SIZE_MB 64 CACHE STRING "The amount of hypervisor heap space in MiB.")
 
-# Preprocess the linker script
-add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld
-  COMMAND ${CMAKE_CXX_COMPILER}
-  ARGS
-  -x c -E ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld -P
-  -o ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
-  -I ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  VERBATIM
-  )
-
-add_executable(hypervisor hypervisor-x86_64.ld
+add_executable(hypervisor
   # Assembly sources
   entry.S  start.S
 
@@ -98,12 +86,29 @@ else()
   set(GIT_VER "00000000")
 endif()
 
+# Preprocess and use the custom linker script
+set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld)
+
+add_custom_command(
+  OUTPUT ${HYPERVISOR-LINKER-SCRIPT}
+  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld
+  COMMAND ${CMAKE_CXX_COMPILER}
+  ARGS
+  -x c -E ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld -P
+  -o ${HYPERVISOR-LINKER-SCRIPT}
+  -I ${CMAKE_CURRENT_SOURCE_DIR}/../include
+  VERBATIM
+  )
+add_custom_target(hypervisor-ld-script-generated DEPENDS ${HYPERVISOR-LINKER-SCRIPT})
+
+add_dependencies(hypervisor hypervisor-ld-script-generated)
+set_target_properties(hypervisor PROPERTIES LINK_DEPENDS ${HYPERVISOR-LINKER-SCRIPT})
 target_link_options(hypervisor PRIVATE
   -static
   -nostdlib
   -Wl,--defsym=GIT_VER=0x${GIT_VER},--gc-sections,--warn-common,-n,--build-id=none
   -Wl,--defsym=CONFIG_KERNEL_MEMORY=${HEAP_SIZE_MB}M
-  -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld
+  -Wl,-T ${HYPERVISOR-LINKER-SCRIPT}
   )
 
 install(TARGETS hypervisor DESTINATION share/NOVA COMPONENT NOVA_Application)
