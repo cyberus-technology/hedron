@@ -187,6 +187,9 @@ void Hip::add_check()
     h->dmar_table    = Acpi::dmar;
     h->hpet_base     = Hpet::list == nullptr ? 0 : Hpet::list->phys;
 
+    // Userspace needs to read the table's signature to figure out what it got.
+    h->xsdt_rdst_table = Acpi::xsdt ? Acpi::xsdt : Acpi::rsdt;
+
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(PAGE_H);
                        ptr < reinterpret_cast<uint16 const *>(PAGE_H + h->length);

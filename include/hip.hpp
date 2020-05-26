@@ -105,6 +105,8 @@ class Hip
 
         uint64     cap_vmx_sec_exec;       // 0x60
 
+        uint64     xsdt_rdst_table;        // 0x68
+
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
         Hip_mem    mem_desc[];
