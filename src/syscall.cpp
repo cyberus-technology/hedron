@@ -776,26 +776,34 @@ void Ec::sys_assign_gsi()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
-extern "C"
-void (*const syscall[])() =
+void Ec::syscall_handler()
 {
-    &Ec::sys_call,
-    &Ec::sys_reply,
-    &Ec::sys_create_pd,
-    &Ec::sys_create_ec,
-    &Ec::sys_create_sc,
-    &Ec::sys_create_pt,
-    &Ec::sys_create_sm,
-    &Ec::sys_revoke,
-    &Ec::sys_pd_ctrl,
-    &Ec::sys_ec_ctrl,
-    &Ec::sys_sc_ctrl,
-    &Ec::sys_pt_ctrl,
-    &Ec::sys_sm_ctrl,
-    &Ec::sys_assign_pci,
-    &Ec::sys_assign_gsi,
-    &Ec::sys_finish<Sys_regs::BAD_HYP>,
-};
+    // System call handler functions are all marked noreturn.
+
+    switch (current()->sys_regs()->id()) {
+    case hypercall_id::HC_CALL: sys_call();
+    case hypercall_id::HC_REPLY: sys_reply();
+    case hypercall_id::HC_REVOKE: sys_revoke();
+
+    case hypercall_id::HC_ASSIGN_PCI: sys_assign_pci();
+    case hypercall_id::HC_ASSIGN_GSI: sys_assign_gsi();
+
+    case hypercall_id::HC_CREATE_PD: sys_create_pd();
+    case hypercall_id::HC_CREATE_EC: sys_create_ec();
+    case hypercall_id::HC_CREATE_SC: sys_create_sc();
+    case hypercall_id::HC_CREATE_PT: sys_create_pt();
+    case hypercall_id::HC_CREATE_SM: sys_create_sm();
+
+    case hypercall_id::HC_PD_CTRL: sys_pd_ctrl();
+    case hypercall_id::HC_EC_CTRL: sys_ec_ctrl();
+    case hypercall_id::HC_SC_CTRL: sys_sc_ctrl();
+    case hypercall_id::HC_PT_CTRL: sys_pt_ctrl();
+    case hypercall_id::HC_SM_CTRL: sys_sm_ctrl();
+
+    default:
+        Ec::sys_finish<Sys_regs::BAD_HYP>();
+    }
+}
 
 template void Ec::sys_finish<Sys_regs::COM_ABT>();
 template void Ec::send_msg<Ec::ret_user_vmresume>();

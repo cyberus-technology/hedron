@@ -197,8 +197,7 @@ entry_sysenter:         mov     PREG(sp), PREG(11)
                         mov     %gs:8, PREG(sp) // Per_cpu::sys_entry_stack
                         SAVE_GPR
                         RESTORE_STACK
-                        and     $0xf, %ARG_1
-                        jmp     *syscall(,%ARG_1,PTR_SIZE)
+                        jmp     syscall_handler
 
 /*
  * VMX Entry

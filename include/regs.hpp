@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "api.hpp"
 #include "arch.hpp"
 #include "atomic.hpp"
 #include "hazards.hpp"
@@ -70,6 +71,8 @@ class Sys_regs
             BAD_CPU,
             BAD_DEV,
         };
+
+        inline hypercall_id id() const { return static_cast<hypercall_id>(ARG_1 & 0xF); }
 
         inline unsigned flags() const { return ARG_1 >> 4 & 0xf; }
 
