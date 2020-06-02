@@ -121,8 +121,6 @@ class Sys_revoke : public Sys_regs
         inline mword pd() const { return ARG_3; }
 
         inline mword sm() const { return ARG_1 >> 8; }
-
-        inline void rem(Pd * p) { ARG_3 = reinterpret_cast<mword>(p); }
 };
 
 class Sys_pd_ctrl : public Sys_regs
