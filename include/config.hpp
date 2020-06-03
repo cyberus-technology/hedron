@@ -23,7 +23,17 @@
 
 #pragma once
 
-#define CFG_VER         7
+/// NOVA API Version
+///
+/// This value needs to be increased for every incompatible API version by 1000
+/// (major version bump). Backward compatible changes need to increase this
+/// value by 1 (minor version bump).
+///
+/// For example, a change to the HIP or UTCB layouts or a change in hypercall
+/// numbers is backwards incompatible and requires a major version bump. The
+/// addition of a new hypercall without changing any of the existing hypercalls
+/// is backwards compatible and requires a minor version bump.
+#define CFG_VER         2000
 
 #define NUM_CPU         64
 #define NUM_IRQ         16

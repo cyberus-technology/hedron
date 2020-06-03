@@ -58,8 +58,6 @@ void Hip::build (mword magic, mword addr)
     h->sel_vmi           = NUM_VMI;
     h->cfg_page          = PAGE_SIZE;
     h->cfg_utcb          = PAGE_SIZE;
-    h->initial_pat       = Msr::read (Msr::IA32_CR_PAT);
-    h->msr_platform_info = Msr::read_safe (Msr::MSR_PLATFORM_INFO);
 
     Hip_ioapic *ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);
@@ -188,6 +186,9 @@ void Hip::add_check()
 
     h->dmar_table    = Acpi::dmar;
     h->hpet_base     = Hpet::list == nullptr ? 0 : Hpet::list->phys;
+
+    // Userspace needs to read the table's signature to figure out what it got.
+    h->xsdt_rdst_table = Acpi::xsdt ? Acpi::xsdt : Acpi::rsdt;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(PAGE_H);

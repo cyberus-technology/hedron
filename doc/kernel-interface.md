@@ -7,6 +7,14 @@ This document describes the system call interface for the NOVA microhypervisor.
 
 # Data Structures
 
+## Hypervisor Information Page (HIP)
+
+The HIP is a region of memory exported by the microhypervisor to the
+roottask. It contains system information that the roottask can
+otherwise not obtain.
+
+Check `include/hip.hpp` for its layout.
+
 ## Capabilities
 
 A capability is a reference to a kernel object plus associated access

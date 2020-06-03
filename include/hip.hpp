@@ -103,11 +103,9 @@ class Hip
         uint64     dmar_table;             // 0x50
         uint64     hpet_base;              // 0x58
 
-        uint64     initial_pat;            // 0x60
+        uint64     cap_vmx_sec_exec;       // 0x60
 
-        uint64     msr_platform_info;      // 0x68
-
-        uint64     cap_vmx_sec_exec;       // 0x70
+        uint64     xsdt_rdst_table;        // 0x68
 
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
