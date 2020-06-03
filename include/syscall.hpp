@@ -252,3 +252,21 @@ class Sys_assign_gsi : public Sys_regs
             ARG_3 = static_cast<mword>(val);
         }
 };
+
+class Sys_machine_ctrl : public Sys_regs
+{
+    public:
+        enum ctrl_op
+        {
+            SUSPEND = 0,
+        };
+
+        inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};
+
+class Sys_machine_ctrl_suspend : public Sys_machine_ctrl
+{
+    public:
+        inline uint8 slp_typa() const { return (ARG_1 >> 8) & 0xFF; }
+        inline uint8 slp_typb() const { return (ARG_1 >> 16) & 0xFF; }
+};

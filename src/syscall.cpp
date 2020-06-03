@@ -776,6 +776,28 @@ void Ec::sys_assign_gsi()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_machine_ctrl()
+{
+    Sys_machine_ctrl *r = static_cast<Sys_machine_ctrl *>(current()->sys_regs());
+
+    switch (r->op()) {
+    case Sys_machine_ctrl::SUSPEND: sys_machine_ctrl_suspend();
+
+    default:
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
+void Ec::sys_machine_ctrl_suspend()
+{
+    Sys_machine_ctrl_suspend *r = static_cast<Sys_machine_ctrl_suspend *>(current()->sys_regs());
+
+    // This system call is work-in-progress. Avoid unused variable warnings.
+    (void)r;
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
 void Ec::syscall_handler()
 {
     // System call handler functions are all marked noreturn.
@@ -799,6 +821,8 @@ void Ec::syscall_handler()
     case hypercall_id::HC_SC_CTRL: sys_sc_ctrl();
     case hypercall_id::HC_PT_CTRL: sys_pt_ctrl();
     case hypercall_id::HC_SM_CTRL: sys_sm_ctrl();
+
+    case hypercall_id::HC_MACHINE_CTRL: sys_machine_ctrl();
 
     default:
         Ec::sys_finish<Sys_regs::BAD_HYP>();
