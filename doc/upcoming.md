@@ -19,8 +19,8 @@ Consider each section of this document a design proposal.
 |------------------------------|-----------------|
 | `HC_PD_CTRL_MSR_ACCESS`      | _to be removed_ |
 |------------------------------|-----------------|
-| `HC_MACHINE_CTRL_SUSPEND`    | 1               |
-| `HC_MACHINE_CTRL_MSR_ACCESS` | 2               |
+| `HC_MACHINE_CTRL_SUSPEND`    | 0               |
+| `HC_MACHINE_CTRL_MSR_ACCESS` | 1               |
 
 ## pd_ctrl_msr_access
 
