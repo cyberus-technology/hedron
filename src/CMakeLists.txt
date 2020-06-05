@@ -13,7 +13,7 @@ add_executable(hypervisor
   hpet.cpp hpt.cpp idt.cpp init.cpp ioapic.cpp lapic.cpp
   mca.cpp mdb.cpp memory.cpp msr.cpp mtrr.cpp pci.cpp pd.cpp pt.cpp
   rcu.cpp regs.cpp sc.cpp si.cpp slab.cpp sm.cpp space.cpp
-  space_mem.cpp space_obj.cpp space_pio.cpp string.cpp svm.cpp
+  space_mem.cpp space_obj.cpp space_pio.cpp string.cpp suspend.cpp svm.cpp
   syscall.cpp timeout_budget.cpp timeout.cpp timeout_hypercall.cpp
   tss.cpp utcb.cpp vlapic.cpp vmx.cpp
   )

@@ -31,6 +31,7 @@
 #include "pt.hpp"
 #include "sm.hpp"
 #include "stdio.hpp"
+#include "suspend.hpp"
 #include "syscall.hpp"
 #include "utcb.hpp"
 #include "vectors.hpp"
@@ -792,9 +793,13 @@ void Ec::sys_machine_ctrl_suspend()
 {
     Sys_machine_ctrl_suspend *r = static_cast<Sys_machine_ctrl_suspend *>(current()->sys_regs());
 
-    // This system call is work-in-progress. Avoid unused variable warnings.
-    (void)r;
+    // In case of a successful suspend below, we will not return from the
+    // suspend call.
+    current()->cont = sys_finish<Sys_regs::SUCCESS>;
 
+    Suspend::suspend(r->slp_typa(), r->slp_typb());
+
+    // Something went wrong.
     sys_finish<Sys_regs::BAD_PAR>();
 }
 
