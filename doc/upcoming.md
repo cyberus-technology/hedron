@@ -68,6 +68,9 @@ Userspace **must not** attempt to put the system into sleep states S1 to
 S3 without using this system call, because it will put the system in
 an undefined state.
 
+Userspace **should not** call this function concurrently. All
+invocations except of one will fail in this case.
+
 The ACPI specification knows two variants of entering S4 (see ACPI
 Specification 6.2 Section 16.1.4). This system call does not support
 either variant. Userspace can trigger a OSPM-initiated S4 transition
