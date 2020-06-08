@@ -43,14 +43,7 @@ class Acpi_rsdp
                    signature[1] == SIG ('P','T','R',' ');
         }
 
-        bool good_checksum (unsigned len = 20) const
-        {
-            uint8 check = 0;
-            for (uint8 const *ptr = reinterpret_cast<uint8 const *>(this);
-                              ptr < reinterpret_cast<uint8 const *>(this) + len;
-                              check = static_cast<uint8>(check + *ptr++)) ;
-            return !check;
-        }
+        INIT bool good_checksum (size_t len = 20) const;
 
         INIT
         static Acpi_rsdp *find (mword, unsigned);

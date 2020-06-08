@@ -18,7 +18,14 @@
 
 #include "acpi.hpp"
 #include "acpi_rsdp.hpp"
+#include "acpi_table.hpp"
+#include "algorithm.hpp"
 #include "hpt.hpp"
+
+bool Acpi_rsdp::good_checksum (size_t len) const
+{
+    return Acpi_table::do_checksum(this, len) == 0;
+}
 
 Acpi_rsdp *Acpi_rsdp::find (mword start, unsigned len)
 {
