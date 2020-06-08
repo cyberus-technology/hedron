@@ -435,4 +435,7 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         static inline void *operator new (size_t) { return cache.alloc(); }
 
         static inline void operator delete (void *ptr) { cache.free (ptr); }
+
+        NORETURN
+        static void syscall_handler() asm ("syscall_handler");
 };
