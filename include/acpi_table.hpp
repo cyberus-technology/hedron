@@ -21,7 +21,12 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
-#define SIG(A,B,C,D) (A + (B << 8) + (C << 16) + (D << 24))
+// Converts an ASCII ACPI table signature into its numeric representation.
+constexpr uint32 SIG(char const (&s)[5])
+{
+    return static_cast<uint32>(s[0]) + (static_cast<uint32>(s[1]) << 8)
+        + (static_cast<uint32>(s[2]) << 16) + (static_cast<uint32>(s[3]) << 24);
+}
 
 class Acpi_header
 {

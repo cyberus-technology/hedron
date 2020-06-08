@@ -22,13 +22,13 @@
 #include "acpi_rsdt.hpp"
 #include "hpt.hpp"
 
-struct Acpi_table_rsdt::table_map Acpi_table_rsdt::map[] INITDATA =
+struct Acpi_table_rsdt::table_map const Acpi_table_rsdt::map[] INITDATA =
 {
-    { SIG ('A','P','I','C'),    &Acpi::madt },
-    { SIG ('D','M','A','R'),    &Acpi::dmar },
-    { SIG ('F','A','C','P'),    &Acpi::fadt },
-    { SIG ('H','P','E','T'),    &Acpi::hpet },
-    { SIG ('M','C','F','G'),    &Acpi::mcfg },
+    { SIG ("APIC"), &Acpi::madt },
+    { SIG ("DMAR"), &Acpi::dmar },
+    { SIG ("FACP"), &Acpi::fadt },
+    { SIG ("HPET"), &Acpi::hpet },
+    { SIG ("MCFG"), &Acpi::mcfg },
 };
 
 void Acpi_table_rsdt::parse (Paddr addr, size_t size) const

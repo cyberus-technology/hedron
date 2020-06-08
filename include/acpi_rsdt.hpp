@@ -32,7 +32,7 @@ class Acpi_table_rsdt : public Acpi_table
         {
             uint32  const sig;
             Paddr * const ptr;
-        } map[];
+        } const map[];
 
         unsigned long entries (size_t size) const
         {
