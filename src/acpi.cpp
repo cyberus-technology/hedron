@@ -61,6 +61,48 @@ void Acpi::reset()
     write (RESET, reset_val);
 }
 
+Acpi_table_facs Acpi::get_facs()
+{
+    return *static_cast<Acpi_table_facs *>(Hpt::remap (facs));
+}
+
+void Acpi::set_facs (Acpi_table_facs const &saved_facs)
+{
+    *static_cast<Acpi_table_facs *>(Hpt::remap (facs)) = saved_facs;
+}
+
+void Acpi::set_waking_vector (Paddr vector, Wake_mode mode)
+{
+    Acpi_table_facs * const facsp = static_cast<Acpi_table_facs *>(Hpt::remap (facs));
+
+    // We don't implement protected or long mode wake up, because firmware
+    // doesn't correctly implement these.
+    switch (mode) {
+    case Wake_mode::REAL_MODE:
+        // We only have this much address space in Real Mode.
+        assert (vector < (1U << 20));
+
+        facsp->firmware_waking_vector = static_cast<uint32>(vector);
+        facsp->x_firmware_waking_vector = 0;
+        break;
+    }
+}
+
+bool Acpi::valid_sleep_type (uint8 slp_typa, uint8 slp_typb)
+{
+    return 0 == (((slp_typa | slp_typb) << PM1_CNT_SLP_TYP_SHIFT) & ~PM1_CNT_SLP_TYP);
+}
+
+void Acpi::enter_sleep_state (uint8 slp_typa, uint8 slp_typb)
+{
+    unsigned pm1_cnt_common = (Acpi::read (PM1_CNT) & ~PM1_CNT_SLP_TYP) | PM1_CNT_SLP_EN;
+
+    // The PM1_CNT register is special compared to other split registers,
+    // because different values have to be written in each part.
+    Acpi::hw_write (&pm1a_cnt, pm1_cnt_common | (slp_typa << PM1_CNT_SLP_TYP_SHIFT));
+    Acpi::hw_write (&pm1b_cnt, pm1_cnt_common | (slp_typb << PM1_CNT_SLP_TYP_SHIFT));
+}
+
 void Acpi::setup()
 {
     if (!xsdt && !rsdt)
