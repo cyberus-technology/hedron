@@ -180,9 +180,9 @@ integration_test:bionic:
 # so we put it in the integration test phase.
 integration_test:nixos:
   stage: integration_test
-  # We can't upgrade the nixos/nix container until this upstream bug is resolved:
-  # https://github.com/NixOS/docker/issues/21
-  image: nixos/nix:2.3.4
+  needs: []
+  tags:
+    - native-nix
   script:
     - mkdir -p output
     # Workaround Gitlab CI not archiving across symlinks
