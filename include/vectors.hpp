@@ -36,3 +36,4 @@
 #define VEC_IPI_RRQ     (VEC_IPI + 0)
 #define VEC_IPI_RKE     (VEC_IPI + 1)
 #define VEC_IPI_IDL     (VEC_IPI + 2)
+#define VEC_IPI_PRK     (VEC_IPI + 3)
