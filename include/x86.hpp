@@ -70,6 +70,11 @@ inline void cpuid (unsigned leaf, uint32 &eax, uint32 &ebx, uint32 &ecx, uint32 
     cpuid (leaf, 0, eax, ebx, ecx, edx);
 }
 
+inline void wbinvd()
+{
+    asm volatile ("wbinvd" ::: "memory");
+}
+
 inline mword get_cr0()
 {
     mword cr0;
