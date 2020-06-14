@@ -20,6 +20,7 @@
 
 #include "acpi.hpp"
 #include "acpi_dmar.hpp"
+#include "acpi_facs.hpp"
 #include "acpi_fadt.hpp"
 #include "acpi_hpet.hpp"
 #include "acpi_madt.hpp"
@@ -32,7 +33,7 @@
 #include "stdio.hpp"
 #include "x86.hpp"
 
-Paddr       Acpi::dmar, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
+Paddr       Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas    Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt, Acpi::pm2_cnt, Acpi::pm_tmr, Acpi::reset_reg;
 Acpi_gas    Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32      Acpi::tmr_ovf, Acpi::feature;
@@ -80,6 +81,18 @@ void Acpi::setup()
         static_cast<Acpi_table_mcfg *>(Hpt::remap (mcfg))->parse();
     if (dmar)
         static_cast<Acpi_table_dmar *>(Hpt::remap (dmar))->parse();
+
+    if (facs) {
+        Acpi_table_facs * const facsp = static_cast<Acpi_table_facs *>(Hpt::remap (facs));
+
+        trace (TRACE_ACPI, "%.4s:%#010lx VER:%2d FLAGS:%#x HW:%#010x LEN:%5u",
+               reinterpret_cast<char const *>(&facsp->signature),
+               facs,
+               facsp->version,
+               facsp->flags,
+               facsp->hardware_signature,
+               facsp->length);
+    }
 
     if (!Acpi_table_madt::sci_overridden) {
         Acpi_intr sci_override;

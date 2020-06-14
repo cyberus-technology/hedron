@@ -33,7 +33,7 @@ class Cmdline
         {
             char   const *arg;
             bool * const  ptr;
-        } map[];
+        } const map[];
 
         INIT
         static char const *get_arg (char const **, unsigned &);

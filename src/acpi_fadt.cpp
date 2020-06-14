@@ -69,4 +69,12 @@ void Acpi_table_fadt::parse() const
         while (!(Acpi::read (Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
             pause();
     }
+
+    if (length >= 140) {
+        Acpi::facs = x_firmware_ctrl;
+    }
+
+    if (not Acpi::facs) {
+        Acpi::facs = firmware_ctrl;
+    }
 }

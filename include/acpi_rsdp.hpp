@@ -19,8 +19,7 @@
 #pragma once
 
 #include "compiler.hpp"
-
-#define SIG(A,B,C,D) (A + (B << 8) + (C << 16) + (D << 24))
+#include "types.hpp"
 
 /*
  * Root System Description Pointer (5.2.5)
@@ -37,20 +36,8 @@ class Acpi_rsdp
         uint64  xsdt_addr;
         uint8   extended_checksum;
 
-        bool good_signature() const
-        {
-            return signature[0] == SIG ('R','S','D',' ') &&
-                   signature[1] == SIG ('P','T','R',' ');
-        }
-
-        bool good_checksum (unsigned len = 20) const
-        {
-            uint8 check = 0;
-            for (uint8 const *ptr = reinterpret_cast<uint8 const *>(this);
-                              ptr < reinterpret_cast<uint8 const *>(this) + len;
-                              check = static_cast<uint8>(check + *ptr++)) ;
-            return !check;
-        }
+        INIT bool good_signature() const;
+        INIT bool good_checksum (size_t len = 20) const;
 
         INIT
         static Acpi_rsdp *find (mword, unsigned);
