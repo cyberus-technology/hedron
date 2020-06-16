@@ -27,6 +27,7 @@
 #include "hip.hpp"
 #include "hpet.hpp"
 #include "lapic.hpp"
+#include "msr.hpp"
 #include "pci.hpp"
 #include "pt.hpp"
 #include "sm.hpp"
@@ -783,6 +784,7 @@ void Ec::sys_machine_ctrl()
 
     switch (r->op()) {
     case Sys_machine_ctrl::SUSPEND: sys_machine_ctrl_suspend();
+    case Sys_machine_ctrl::UPDATE_MICROCODE: sys_machine_ctrl_update_microcode();
 
     default:
         sys_finish<Sys_regs::BAD_PAR>();
@@ -801,6 +803,25 @@ void Ec::sys_machine_ctrl_suspend()
 
     // Something went wrong.
     sys_finish<Sys_regs::BAD_PAR>();
+}
+
+void Ec::sys_machine_ctrl_update_microcode()
+{
+    Sys_machine_ctrl_update_microcode *r = static_cast<Sys_machine_ctrl_update_microcode *>(current()->sys_regs());
+
+    // Hpt::remap has a limit on how much memory is guaranteed to be accessible.
+    // To avoid kernel pagefaults, require the size to be less than that.
+    if (EXPECT_FALSE (r->size() > Hpt::remap_guaranteed_size)) {
+        trace (TRACE_ERROR, "%s: Microcode update too large (%#x)", __func__, r->size());
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    // The userspace mapping describes the start of the microcode update BLOB,
+    // but the WRMSR instruction expects a pointer to the payload, which starts
+    // at offset 48.
+    auto kernel_addr {reinterpret_cast<mword>(Hpt::remap (r->update_address(), false)) + 48};
+    Msr::write_safe(Msr::IA32_BIOS_UPDT_TRIG, kernel_addr);
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::syscall_handler()
