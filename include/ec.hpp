@@ -419,6 +419,12 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         static void sys_assign_gsi();
 
         NORETURN
+        static void sys_machine_ctrl();
+
+        NORETURN
+        static void sys_machine_ctrl_suspend();
+
+        NORETURN
         static void root_invoke();
 
         template <bool>

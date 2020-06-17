@@ -19,8 +19,8 @@ Consider each section of this document a design proposal.
 |------------------------------|-----------------|
 | `HC_PD_CTRL_MSR_ACCESS`      | _to be removed_ |
 |------------------------------|-----------------|
-| `HC_MACHINE_CTRL_SUSPEND`    | 1               |
-| `HC_MACHINE_CTRL_MSR_ACCESS` | 2               |
+| `HC_MACHINE_CTRL_SUSPEND`    | 0               |
+| `HC_MACHINE_CTRL_MSR_ACCESS` | 1               |
 
 ## pd_ctrl_msr_access
 
@@ -60,6 +60,9 @@ sets the SLP_EN bit to enter the sleep state. The wake vector in the
 FACS will be temporarily overwritten and restored after the system has
 resumed.
 
+The parameters of the system call are the respective `SLP_TYP` values
+that are indicated by the `\_Sx` system state DSDT method.
+
 For userspace the suspend/resume cycle will happen during the
 execution of the system call and execution resumes as normal when the
 system call returns.
@@ -67,6 +70,9 @@ system call returns.
 Userspace **must not** attempt to put the system into sleep states S1 to
 S3 without using this system call, because it will put the system in
 an undefined state.
+
+Userspace **should not** call this function concurrently. All
+invocations except of one will fail in this case.
 
 The ACPI specification knows two variants of entering S4 (see ACPI
 Specification 6.2 Section 16.1.4). This system call does not support
@@ -80,12 +86,13 @@ Hardware-reduced ACPI platforms are **not** supported.
 
 ### In
 
-| *Register* | *Content*           | *Description*                                               |
-|------------|---------------------|-------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number  | Needs to be `HC_MACHINE_CTRL`.                              |
-| ARG1[5:4]  | Sub-operation       | Needs to be `HC_MACHINE_CTRL_SUSPEND`.                      |
-| ARG1[7:6]  | Ignored             | Should be set to zero.                                      |
-| ARG1[10:8] | Desired Sleep State | The desired sleep state to enter. A value x enters ACPI Sx. |
+| *Register*  | *Content*          | *Description*                               |
+|-------------|--------------------|---------------------------------------------|
+| ARG1[3:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.              |
+| ARG1[5:4]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_SUSPEND`.      |
+| ARG1[7:6]   | Ignored            | Should be set to zero.                      |
+| ARG1[15:8]  | PM1a_CNT.SLP_TYP   | The value to write into `PM1a_CNT.SLP_TYP`. |
+| ARG1[23:16] | PM1b_CNT.SLP_TYP   | The value to write into `PM1b_CNT.SLP_TYP`. |
 
 ### Out
 

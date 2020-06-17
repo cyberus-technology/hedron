@@ -1,5 +1,5 @@
 /*
- * NOVA Public API
+ * ACPI Sleep State Support
  *
  * Copyright (C) 2020 Julian Stecklina, Cyberus Technology GmbH.
  *
@@ -15,26 +15,19 @@
  * GNU General Public License version 2 for more details.
  */
 
-#pragma once
+#include "atomic.hpp"
+#include "suspend.hpp"
 
-/// Hypercalls IDs
-///
-/// See chapter "Hypercall Numbers" in the Kernel Interface documentation.
-enum class hypercall_id {
-    HC_CALL = 0,
-    HC_REPLY = 1,
-    HC_CREATE_PD = 2,
-    HC_CREATE_EC = 3,
-    HC_CREATE_SC = 4,
-    HC_CREATE_PT = 5,
-    HC_CREATE_SM = 6,
-    HC_REVOKE = 7,
-    HC_PD_CTRL = 8,
-    HC_EC_CTRL = 9,
-    HC_SC_CTRL = 10,
-    HC_PT_CTRL = 11,
-    HC_SM_CTRL = 12,
-    HC_ASSIGN_PCI = 13,
-    HC_ASSIGN_GSI = 14,
-    HC_MACHINE_CTRL = 15,
-};
+void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
+{
+    if (Atomic::exchange(Suspend::in_progress, true)) {
+        // Someone else is already trying to sleep.
+        return;
+    }
+
+    // Nothing implemented yet.
+    (void)slp_typa;
+    (void)slp_typb;
+
+    Atomic::store(Suspend::in_progress, false);
+}
