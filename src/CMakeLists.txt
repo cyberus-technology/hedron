@@ -1,4 +1,4 @@
-set(HEAP_SIZE_MB 64 CACHE STRING "The amount of hypervisor heap space in MiB.")
+set(HEAP_SIZE_MB 256 CACHE STRING "The amount of hypervisor heap space in MiB.")
 
 add_executable(hypervisor
   # Assembly sources
