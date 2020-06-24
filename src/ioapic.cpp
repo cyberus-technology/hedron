@@ -20,14 +20,20 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "buddy.hpp"
 #include "ioapic.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Ioapic::cache (sizeof (Ioapic), 8);
-
 Ioapic *Ioapic::list;
+
+void *Ioapic::operator new (size_t size)
+{
+    assert (size == sizeof (Ioapic));
+    static_assert (sizeof (Ioapic) <= PAGE_SIZE);
+
+    return Buddy::allocator.alloc (0, Buddy::NOFILL);
+}
 
 Ioapic::Ioapic (Paddr p, unsigned i, unsigned g) : List<Ioapic> (list), paddr(uint32(p)), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), gsi_base (g), id (i), rid (0)
 {
@@ -43,5 +49,49 @@ Ioapic::Ioapic (Paddr p, unsigned i, unsigned g) : List<Ioapic> (list), paddr(ui
     // by the GSI subsystem.
     for (unsigned pin {0}; pin <= irt_max(); pin++) {
         set_irt(gsi_base + pin, 1U << 16);
+    }
+}
+
+void Ioapic::set_irt_entry (size_t entry, uint64 val)
+{
+    write (Register (IOAPIC_IRT + 2 * entry + 1), static_cast<uint32> (val >> 32));
+    write (Register (IOAPIC_IRT + 2 * entry), static_cast<uint32> (val));
+}
+
+uint64 Ioapic::get_irt_entry (size_t entry)
+{
+    return (static_cast<uint64> (read (Register (IOAPIC_IRT + 2 * entry + 1))) << 32)
+        | read (Register (IOAPIC_IRT + 2 * entry));
+}
+
+void Ioapic::save()
+{
+    size_t entries {irt_max()};
+
+    suspend_redir_table.reset();
+
+    for (size_t i = 0; i < entries; i++) {
+        suspend_redir_table.push_back (get_irt_entry(i));
+    }
+}
+
+void Ioapic::restore()
+{
+    for (size_t i = 0; i < suspend_redir_table.size(); i++) {
+        set_irt_entry(i, suspend_redir_table[i]);
+    }
+}
+
+void Ioapic::save_all()
+{
+    for (Ioapic *cur = list; cur; cur = cur->next) {
+        cur->save();
+    }
+}
+
+void Ioapic::restore_all()
+{
+    for (Ioapic *cur = list; cur; cur = cur->next) {
+        cur->restore();
     }
 }
