@@ -781,6 +781,11 @@ void Ec::sys_machine_ctrl()
 {
     Sys_machine_ctrl *r = static_cast<Sys_machine_ctrl *>(current()->sys_regs());
 
+    if (EXPECT_FALSE (not Pd::current()->is_passthrough)) {
+        trace (TRACE_ERROR, "%s: PD without passthrough permission called machine_ctrl", __func__);
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
     switch (r->op()) {
     case Sys_machine_ctrl::SUSPEND: sys_machine_ctrl_suspend();
 
