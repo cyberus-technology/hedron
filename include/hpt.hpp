@@ -108,6 +108,9 @@ class Hpt : public Hpt_page_table
             asm volatile ("mov %0, %%cr3" : : "r" (phys_root | pcid) : "memory");
         }
 
+        // The limit of how much memory can be accessed safely after remap().
+        static size_t remap_guaranteed_size;
+
         // Temporarily map the given physical memory.
         //
         // Establish a temporary mapping for the given physical address in a
