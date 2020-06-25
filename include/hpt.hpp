@@ -109,7 +109,7 @@ class Hpt : public Hpt_page_table
         }
 
         // The limit of how much memory can be accessed safely after remap().
-        static size_t remap_guaranteed_size;
+        static const size_t remap_guaranteed_size;
 
         // Temporarily map the given physical memory.
         //

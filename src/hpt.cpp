@@ -54,7 +54,7 @@ Hpt &Hpt::boot_hpt()
     return *&boot_hpt;
 }
 
-size_t Hpt::remap_guaranteed_size {0x200000};
+const size_t Hpt::remap_guaranteed_size {0x200000};
 
 void *Hpt::remap (Paddr phys, bool use_boot_hpt)
 {
