@@ -35,4 +35,13 @@ Ioapic::Ioapic (Paddr p, unsigned i, unsigned g) : List<Ioapic> (list), paddr(ui
 
     trace (TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x IRT:%#x PRQ:%u GSI:%u",
            p, i, version(), irt_max(), prq(), gsi_base);
+
+    // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
+    // set to EXTINT and left unmasked. To avoid random interrupts from being
+    // delivered (e.g., when userland enables interrupts through the PIC), we
+    // mask all entries and only unmask them when they are properly configured
+    // by the GSI subsystem.
+    for (unsigned pin {0}; pin <= irt_max(); pin++) {
+        set_irt(gsi_base + pin, 1U << 16);
+    }
 }
