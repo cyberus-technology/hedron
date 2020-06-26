@@ -30,6 +30,7 @@
 #include "gsi.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
+#include "pic.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
 
@@ -39,7 +40,6 @@ Acpi_gas    Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32      Acpi::tmr_ovf, Acpi::feature;
 uint8       Acpi::reset_val;
 unsigned    Acpi::irq, Acpi::gsi;
-bool        Acpi_table_madt::sci_overridden = false;
 
 void Acpi::delay (unsigned ms)
 {
@@ -92,6 +92,10 @@ void Acpi::setup()
                facsp->flags,
                facsp->hardware_signature,
                facsp->length);
+    }
+
+    if (Acpi_table_madt::pic_present) {
+        Pic::init();
     }
 
     if (!Acpi_table_madt::sci_overridden) {

@@ -122,7 +122,8 @@ class Acpi_table_madt : public Acpi_table
         uint32      flags;
         Acpi_apic   apic[];
 
-        static bool sci_overridden;
+        static inline bool sci_overridden = false;
+        static inline bool pic_present = false;
 
         INIT
         void parse() const;
