@@ -15,7 +15,7 @@ let
 in
 stdenv.mkDerivation {
   name = "nova";
-  src = nix-gitignore.gitignoreSourcePure (["nix\n"] ++ gitIgnores) ./..;
+  src = nix-gitignore.gitignoreSourcePure ([".git\nnix\n"] ++ gitIgnores) ./..;
 
   nativeBuildInputs = [ cmake ];
   checkInputs = [ catch2 ];

@@ -5,10 +5,10 @@
         "homepage": null,
         "owner": "cyberus-technology",
         "repo": "cbspkgs-public",
-        "rev": "a41099e97f492b7fcf916feb114d960bb0ef3707",
-        "sha256": "16qxln5l2i5rs9rjjk841y5f24gs54ziqknnch7yr22fdjhii9mq",
+        "rev": "4e4f0e3e7afdf93fa96b153be5b454d7b54ead4d",
+        "sha256": "1s0nwym9a5i7rkl8bgjj9vdkgiw8jh27n9cqyv5qkln7y567gs8i",
         "type": "tarball",
-        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/a41099e97f492b7fcf916feb114d960bb0ef3707.tar.gz",
+        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/4e4f0e3e7afdf93fa96b153be5b454d7b54ead4d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "cmake-modules": {
@@ -29,10 +29,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs-channels",
-        "rev": "82b54d490663b6d87b7b34b9cfc0985df8b49c7d",
-        "sha256": "12gpsif48g5b4ys45x36g4vdf0srgal4c96351m7gd2jsgvdllyf",
+        "rev": "029a5de08390bb03c3f44230b064fd1850c6658a",
+        "sha256": "03fjkzhrs2avcvdabgm7a65rnyjaqbqdnv4q86qyjkkwg64g5m8x",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/82b54d490663b6d87b7b34b9cfc0985df8b49c7d.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/029a5de08390bb03c3f44230b064fd1850c6658a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
