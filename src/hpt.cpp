@@ -54,6 +54,8 @@ Hpt &Hpt::boot_hpt()
     return *&boot_hpt;
 }
 
+const size_t Hpt::remap_guaranteed_size {0x200000};
+
 void *Hpt::remap (Paddr phys, bool use_boot_hpt)
 {
     Tlb_cleanup cleanup;

@@ -39,6 +39,7 @@ class Msr
             IA32_APIC_BASE          = 0x1b,
             IA32_FEATURE_CONTROL    = 0x3a,
             IA32_TSC_ADJUST         = 0x3b,
+            IA32_BIOS_UPDT_TRIG     = 0x79,
             IA32_BIOS_SIGN_ID       = 0x8b,
             IA32_SMM_MONITOR_CTL    = 0x9b,
             IA32_MTRR_CAP           = 0xfe,

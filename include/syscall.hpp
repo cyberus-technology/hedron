@@ -259,6 +259,7 @@ class Sys_machine_ctrl : public Sys_regs
         enum ctrl_op
         {
             SUSPEND = 0,
+            UPDATE_MICROCODE = 1,
         };
 
         inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
@@ -269,4 +270,11 @@ class Sys_machine_ctrl_suspend : public Sys_machine_ctrl
     public:
         inline uint8 slp_typa() const { return (ARG_1 >> 8) & 0xFF; }
         inline uint8 slp_typb() const { return (ARG_1 >> 16) & 0xFF; }
+};
+
+class Sys_machine_ctrl_update_microcode : public Sys_machine_ctrl
+{
+    public:
+        inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> 8; }
+        inline mword update_address() const { return static_cast<mword>(ARG_2); }
 };

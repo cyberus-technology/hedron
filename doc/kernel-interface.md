@@ -229,15 +229,19 @@ System call parameters are passed in registers. The following register names are
 
 Hypercalls are identified by these values.
 
-| *Constant*              | *Value* |
-|-------------------------|---------|
-| `HC_CREATE_PD`          | 2       |
-| `HC_CREATE_EC`          | 3       |
-| `HC_REVOKE`             | 7       |
-| `HC_PD_CTRL`            | 8       |
-|-------------------------|---------|
-| `HC_PD_CTRL_DELEGATE`   | 2       |
-| `HC_PD_CTRL_MSR_ACCESS` | 3       |
+| *Constant*                         | *Value* |
+|------------------------------------|---------|
+| `HC_CREATE_PD`                     | 2       |
+| `HC_CREATE_EC`                     | 3       |
+| `HC_REVOKE`                        | 7       |
+| `HC_PD_CTRL`                       | 8       |
+| `HC_MACHINE_CTRL`                  | 15      |
+|------------------------------------|---------|
+| `HC_PD_CTRL_DELEGATE`              | 2       |
+| `HC_PD_CTRL_MSR_ACCESS`            | 3       |
+|------------------------------------|---------|
+| `HC_MACHINE_CTRL_SUSPEND`          | 0       |
+| `HC_MACHINE_CTRL_UPDATE_MICROCODE` | 1       |
 
 ## Hypercall Status
 
@@ -446,3 +450,59 @@ revoking all rights at the same time. It will be removed, use
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## machine_ctrl
+
+The `machine_ctrl` system call is used to perform global operations on
+the machine the microhypervisor is running on. Individual operations
+are sub-operations of this system call.
+
+Each PD with passthrough permissions (see `create_pd`) can invoke this
+system call.
+
+**Access to `machine_ctrl` is inherently insecure and should not be
+granted to untrusted userspace PDs.**
+
+### In
+
+| *Register* | *Content*          | *Description*                                                                             |
+|------------|--------------------|-------------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_MACHINE_CTRL`.                                                            |
+| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_MACHINE_CTRL_*` to select one of the `machine_ctrl_*` calls below. |
+| ...        | ...                |                                                                                           |
+
+### Out
+
+See the specific `machine_ctrl` sub-operation.
+
+## machine_ctrl_update_microcode
+
+The `machine_ctrl_update_microcode` system call performs the microcode update
+supplied as a physical address.
+
+Although the microcode update size needs to be passed to avoid page-faults in
+the kernel, there are no sanity checks that this size is actually correct.
+
+It is up to the userspace to match the correct microcode update to the current
+platform, the kernel does no additional checks.
+
+**Note that this functionality is inherently insecure and needs to be used with
+caution. The kernel also does not rediscover features after the update was
+applied.**
+
+### In
+
+| *Register*  | *Content*          | *Description*                                   |
+|-------------|--------------------|-------------------------------------------------|
+| ARG1[3:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.                  |
+| ARG1[5:4]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_UPDATE_MICROCODE`. |
+| ARG1[7:6]   | Ignored            | Should be set to zero.                          |
+| ARG1[48:8]  | Update BLOB size   | Size of the complete update BLOB.               |
+| ARG1[63:6]  | Ignored            | Should be set to zero.                          |
+| ARG2        | Update address     | Physical address of the update BLOB.            |
+
+### Out
+
+| *Register* | *Content* | *Description*                                |
+|------------|-----------|----------------------------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
