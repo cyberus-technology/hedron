@@ -31,6 +31,8 @@
 #include "fpu.hpp"
 #include "lock_guard.hpp"
 #include "mtd.hpp"
+#include "page_alloc_policy.hpp"
+#include "page_table_policies.hpp"
 #include "pd.hpp"
 #include "queue.hpp"
 #include "regs.hpp"
@@ -41,6 +43,7 @@
 #include "si.hpp"
 #include "unique_ptr.hpp"
 #include "vlapic.hpp"
+#include "vmx_msr_bitmap.hpp"
 
 class Utcb;
 
@@ -55,6 +58,8 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
 
         Unique_ptr<Utcb>   utcb;
         Unique_ptr<Vlapic> vlapic;
+
+        Unique_ptr<Vmx_msr_bitmap<Page_alloc_policy<>>> msr_bitmap;
 
         // The protection domain the EC will run in.
         Refptr<Pd>  pd;
