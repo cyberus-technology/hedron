@@ -21,6 +21,10 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
+#if __STDC_HOSTED__
+#include <cstring>
+#else
+
 extern "C" USED NONNULL
 inline void *memcpy (void *d, void const *s, size_t n)
 {
@@ -42,6 +46,8 @@ inline void *memset (void *d, int c, size_t n)
                   : "memory");
     return d;
 }
+
+#endif // __STDC_HOSTED__
 
 // Check whether the first n bytes in two strings match.
 inline bool strnmatch (char const *s1, char const *s2, size_t n)
