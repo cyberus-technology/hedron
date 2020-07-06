@@ -26,6 +26,7 @@
 #include "types.hpp"
 
 class Acpi_gas;
+class Acpi_table_facs;
 
 class Acpi
 {
@@ -73,10 +74,12 @@ class Acpi
 
         enum PM1_Control
         {
+            PM1_CNT_SLP_TYP_SHIFT = 10,
+
             PM1_CNT_SCI_EN      = 1U << 0,      // 0x1
             PM1_CNT_BM_RLD      = 1U << 1,      // 0x2
             PM1_CNT_GBL_RLS     = 1U << 2,      // 0x4
-            PM1_CNT_SLP_TYP     = 7U << 10,     // 0x400
+            PM1_CNT_SLP_TYP     = 7U << PM1_CNT_SLP_TYP_SHIFT, // 0x1c00
             PM1_CNT_SLP_EN      = 1U << 13      // 0x2000
         };
 
@@ -119,6 +122,35 @@ class Acpi
         static uint64 time();
         static void reset();
         static void interrupt();
+
+        static Acpi_table_facs get_facs();
+        static void set_facs (Acpi_table_facs const &saved_facs);
+
+        // Sets the kind of execution mode that we want to wake up with.
+        //
+        // See set_waking_vector.
+        enum class Wake_mode {
+            REAL_MODE,
+        };
+
+        // Set the location of code that is executed when the system resumes
+        // from a sleep state deeper than S1.
+        static void set_waking_vector (Paddr vector, Wake_mode mode);
+
+        // Check whether the SLP_TYP values look valid.
+        static bool valid_sleep_type (uint8 slp_typa, uint8 slp_typb);
+
+        // Enter an ACPI Sleep State.
+        //
+        // This function performs the final step of entering a sleep state by
+        // writing the SLP_EN / SLP_TYPx bits as indicated by the respective
+        // \_Sx system state DSDT method. See the ACPI specification, chapter
+        // "System \_Sx States".
+        //
+        // The caller must ensure that the system is ready to enter the sleep
+        // state as described in the ACPI specification, chapter "Waking and
+        // Sleeping".
+        static void enter_sleep_state (uint8 slp_typa, uint8 slp_typb);
 
         INIT
         static void setup();
