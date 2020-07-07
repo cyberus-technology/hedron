@@ -18,6 +18,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "bitmap.hpp"
 #include "memory.hpp"
 #include "msr.hpp"
 #include "page_alloc_policy.hpp"
@@ -48,7 +49,7 @@ class Generic_vmx_msr_bitmap
         {
             // We want the default to be to exit on all MSR accesses, so we
             // initialize the bitmap to all ones.
-            memset(bitmap, 0xFF, sizeof(bitmap));
+            memset(raw_bitmap, 0xFF, sizeof(raw_bitmap));
         }
 
         /// Sets the respective MSR to exit according to the exit setting
@@ -74,46 +75,24 @@ class Generic_vmx_msr_bitmap
         }
 
     private:
-        void set(Msr::Register msr, bool exit_read, bool exit_write)
-        {
-            const size_t bit_pos {bit_position(msr)};
-            bitmap[read_index(msr)] &= ~(1u << bit_pos);
-            bitmap[read_index(msr)] |= exit_read * (1u << bit_pos);
-
-            bitmap[write_index(msr)] &= ~(1u << bit_pos);
-            bitmap[write_index(msr)] |= exit_write * (1u << bit_pos);
-        }
-
         // low  MSRs (<= 0x1FFF)     READ:  bits     0 -  8191
         // high MSRs (>= 0xC0000000) READ:  bits  8192 - 16383
         // low  MSRs (<= 0x1FFF)     WRITE: bits 16384 - 24575
         // high MSRs (>= 0xC0000000) WRITE: bits 24576 - 32767
-
-        size_t bit_position(Msr::Register msr) const
-        {
-            return msr % (sizeof(bitmap[0]) * 8);
-        }
-
-        size_t read_index(Msr::Register msr) const
+        void set(Msr::Register msr, bool exit_read, bool exit_write)
         {
             assert(msr <= 0x1FFF or (msr >= 0xC0000000 and msr <= 0xC0001FFF));
 
-            const size_t idx {(msr & 0x1FFF) / sizeof(bitmap[0]) / 8 +
-                !!(msr & 0xC0000000) * (8192 / sizeof(bitmap[0]) / 8)};
-            assert(idx < PAGE_SIZE / sizeof(bitmap[0]));
-            return idx;
+            const bool high {msr >= 0xC0000000};
+
+            Bitmap<unsigned, 8192> bitmap_read{raw_bitmap + high * 1024 / sizeof(unsigned)};
+            Bitmap<unsigned, 8192> bitmap_write{raw_bitmap + (2048 + high * 1024) / sizeof(unsigned)};
+
+            bitmap_read[msr & 0x1FFF] = exit_read;
+            bitmap_write[msr & 0x1FFF] = exit_write;
         }
 
-        size_t write_index(Msr::Register msr) const
-        {
-            assert(msr <= 0x1FFF or (msr >= 0xC0000000 and msr <= 0xC0001FFF));
-
-            const size_t idx {read_index(msr) + (16384 / sizeof(bitmap[0]) / 8)};
-            assert(idx < PAGE_SIZE / sizeof(bitmap[0]));
-            return idx;
-        }
-
-        alignas(PAGE_SIZE) unsigned bitmap[PAGE_SIZE / sizeof(unsigned)];
+        alignas(PAGE_SIZE) unsigned raw_bitmap[PAGE_SIZE / sizeof(unsigned)];
 };
 
 using Vmx_msr_bitmap = Generic_vmx_msr_bitmap<Page_alloc_policy<>>;
