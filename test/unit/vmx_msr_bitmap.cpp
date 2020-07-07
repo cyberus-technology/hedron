@@ -40,6 +40,8 @@ class Fake_page_alloc
 
         static void free_page(void*) {}
 };
+using Fake_vmx_msr_bitmap = Generic_vmx_msr_bitmap<Fake_page_alloc>;
+using Exit_setting = Fake_vmx_msr_bitmap::exit_setting;
 
 auto all_ones = [](unsigned char byte) { return byte == 0xFF; };
 
@@ -47,16 +49,16 @@ auto all_ones = [](unsigned char byte) { return byte == 0xFF; };
 
 TEST_CASE("MSR bitmap is all ones at init", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Fake_vmx_msr_bitmap};
     CHECK(std::all_of(fake_bitmap_memory.begin(), fake_bitmap_memory.end(), all_ones));
 }
 
 TEST_CASE("MSR bitmap sets correct bits for low MSRs", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Fake_vmx_msr_bitmap};
 
     const auto tsc_msr {Msr::Register::IA32_TSC};
-    bmp->set_passthrough(tsc_msr);
+    bmp->set_exit(tsc_msr, Exit_setting::EXIT_NEVER);
 
     // We expect the 16th bit to be zero in the low read and low write ranges
     // That equals to
@@ -69,15 +71,14 @@ TEST_CASE("MSR bitmap sets correct bits for low MSRs", "[vmx_msr_bitmap]")
     CHECK(fake_bitmap_memory[2050] == 0xFE);
 
     // Now we set it to exit only on reads, but leave write passthrough
-    bmp->set_read_exit(tsc_msr);
+    bmp->set_exit(tsc_msr, Exit_setting::EXIT_READ);
 
     CHECK(std::all_of(fake_bitmap_memory.begin() +    0, fake_bitmap_memory.begin() + 2050, all_ones));
     CHECK(std::all_of(fake_bitmap_memory.begin() + 2051, fake_bitmap_memory.end(),          all_ones));
     CHECK(fake_bitmap_memory[2050] == 0xFE);
 
     // Now we flip those two around
-    bmp->set_read_passthrough(tsc_msr);
-    bmp->set_write_exit(tsc_msr);
+    bmp->set_exit(tsc_msr, Exit_setting::EXIT_WRITE);
 
     CHECK(std::all_of(fake_bitmap_memory.begin() + 0, fake_bitmap_memory.begin() + 2, all_ones));
     CHECK(std::all_of(fake_bitmap_memory.begin() + 3, fake_bitmap_memory.end(),       all_ones));
@@ -86,10 +87,10 @@ TEST_CASE("MSR bitmap sets correct bits for low MSRs", "[vmx_msr_bitmap]")
 
 TEST_CASE("MSR bitmap sets correct bits for high MSRs", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Fake_vmx_msr_bitmap};
 
     const auto star_msr {Msr::Register::IA32_STAR};
-    bmp->set_passthrough(star_msr);
+    bmp->set_exit(star_msr, Exit_setting::EXIT_NEVER);
 
     // We expect the 129th bit to be zero in the high read and low write ranges
     // That equals to
@@ -102,15 +103,14 @@ TEST_CASE("MSR bitmap sets correct bits for high MSRs", "[vmx_msr_bitmap]")
     CHECK(fake_bitmap_memory[3088] == 0xFD);
 
     // Now we set it to exit only on reads, but leave write passthrough
-    bmp->set_read_exit(star_msr);
+    bmp->set_exit(star_msr, Exit_setting::EXIT_READ);
 
     CHECK(std::all_of(fake_bitmap_memory.begin() +    0, fake_bitmap_memory.begin() + 3088, all_ones));
     CHECK(std::all_of(fake_bitmap_memory.begin() + 3089, fake_bitmap_memory.end(),          all_ones));
     CHECK(fake_bitmap_memory[3088] == 0xFD);
 
     // Now we flip those two around
-    bmp->set_read_passthrough(star_msr);
-    bmp->set_write_exit(star_msr);
+    bmp->set_exit(star_msr, Exit_setting::EXIT_WRITE);
 
     CHECK(std::all_of(fake_bitmap_memory.begin() + 0, fake_bitmap_memory.begin() + 1040, all_ones));
     CHECK(std::all_of(fake_bitmap_memory.begin() + 1041, fake_bitmap_memory.end(),       all_ones));
@@ -119,23 +119,22 @@ TEST_CASE("MSR bitmap sets correct bits for high MSRs", "[vmx_msr_bitmap]")
 
 TEST_CASE("MSR bitmap works at extremes", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Fake_vmx_msr_bitmap};
 
     SECTION("MSR idx 0 read -> Bit 0") {
-        bmp->set_read_passthrough(Msr::Register(0));
+        bmp->set_exit(Msr::Register(0), Exit_setting::EXIT_WRITE);
         CHECK(fake_bitmap_memory.front() == 0xFE);
         CHECK(std::all_of(fake_bitmap_memory.begin() + 1, fake_bitmap_memory.end(), all_ones));
     }
 
     SECTION("MSR idx 0xC0001FFF write -> Bit 32767") {
-        bmp->set_write_passthrough(Msr::Register(0xC0001FFF));
+        bmp->set_exit(Msr::Register(0xC0001FFF), Exit_setting::EXIT_READ);
         CHECK(fake_bitmap_memory.back() == 0x7F);
         CHECK(std::all_of(fake_bitmap_memory.rbegin() + 1, fake_bitmap_memory.rend(), all_ones));
     }
 
     SECTION("MSR idx 0xC0000000 -> first high MSR") {
-        bmp->set_read_passthrough(Msr::Register(0xC0000000));
-        bmp->set_write_passthrough(Msr::Register(0xC0000000));
+        bmp->set_exit(Msr::Register(0xC0000000), Exit_setting::EXIT_NEVER);
         CHECK(std::all_of(fake_bitmap_memory.begin() +    0, fake_bitmap_memory.begin() + 1024, all_ones));
         CHECK(std::all_of(fake_bitmap_memory.begin() + 1025, fake_bitmap_memory.begin() + 3072, all_ones));
         CHECK(std::all_of(fake_bitmap_memory.begin() + 3073, fake_bitmap_memory.end(),          all_ones));
@@ -144,8 +143,7 @@ TEST_CASE("MSR bitmap works at extremes", "[vmx_msr_bitmap]")
     }
 
     SECTION("MSR idx 0x1FFF -> last low MSR") {
-        bmp->set_read_passthrough(Msr::Register(0x1FFF));
-        bmp->set_write_passthrough(Msr::Register(0x1FFF));
+        bmp->set_exit(Msr::Register(0x1FFF), Exit_setting::EXIT_NEVER);
         CHECK(std::all_of(fake_bitmap_memory.begin() +    0, fake_bitmap_memory.begin() + 1023, all_ones));
         CHECK(std::all_of(fake_bitmap_memory.begin() + 1024, fake_bitmap_memory.begin() + 3071, all_ones));
         CHECK(std::all_of(fake_bitmap_memory.begin() + 3072, fake_bitmap_memory.end(),          all_ones));

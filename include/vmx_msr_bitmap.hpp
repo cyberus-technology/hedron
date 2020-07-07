@@ -36,6 +36,14 @@ template <typename PAGE_ALLOC>
 class Generic_vmx_msr_bitmap
 {
     public:
+        enum exit_setting
+        {
+            EXIT_NEVER  = 1u << 0,
+            EXIT_READ   = 1u << 1,
+            EXIT_WRITE  = 1u << 2,
+            EXIT_ALWAYS = EXIT_READ | EXIT_WRITE,
+        };
+
         Generic_vmx_msr_bitmap()
         {
             // We want the default to be to exit on all MSR accesses, so we
@@ -43,40 +51,10 @@ class Generic_vmx_msr_bitmap
             memset(bitmap, 0xFF, sizeof(bitmap));
         }
 
-        /// Sets the given MSR to be directly readable and writable by the guest
-        void set_passthrough(Msr::Register msr)
+        /// Sets the respective MSR to exit according to the exit setting
+        void set_exit(Msr::Register msr, exit_setting exit)
         {
-            set(msr, false, false);
-        }
-
-        /// Sets the given MSR to cause a VM exit on all accesses
-        void set_exit(Msr::Register msr)
-        {
-            set(msr, true, true);
-        }
-
-        /// Sets the given MSR to be directly readable by the guest
-        void set_read_passthrough(Msr::Register msr)
-        {
-            set(msr, false, exits_on_write(msr));
-        }
-
-        /// Sets the given MSR to cause a VM exit upon read
-        void set_read_exit(Msr::Register msr)
-        {
-            set(msr, true, exits_on_write(msr));
-        }
-
-        /// Sets the given MSR to be directly writable by the guest
-        void set_write_passthrough(Msr::Register msr)
-        {
-            set(msr, exits_on_read(msr), false);
-        }
-
-        /// Sets the given MSR to cause a VM exit upon write
-        void set_write_exit(Msr::Register msr)
-        {
-            set(msr, exits_on_read(msr), true);
+            set(msr, exit & exit_setting::EXIT_READ, exit & exit_setting::EXIT_WRITE);
         }
 
         /// Returns the resulting physical address to write to the VMCS
@@ -133,16 +111,6 @@ class Generic_vmx_msr_bitmap
             const size_t idx {read_index(msr) + (16384 / sizeof(bitmap[0]) / 8)};
             assert(idx < PAGE_SIZE / sizeof(bitmap[0]));
             return idx;
-        }
-
-        bool exits_on_read(Msr::Register msr) const
-        {
-            return bitmap[read_index(msr)] & (1u << bit_position(msr));
-        }
-
-        bool exits_on_write(Msr::Register msr) const
-        {
-            return bitmap[write_index(msr)] & (1u << bit_position(msr));
         }
 
         alignas(PAGE_SIZE) unsigned bitmap[PAGE_SIZE / sizeof(unsigned)];
