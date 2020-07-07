@@ -45,13 +45,6 @@ class Generic_vmx_msr_bitmap
             EXIT_ALWAYS = EXIT_READ | EXIT_WRITE,
         };
 
-        Generic_vmx_msr_bitmap()
-        {
-            // We want the default to be to exit on all MSR accesses, so we
-            // initialize the bitmap to all ones.
-            memset(raw_bitmap, 0xFF, sizeof(raw_bitmap));
-        }
-
         /// Sets the respective MSR to exit according to the exit setting
         void set_exit(Msr::Register msr, exit_setting exit)
         {
@@ -85,14 +78,20 @@ class Generic_vmx_msr_bitmap
 
             const bool high {msr >= 0xC0000000};
 
-            Bitmap<unsigned, 8192> bitmap_read{raw_bitmap + high * 1024 / sizeof(unsigned)};
-            Bitmap<unsigned, 8192> bitmap_write{raw_bitmap + (2048 + high * 1024) / sizeof(unsigned)};
+            auto &bitmap_read  {high ? bitmap_read_high  : bitmap_read_low};
+            auto &bitmap_write {high ? bitmap_write_high : bitmap_write_low};
 
             bitmap_read[msr & 0x1FFF] = exit_read;
             bitmap_write[msr & 0x1FFF] = exit_write;
         }
 
-        alignas(PAGE_SIZE) unsigned raw_bitmap[PAGE_SIZE / sizeof(unsigned)];
+        // We want the default to be to exit on all MSR accesses, so we
+        // initialize the bitmaps to all ones.
+        Bitmap<unsigned, 8192> bitmap_read_low {true};
+        Bitmap<unsigned, 8192> bitmap_read_high {true};
+        Bitmap<unsigned, 8192> bitmap_write_low {true};
+        Bitmap<unsigned, 8192> bitmap_write_high {true};
 };
 
 using Vmx_msr_bitmap = Generic_vmx_msr_bitmap<Page_alloc_policy<>>;
+static_assert(sizeof(Vmx_msr_bitmap) == PAGE_SIZE, "MSR bitmap has to fit in a single page!");

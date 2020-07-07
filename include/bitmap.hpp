@@ -18,12 +18,20 @@
 #pragma once
 
 #include "assert.hpp"
+#include "math.hpp"
+#include "string.hpp"
 #include "types.hpp"
 
+/**
+ * Simple Generic Bitmap
+ *
+ * Stores a given number of bits in an underlying array of the type T.
+ */
 template <typename T, size_t NUMBER_OF_BITS>
 class Bitmap
 {
 public:
+    /// Helper to simulate a bool reference
     class Bit_accessor
     {
     public:
@@ -32,6 +40,7 @@ public:
             assert(bitpos_ < sizeof(T) * 8);
         }
 
+        /// Assigns val to the corresponding bit
         void operator=(const bool val)
         {
             raw &= ~(1u << bitpos);
@@ -43,14 +52,20 @@ public:
         size_t bitpos {static_cast<size_t>(-1)};
     };
 
-    Bitmap(T *bitmap_) : bitmap(bitmap_) {}
+    explicit Bitmap(bool initial_value)
+    {
+        memset(bitmap, initial_value * 0xFF, sizeof(bitmap));
+    }
 
+    /// Obtain a bool-reference like object to access bit idx
     Bit_accessor operator[](size_t idx)
     {
         assert(idx < NUMBER_OF_BITS);
+        assert(idx < sizeof(bitmap) * 8);
+
         return {bitmap[idx / sizeof(bitmap[0]) / 8], idx % (sizeof(bitmap[0]) * 8)};
     }
 
-private:
-    T *bitmap;
+protected:
+    T bitmap[align_up(NUMBER_OF_BITS, sizeof(T) * 8) / 8 / sizeof(T)];
 };
