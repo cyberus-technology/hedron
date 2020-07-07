@@ -116,9 +116,8 @@ void Vmcs::init()
         ctrl_cpu()[1].val = Msr::read (Msr::IA32_VMX_CTRL_CPU1);
     }
 
-    // The following features are either essential to correct operation or we
-    // don't have access to machines without it for proper testing. The safe
-    // option is to require all of them until we do:
+    // Until we have a way to test on such machines, we require all those
+    // features to be present:
     // - Extended Page Tables (EPT)
     // - Unrestricted Guest (URG)
     // - Guest PAT
