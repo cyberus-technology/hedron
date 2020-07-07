@@ -40,7 +40,7 @@ class Generic_vmx_msr_bitmap
         {
             // We want the default to be to exit on all MSR accesses, so we
             // initialize the bitmap to all ones.
-            memset(bitmap, 0xFF, PAGE_SIZE);
+            memset(bitmap, 0xFF, sizeof(bitmap));
         }
 
         /// Sets the given MSR to be directly readable and writable by the guest
@@ -145,7 +145,7 @@ class Generic_vmx_msr_bitmap
             return bitmap[write_index(msr)] & (1u << bit_position(msr));
         }
 
-        alignas(PAGE_SIZE) unsigned bitmap[PAGE_SIZE];
+        alignas(PAGE_SIZE) unsigned bitmap[PAGE_SIZE / sizeof(unsigned)];
 };
 
 using Vmx_msr_bitmap = Generic_vmx_msr_bitmap<Page_alloc_policy<>>;
