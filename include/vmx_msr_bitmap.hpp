@@ -85,12 +85,12 @@ class Generic_vmx_msr_bitmap
             return PAGE_ALLOC::pointer_to_phys(reinterpret_cast<mword*>(this));
         }
 
-        static inline void *operator new (size_t)
+        static void *operator new (size_t)
         {
             return static_cast<void*>(PAGE_ALLOC::alloc_zeroed_page());
         }
 
-        static inline void operator delete (void *ptr)
+        static void operator delete (void *ptr)
         {
             PAGE_ALLOC::free_page(reinterpret_cast<mword*>(ptr));
         }
