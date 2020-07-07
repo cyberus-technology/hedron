@@ -20,6 +20,7 @@
 #include "assert.hpp"
 #include "memory.hpp"
 #include "msr.hpp"
+#include "page_alloc_policy.hpp"
 #include "string.hpp"
 
 /**
@@ -32,10 +33,10 @@
  * Those settings can be configured separately for read and write accesses.
  */
 template <typename PAGE_ALLOC>
-class Vmx_msr_bitmap
+class Generic_vmx_msr_bitmap
 {
     public:
-        Vmx_msr_bitmap()
+        Generic_vmx_msr_bitmap()
         {
             // We want the default to be to exit on all MSR accesses, so we
             // initialize the bitmap to all ones.
@@ -146,3 +147,5 @@ class Vmx_msr_bitmap
 
         alignas(PAGE_SIZE) unsigned bitmap[PAGE_SIZE];
 };
+
+using Vmx_msr_bitmap = Generic_vmx_msr_bitmap<Page_alloc_policy<>>;

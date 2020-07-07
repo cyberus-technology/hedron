@@ -47,13 +47,13 @@ auto all_ones = [](unsigned char byte) { return byte == 0xFF; };
 
 TEST_CASE("MSR bitmap is all ones at init", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
     CHECK(std::all_of(fake_bitmap_memory.begin(), fake_bitmap_memory.end(), all_ones));
 }
 
 TEST_CASE("MSR bitmap sets correct bits for low MSRs", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
 
     const auto tsc_msr {Msr::Register::IA32_TSC};
     bmp->set_passthrough(tsc_msr);
@@ -86,7 +86,7 @@ TEST_CASE("MSR bitmap sets correct bits for low MSRs", "[vmx_msr_bitmap]")
 
 TEST_CASE("MSR bitmap sets correct bits for high MSRs", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
 
     const auto star_msr {Msr::Register::IA32_STAR};
     bmp->set_passthrough(star_msr);
@@ -119,7 +119,7 @@ TEST_CASE("MSR bitmap sets correct bits for high MSRs", "[vmx_msr_bitmap]")
 
 TEST_CASE("MSR bitmap works at extremes", "[vmx_msr_bitmap]")
 {
-    auto bmp {new Vmx_msr_bitmap<Fake_page_alloc>};
+    auto bmp {new Generic_vmx_msr_bitmap<Fake_page_alloc>};
 
     SECTION("MSR idx 0 read -> Bit 0") {
         bmp->set_read_passthrough(Msr::Register(0));
