@@ -18,27 +18,41 @@
 // Include the class under test first to detect any missing includes early
 #include <vmx_msr_bitmap.hpp>
 
+#include <barrier.hpp>
 #include <msr.hpp>
 
 #include <catch2/catch.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 namespace {
 
-alignas(0x1000) std::array<unsigned char, 0x1000> fake_bitmap_memory;
+alignas(PAGE_SIZE) std::array<unsigned char, PAGE_SIZE> fake_bitmap_memory;
 
 class Fake_page_alloc
 {
     public:
         static void *alloc_zeroed_page()
         {
-            memset(fake_bitmap_memory.data(), 0, fake_bitmap_memory.size());
+            fake_bitmap_memory.fill(0);
+
+            // For some reason, the memory is not properly initialized without
+            // the barrier. Until we find out, we prefer to make sure.
+            barrier();
+
             return fake_bitmap_memory.data();
         }
 
-        static void free_page(void*) {}
+        static void free_page(void*)
+        {
+            fake_bitmap_memory.fill(0xAB);
+
+            // For some reason, the memory is not properly initialized without
+            // the barrier. Until we find out, we prefer to make sure.
+            barrier();
+        }
 };
 using Fake_vmx_msr_bitmap = Generic_vmx_msr_bitmap<Fake_page_alloc>;
 using Exit_setting = Fake_vmx_msr_bitmap::exit_setting;
