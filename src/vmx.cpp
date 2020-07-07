@@ -116,6 +116,13 @@ void Vmcs::init()
         ctrl_cpu()[1].val = Msr::read (Msr::IA32_VMX_CTRL_CPU1);
     }
 
+    // The following features are either essential to correct operation or we
+    // don't have access to machines without it for proper testing. The safe
+    // option is to require all of them until we do:
+    // - Extended Page Tables (EPT)
+    // - Unrestricted Guest (URG)
+    // - Guest PAT
+    // - MSR Bitmap
     if (not has_ept() or not has_urg() or not has_guest_pat() or not has_msr_bmp()) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
