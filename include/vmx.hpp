@@ -267,6 +267,7 @@ class Vmcs
             CPU_NMI_WINDOW          = 1ul << 22,
             CPU_IO                  = 1ul << 24,
             CPU_IO_BITMAP           = 1ul << 25,
+            CPU_MSR_BITMAP          = 1ul << 28,
             CPU_SECONDARY           = 1ul << 31,
         };
 
@@ -409,6 +410,7 @@ class Vmcs
         static bool has_vpid()      { return ctrl_cpu()[1].clr & CPU_VPID; }
         static bool has_urg()       { return ctrl_cpu()[1].clr & CPU_URG; }
         static bool has_vnmi()      { return ctrl_pin().clr & PIN_VIRT_NMI; }
+        static bool has_msr_bmp()   { return ctrl_cpu()[0].clr & CPU_MSR_BITMAP; }
 
         static void init();
 };

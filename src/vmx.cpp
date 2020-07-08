@@ -116,7 +116,13 @@ void Vmcs::init()
         ctrl_cpu()[1].val = Msr::read (Msr::IA32_VMX_CTRL_CPU1);
     }
 
-    if (not has_ept() or not has_urg() or not has_guest_pat()) {
+    // Until we have a way to test on such machines, we require all those
+    // features to be present:
+    // - Extended Page Tables (EPT)
+    // - Unrestricted Guest (URG)
+    // - Guest PAT
+    // - MSR Bitmap
+    if (not has_ept() or not has_urg() or not has_guest_pat() or not has_msr_bmp()) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }

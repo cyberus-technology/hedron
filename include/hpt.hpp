@@ -18,6 +18,7 @@
 #pragma once
 
 #include "generic_page_table.hpp"
+#include "page_alloc_policy.hpp"
 #include "page_table_policies.hpp"
 #include "tlb_cleanup.hpp"
 

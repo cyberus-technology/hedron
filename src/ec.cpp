@@ -106,6 +106,13 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
             Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
 
+            /* Allocate and configure a default sane MSR bitmap */
+            msr_bitmap = make_unique<Vmx_msr_bitmap>();
+            msr_bitmap->set_exit(Msr::Register::IA32_FS_BASE, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+            msr_bitmap->set_exit(Msr::Register::IA32_GS_BASE, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+            msr_bitmap->set_exit(Msr::Register::IA32_KERNEL_GS_BASE, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+            Vmcs::write(Vmcs::MSR_BITMAP, msr_bitmap->phys_addr());
+
             if (u) {
                 /* Allocate and register the virtual LAPIC page and map it into user space. */
                 user_vlapic    = u;
