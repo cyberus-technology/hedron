@@ -354,6 +354,13 @@ class Vmcs
             assert (ret);
         }
 
+        static void vmxoff()
+        {
+            bool ret;
+            asm volatile ("vmxoff" : "=@cca" (ret) :: "cc");
+            assert (ret);
+        }
+
         inline void clear()
         {
             if (EXPECT_TRUE (current() == this))
