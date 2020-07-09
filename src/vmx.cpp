@@ -157,7 +157,10 @@ void Vmcs::init()
     set_cr0 ((get_cr0() & ~fix_cr0_clr()) | fix_cr0_set());
     set_cr4 ((get_cr4() & ~fix_cr4_clr()) | fix_cr4_set());
 
-    Vmcs *root = new Vmcs;
+    // We pass through this code at boot time and after each resume. Re-use the
+    // root VMCS by allocating it only once.
+    static Vmcs *root = new Vmcs;
+    root->vmxon();
 
     trace (TRACE_VMX, "VMCS:%#010lx REV:%#x EPT:%d URG:%d VNMI:%d VPID:%d", Buddy::ptr_to_phys (root), basic().revision, has_ept(), has_urg(), has_vnmi(), has_vpid());
 }

@@ -345,7 +345,10 @@ class Vmcs
 
         Vmcs (mword, mword, mword, Ept const &, unsigned);
 
-        inline Vmcs() : rev (basic().revision)
+        /// Construct a root VMCS.
+        Vmcs() : rev (basic().revision) {}
+
+        void vmxon()
         {
             uint64 phys = Buddy::ptr_to_phys (this);
 
