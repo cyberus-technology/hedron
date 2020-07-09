@@ -6,6 +6,8 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
+ * Copyright (C) 2020 Julian Stecklina, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -18,47 +20,87 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "bootstrap.hpp"
 #include "compiler.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
+#include "stdio.hpp"
 #include "timeout_budget.hpp"
 
-extern "C" NORETURN
-void bootstrap()
+void Bootstrap::bootstrap()
 {
-    static mword barrier;
+    // If we already have the idle EC, we've been here before and it we go
+    // through here as part of resume from ACPI sleep states.
+    bool const is_initial_boot = not Ec::idle_ec();
 
-    Cpu::init();
+    if (Cpu_info cpu_info = Cpu::init(); is_initial_boot) {
+        Hip::add_cpu (cpu_info);
+    }
 
-    // Create idle EC
+    // Let the next CPU initialize itself. From now one, we can only touch
+    // CPU-local data.
+    release_next_cpu();
+
+    if (is_initial_boot) {
+        create_idle_ec();
+    }
+
+    wait_for_all_cpus();
+
+    // We need to set the TSC immediately after the barrier finishes to be sure
+    // that all CPUs execute this at a roughly identical time. This does not
+    // achieve perfect synchronization between TSCs, but should be good enough.
+    //
+    // By using TSC_ADJUST, we could achieve perfect TSC synchronization, but
+    // experiments in the past have uncovered CPU bugs: See the following forum
+    // post for details:
+    //
+    // https://community.intel.com/t5/Processors/Missing-TSC-deadline-interrupt-after-suspend-resume-and-using/td-p/287889
+    Msr::write (Msr::IA32_TSC, Cpu::initial_tsc);
+
+    if (Cpu::bsp()) {
+        // All CPUs are online. Time to restore the low memory that we've
+        // clobbered for booting APs.
+        Lapic::restore_low_memory();
+
+        // Reset the spinlock and barrier we use to synchronize CPUs on
+        // bootup. This is to prepare for the next suspend/resume cycle.
+        rearm();
+
+        if (is_initial_boot) {
+            create_roottask();
+        }
+    }
+
+    Sc::schedule();
+}
+
+void Bootstrap::wait_for_all_cpus()
+{
+    for (Atomic::add (barrier, 1UL); Atomic::load (barrier) != Cpu::online; pause()) ;
+}
+
+void Bootstrap::create_idle_ec()
+{
     Timeout_budget::init();
 
     Ec::idle_ec() = new Ec (Pd::current() = &Pd::kern, Cpu::id());
     Ec::current() = Ec::idle_ec();
+
     Ec::current()->add_ref();
     Pd::current()->add_ref();
     Space_obj::insert_root (Sc::current() = new Sc (&Pd::kern, Cpu::id(), Ec::current()));
     Sc::current()->add_ref();
+}
 
-    // Barrier: wait for all ECs to arrive here
-    for (Atomic::add (barrier, 1UL); barrier != Cpu::online; pause()) ;
+void Bootstrap::create_roottask()
+{
+    ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
 
-    Msr::write (Msr::IA32_TSC, 0);
-
-    if (Cpu::bsp()) {
-        // All CPUs are online.
-        Lapic::restore_low_memory();
-
-        // Create root task
-        ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
-
-        Hip::add_check();
-        Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
-        Sc *root_sc = new Sc (&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
-        root_sc->remote_enqueue();
-    }
-
-    Sc::schedule();
+    Hip::add_check();
+    Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
+    Sc *root_sc = new Sc (&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
+    root_sc->remote_enqueue();
 }

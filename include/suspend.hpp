@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "acpi_facs.hpp"
 #include "types.hpp"
 
 class Suspend
@@ -25,6 +26,17 @@ class Suspend
 
         // Set to true while suspend is ongoing.
         static inline bool in_progress {false};
+
+        // A pristine copy of the FACS.
+        //
+        // Userspace might not expect the FACS to change, but during
+        // suspend/resume we clobber the content of the FACS. So we keep a copy
+        // around to be able to restore its content.
+        static inline Acpi_table_facs saved_facs;
+
+        // This function needs to be called on all CPUs to prepare them to
+        // sleep.
+        static void prepare_cpu_for_suspend();
 
     public:
 

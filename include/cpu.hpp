@@ -142,8 +142,6 @@ class Cpu
             EFL_ID      = 1ul << 21             // 0x200000
         };
 
-        static mword    boot_lock           asm ("boot_lock");
-
         static unsigned online;
         static uint8    acpi_id[NUM_CPU];
         static uint8    apic_id[NUM_CPU];
@@ -159,6 +157,9 @@ class Cpu
         };
         static lapic_info_t lapic_info[NUM_CPU];
 
+        // The TSC value that all CPUs start with after boot or resume.
+        static inline uint64 initial_tsc = 0;
+
         CPULOCAL_CONST_ACCESSOR(cpu, id);
         CPULOCAL_ACCESSOR(cpu, hazard);
         CPULOCAL_ACCESSOR(cpu, row);
@@ -167,7 +168,7 @@ class Cpu
         CPULOCAL_ACCESSOR(cpu, bsp);
         CPULOCAL_ACCESSOR(cpu, preemption);
 
-        static void init();
+        static Cpu_info init();
 
         static inline bool feature (Feature f)
         {
