@@ -33,7 +33,7 @@ let
   # There is some magic here to pass along the compiler names, so we
   # can use them in novaBuilds to create nice attribute names.
   buildConfs = cbspkgs.lib.cartesian.cartesianProductFromSet {
-    cc = attrsToList { inherit (pkgs) clang_8 clang_9 clang_10 gcc7 gcc8 gcc9 gcc10; };
+    cc = attrsToList { inherit (pkgs) clang_9 clang_10 gcc7 gcc8 gcc9 gcc10; };
     buildType = [ "Debug" "Release"];
   };
 
