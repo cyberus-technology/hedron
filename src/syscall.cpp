@@ -22,6 +22,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "acpi.hpp"
 #include "dmar.hpp"
 #include "gsi.hpp"
 #include "hip.hpp"
@@ -799,6 +800,8 @@ void Ec::sys_machine_ctrl()
 void Ec::sys_machine_ctrl_suspend()
 {
     Sys_machine_ctrl_suspend *r = static_cast<Sys_machine_ctrl_suspend *>(current()->sys_regs());
+
+    r->set_waking_vector (Acpi::get_waking_vector(), Sys_machine_ctrl_suspend::mode::REAL_MODE);
 
     // In case of a successful suspend below, we will not return from the
     // suspend call.

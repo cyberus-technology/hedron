@@ -137,6 +137,9 @@ class Acpi
         // from a sleep state deeper than S1.
         static void set_waking_vector (Paddr vector, Wake_mode mode);
 
+        // Return the value of the legacy wake vector.
+        static Paddr get_waking_vector();
+
         // Check whether the SLP_TYP values look valid.
         static bool valid_sleep_type (uint8 slp_typa, uint8 slp_typb);
 

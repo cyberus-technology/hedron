@@ -71,6 +71,15 @@ void Acpi::set_facs (Acpi_table_facs const &saved_facs)
     *static_cast<Acpi_table_facs *>(Hpt::remap (facs)) = saved_facs;
 }
 
+Paddr Acpi::get_waking_vector()
+{
+    // It's unfortunate that we have hardcode which page table we are using for
+    // remap. See #119.
+    Acpi_table_facs * const facsp = static_cast<Acpi_table_facs *>(Hpt::remap (facs, false));
+
+    return facsp->firmware_waking_vector;
+}
+
 void Acpi::set_waking_vector (Paddr vector, Wake_mode mode)
 {
     Acpi_table_facs * const facsp = static_cast<Acpi_table_facs *>(Hpt::remap (facs));
