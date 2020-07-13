@@ -521,9 +521,11 @@ Hardware-reduced ACPI platforms are **not** supported.
 
 ### Out
 
-| *Register* | *Content* | *Description*                                |
-|------------|-----------|----------------------------------------------|
-| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
+| *Register*  | *Content*     | *Description*                                                         |
+|-------------|---------------|-----------------------------------------------------------------------|
+| OUT1[7:0]   | Status        | See "Hypercall Status".                                               |
+| OUT2[62:0]  | Waking Vector | The value of the FACS waking vector                                   |
+| OUT2[63:62] | Waking Mode   | The desired execution mode, only Real Mode (0) is supported right now |
 
 ## machine_ctrl_update_microcode
 
