@@ -112,3 +112,5 @@ target_link_options(hypervisor PRIVATE
   )
 
 install(TARGETS hypervisor DESTINATION share/NOVA COMPONENT NOVA_Application)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.elf32
+  DESTINATION share/NOVA COMPONENT NOVA_Application)
