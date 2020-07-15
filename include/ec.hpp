@@ -210,6 +210,7 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         };
 
         CPULOCAL_ACCESSOR(ec, current);
+        CPULOCAL_ACCESSOR(ec, idle_ec);
 
         // Special constructor for the idle thread.
         Ec (Pd *own, unsigned c);

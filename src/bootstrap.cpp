@@ -34,7 +34,9 @@ void bootstrap()
 
     // Create idle EC
     Timeout_budget::init();
-    Ec::current() = new Ec (Pd::current() = &Pd::kern, Cpu::id());
+
+    Ec::idle_ec() = new Ec (Pd::current() = &Pd::kern, Cpu::id());
+    Ec::current() = Ec::idle_ec();
     Ec::current()->add_ref();
     Pd::current()->add_ref();
     Space_obj::insert_root (Sc::current() = new Sc (&Pd::kern, Cpu::id(), Ec::current()));

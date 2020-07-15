@@ -79,6 +79,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     // The current virtual machine control structure.
     Vmcs *vmcs_current;
 
+    // Ec-related variables;
+    Ec *ec_idle_ec;
+
     // The list of pending timeouts.
     Timeout *timeout_list;
     Timeout *timeout_budget;
