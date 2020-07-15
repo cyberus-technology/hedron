@@ -43,6 +43,9 @@ static char __start_ap_backup[128];
 extern "C" char __start_ap[];
 extern "C" char __start_ap_end[];
 
+extern "C" char __resume_bsp[];
+extern "C" char __resume_bsp_end[];
+
 void Lapic::setup()
 {
     Paddr apic_base = Msr::read (Msr::IA32_APIC_BASE);
@@ -58,6 +61,16 @@ void Lapic::prepare_ap_boot()
 
     memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
     memcpy(low_memory,        __start_ap, sizeof(__start_ap_backup));
+}
+
+void Lapic::prepare_bsp_resume()
+{
+    assert (static_cast<size_t>(__resume_bsp_end - __resume_bsp) < sizeof(__start_ap_backup));
+
+    void * const low_memory {Hpt::remap (APBOOT_ADDR)};
+
+    memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
+    memcpy(low_memory,        __resume_bsp, sizeof(__start_ap_backup));
 }
 
 void Lapic::restore_low_memory()

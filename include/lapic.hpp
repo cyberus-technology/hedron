@@ -172,6 +172,9 @@ class Lapic
         // This needs to be called before APs are booted.
         static void prepare_ap_boot();
 
+        // Copy the BSP resume code into low-memory (APBOOT_ADDR).
+        static void prepare_bsp_resume();
+
         // Restore low-memory that was clobbered during AP bringup.
         //
         // This needs to be called once all APs have successfully booted.

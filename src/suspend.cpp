@@ -17,6 +17,7 @@
 
 #include "acpi.hpp"
 #include "atomic.hpp"
+#include "lapic.hpp"
 #include "suspend.hpp"
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
@@ -39,5 +40,10 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 
 void Suspend::resume_bsp()
 {
+    // Restore the memory that we temporarily used to store our assembly resume
+    // trampoline. We have to restore it early before the LAPIC code will use
+    // the same memory to host its application processor boot code.
+    Lapic::restore_low_memory();
+
     Atomic::store (Suspend::in_progress, false);
 }
