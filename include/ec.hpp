@@ -255,10 +255,11 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         NORETURN
         inline void make_current()
         {
+            transfer_fpu(current());
+
             if (EXPECT_FALSE (current()->del_rcu()))
                 Rcu::call (current());
 
-            transfer_fpu(current());
             current() = this;
 
             bool ok = current()->add_ref();
