@@ -150,8 +150,8 @@ __start_all:            INIT_STATE
                         call    setup_cpulocal
                         mov     %REG(ax), %REG(sp)
 
-                        movabs  $(bootstrap), %REG(bx)
-                        jmp     *%REG(bx)
+                        call    bootstrap
+                        ud2a
 
 .text
 
@@ -173,3 +173,41 @@ __start_ap:             INIT_PAGING
 __gdt_desc:             .word   __boot_gdt__ - __boot_gdt - 1
                         .long   __boot_gdt
 __start_ap_end:
+
+/*
+ * BSP Resume Code
+ */
+.section .init.multiboot, "ax"
+.code64
+
+resume_bsp_long:        INIT_STATE
+
+                        call    setup_cpulocal
+                        mov     %REG(ax), %REG(sp)
+
+                        call    resume_bsp
+
+                        call    bootstrap
+                        ud2a
+
+.text
+
+/*
+ * BSP Resume Code Real Mode Entry
+ *
+ * This code needs to be position independent. It will be copied by
+ * the LAPIC code.
+ */
+.code16
+
+.globl __resume_bsp
+.globl __resume_bsp_end
+
+__resume_bsp:           INIT_PAGING
+                        lgdtl   %cs:__resume_gdt_desc - __resume_bsp
+                        ljmpl   $SEL_KERN_CODE, $resume_bsp_long
+
+__resume_gdt_desc:      .word   __boot_gdt__ - __boot_gdt - 1
+                        .long   __boot_gdt
+
+__resume_bsp_end:

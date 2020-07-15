@@ -36,3 +36,8 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 
     Atomic::store(Suspend::in_progress, false);
 }
+
+void Suspend::resume_bsp()
+{
+    Atomic::store (Suspend::in_progress, false);
+}

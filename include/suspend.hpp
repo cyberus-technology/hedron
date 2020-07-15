@@ -42,4 +42,7 @@ class Suspend
         //
         // On a successful suspend this function will not return.
         static void suspend(uint8 slp_typa, uint8 slp_typb);
+
+        // Clean up any state that was modified during suspend.
+        static void resume_bsp() asm ("resume_bsp");
 };
