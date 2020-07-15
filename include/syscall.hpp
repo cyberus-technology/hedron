@@ -268,8 +268,18 @@ class Sys_machine_ctrl : public Sys_regs
 class Sys_machine_ctrl_suspend : public Sys_machine_ctrl
 {
     public:
+
+        enum class mode : mword {
+            REAL_MODE = 0,
+        };
+
         inline uint8 slp_typa() const { return (ARG_1 >> 8) & 0xFF; }
         inline uint8 slp_typb() const { return (ARG_1 >> 16) & 0xFF; }
+
+        inline void set_waking_vector(mword waking_vector, mode waking_mode)
+        {
+            ARG_2 = (static_cast<mword>(waking_mode) << 62) | waking_vector;
+        }
 };
 
 class Sys_machine_ctrl_update_microcode : public Sys_machine_ctrl

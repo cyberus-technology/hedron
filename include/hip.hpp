@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "acpi_gas.hpp"
 #include "atomic.hpp"
 #include "cpu.hpp"
 #include "config.hpp"
@@ -106,6 +107,9 @@ class Hip
         uint64     cap_vmx_sec_exec;       // 0x60
 
         uint64     xsdt_rdst_table;        // 0x68
+
+        Acpi_gas   pm1a_cnt;               // 0x70
+        Acpi_gas   pm1b_cnt;               // 0x7c
 
         Hip_cpu    cpu_desc[NUM_CPU];
         Hip_ioapic ioapic_desc[NUM_IOAPIC];
