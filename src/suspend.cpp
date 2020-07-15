@@ -15,11 +15,16 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "acpi.hpp"
 #include "atomic.hpp"
 #include "suspend.hpp"
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
+    if (not Acpi::valid_sleep_type (slp_typa, slp_typb)) {
+        return;
+    }
+
     if (Atomic::exchange(Suspend::in_progress, true)) {
         // Someone else is already trying to sleep.
         return;
