@@ -14,8 +14,8 @@ stdenv.mkDerivation {
   '';
 
   buildPhase = ''
-    test/integration/qemu-boot ${nova}/hypervisor.elf32 | tee output.log
-    tools/gen_usb.sh ${grub_image} ${nova}/hypervisor.elf32 tools/grub.cfg.tmpl
+    test/integration/qemu-boot ${nova}/share/NOVA/hypervisor.elf32 | tee output.log
+    tools/gen_usb.sh ${grub_image} ${nova}/share/NOVA/hypervisor.elf32 tools/grub.cfg.tmpl
     test/integration/qemu-boot ${grub_image} -i | tee -a output.log
     test/integration/qemu-boot ${grub_image} -i -e ${OVMF.fd}/FV | tee -a output.log
   '';
