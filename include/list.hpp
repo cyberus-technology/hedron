@@ -18,11 +18,63 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
+
+#if __STDC_HOSTED__
+#include <iterator>
+#endif
+
+template <typename T>
+class List_iterator
+{
+        T *ptr;
+
+    public:
+
+        using difference_type = ptrdiff_t;
+        using value_type = T;
+        using pointer = T*;
+        using reference = T&;
+
+#if __STDC_HOSTED__
+        using iterator_category = std::forward_iterator_tag;
+#endif
+
+        List_iterator(T *ptr_)
+            : ptr {ptr_}
+        {}
+
+        T &operator*() const { return *ptr; }
+        T *operator->() const { return ptr; }
+
+        List_iterator &operator++()
+        {
+            ptr = ptr->next;
+            return *this;
+        }
+
+        bool operator==(List_iterator<T> const &rhs) const { return ptr == rhs.ptr; }
+        bool operator!=(List_iterator<T> const &rhs) const { return not (*this == rhs); }
+};
+
+template <typename T>
+class List_range
+{
+        T *ptr;
+
+    public:
+        List_range(T *ptr_) : ptr{ptr_} {}
+
+        List_iterator<T> begin() const { return {ptr}; }
+        List_iterator<T> end()   const { return {nullptr}; }
+};
 
 template <typename T>
 class List
 {
     protected:
+        friend class List_iterator<T>;
+
         T *next;
 
     public:
