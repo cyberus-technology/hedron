@@ -17,12 +17,15 @@
 
 #include "acpi.hpp"
 #include "atomic.hpp"
+#include "hip.hpp"
 #include "lapic.hpp"
 #include "suspend.hpp"
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
-    if (not Acpi::valid_sleep_type (slp_typa, slp_typb)) {
+    if (not Acpi::valid_sleep_type (slp_typa, slp_typb) or
+        // We don't support suspending with IOMMU yet. See issue #120.
+        (Hip::feature() & Hip::FEAT_IOMMU)) {
         return;
     }
 
