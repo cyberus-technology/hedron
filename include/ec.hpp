@@ -252,7 +252,6 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             regs.ARG_3 = cnt;
         }
 
-        NORETURN
         inline void make_current()
         {
             transfer_fpu(current());
@@ -265,13 +264,19 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             bool ok = current()->add_ref();
             assert (ok);
 
+            pd->make_current();
+        }
+
+        NORETURN
+        inline void return_to_user()
+        {
+            make_current();
+
             // Set the stack to just behind the register block to be able to use
             // push instructions to fill it. System call entry points need to
             // preserve less state.
             Tss::local().sp0 = reinterpret_cast<mword>(exc_regs() + 1);
             Cpulocal::set_sys_entry_stack (sys_regs() + 1);
-
-            pd->make_current();
 
             asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
         }

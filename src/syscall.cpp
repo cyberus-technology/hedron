@@ -66,7 +66,7 @@ void Ec::activate()
     if (EXPECT_FALSE (ec->blocked()))
         ec->block_sc();
 
-    ec->make_current();
+    ec->return_to_user();
 }
 
 template <bool C>
@@ -111,7 +111,7 @@ void Ec::send_msg()
         ec->cont = recv_kern;
         ec->regs.set_pt (pt->id);
         ec->regs.set_ip (pt->ip);
-        ec->make_current();
+        ec->return_to_user();
     }
 
     ec->help (send_msg<C>);
@@ -139,7 +139,7 @@ void Ec::sys_call()
         ec->cont = recv_user;
         ec->regs.set_pt (pt->id);
         ec->regs.set_ip (pt->ip);
-        ec->make_current();
+        ec->return_to_user();
     }
 
     if (EXPECT_TRUE (!(s->flags() & Sys_call::DISABLE_BLOCKING)))
@@ -202,7 +202,7 @@ void Ec::reply (void (*c)(), Sm * sm)
     if (!clr)
         Sc::current()->ec->activate();
 
-    ec->make_current();
+    ec->return_to_user();
 }
 
 void Ec::sys_reply()
@@ -618,7 +618,7 @@ void Ec::sys_ec_ctrl()
                 sys_finish<Sys_regs::BAD_PAR>();
 
             current()->cont = sys_finish<Sys_regs::SUCCESS>;
-            ec->make_current();
+            ec->return_to_user();
 
             break;
         }
