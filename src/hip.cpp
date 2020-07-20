@@ -191,7 +191,7 @@ void Hip::add_check()
     h->xsdt_rdst_table = Acpi::xsdt ? Acpi::xsdt : Acpi::rsdt;
 
     h->pm1a_cnt = Acpi::pm1a_cnt;
-    h->pm1a_cnt = Acpi::pm1b_cnt;
+    h->pm1b_cnt = Acpi::pm1b_cnt;
 
     uint16 c = 0;
     for (uint16 const *ptr = reinterpret_cast<uint16 const *>(PAGE_H);
