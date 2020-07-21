@@ -173,7 +173,7 @@ void Hip::add_cpu(Cpu_info const &cpu_info)
     cpu->lapic_info = Cpu::lapic_info[Cpu::id()];
 }
 
-void Hip::add_check()
+void Hip::finalize()
 {
     Hip *h = hip();
 

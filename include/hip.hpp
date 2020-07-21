@@ -177,5 +177,10 @@ class Hip
         static void add_mhv (Hip_mem *&);
 
         static void add_cpu (Cpu_info const &);
-        static void add_check();
+
+        // Finalize the HIP.
+        //
+        // This function adds any missing information and the checksum. Further
+        // modifications to the HIP are not possible after finalizing it.
+        static void finalize();
 };
