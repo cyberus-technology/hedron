@@ -19,14 +19,36 @@
 
 #include "algorithm.hpp"
 
-TEST_CASE("Accumulate works on arrays")
+TEST_CASE("accumulate works")
 {
-    std::array<int, 0> const empty_array;
-    std::array<int, 3> const test_array = {1, 2, 3};
+    std::vector<int> const empty;
+    std::vector<int> const example {1, 2, 3};
 
-    CHECK(accumulate(empty_array.begin(), empty_array.end(), 0) == 0);
-    CHECK(accumulate(empty_array.begin(), empty_array.end(), 17) == 17);
+    CHECK(::accumulate (std::begin (empty), std::end (empty), 0) == 0);
+    CHECK(::accumulate (std::begin (empty), std::end (empty), 17) == 17);
 
-    CHECK(accumulate(test_array.begin(), test_array.end(), 0) == 6);
-    CHECK(accumulate(test_array.begin(), test_array.end(), 17) == 23);
+    CHECK(::accumulate (std::begin (example), std::end (example), 0) == 6);
+    CHECK(::accumulate (std::begin (example), std::end (example), 17) == 23);
+}
+
+TEST_CASE("find_if works")
+{
+    std::vector<int> empty;
+    std::vector<int> example {1, 2, 3};
+
+    auto is_even {[] (int i) { return i % 2 == 0; }};
+
+    CHECK(::find_if (std::begin (empty), std::end (empty), is_even) == std::end (empty));
+    CHECK(::find_if (std::begin (example), std::end (example), is_even) == ++std::begin (example));
+}
+
+TEST_CASE("for_each works")
+{
+    std::vector<int> const example {1, 2, 3};
+    size_t pos {0};
+
+    ::for_each(std::begin (example), std::end (example),
+               [&] (int v) {
+                   CHECK(example[pos++] == v);
+               });
 }

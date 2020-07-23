@@ -53,6 +53,20 @@ constexpr T &&forward (typename remove_reference<T>::type &&arg)
     return static_cast<T &&>(arg);
 }
 
+/// Wrap a member function together with its parameters into a callable.
+///
+/// Example:
+///
+/// std::for_each(begin, end, mem_fn_closure(&Foo:method)(param1, param2));
+template <typename T, typename RET>
+auto mem_fn_closure(RET T::*method) {
+    return [method](auto ... args){
+        return [method, args...](T& object) {
+            (object.*method)(args...);
+        };
+    };
+}
+
 #if !__STDC_HOSTED__
 
 // Placement new operator

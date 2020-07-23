@@ -17,12 +17,29 @@
 
 #pragma once
 
-template <typename IT, typename T>
-T accumulate(IT begin, IT end, T init)
+template <typename IT, typename IT_END, typename T>
+T accumulate (IT begin, IT_END end, T init)
 {
-    for (IT cur = begin; cur != end; ++cur) {
-        init += *cur;
+    for (; begin != end; ++begin) {
+        init += *begin;
     }
 
     return init;
+}
+
+template <typename IT, typename IT_END, typename PRED>
+IT find_if (IT begin, IT_END end, PRED predicate)
+{
+    for (; begin != end and not predicate (*begin); ++begin) {
+    }
+
+    return begin;
+}
+
+template <typename IT, typename IT_END, typename FN>
+void for_each (IT begin, IT_END end, FN fn)
+{
+    for (; begin != end; ++begin) {
+        fn (*begin);
+    }
 }
