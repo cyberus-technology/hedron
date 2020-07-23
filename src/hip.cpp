@@ -155,7 +155,7 @@ void Hip::add_mem (Hip_mem *&mem, T const *map)
 
 void Hip::add_mhv (Hip_mem *&mem)
 {
-    mem->addr = reinterpret_cast<mword>(&LINK_P);
+    mem->addr = LOAD_ADDR;
     mem->size = reinterpret_cast<mword>(&LINK_E) - mem->addr;
     mem->type = Hip_mem::HYPERVISOR;
     mem++;

@@ -44,7 +44,7 @@ SECTIONS
     . = ALIGN(4K) + 4K; PROVIDE (STACK = .);
 
     PROVIDE (LOAD_E = .);
-    OFFSET = LINK_ADDR - ALIGN (4M);
+    OFFSET = LINK_ADDR - ALIGN (2M);
     PROVIDE (LINK_P = LINK_ADDR - OFFSET);
 
     .text LINK_ADDR : AT (ADDR (.text) - OFFSET)
