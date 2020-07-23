@@ -153,8 +153,15 @@ class Acpi
         // The caller must ensure that the system is ready to enter the sleep
         // state as described in the ACPI specification, chapter "Waking and
         // Sleeping".
+        //
+        // Depending on the sleep state entered, this function might return (for
+        // S1) or execution contines at the waking vector (S2, S3).
         static void enter_sleep_state (uint8 slp_typa, uint8 slp_typb);
 
         INIT
         static void setup();
+
+        // Initialize ACPI after all tables have been parsed.
+        INIT
+        static void init();
 };

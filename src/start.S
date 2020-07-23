@@ -180,6 +180,8 @@ __start_ap_end:
 .section .init.multiboot, "ax"
 .code64
 
+.globl resume_bsp_long
+
 resume_bsp_long:        INIT_STATE
 
                         call    setup_cpulocal

@@ -17,17 +17,18 @@
 
 #include "acpi.hpp"
 #include "acpi_facs.hpp"
-#include "acpi_madt.hpp"
 #include "atomic.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
-#include "pic.hpp"
 #include "suspend.hpp"
 #include "vmx.hpp"
 #include "x86.hpp"
+
+// The low-level BSP bring-up function.
+extern "C" [[noreturn]] void resume_bsp_long();
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
@@ -62,10 +63,11 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     // Flush the cache as mandated by the ACPI specification.
     wbinvd();
 
-    // Instruct the hardware to actually turn off the power. We might run for a
-    // bit afterwards, so just go into a CLI/HLT loop until the lights are out.
+    // Instruct the hardware to actually turn off the power.
     Acpi::enter_sleep_state(slp_typa, slp_typb);
-    shutdown();
+
+    // If we return, it was an S1 transition and we need to re-initialize.
+    resume_bsp_long();
 
     // Not reached.
 }
@@ -92,12 +94,10 @@ void Suspend::resume_bsp()
     // the same memory to host its application processor boot code.
     Lapic::restore_low_memory();
 
-    if (Acpi_table_madt::pic_present) {
-        Pic::init();
-    }
+    Acpi::init();
+    Acpi::set_facs (saved_facs);
 
     Ioapic::restore_all();
-    Acpi::set_facs (saved_facs);
 
     Atomic::store (Suspend::in_progress, false);
 }
