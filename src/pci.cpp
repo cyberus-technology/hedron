@@ -34,7 +34,7 @@ struct Pci::quirk_map Pci::map[] =
 {
 };
 
-Pci::Pci (unsigned r, unsigned l) : List<Pci> (list), reg_base (hwdev_addr -= PAGE_SIZE), rid (static_cast<uint16>(r)), lev (static_cast<uint16>(l))
+Pci::Pci (unsigned r, unsigned l) : Forward_list<Pci> (list), reg_base (hwdev_addr -= PAGE_SIZE), rid (static_cast<uint16>(r)), lev (static_cast<uint16>(l))
 {
     Pd::kern->claim_mmio_page (reg_base, cfg_base + (rid << PAGE_BITS), false);
 

@@ -79,7 +79,7 @@ class Dmar_irt
         static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
-class Dmar : public List<Dmar>
+class Dmar : public Forward_list<Dmar>
 {
     private:
         mword const         reg_base;

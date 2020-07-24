@@ -27,7 +27,7 @@
 
 class Dmar;
 
-class Pci : public List<Pci>
+class Pci : public Forward_list<Pci>
 {
     friend class Acpi_table_mcfg;
     friend class Hip;

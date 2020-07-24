@@ -22,7 +22,7 @@
 #include "list.hpp"
 #include "slab.hpp"
 
-class Hpet : public List<Hpet>
+class Hpet : public Forward_list<Hpet>
 {
     friend class Hip;
 
@@ -35,7 +35,7 @@ class Hpet : public List<Hpet>
         static Slab_cache   cache;
 
     public:
-        explicit inline Hpet (Paddr p, unsigned i) : List<Hpet> (list), phys (p), id (i), rid (0) {}
+        explicit inline Hpet (Paddr p, unsigned i) : Forward_list<Hpet> (list), phys (p), id (i), rid (0) {}
 
         static inline void *operator new (size_t) { return cache.alloc(); }
 

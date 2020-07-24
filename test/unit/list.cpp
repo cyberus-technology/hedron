@@ -24,13 +24,13 @@
 
 namespace {
 
-class Element : public List<Element>
+class Element : public Forward_list<Element>
 {
     public:
         int value;
 
         Element (Element *&head, int value_)
-            : List<Element> {head}, value {value_}
+            : Forward_list<Element> {head}, value {value_}
         {}
 };
 
@@ -51,7 +51,7 @@ class Test_list
 };
 
 // This operator compares Elements to integers by their value.
-bool operator==(List_range<Element> const &range, std::vector<int> const &vector)
+bool operator==(Forward_list_range<Element> const &range, std::vector<int> const &vector)
 {
     return std::equal (range.begin(), range.end(),
                        vector.begin(), vector.end(),
@@ -60,10 +60,10 @@ bool operator==(List_range<Element> const &range, std::vector<int> const &vector
 
 }
 
-TEST_CASE ("List iterators works", "[list]")
+TEST_CASE ("Forward_list iterators works", "[list]")
 {
     Test_list test_list {1, 2, 3};
-    auto range {List_range (test_list.head)};
+    auto range {Forward_list_range (test_list.head)};
 
     auto cur {std::begin (range)};
 
@@ -77,7 +77,7 @@ TEST_CASE ("List iterators works", "[list]")
 TEST_CASE ("Empty lists work", "[list]")
 {
     Element *el {nullptr};
-    auto range {List_range (el)};
+    auto range {Forward_list_range (el)};
 
     CHECK (std::begin (range) == std::end (range));
 }
@@ -86,12 +86,12 @@ TEST_CASE ("Algorithms work on lists", "[list]")
 {
     Test_list test_list {1, 2, 3};
 
-    CHECK (List_range (test_list.head) == std::vector<int> {1, 2, 3});
+    CHECK (Forward_list_range (test_list.head) == std::vector<int> {1, 2, 3});
 }
 
 TEST_CASE("Range-based for works on lists", "[list]")
 {
     Test_list test_list {1, 2, 3};
 
-    CHECK (List_range (test_list.head) == std::vector<int> {1, 2, 3});
+    CHECK (Forward_list_range (test_list.head) == std::vector<int> {1, 2, 3});
 }

@@ -27,7 +27,7 @@
 #include "lock_guard.hpp"
 #include "static_vector.hpp"
 
-class Ioapic : public List<Ioapic>
+class Ioapic : public Forward_list<Ioapic>
 {
     private:
         uint32   const      paddr;

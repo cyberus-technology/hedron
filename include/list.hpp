@@ -25,7 +25,7 @@
 #endif
 
 template <typename T>
-class List_iterator
+class Forward_list_iterator
 {
         T *ptr;
 
@@ -40,45 +40,45 @@ class List_iterator
         using iterator_category = std::forward_iterator_tag;
 #endif
 
-        List_iterator(T *ptr_)
+        Forward_list_iterator(T *ptr_)
             : ptr {ptr_}
         {}
 
         T &operator*() const { return *ptr; }
         T *operator->() const { return ptr; }
 
-        List_iterator &operator++()
+        Forward_list_iterator &operator++()
         {
             ptr = ptr->next;
             return *this;
         }
 
-        bool operator==(List_iterator<T> const &rhs) const { return ptr == rhs.ptr; }
-        bool operator!=(List_iterator<T> const &rhs) const { return not (*this == rhs); }
+        bool operator==(Forward_list_iterator<T> const &rhs) const { return ptr == rhs.ptr; }
+        bool operator!=(Forward_list_iterator<T> const &rhs) const { return not (*this == rhs); }
 };
 
 template <typename T>
-class List_range
+class Forward_list_range
 {
         T *ptr;
 
     public:
-        List_range(T *ptr_) : ptr{ptr_} {}
+        Forward_list_range(T *ptr_) : ptr{ptr_} {}
 
-        List_iterator<T> begin() const { return {ptr}; }
-        List_iterator<T> end()   const { return {nullptr}; }
+        Forward_list_iterator<T> begin() const { return {ptr}; }
+        Forward_list_iterator<T> end()   const { return {nullptr}; }
 };
 
 template <typename T>
-class List
+class Forward_list
 {
     protected:
-        friend class List_iterator<T>;
+        friend class Forward_list_iterator<T>;
 
         T *next;
 
     public:
-        explicit inline List (T *&list) : next (nullptr)
+        explicit inline Forward_list (T *&list) : next (nullptr)
         {
             T **ptr;
 
