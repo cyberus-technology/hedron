@@ -21,6 +21,7 @@
 
 #include "list.hpp"
 #include "slab.hpp"
+#include "algorithm.hpp"
 
 class Hpet : public Forward_list<Hpet>
 {
@@ -41,21 +42,24 @@ class Hpet : public Forward_list<Hpet>
 
         static inline bool claim_dev (unsigned r, unsigned i)
         {
-            for (Hpet *hpet = list; hpet; hpet = hpet->next)
-                if (hpet->rid == 0 && hpet->id == i) {
-                    hpet->rid = static_cast<uint16>(r);
-                    return true;
-                }
+            auto range = Forward_list_range {list};
+            auto it = find_if (range.begin(), range.end(),
+                               [i] (auto &hpet) { return hpet.rid == 0 && hpet.id == i; });
 
-            return false;
+            if (it != range.end()) {
+                it->rid = static_cast<uint16>(r);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         static inline unsigned phys_to_rid (Paddr p)
         {
-            for (Hpet *hpet = list; hpet; hpet = hpet->next)
-                if (hpet->phys == p)
-                    return hpet->rid;
+            auto range = Forward_list_range (list);
+            auto it = find_if (range.begin(), range.end(),
+                               [p] (auto &hpet) { return hpet.phys == p; });
 
-            return ~0U;
+            return it != range.end() ? it->rid : ~0U;
         }
 };
