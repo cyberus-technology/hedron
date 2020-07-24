@@ -101,7 +101,6 @@ class Acpi
         static Acpi_gas gpe1_ena;
         static Acpi_gas reset_reg;
 
-        static uint32   tmr_ovf;
         static uint32   feature;
         static uint8    reset_val;
 
@@ -119,9 +118,7 @@ class Acpi
         static unsigned gsi;
 
         static void delay (unsigned);
-        static uint64 time();
         static void reset();
-        static void interrupt();
 
         static Acpi_table_facs get_facs();
         static void set_facs (Acpi_table_facs const &saved_facs);

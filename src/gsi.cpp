@@ -89,9 +89,7 @@ void Gsi::vector (unsigned vector)
 {
     unsigned gsi = vector - VEC_GSI;
 
-    if (gsi == Acpi::gsi) {
-        Acpi::interrupt();
-    } else if (gsi_table[gsi].trg) {
+    if (gsi_table[gsi].trg) {
         mask (gsi);
     }
 

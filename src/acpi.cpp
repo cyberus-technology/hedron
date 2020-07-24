@@ -37,7 +37,7 @@
 Paddr       Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas    Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt, Acpi::pm2_cnt, Acpi::pm_tmr, Acpi::reset_reg;
 Acpi_gas    Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
-uint32      Acpi::tmr_ovf, Acpi::feature;
+uint32      Acpi::feature;
 uint8       Acpi::reset_val;
 unsigned    Acpi::irq, Acpi::gsi;
 
@@ -48,12 +48,6 @@ void Acpi::delay (unsigned ms)
 
     while ((read (PM_TMR) - val) % (1UL << 24) < cnt)
         pause();
-}
-
-uint64 Acpi::time()
-{
-    mword b = tmr_msb(), c = read (PM_TMR), p = 1UL << b;
-    return (1000000 * ((tmr_ovf + ((c >> b ^ tmr_ovf) & 1)) * static_cast<uint64>(p) + (c & (p - 1)))) / timer_frequency;
 }
 
 void Acpi::reset()
@@ -181,12 +175,10 @@ void Acpi::init()
         Pic::init();
     }
 
-    write (PM1_ENA, PM1_ENA_PWRBTN | PM1_ENA_GBL | PM1_ENA_TMR);
+    write (PM1_ENA, 0);
 
     clear (GPE0_ENA, 0);
     clear (GPE1_ENA, 0);
-
-    for (; tmr_ovf = read (PM_TMR) >> tmr_msb(), read (PM1_STS) & PM1_STS_TMR; write (PM1_STS, PM1_STS_TMR)) ;
 }
 
 unsigned Acpi::read (Register reg)
@@ -305,14 +297,4 @@ void Acpi::hw_write (Acpi_gas *gas, unsigned val, bool prm)
     }
 
     Console::panic ("Unimplemented ASID %d bits=%d prm=%u", gas->asid, gas->bits, prm);
-}
-
-void Acpi::interrupt()
-{
-    unsigned sts = read (PM1_STS);
-
-    if (sts & PM1_STS_TMR)
-        tmr_ovf++;
-
-    write (PM1_STS, sts);
 }
