@@ -122,9 +122,10 @@ void Dmar::vector (unsigned vector)
 {
     unsigned msi = vector - VEC_MSI;
 
-    if (EXPECT_TRUE (msi == 0))
-        for (Dmar *dmar = list; dmar; dmar = dmar->next)
-            dmar->fault_handler();
+    if (EXPECT_TRUE (msi == 0)) {
+        auto range = Forward_list_range (list);
+        for_each(range.begin(), range.end(), mem_fn_closure(&Dmar::fault_handler)());
+    }
 
     Lapic::eoi();
 }

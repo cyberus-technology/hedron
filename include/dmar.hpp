@@ -22,7 +22,9 @@
 
 #include "list.hpp"
 #include "slab.hpp"
+#include "util.hpp"
 #include "x86.hpp"
+#include "algorithm.hpp"
 
 class Pd;
 
@@ -223,8 +225,8 @@ class Dmar : public Forward_list<Dmar>
             if (!(flags & 1))
                 gcmd &= ~GCMD_IRE;
 
-            for (Dmar *dmar = list; dmar; dmar = dmar->next)
-                dmar->command (gcmd);
+            Forward_list_range iommus {list};
+            for_each(iommus.begin(), iommus.end(), mem_fn_closure(&Dmar::command)(gcmd));
         }
 
         static inline void set_irt (unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
