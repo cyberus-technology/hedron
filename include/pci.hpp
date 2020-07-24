@@ -79,39 +79,16 @@ class Pci : public Forward_list<Pci>
         template <typename T>
         inline void write (Register r, T v) { *reinterpret_cast<T volatile *>(reg_base + r) = v; }
 
-        static inline Pci *find_dev (unsigned long r)
-        {
-            for (Pci *pci = list; pci; pci = pci->next)
-                if (pci->rid == r)
-                    return pci;
-
-            return nullptr;
-        }
+        static Pci *find_dev (unsigned long r);
 
     public:
         Pci (unsigned, unsigned);
 
         static inline void *operator new (size_t) { return cache.alloc(); }
 
-        static inline void claim_all (Dmar *d)
-        {
-            for (Pci *pci = list; pci; pci = pci->next)
-                if (!pci->dmar)
-                    pci->dmar = d;
-        }
+        static void claim_all (Dmar *d);
 
-        static inline bool claim_dev (Dmar *d, unsigned r)
-        {
-            Pci *pci = find_dev (r);
-
-            if (!pci)
-                return false;
-
-            unsigned l = pci->lev;
-            do pci->dmar = d; while ((pci = pci->next) && pci->lev > l);
-
-            return true;
-        }
+        static bool claim_dev (Dmar *d, unsigned r);
 
         static void init ();
 
