@@ -1,9 +1,9 @@
-# NOVA: System Call Interface
+# Hedron: System Call Interface
 
 **This document is currently work-in-progress. Information in this
 document should be correct, but the document itself is incomplete.**
 
-This document describes the system call interface for the NOVA microhypervisor.
+This document describes the system call interface for the Hedron microhypervisor.
 
 # Data Structures
 
@@ -502,9 +502,9 @@ invocations except of one will fail in this case.
 The ACPI specification knows two variants of entering S4 (see ACPI
 Specification 6.2 Section 16.1.4). This system call does not support
 either variant. Userspace can trigger a OSPM-initiated S4 transition
-directly and needs to make sure that NOVA is reloaded when the system
+directly and needs to make sure that Hedron is reloaded when the system
 resumes. How this is performed is out-of-scope for this document. In
-this case, NOVA will not retain state. Platform firmware-initiated S4
+this case, Hedron will not retain state. Platform firmware-initiated S4
 transitions are not supported in general.
 
 Hardware-reduced ACPI platforms are **not** supported.

@@ -1,12 +1,12 @@
-# NOVA: Implementation Details
+# Hedron: Implementation Details
 
 The purpose of this document is to describe the implementation of the
-NOVA microhypervisor. This document is meant for the person hacking on
-NOVA source code. It's not meant as user documentation.
+Hedron microhypervisor. This document is meant for the person hacking on
+Hedron source code. It's not meant as user documentation.
 
 ## Initialization Flow
 
-NOVA shares much of its initialization flow between initial boot-up
+Hedron shares much of its initialization flow between initial boot-up
 and resume (as in ACPI sleep states).
 
 All entry points are located in `src/start.S`. `__start_bsp` is the
