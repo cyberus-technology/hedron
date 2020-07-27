@@ -1,11 +1,11 @@
-{ nova
+{ hedron
 , cmake-modules
 , gcovr
 , python3Packages
 }:
-nova.overrideAttrs (
+hedron.overrideAttrs (
   old: {
-    name = "nova-coverage";
+    name = "hedron-coverage";
     cmakeBuildType = "Debug";
     cmakeFlags = [
       "-DCOVERAGE=true"

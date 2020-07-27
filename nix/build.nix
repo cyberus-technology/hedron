@@ -14,7 +14,7 @@ let
   gitIgnores = lib.optional (builtins.pathExists ../.gitignore) ../.gitignore;
 in
 stdenv.mkDerivation {
-  name = "nova";
+  name = "hedron";
   src = nix-gitignore.gitignoreSourcePure ([".git\nnix\n"] ++ gitIgnores) ./..;
 
   nativeBuildInputs = [ cmake ];
@@ -30,14 +30,14 @@ stdenv.mkDerivation {
   postInstall = ''
     mkdir -p $out/nix-support $out/share
     cp -r $src/doc $out/share
-    echo "file binary-dist $out/share/NOVA/hypervisor" >> $out/nix-support/hydra-build-products
-    echo "file binary-dist $out/share/NOVA/hypervisor.elf32" >> $out/nix-support/hydra-build-products
+    echo "file binary-dist $out/share/hedron/hypervisor" >> $out/nix-support/hydra-build-products
+    echo "file binary-dist $out/share/hedron/hypervisor.elf32" >> $out/nix-support/hydra-build-products
     echo "doc-pdf manual $out/share/doc/specification.pdf" >> $out/nix-support/hydra-build-products
   '';
 
   meta = with stdenv.lib; {
-    description = "NOVA microhypervisor, Cyberus Technology fork";
-    homepage = https://gitlab.com/cyberus/NOVA;
+    description = "Hedron microhypervisor by Cyberus Technology";
+    homepage = "https://github.com/cyberus-technology/hedron";
     license = licenses.gpl2;
   };
 }

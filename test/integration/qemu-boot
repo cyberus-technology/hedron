@@ -29,11 +29,11 @@ QEMU_DEFAULT_ARGS = [
 
 def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     """
-    Run qemu with the specified flags and check whether NOVA is booted
+    Run qemu with the specified flags and check whether Hedron is booted
     correctly.
 
     The expect_multiboot_version parameter specifies which multiboot
-    version we expect NOVA to come up with (1 or 2).
+    version we expect Hedron to come up with (1 or 2).
 
     The expect_cpus parameter specifies how many CPUs need to check
     in.
@@ -45,7 +45,7 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     child.logfile = sys.stdout
 
     child.expect(
-        r"NOVA Microhypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
+        r"Hedron Microhypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
         # This can be extremely slow on a busy host.
         timeout=120,
     )

@@ -70,7 +70,7 @@ void init (mword magic, mword mbi)
     for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
 
     // Now we're ready to talk to the world
-    Console::print ("\fNOVA Microhypervisor (Cyberus-%07lx "
+    Console::print ("\fHedron Microhypervisor (Cyberus-%07lx "
 #ifdef NDEBUG
                      "RELEASE"
 #else
