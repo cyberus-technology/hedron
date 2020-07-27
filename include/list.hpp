@@ -72,7 +72,7 @@ class Forward_list_range
 template <typename T>
 class Forward_list
 {
-    protected:
+    private:
         friend class Forward_list_iterator<T>;
 
         T *next;
