@@ -25,35 +25,12 @@
 #include <cstring>
 #else
 
-extern "C" USED NONNULL
-inline void *memcpy (void *d, void const *s, size_t n)
-{
-    mword dummy;
-    asm volatile ("rep; movsb"
-                  : "=D" (dummy), "+S" (s), "+c" (n)
-                  : "0" (d)
-                  : "memory");
-    return d;
-}
+extern "C" NONNULL void *memcpy  (void *d, void const *s, size_t n);
+extern "C" NONNULL void *memmove (void *d, void const *s, size_t n);
 
-extern "C" USED NONNULL
-inline void *memset (void *d, int c, size_t n)
-{
-    mword dummy;
-    asm volatile ("rep; stosb"
-                  : "=D" (dummy), "+c" (n)
-                  : "0" (d), "a" (c)
-                  : "memory");
-    return d;
-}
+extern "C" NONNULL void *memset  (void *d, int c, size_t n);
 
 #endif // __STDC_HOSTED__
 
-// Check whether the first n bytes in two strings match.
-inline bool strnmatch (char const *s1, char const *s2, size_t n)
-{
-    while (n && *s1 == *s2)
-        s1++, s2++, n--;
-
-    return n == 0;
-}
+/// Check whether the first n bytes in two strings match.
+bool strnmatch (char const *s1, char const *s2, size_t n);

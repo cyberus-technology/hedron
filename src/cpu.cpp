@@ -29,6 +29,7 @@
 #include "cpu.hpp"
 #include "compiler.hpp"
 #include "counter.hpp"
+#include "ec.hpp"
 #include "fpu.hpp"
 #include "gdt.hpp"
 #include "hip.hpp"
@@ -49,8 +50,6 @@ char const * const Cpu::vendor_string[] =
     "GenuineIntel",
     "AuthenticAMD"
 };
-
-mword       Cpu::boot_lock;
 
 // Order of these matters
 unsigned    Cpu::online;
@@ -172,8 +171,14 @@ void Cpu::setup_sysenter()
     Msr::write (Msr::IA32_FMASK, ~static_cast<mword>(0));
 }
 
-void Cpu::init()
+Cpu_info Cpu::init()
 {
+    // We go through this function on resume as well. We could skip over certain
+    // initializations and probes, but for now it seems less error-prone to just
+    // rediscover everything.
+
+    // If we ever remove the Gdt rebuild from the resume path, we shouldn't
+    // forget to unbusy the TSS. Otherwise, Tss:load() will crash.
     Gdt::build();
     Tss::build();
 
@@ -226,7 +231,6 @@ void Cpu::init()
 
     Fpu::init();
 
-    Hip::add_cpu(cpu_info);
-
-    boot_lock++;
+    return cpu_info;
 }
+

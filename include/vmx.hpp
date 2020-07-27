@@ -345,12 +345,22 @@ class Vmcs
 
         Vmcs (mword, mword, mword, Ept const &, unsigned);
 
-        inline Vmcs() : rev (basic().revision)
+        /// Construct a root VMCS.
+        Vmcs() : rev (basic().revision) {}
+
+        void vmxon()
         {
             uint64 phys = Buddy::ptr_to_phys (this);
 
             bool ret;
-            asm volatile ("vmxon %1; seta %0" : "=q" (ret) : "m" (phys) : "cc");
+            asm volatile ("vmxon %1" : "=@cca" (ret) : "m" (phys) : "cc");
+            assert (ret);
+        }
+
+        static void vmxoff()
+        {
+            bool ret;
+            asm volatile ("vmxoff" : "=@cca" (ret) :: "cc");
             assert (ret);
         }
 
@@ -362,7 +372,7 @@ class Vmcs
             uint64 phys = Buddy::ptr_to_phys (this);
 
             bool ret;
-            asm volatile ("vmclear %1; seta %0" : "=q" (ret) : "m" (phys) : "cc");
+            asm volatile ("vmclear %1" : "=@cca" (ret) : "m" (phys) : "cc");
             assert (ret);
         }
 
@@ -374,7 +384,7 @@ class Vmcs
             uint64 phys = Buddy::ptr_to_phys (current() = this);
 
             bool ret;
-            asm volatile ("vmptrld %1; seta %0" : "=q" (ret) : "m" (phys) : "cc");
+            asm volatile ("vmptrld %1" : "=@cca" (ret) : "m" (phys) : "cc");
             assert (ret);
         }
 

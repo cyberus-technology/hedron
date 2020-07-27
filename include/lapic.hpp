@@ -97,10 +97,24 @@ class Lapic
 
         static inline void therm_handler();
 
+        static inline void park_handler();
+
     public:
         static unsigned freq_tsc;
         static unsigned freq_bus;
         static bool     use_tsc_timer;
+
+        // Number of CPUs that still need to be parked.
+        //
+        // See park_all_but_self.
+        static unsigned cpu_park_count;
+
+        using park_fn = void (*)();
+
+        /// The function to be executed before CPUs are parked.
+        ///
+        /// \see park_all_but_self
+        static inline park_fn park_function = nullptr;
 
         static inline unsigned id()
         {
@@ -158,12 +172,23 @@ class Lapic
         // This needs to be called before APs are booted.
         static void prepare_ap_boot();
 
+        // Copy the BSP resume code into low-memory (APBOOT_ADDR).
+        static void prepare_bsp_resume();
+
         // Restore low-memory that was clobbered during AP bringup.
         //
         // This needs to be called once all APs have successfully booted.
         static void restore_low_memory();
 
         static void send_ipi (unsigned, unsigned, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
+
+        // Stop all CPUs except the current one.
+        //
+        // Parked CPUs execute the passed function and all but the calling CPU
+        // enter a CLI/HLT loop.
+        //
+        /// This function is not safe to be called concurrently.
+        static void park_all_but_self(park_fn fn);
 
         REGPARM (1)
         static void lvt_vector (unsigned) asm ("lvt_vector");

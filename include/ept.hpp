@@ -88,7 +88,7 @@ class Ept : public Ept_page_table
             static_assert(sizeof(desc) == 16, "INVEPT descriptor layout is broken");
 
             bool ret;
-            asm volatile ("invept %1, %2; seta %0" : "=q" (ret) : "m" (desc), "r" (INVEPT_SINGLE_CONTEXT) : "cc", "memory");
+            asm volatile ("invept %1, %2" : "=@cca" (ret) : "m" (desc), "r" (INVEPT_SINGLE_CONTEXT) : "cc", "memory");
             assert (ret);
         }
 

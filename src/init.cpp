@@ -32,6 +32,7 @@
 #include "lapic.hpp"
 #include "multiboot.hpp"
 #include "multiboot2.hpp"
+#include "suspend.hpp"
 #include "tss.hpp"
 
 static char const *get_boot_type (mword magic)

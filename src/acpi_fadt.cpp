@@ -64,11 +64,7 @@ void Acpi_table_fadt::parse() const
         Acpi::reset_val = reset_value;
     }
 
-    if (smi_cmd && acpi_enable) {
-        Io::out (smi_cmd, acpi_enable);
-        while (!(Acpi::read (Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
-            pause();
-    }
+    init();
 
     if (length >= 140) {
         Acpi::facs = x_firmware_ctrl;
@@ -76,5 +72,14 @@ void Acpi_table_fadt::parse() const
 
     if (not Acpi::facs) {
         Acpi::facs = firmware_ctrl;
+    }
+}
+
+void Acpi_table_fadt::init() const
+{
+    if (smi_cmd && acpi_enable) {
+        Io::out (smi_cmd, acpi_enable);
+        while (!(Acpi::read (Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
+            pause();
     }
 }

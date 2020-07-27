@@ -36,11 +36,15 @@
 unsigned    Lapic::freq_tsc;
 unsigned    Lapic::freq_bus;
 bool        Lapic::use_tsc_timer {false};
+unsigned    Lapic::cpu_park_count;
 
 static char __start_ap_backup[128];
 
 extern "C" char __start_ap[];
 extern "C" char __start_ap_end[];
+
+extern "C" char __resume_bsp[];
+extern "C" char __resume_bsp_end[];
 
 void Lapic::setup()
 {
@@ -57,6 +61,16 @@ void Lapic::prepare_ap_boot()
 
     memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
     memcpy(low_memory,        __start_ap, sizeof(__start_ap_backup));
+}
+
+void Lapic::prepare_bsp_resume()
+{
+    assert (static_cast<size_t>(__resume_bsp_end - __resume_bsp) < sizeof(__start_ap_backup));
+
+    void * const low_memory {Hpt::remap (APBOOT_ADDR)};
+
+    memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
+    memcpy(low_memory,        __resume_bsp, sizeof(__start_ap_backup));
 }
 
 void Lapic::restore_low_memory()
@@ -154,6 +168,23 @@ void Lapic::send_ipi (unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthan
     write (LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
 }
 
+void Lapic::park_all_but_self(park_fn fn)
+{
+    assert (Atomic::load (cpu_park_count) == 0);
+    assert (Cpu::online > 0);
+
+    Atomic::store (park_function, fn);
+    Atomic::store (cpu_park_count, Cpu::online - 1);
+
+    send_ipi (0, VEC_IPI_PRK, DLV_FIXED, DSH_EXC_SELF);
+
+    while (Atomic::load (cpu_park_count) != 0) {
+        pause();
+    }
+
+    park_function();
+}
+
 void Lapic::therm_handler() {}
 
 void Lapic::perfm_handler() {}
@@ -189,6 +220,14 @@ void Lapic::lvt_vector (unsigned vector)
     Counter::print<1,16> (++Counter::lvt()[lvt], Console_vga::COLOR_LIGHT_BLUE, lvt + SPN_LVT);
 }
 
+void Lapic::park_handler()
+{
+    park_function();
+
+    Atomic::sub(cpu_park_count, 1U);
+    shutdown();
+}
+
 void Lapic::ipi_vector (unsigned vector)
 {
     unsigned ipi = vector - VEC_IPI;
@@ -197,6 +236,7 @@ void Lapic::ipi_vector (unsigned vector)
         case VEC_IPI_RRQ: Sc::rrq_handler(); break;
         case VEC_IPI_RKE: Sc::rke_handler(); break;
         case VEC_IPI_IDL: Ec::idl_handler(); break;
+        case VEC_IPI_PRK: park_handler(); break;
     }
 
     eoi();

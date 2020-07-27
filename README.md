@@ -50,7 +50,7 @@ You need the following tools to compile the hypervisor:
 
 - gcc 7.4.0 or higher, available from http://gcc.gnu.org/
 
-- or alternatively, clang 8.0 or higher, available from http://clang.llvm.org/
+- or alternatively, clang 9.0 or higher, available from http://clang.llvm.org/
 
 To build and run the unit tests (optional), you need:
 

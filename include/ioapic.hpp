@@ -25,7 +25,7 @@
 #include "hip.hpp"
 #include "list.hpp"
 #include "lock_guard.hpp"
-#include "slab.hpp"
+#include "static_vector.hpp"
 
 class Ioapic : public List<Ioapic>
 {
@@ -38,7 +38,6 @@ class Ioapic : public List<Ioapic>
         Spinlock            lock;
 
         static Ioapic *     list;
-        static Slab_cache   cache;
 
         enum
         {
@@ -46,6 +45,10 @@ class Ioapic : public List<Ioapic>
             IOAPIC_WND  = 0x10,
             IOAPIC_PAR  = 0x20,
             IOAPIC_EOI  = 0x40,
+
+            // The maximum number of redirection table entries allowed by the
+            // specification.
+            IOAPIC_MAX_IRT = 0xf0,
         };
 
         enum Register
@@ -56,6 +59,9 @@ class Ioapic : public List<Ioapic>
             IOAPIC_BCFG = 0x3,
             IOAPIC_IRT  = 0x10,
         };
+
+        // Stores redirection entries across suspend/resume.
+        Static_vector<uint64, IOAPIC_MAX_IRT> suspend_redir_table;
 
         inline void index (Register reg)
         {
@@ -80,7 +86,7 @@ class Ioapic : public List<Ioapic>
         INIT
         Ioapic (Paddr, unsigned, unsigned);
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
+        static void *operator new (size_t);
 
         static inline bool claim_dev (unsigned r, unsigned i)
         {
@@ -129,4 +135,19 @@ class Ioapic : public List<Ioapic>
             unsigned pin = gsi - gsi_base;
             write (Register (IOAPIC_IRT + 2 * pin + 1), ire ? (gsi << 17 | 1ul << 16) : (cpu << 24));
         }
+
+        void set_irt_entry (size_t entry, uint64 val);
+        uint64 get_irt_entry (size_t entry);
+
+        // Prepare the IOAPIC for system suspend by saving its state to memory.
+        void save();
+
+        // Restore the state of the IOAPIC from memory after a system resume.
+        void restore();
+
+        // Call save on all IOAPICs.
+        static void save_all();
+
+        // Call restore on all IOAPICs.
+        static void restore_all();
 };

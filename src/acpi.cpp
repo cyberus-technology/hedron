@@ -37,7 +37,7 @@
 Paddr       Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas    Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt, Acpi::pm2_cnt, Acpi::pm_tmr, Acpi::reset_reg;
 Acpi_gas    Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
-uint32      Acpi::tmr_ovf, Acpi::feature;
+uint32      Acpi::feature;
 uint8       Acpi::reset_val;
 unsigned    Acpi::irq, Acpi::gsi;
 
@@ -48,12 +48,6 @@ void Acpi::delay (unsigned ms)
 
     while ((read (PM_TMR) - val) % (1UL << 24) < cnt)
         pause();
-}
-
-uint64 Acpi::time()
-{
-    mword b = tmr_msb(), c = read (PM_TMR), p = 1UL << b;
-    return (1000000 * ((tmr_ovf + ((c >> b ^ tmr_ovf) & 1)) * static_cast<uint64>(p) + (c & (p - 1)))) / timer_frequency;
 }
 
 void Acpi::reset()
@@ -106,10 +100,19 @@ void Acpi::enter_sleep_state (uint8 slp_typa, uint8 slp_typb)
 {
     unsigned pm1_cnt_common = (Acpi::read (PM1_CNT) & ~PM1_CNT_SLP_TYP) | PM1_CNT_SLP_EN;
 
+    // Clear WAK_STS. This is a write-one-to-clear register.
+    Acpi::write (PM1_STS, PM1_STS_WAKE);
+
     // The PM1_CNT register is special compared to other split registers,
     // because different values have to be written in each part.
     Acpi::hw_write (&pm1a_cnt, pm1_cnt_common | (slp_typa << PM1_CNT_SLP_TYP_SHIFT));
     Acpi::hw_write (&pm1b_cnt, pm1_cnt_common | (slp_typb << PM1_CNT_SLP_TYP_SHIFT));
+
+    // For S2 and S3, the wake status will never be set and CPU power will be
+    // turned off. For S1, this bit will be set when it's time to wake up again.
+    while (not (Acpi::read (PM1_STS) & PM1_STS_WAKE)) {
+        pause();
+    }
 }
 
 void Acpi::setup()
@@ -145,10 +148,6 @@ void Acpi::setup()
                facsp->length);
     }
 
-    if (Acpi_table_madt::pic_present) {
-        Pic::init();
-    }
-
     if (!Acpi_table_madt::sci_overridden) {
         Acpi_intr sci_override;
         sci_override.bus = 0;
@@ -161,14 +160,25 @@ void Acpi::setup()
 
     Gsi::set (gsi = Gsi::irq_to_gsi (irq));
 
-    write (PM1_ENA, PM1_ENA_PWRBTN | PM1_ENA_GBL | PM1_ENA_TMR);
+    Acpi::init();
+
+    trace (TRACE_ACPI, "ACPI: GSI:%#x TMR:%lu", gsi, tmr_msb() + 1);
+}
+
+void Acpi::init()
+{
+    if (fadt) {
+        static_cast<Acpi_table_fadt *>(Hpt::remap (fadt))->init();
+    }
+
+    if (Acpi_table_madt::pic_present) {
+        Pic::init();
+    }
+
+    write (PM1_ENA, 0);
 
     clear (GPE0_ENA, 0);
     clear (GPE1_ENA, 0);
-
-    for (; tmr_ovf = read (PM_TMR) >> tmr_msb(), read (PM1_STS) & PM1_STS_TMR; write (PM1_STS, PM1_STS_TMR)) ;
-
-    trace (TRACE_ACPI, "ACPI: GSI:%#x TMR:%lu", gsi, tmr_msb() + 1);
 }
 
 unsigned Acpi::read (Register reg)
@@ -287,14 +297,4 @@ void Acpi::hw_write (Acpi_gas *gas, unsigned val, bool prm)
     }
 
     Console::panic ("Unimplemented ASID %d bits=%d prm=%u", gas->asid, gas->bits, prm);
-}
-
-void Acpi::interrupt()
-{
-    unsigned sts = read (PM1_STS);
-
-    if (sts & PM1_STS_TMR)
-        tmr_ovf++;
-
-    write (PM1_STS, sts);
 }
