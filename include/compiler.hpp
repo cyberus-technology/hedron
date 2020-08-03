@@ -75,18 +75,10 @@
 
     #define FORMAT(X,Y)         __attribute__((format (printf, (X),(Y))))
 
-    // On hosted builds, we do not use a linker script, so linking into these
-    // special section may cause problems.
-    //
-    // On clang 9, this causes INIT functions to be called randomly when static
-    // constructors are called.
-    #if __STDC_HOSTED__
-        #define INIT
-        #define INITDATA
-    #else
-        #define INIT                __attribute__((section (".init")))
-        #define INITDATA            __attribute__((section (".initdata")))
-    #endif
+    // These used to be used to link initialization code and data into special
+    // sections.
+    #define INIT
+    #define INITDATA
 
     #define INIT_PRIORITY(X)    __attribute__((init_priority((X))))
     #define NOINLINE            __attribute__((noinline))
