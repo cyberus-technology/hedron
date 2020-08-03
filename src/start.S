@@ -27,6 +27,15 @@
 #include "selectors.hpp"
 
 /*
+ * The boot stack that we used during early CPU boot.
+ */
+.bss
+
+.align PAGE_SIZE
+.skip PAGE_SIZE
+BOOT_STACK:
+
+/*
  * Initialization Code
  */
 .section .init.multiboot, "ax"
@@ -74,7 +83,7 @@ __boot_gdt__:
                         mov     %ecx, %es
                         mov     %ecx, %fs
                         mov     %ecx, %gs
-                        mov     $STACK, %esp
+                        lea     BOOT_STACK, %rsp
 .endm
 
 .macro                  INIT_PAGING
