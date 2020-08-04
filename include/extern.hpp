@@ -29,8 +29,6 @@ extern char PAGE_0[PAGE_SIZE];
 extern char PAGE_1[PAGE_SIZE];
 extern char PAGE_H[PAGE_SIZE];
 
-extern char FRAME_H;
-
 extern char PDBRV;
 extern char PDBR;
 

@@ -52,7 +52,8 @@ Pd::Pd ()
     mark_avail_phys (reinterpret_cast<mword>(&LINK_E), 1ULL << hpt.max_order());
 
     // HIP
-    mark_avail_phys (reinterpret_cast<mword>(&FRAME_H), reinterpret_cast<mword>(&FRAME_H) + PAGE_SIZE, 1);
+    Paddr frame_h = Buddy::ptr_to_phys (&PAGE_H);
+    mark_avail_phys (frame_h, frame_h + PAGE_SIZE, 1);
 
     // I/O Ports
     Space_pio::addreg (0, 1UL << 16, 7);
