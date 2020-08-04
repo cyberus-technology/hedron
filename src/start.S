@@ -186,7 +186,7 @@ __start_ap_end:
 /*
  * BSP Resume Code
  */
-.section .init.multiboot, "ax"
+.section .init, "ax"
 .code64
 
 .globl resume_bsp_long
