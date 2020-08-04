@@ -55,6 +55,9 @@ SECTIONS
 
     .rodata : AT (ADDR (.rodata) - OFFSET)
     {
+        . = ALIGN(8); VIRT_PHYS_OFFSET = .;
+        QUAD (OFFSET);
+
         *(.rodata .rodata.* .gnu.linkonce.r.*)
     } : kern
 

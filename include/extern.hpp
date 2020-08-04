@@ -35,7 +35,6 @@ extern char PDBR;
 extern char LINK_P;
 extern char LINK_E;
 extern char LOAD_E;
-extern char OFFSET;
 
 extern mword FIXUP_S;
 extern mword FIXUP_E;
@@ -43,6 +42,8 @@ extern mword FIXUP_E;
 extern void (*CTORS_C)();
 extern void (*CTORS_G)();
 extern void (*CTORS_E)();
+
+extern mword const VIRT_PHYS_OFFSET;
 
 extern char entry_sysenter;
 extern char entry_vmx;

@@ -71,12 +71,12 @@ class Buddy
 
         inline mword virt_to_phys (mword virt)
         {
-            return virt - reinterpret_cast<mword>(&OFFSET);
+            return virt - VIRT_PHYS_OFFSET;
         }
 
         inline mword phys_to_virt (mword phys)
         {
-            return phys + reinterpret_cast<mword>(&OFFSET);
+            return phys + VIRT_PHYS_OFFSET;
         }
 
     public:
