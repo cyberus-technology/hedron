@@ -33,22 +33,26 @@ ALIGNED(32) No_destruct<Pd> Pd::kern;
 Pd::Pd ()
     : Typed_kobject (static_cast<Space_obj *>(this))
 {
+    auto mark_avail_phys = [this] (uint64 start, uint64 end, mword attr = 0x7) {
+                               Space_mem::insert_root (start >> PAGE_BITS, end >> PAGE_BITS, attr);
+                           };
+
     Mtrr_state::get().init();
 
     // We insert everything into the memory space that is usable for userspace.
     // It needs to match Hip::add_mhv and our linker script.
 
     // This the memory before the first ELF segment.
-    Space_mem::insert_root (0, LOAD_ADDR);
+    mark_avail_phys (0, LOAD_ADDR);
 
     // The memory between the ELF segments.
-    Space_mem::insert_root (reinterpret_cast<mword>(&LOAD_E), reinterpret_cast<mword>(&LINK_P));
+    mark_avail_phys (reinterpret_cast<mword>(&LOAD_E), reinterpret_cast<mword>(&LINK_P));
 
     // The memory after the second ELF segment to "infinity".
-    Space_mem::insert_root (reinterpret_cast<mword>(&LINK_E), 1ULL << 52);
+    mark_avail_phys (reinterpret_cast<mword>(&LINK_E), 1ULL << hpt.max_order());
 
     // HIP
-    Space_mem::insert_root (reinterpret_cast<mword>(&FRAME_H), reinterpret_cast<mword>(&FRAME_H) + PAGE_SIZE, 1);
+    mark_avail_phys (reinterpret_cast<mword>(&FRAME_H), reinterpret_cast<mword>(&FRAME_H) + PAGE_SIZE, 1);
 
     // I/O Ports
     Space_pio::addreg (0, 1UL << 16, 7);
