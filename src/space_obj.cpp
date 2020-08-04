@@ -28,10 +28,11 @@ Space_mem *Space_obj::space_mem()
 
 Paddr Space_obj::walk (mword idx, bool &shootdown)
 {
+    Paddr const frame_0 = Buddy::ptr_to_phys(&PAGE_0);
     mword virt = idx_to_virt (idx); Paddr phys; void *ptr;
 
-    if (!space_mem()->lookup (virt, &phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0)) {
-        shootdown = (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0);
+    if (!space_mem()->lookup (virt, &phys) || (phys & ~PAGE_MASK) == frame_0) {
+        shootdown = (phys & ~PAGE_MASK) == frame_0;
 
         Paddr p = Buddy::ptr_to_phys (ptr = Buddy::allocator.alloc (0, Buddy::FILL_0));
 
@@ -54,7 +55,7 @@ Tlb_cleanup Space_obj::update (mword idx, Capability cap)
 size_t Space_obj::lookup (mword idx, Capability &cap)
 {
     Paddr phys;
-    if (!space_mem()->lookup (idx_to_virt (idx), &phys) || (phys & ~PAGE_MASK) == reinterpret_cast<Paddr>(&FRAME_0))
+    if (!space_mem()->lookup (idx_to_virt (idx), &phys) || (phys & ~PAGE_MASK) == Buddy::ptr_to_phys(&PAGE_0))
         return 0;
 
     cap = *static_cast<Capability *>(Buddy::phys_to_ptr (phys));
@@ -83,5 +84,5 @@ bool Space_obj::insert_root (Kobject *obj)
 void Space_obj::page_fault (mword addr, mword error)
 {
     assert (!(error & Hpt::ERR_W));
-    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_0) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
+    Pd::current()->Space_mem::replace (addr, Buddy::ptr_to_phys(&PAGE_0) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
 }
