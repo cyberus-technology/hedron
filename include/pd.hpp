@@ -75,7 +75,7 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
 
         void *get_access_page();
 
-        INIT Pd();
+        Pd();
         ~Pd();
 
         enum pd_creation_flags {

@@ -30,7 +30,6 @@ Per_cpu &Cpulocal::get_remote(unsigned cpu_id)
     return Cpulocal::cpu[cpu_id];
 }
 
-INIT
 mword Cpulocal::setup_cpulocal()
 {
     unsigned cpu_id {Cpu::find_by_apic_id (Lapic::early_id())};

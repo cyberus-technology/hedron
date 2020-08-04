@@ -35,7 +35,6 @@ class Cmdline
             bool * const  ptr;
         } const map[];
 
-        INIT
         static char const *get_arg (char const **, unsigned &);
 
     public:
@@ -48,6 +47,5 @@ class Cmdline
         static bool novpid;
         static bool noxsave;
 
-        INIT
         static void init (char const *);
 };

@@ -47,8 +47,7 @@ class Acpi_table : public Acpi_header
         uint32      creator_revision;               // 32
 
         // Compute the ACPI byte-by-byte checksum of an arbitrary piece of memory.
-        INIT static
-        uint8 do_checksum (const void *table, size_t len);
+        static uint8 do_checksum (const void *table, size_t len);
 
         // Compute the ACPI byte-by-byte checksum of this table.
         uint8 do_checksum() const
@@ -56,6 +55,5 @@ class Acpi_table : public Acpi_header
             return do_checksum (this, length);
         }
 
-        INIT
         bool good_checksum (Paddr addr) const;
 };

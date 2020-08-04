@@ -156,24 +156,18 @@ class Hip
             Atomic::store(hip()->cap_vmx_sec_exec, caps);
         }
 
-        INIT
         static void build (mword, mword);
 
-        INIT
         static void build_mbi1 (Hip_mem *&, mword);
 
-        INIT
         static void build_mbi2 (Hip_mem *&, mword);
 
         template <typename T>
-        INIT
         static void add_mem (Hip_mem *&, T const *);
 
         template <typename T>
-        INIT
         static void add_mod (Hip_mem *&, T const *, uint32);
 
-        INIT
         static void add_mhv (Hip_mem *&);
 
         static void add_cpu (Cpu_info const &);

@@ -214,7 +214,6 @@ class Dmar : public List<Dmar>
         void fault_handler();
 
     public:
-        INIT
         Dmar (Paddr);
 
         static inline void *operator new (size_t) { return cache.alloc(); }

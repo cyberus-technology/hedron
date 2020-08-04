@@ -164,7 +164,6 @@ class Lapic
 
         static void init();
 
-        INIT
         static void setup();
 
         // Copy the AP boot code into low-memory.

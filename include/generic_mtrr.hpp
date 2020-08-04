@@ -65,7 +65,7 @@ class Generic_mtrr_state
         uint64 read (size_t index) { return MSR::read (typename MSR::Register (index)); }
 
     public:
-        INIT void init()
+        void init()
         {
             size_t const count {read (MSR::IA32_MTRR_CAP) & 0xff};
 
@@ -81,7 +81,7 @@ class Generic_mtrr_state
             }
         }
 
-        INIT unsigned memtype (uint64 phys, uint64 &next)
+        unsigned memtype (uint64 phys, uint64 &next)
         {
             if (phys < 0x80000) {
                 next = 1 + (phys | 0xffff);

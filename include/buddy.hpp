@@ -89,7 +89,6 @@ class Buddy
 
         static Buddy allocator;
 
-        INIT
         Buddy (mword phys, mword virt, mword f_addr, size_t size);
 
         static void fill(void *dst, Fill fill_mem, size_t size);

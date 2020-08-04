@@ -75,11 +75,6 @@
 
     #define FORMAT(X,Y)         __attribute__((format (printf, (X),(Y))))
 
-    // These used to be used to link initialization code and data into special
-    // sections.
-    #define INIT
-    #define INITDATA
-
     #define INIT_PRIORITY(X)    __attribute__((init_priority((X))))
     #define NOINLINE            __attribute__((noinline))
     #define NONNULL             __attribute__((nonnull))

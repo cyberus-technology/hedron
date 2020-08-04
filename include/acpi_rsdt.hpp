@@ -50,7 +50,6 @@ class Acpi_table_rsdt : public Acpi_table
         uint32 rsdt(unsigned i) const { return *(&rsdt_ + i); }
         uint64 xsdt(unsigned i) const { return *(&xsdt_ + i); }
 
-        INIT
         void parse (Paddr, size_t) const;
 };
 

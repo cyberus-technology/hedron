@@ -63,7 +63,6 @@ class Acpi_dmar : public Acpi_remap
         uint64      phys;
         Acpi_scope  scope[];
 
-        INIT
         void parse() const;
 };
 
@@ -79,7 +78,6 @@ class Acpi_rmrr : public Acpi_remap
         uint64      limit;
         Acpi_scope  scope[];
 
-        INIT
         void parse() const;
 };
 
@@ -94,7 +92,6 @@ class Acpi_atsr : public Acpi_remap
         uint16      segment;
         Acpi_scope  scope[];
 
-        INIT
         void parse() const;
 };
 
@@ -109,6 +106,5 @@ class Acpi_table_dmar : public Acpi_table
         uint8       reserved[10];
         Acpi_remap  remap[];
 
-        INIT
         void parse() const;
 };
