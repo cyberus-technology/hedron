@@ -35,7 +35,16 @@ Pd::Pd ()
 {
     Mtrr_state::get().init();
 
+    // We insert everything into the memory space that is usable for userspace.
+    // It needs to match Hip::add_mhv and our linker script.
+
+    // This the memory before the first ELF segment.
     Space_mem::insert_root (0, LOAD_ADDR);
+
+    // The memory between the ELF segments.
+    Space_mem::insert_root (reinterpret_cast<mword>(&LOAD_E), reinterpret_cast<mword>(&LINK_P));
+
+    // The memory after the second ELF segment to "infinity".
     Space_mem::insert_root (reinterpret_cast<mword>(&LINK_E), 1ULL << 52);
 
     // HIP
