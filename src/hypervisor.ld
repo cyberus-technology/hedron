@@ -85,7 +85,7 @@ SECTIONS
         *(.bss .bss.* .gnu.linkonce.b.*)
 
         . = ALIGN(4K);
-        _mempool_l = .; PROVIDE (_mempool_p = _mempool_l - OFFSET);
+        _mempool_l = .;
 
         PROVIDE (PAGE_0 = .); . += 4K;
         PROVIDE (PAGE_1 = .); . += 4K;
