@@ -71,12 +71,12 @@ class Buddy
 
         inline mword virt_to_phys (mword virt)
         {
-            return virt - VIRT_PHYS_OFFSET;
+            return VIRT_TO_PHYS_NORELOC (virt) + PHYS_RELOCATION;
         }
 
         inline mword phys_to_virt (mword phys)
         {
-            return phys + VIRT_PHYS_OFFSET;
+            return PHYS_TO_VIRT_NORELOC (phys - PHYS_RELOCATION);
         }
 
     public:

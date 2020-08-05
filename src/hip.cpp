@@ -159,15 +159,8 @@ void Hip::add_mhv (Hip_mem *&mem)
     // descriptors need to match Pd::Pd (the constructor of the hypervisor PD)
     // and our linker script.
 
-    // Our low memory region with bootstrap code (see start.S).
-    mem->addr = LOAD_ADDR;
-    mem->size = reinterpret_cast<mword>(&LOAD_E) - mem->addr;
-    mem->type = Hip_mem::HYPERVISOR;
-    mem++;
-
-    // The rest of the hypervisor.
-    mem->addr = reinterpret_cast<mword>(&LINK_P);
-    mem->size = reinterpret_cast<mword>(&LINK_E) - mem->addr;
+    mem->addr = LOAD_ADDR + PHYS_RELOCATION;
+    mem->size = reinterpret_cast<mword>(&LOAD_END) - LOAD_ADDR;
     mem->type = Hip_mem::HYPERVISOR;
     mem++;
 }
