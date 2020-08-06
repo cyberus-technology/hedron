@@ -87,18 +87,45 @@ else()
 endif()
 
 # Preprocess and use the custom linker script
-set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-x86_64.ld)
+set(HYPERVISOR-LINKER-SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld)
+set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.ld)
 
-add_custom_command(
-  OUTPUT ${HYPERVISOR-LINKER-SCRIPT}
-  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld
-  COMMAND ${CMAKE_CXX_COMPILER}
-  ARGS
-  -x c -E ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld -P
-  -o ${HYPERVISOR-LINKER-SCRIPT}
-  -I ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  VERBATIM
-  )
+# In order to let the build system reason about the dependencies
+# (header files) of preprocessed linker scripts, cmake needs to
+# determine those dependencies so we don't have to specify them
+# manually.
+#
+# Unfortunately, there is a catch:
+# - IMPLICIT_DEPENDS works for Makefiles and is ignored by all others
+# - DEPFILE works for Ninja, but causes an error with Makefiles (sigh)
+#
+# The only reasonable solution right now is to duplicate this custom
+# command depending on the generator.
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+  add_custom_command(
+    OUTPUT ${HYPERVISOR-LINKER-SCRIPT}
+    MAIN_DEPENDENCY ${HYPERVISOR-LINKER-SOURCE}
+    DEPFILE ${HYPERVISOR-LINKER-SCRIPT}.d
+    COMMAND ${CMAKE_CXX_COMPILER}
+    ARGS
+    -x c -E ${HYPERVISOR-LINKER-SOURCE} -P
+    -o ${HYPERVISOR-LINKER-SCRIPT}
+    -I ${CMAKE_SOURCE_DIR}/include
+    )
+endif()
+if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+  add_custom_command(
+    OUTPUT ${HYPERVISOR-LINKER-SCRIPT}
+    MAIN_DEPENDENCY ${HYPERVISOR-LINKER-SOURCE}
+    IMPLICIT_DEPENDS CXX ${HYPERVISOR-LINKER-SOURCE}
+    COMMAND ${CMAKE_CXX_COMPILER}
+    ARGS
+    -x c -E ${HYPERVISOR-LINKER-SOURCE} -P
+    -o ${HYPERVISOR-LINKER-SCRIPT}
+    -I ${CMAKE_SOURCE_DIR}/include
+    )
+endif()
+
 add_custom_target(hypervisor-ld-script-generated DEPENDS ${HYPERVISOR-LINKER-SCRIPT})
 
 add_dependencies(hypervisor hypervisor-ld-script-generated)
