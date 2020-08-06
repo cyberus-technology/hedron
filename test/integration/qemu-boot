@@ -1,63 +1,142 @@
-#!/usr/bin/env expect
+#!/usr/bin/env python3
+# -*- Mode: Python -*-
 
-if { $argc < 1 || $argc > 4 } {
-    puts "Usage: qemu-boot <file> \[OPTION\]"
-    puts "Boot NOVA using qemu. FILE is expected to be <hypervisor.elf32> unless specified different by an option."
-    puts "Options:"
-    puts "  -i FILE is a disk image using multiboot2 to boot NOVA"
-    puts "  -e [Firmware] Boot in UEFI mode [using <Firmware> as path for firmware files]"
-    exit 1
-}
+import argparse
+import os.path
+import pexpect
+import sys
 
-set cpus 4
-set boot_file [lindex $argv 0]
-set common_args "-smp $cpus -machine q35,accel=tcg -cpu Westmere -m 2048 -serial stdio -net none -display none"
+DEFAULT_CPUS = 4
+DEFAULT_MEM = 512
 
-if { $argc >= 2 && [lindex $argv 1] == "-i" } {
-    set args "-drive format=raw,snapshot=on,file=$boot_file"
-} else {
-    set kernel_args serial
-    set args "-kernel $boot_file -append $kernel_args"
-}
+QEMU = "qemu-system-x86_64"
+QEMU_DEFAULT_ARGS = [
+    "-machine",
+    "q35,accel=tcg",
+    "-cpu",
+    "Westmere",
+    "-m",
+    "2048",
+    "-serial",
+    "stdio",
+    "-net",
+    "none",
+    "-display",
+    "none",
+    "-no-reboot",
+]
 
-set bios ""
-set fv "/usr/share/OVMF"
-if { $argc == 4 } {
-    set fv [lindex $argv 3]
-}
 
-if { $argc >= 3 && [lindex $argv 2] == "-e" } {
-    if {![file exists $fv/OVMF_CODE.fd] || ![file exists $fv/OVMF_VARS.fd]} {
-        puts "OVMF_CODE.fd or OVMF_VARS.fd not found in $fv"; exit 1;
-    }
-    set bios "-drive if=pflash,format=raw,readonly,file=$fv/OVMF_CODE.fd -drive if=pflash,format=raw,readonly,file=$fv/OVMF_VARS.fd"
-}
+def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
+    """
+    Run qemu with the specified flags and check whether NOVA is booted
+    correctly.
 
-eval spawn qemu-system-x86_64 $common_args $args $bios
+    The expect_multiboot_version parameter specifies which multiboot
+    version we expect NOVA to come up with (1 or 2).
 
-# Consider timeouts and early EOFs as failure.
-expect_before {
-    timeout { puts "Failed: Timeout";   exit 1 }
-    eof     { puts "Failed: Early EOF"; exit 2 }
-}
+    The expect_cpus parameter specifies how many CPUs need to check
+    in.
+    """
 
-# Qemu might take some time to come up.
-set timeout 60
-if { $argc == 2 && [lindex $argv 1] == "-i" } {
-    expect -re "NOVA Microhypervisor.*\[MBI2\]"
-} else {
-    expect -re "NOVA Microhypervisor.*\[MBI\]"
-}
+    assert expect_multiboot_version in [1, 2]
 
-# After NOVA has checked in, everything is very quick.
-set timeout 5
+    child = pexpect.spawn(qemu, args, encoding="utf-8")
+    child.logfile = sys.stdout
 
-# All cores check in. The come up in unspecified order.
-for {set i 0} {$i < $cpus} {incr i} {
-    expect "CORE:"
-}
+    child.expect(
+        r"NOVA Microhypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
+        # This can be extremely slow on a busy host.
+        timeout=120,
+    )
 
-# We die, because no roottask is specified.
-expect -re "Killed EC:.*\(No ELF\)"
+    for cpu in range(expect_cpus):
+        child.expect(r"CORE:", timeout=5)
 
-close
+    child.expect(r"Killed EC:.*\(No ELF\)", timeout=5)
+    child.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Boot the hypervisor in Qemu",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument("hypervisor", help="The hypervisor binary or disk image.")
+
+    parser.add_argument(
+        "--disk-image",
+        action="store_true",
+        default=False,
+        help="The specified hypervisor is a disk image instead of an ELF.",
+    )
+
+    parser.add_argument(
+        "--uefi",
+        action="store_true",
+        default=False,
+        help="Boot in UEFI mode instead of legacy BIOS mode.",
+    )
+
+    parser.add_argument(
+        "--uefi-firmware-path",
+        default="/usr/share/OVMF",
+        help="Specify the path to the UEFI firmware files.",
+    )
+
+    parser.add_argument(
+        "--memory",
+        type=int,
+        default=DEFAULT_MEM,
+        help="The amount of memory in MiB to give to the VM.",
+    )
+
+    args = parser.parse_args()
+
+    qemu_args = QEMU_DEFAULT_ARGS
+    qemu_args += ["-smp", str(DEFAULT_CPUS), "-m", str(args.memory)]
+
+    if args.disk_image:
+        qemu_args += [
+            "-drive",
+            "format=raw,snapshot=on,file={}".format(args.hypervisor),
+        ]
+    else:
+        qemu_args += ["-kernel", args.hypervisor, "-append", "serial"]
+
+    if args.uefi:
+        ovmf_code = os.path.join(args.uefi_firmware_path, "OVMF_CODE.fd")
+        ovmf_data = os.path.join(args.uefi_firmware_path, "OVMF_VARS.fd")
+
+        if not (os.path.exists(ovmf_code) and os.path.exists(ovmf_data)):
+            print(
+                "OVMF_CODE.fd or OVMF_VARS.fd not found in {}".format(
+                    args.uefi_firmware_path
+                ),
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        qemu_args += [
+            "-drive",
+            "if=pflash,format=raw,readonly,file={}".format(ovmf_code),
+            "-drive",
+            "if=pflash,format=raw,readonly,file={}".format(ovmf_data),
+        ]
+
+    try:
+        test_hypervisor(
+            QEMU,
+            qemu_args,
+            expect_multiboot_version=2 if args.disk_image else 1,
+            expect_cpus=DEFAULT_CPUS,
+        )
+        print("\nTest completed successfully.")
+        sys.exit(0)
+    except pexpect.TIMEOUT:
+        print("Timed out during test.", file=sys.stderr)
+        sys.exit(1)
+    except pexpect.EOF:
+        print("Got EOF from qemu during test.", file=sys.stderr)
+        sys.exit(1)

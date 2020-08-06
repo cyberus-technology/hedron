@@ -22,8 +22,7 @@
 }:
 
 let
-  nova = import ./build.nix;
-  itest = import ./integration-test.nix;
+  qemuBoot = pkgs.callPackage ./qemu-boot.nix {};
   cmake-modules = pkgs.callPackage ./cmake-modules.nix { inherit sources; };
 
   attrsToList = pkgs.lib.mapAttrsToList pkgs.lib.nameValuePair;
@@ -41,7 +40,7 @@ let
   # { gcc9-release = ...; gcc9-debug = ...; }
   novaBuilds = with pkgs; builtins.listToAttrs (builtins.map
     ({cc, buildType}:
-      lib.nameValuePair "${cc.name}-${lib.toLower buildType}" (callPackage nova {
+      lib.nameValuePair "${cc.name}-${lib.toLower buildType}" (callPackage ./build.nix {
         inherit buildType;
 
         stdenv = overrideCC stdenv cc.value;
@@ -59,7 +58,12 @@ let
     '';
   });
   testBuilds = with pkgs; lib.mapAttrs
-    (_: v: callPackage itest { grub2 = combinedGrub; nova = v; })
+    (_: v: callPackage ./integration-test.nix {
+      inherit qemuBoot;
+
+      grub2 = combinedGrub;
+      nova = v;
+    })
     novaBuilds;
 in rec {
   nova = {
