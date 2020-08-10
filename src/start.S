@@ -66,6 +66,14 @@ __boot_header_mbi2_s:   .long   0xe85250d6
                         .long   0x0
                         .long   (__boot_header_mbi2_e - __boot_header_mbi2_s)
                         .long  -(0xe85250d6 + (__boot_header_mbi2_e - __boot_header_mbi2_s))
+                        /* relocatable tag */
+                        .word   0xa /* type = relocatable */
+                        .word   0x0 /* flags */
+                        .long   0x18 /* size */
+                        .long   LOAD_ADDR_MIN
+                        .long   LOAD_ADDR_MAX
+                        .long   LOAD_ADDR_ALIGN
+                        .long   2 /* prefer load at highest possible address */
                         /* end tag */
                         .word   0x0 /* type */
                         .word   0x0 /* flags */
