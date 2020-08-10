@@ -155,7 +155,18 @@ void Hip::add_mem (Hip_mem *&mem, T const *map)
 
 void Hip::add_mhv (Hip_mem *&mem)
 {
+    // We describe memory that is used by the microhypervisor. These memory
+    // descriptors need to match Pd::Pd (the constructor of the hypervisor PD)
+    // and our linker script.
+
+    // Our low memory region with bootstrap code (see start.S).
     mem->addr = LOAD_ADDR;
+    mem->size = reinterpret_cast<mword>(&LOAD_E) - mem->addr;
+    mem->type = Hip_mem::HYPERVISOR;
+    mem++;
+
+    // The rest of the hypervisor.
+    mem->addr = reinterpret_cast<mword>(&LINK_P);
     mem->size = reinterpret_cast<mword>(&LINK_E) - mem->addr;
     mem->type = Hip_mem::HYPERVISOR;
     mem++;
