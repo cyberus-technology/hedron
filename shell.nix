@@ -13,7 +13,7 @@ pkgs.mkShell {
   # These can be debugged via `NIX_DEBUG=1 <command>`.
   hardeningDisable = [ "all" ];
 
-  inputsFrom = [ (import ./. { inherit sources nixpkgs pkgs; }) ];
+  inputsFrom = [ (import ./.) ];
 
   buildInputs = [ pkgs.niv ];
 }

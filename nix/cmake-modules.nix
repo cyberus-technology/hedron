@@ -1,7 +1,7 @@
-{ sources, stdenvNoCC }:
+{ src, stdenvNoCC }:
 stdenvNoCC.mkDerivation {
   name = "cmake-modules";
-  src = sources.cmake-modules;
+  inherit src;
 
   patchPhase = ''
     # gcovr itself is a bash script that wraps the python script already
