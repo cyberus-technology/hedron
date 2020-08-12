@@ -73,15 +73,18 @@ let
   default-debug = novaBuildSet.gcc9-debug;
 in
 {
-  nova-builds = pkgs.recurseIntoAttrs {
-    inherit default-release default-debug;
-  } // novaBuildSet;
-  nova = default-release;
+  nova = pkgs.recurseIntoAttrs {
+    builds = pkgs.recurseIntoAttrs {
+      inherit default-release default-debug;
+    } // novaBuildSet;
 
-  nova-integration-test = pkgs.recurseIntoAttrs testBuilds;
+    inherit default-release;
 
-  nova-coverage = pkgs.callPackage ./coverage.nix {
-    nova = default-debug;
-    inherit cmake-modules;
+    integration-test = pkgs.recurseIntoAttrs testBuilds;
+
+    coverage = pkgs.callPackage ./coverage.nix {
+      nova = default-debug;
+      inherit cmake-modules;
+    };
   };
 }

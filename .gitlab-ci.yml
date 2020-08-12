@@ -187,11 +187,11 @@ integration_test:nixos:
     - mkdir -p output
     # Workaround Gitlab CI not archiving across symlinks
     - mkdir -p output/compilers/
-    - cp -r $(nix-build --no-out-link nix/release.nix -A nova-builds) output/compilers/
+    - cp -r $(nix-build --no-out-link nix/release.nix -A nova.builds) output/compilers/
     - mkdir -p output/integration-test/
-    - cp -r $(nix-build --no-out-link nix/release.nix -A nova-integration-test) output/integration-test/
+    - cp -r $(nix-build --no-out-link nix/release.nix -A nova.integration-test) output/integration-test/
     - mkdir -p output/coverage/
-    - cp -r $(nix-build --no-out-link nix/release.nix -A nova-coverage) output/coverage/
+    - cp -r $(nix-build --no-out-link nix/release.nix -A nova.coverage) output/coverage/
   artifacts:
     expire_in: 1 week
     paths:
