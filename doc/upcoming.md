@@ -1,6 +1,6 @@
-# NOVA: Upcoming Changes to the System Call Interface
+# Hedron: Upcoming Changes to the System Call Interface
 
-This document contains documentation for yet-to-be-implemented NOVA
+This document contains documentation for yet-to-be-implemented Hedron
 features. Once features are done, the description will move from this
 document to `kernel-interface.md`. Sections are written in a way that
 they can be merged into the main document, i.e. their top-level

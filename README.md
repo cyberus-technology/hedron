@@ -1,17 +1,16 @@
-NOVA Microhypervisor (Cyberus Fork)
-===================================
+Hedron Microhypervisor
+======================
 
-This is the source code for the NOVA microhypervisor fork of Cyberus
-Technology.
+This is the source code for the Hedron microhypervisor.
 
-The NOVA microhypervisor combines microkernel and hypervisor functionality
+The Hedron microhypervisor combines microkernel and hypervisor functionality
 and provides an extremely small trusted computing base for user applications
 and virtual machines running on top of it. The microhypervisor implements a
 capability-based authorization model and provides basic mechanisms for
 virtualization, spatial and temporal separation, scheduling, communication,
 and management of platform resources.
 
-NOVA can be used with a multi-server environment that implements additional
+Hedron can be used with a multi-server environment that implements additional
 operating-system services in user mode, such as device drivers, protocol
 stacks, and policies. On machines with hardware virtualization features,
 multiple unmodified guest operating systems can run concurrently on top of
@@ -20,11 +19,20 @@ the microhypervisor.
 **Please talk to us before using it in any production system, because
 there are important caveats for some use cases.**
 
+History
+-------
+
+Hedron is derived from the NOVA microhypervisor developed by Udo
+Steinberg. While NOVA and Hedron are still close in spirit, the last
+common commit dates from 2015. Since then Hedron has been steadily
+modernized with a focus on simplicity, testability, and support for
+modern virtualization features. Over the years, Hedron also adopted
+patches by Genode Labs developed as part of their NOVA fork.
 
 Supported platforms
 -------------------
 
-The NOVA microhypervisor runs on single- and multi-processor x86 machines
+The Hedron microhypervisor runs on single- and multi-processor x86 machines
 that support ACPI.
 
 Recommended Intel CPUs are Intel Core processors starting with the Sandy Bridge
@@ -75,9 +83,9 @@ Building unit tests can be avoided by passing `-DBUILD_TESTING=OFF` to
 Building from source code with Nix
 ----------------------------------
 
-As an alternative to manually installing depenencies, NOVA can also be
+As an alternative to manually installing depenencies, Hedron can also be
 built using [Nix](https://nixos.org/nix/). After installing Nix, build
-NOVA using:
+Hedron using:
 
     nix-build
 
@@ -89,21 +97,21 @@ in `nix/release.nix` for details.
 Booting
 -------
 
-The NOVA microhypervisor can be started from a multiboot-compliant
+The Hedron microhypervisor can be started from a multiboot-compliant
 bootloader, such as GRUB or PXEGRUB. Here are some examples:
 
 Boot from harddisk 0, partition 0
 
-    title         NOVA
-    kernel        (hd0,0)/boot/nova/hypervisor
+    title         Hedron
+    kernel        (hd0,0)/boot/hedron/hypervisor
     module        (hd0,0)/...
     ...
 
 Boot from TFTP server aa.bb.cc.dd
 
-    title         NOVA
+    title         Hedron
     tftpserver    aa.bb.cc.dd
-    kernel        (nd)/boot/nova/hypervisor
+    kernel        (nd)/boot/hedron/hypervisor
     module        (nd)/...
     ...
 

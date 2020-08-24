@@ -1,5 +1,5 @@
 /*
- * NOVA Public API
+ * Hedron Public API
  *
  * Copyright (C) 2020 Julian Stecklina, Cyberus Technology GmbH.
  *

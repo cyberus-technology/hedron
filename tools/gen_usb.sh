@@ -4,7 +4,7 @@ set -e -u
 
 die () {
     echo >&2 "ERROR: $@"
-    echo "Usage: ./gen_usb.sh IMG_FILE_NAME PATH_TO_NOVA GRUB_CONFIG"
+    echo "Usage: ./gen_usb.sh IMG_FILE_NAME PATH_TO_HEDRON GRUB_CONFIG"
     exit 1
 }
 
@@ -20,7 +20,7 @@ fi
 [ "$#" -eq 3 ] || die "invalid number of argument $#."
 
 img_filename=$1
-nova_filename=$2
+hedron_filename=$2
 grub_config=$3
 
 if have_exec grub2-mkrescue; then
@@ -37,13 +37,13 @@ trap 'rm -r "$tmp_dir"' EXIT
 
 echo "======== Build details ========"
 echo "Image:       $img_filename"
-echo "NOVA:        $nova_filename"
+echo "Hedron:      $hedron_filename"
 echo "Grub config: $grub_config"
 echo "Tmp-dir:     $tmp_dir"
 echo "==============================="
 
-if [ ! -f "$nova_filename" ] ; then
-    die "NOVA file does not exist."
+if [ ! -f "$hedron_filename" ] ; then
+    die "Hedron file does not exist."
 fi
 
 if [ ! -f "$grub_config" ] ; then
@@ -56,7 +56,7 @@ fi
 
 mkdir -p "$tmp_dir/boot/grub"
 
-cp "$nova_filename" "$tmp_dir/boot/hypervisor-x86_64"
+cp "$hedron_filename" "$tmp_dir/boot/hypervisor-x86_64"
 cp "$grub_config" "$tmp_dir/boot/grub/grub.cfg"
 
 $mkrescue -o "$img_filename" "$tmp_dir"

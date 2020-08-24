@@ -1,10 +1,10 @@
-{ nova, grub2, mtools, OVMF, xorriso, stdenv, qemuBoot }:
+{ hedron, grub2, mtools, OVMF, xorriso, stdenv, qemuBoot }:
 let
   grub_image = "grub_image.iso";
 in
 stdenv.mkDerivation {
-  name = "nova-integration-tests";
-  inherit (nova) src;
+  name = "hedron-integration-tests";
+  inherit (hedron) src;
 
   nativeBuildInputs = [ grub2 mtools OVMF xorriso qemuBoot ];
 
@@ -13,8 +13,8 @@ stdenv.mkDerivation {
   '';
 
   buildPhase = ''
-    qemu-boot ${nova}/share/NOVA/hypervisor.elf32 | tee output.log
-    tools/gen_usb.sh ${grub_image} ${nova}/share/NOVA/hypervisor.elf32 tools/grub.cfg.tmpl
+    qemu-boot ${hedron}/share/hedron/hypervisor.elf32 | tee output.log
+    tools/gen_usb.sh ${grub_image} ${hedron}/share/hedron/hypervisor.elf32 tools/grub.cfg.tmpl
     qemu-boot ${grub_image} --disk-image | tee -a output.log
     qemu-boot ${grub_image} --disk-image --uefi --uefi-firmware-path ${OVMF.fd}/FV | tee -a output.log
   '';

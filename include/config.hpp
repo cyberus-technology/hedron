@@ -23,7 +23,7 @@
 
 #pragma once
 
-/// NOVA API Version
+/// Hedron API Version
 ///
 /// This value needs to be increased for every incompatible API version by 1000
 /// (major version bump). Backward compatible changes need to increase this
