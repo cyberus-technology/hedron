@@ -406,7 +406,7 @@ class Generic_page_table
         //
         // Returns true, if the lookup succeeded. In this case, paddr will be
         // filled with the resulting physical address.
-        WARN_UNUSED_RESULT bool lookup_phys(virt_t vaddr, phys_t *paddr)
+        WARN_UNUSED_RESULT NONNULL bool lookup_phys(virt_t vaddr, phys_t *paddr)
         {
             assert_slow (paddr != nullptr);
 
