@@ -400,15 +400,6 @@ class Vmcs
             asm volatile ("vmwrite %0, %1" : : "rm" (val), "r" (static_cast<mword>(enc)) : "cc");
         }
 
-        static inline void adjust_rip()
-        {
-            write (GUEST_RIP, read (GUEST_RIP) + read (EXI_INST_LEN));
-
-            uint32 intr = static_cast<uint32>(read (GUEST_INTR_STATE));
-            if (EXPECT_FALSE (intr & 3))
-                write (GUEST_INTR_STATE, intr & ~3);
-        }
-
         static inline unsigned long vpid()
         {
             return has_vpid() ? read (VPID) : 0;
