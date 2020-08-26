@@ -330,7 +330,11 @@ class Vmcs
             VMX_PREEMPT             = 52,
             VMX_INVVPID             = 53,
             VMX_WBINVD              = 54,
-            VMX_XSETBV              = 55
+            VMX_XSETBV              = 55,
+
+            // This is not a real VM exit, but we use it to signal VM entry
+            // failures.
+            VMX_FAIL_VMENTRY        = NUM_VMI - 3,
         };
 
         static inline void *operator new (size_t)

@@ -201,11 +201,18 @@ entry_sysenter:         mov     PREG(sp), PREG(11)
 
 /*
  * VMX Entry
+ *
+ * The stack pointer points just behind a Sys_regs structure, so the guest state
+ * can be pushed into it without using additional registers.
+ *
+ * In case of VMRESUME/VMLAUNCH failure, we skip saving guest registers, because
+ * they cannot have been changed and just restore the stack.
  */
 .align                  4, 0x90
 .globl                  entry_vmx
+.globl                  entry_vmx_failure
 entry_vmx:              SAVE_GPR
                         mov     %cr2, %REG(ax)
                         mov     %REG(ax), OFS_CR2 (%REG(sp))
-                        RESTORE_STACK
+entry_vmx_failure:      RESTORE_STACK
                         jmp     vmx_handler
