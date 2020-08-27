@@ -29,17 +29,10 @@ extern char PAGE_0[PAGE_SIZE];
 extern char PAGE_1[PAGE_SIZE];
 extern char PAGE_H[PAGE_SIZE];
 
-extern char FRAME_0;
-extern char FRAME_1;
-extern char FRAME_H;
-
 extern char PDBRV;
 extern char PDBR;
 
-extern char LINK_P;
-extern char LINK_E;
-extern char LOAD_E;
-extern char OFFSET;
+extern char LOAD_END;
 
 extern mword FIXUP_S;
 extern mword FIXUP_E;
@@ -48,7 +41,19 @@ extern void (*CTORS_C)();
 extern void (*CTORS_G)();
 extern void (*CTORS_E)();
 
+extern int32 const PHYS_RELOCATION;
+
 extern char entry_sysenter;
 extern char entry_vmx;
 extern mword handlers[];
 extern mword hwdev_addr;
+
+extern "C" char __start_all[];
+extern "C" char __resume_bsp[];
+
+extern "C" char __start_cpu[];
+extern "C" char __start_cpu_end[];
+
+extern "C" uint32 const __start_cpu_patch_jmp_dst;
+extern "C" uint32 const __start_cpu_patch_rel[];
+extern "C" uint32 const __start_cpu_patch_rel_end[];

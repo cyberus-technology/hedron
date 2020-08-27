@@ -27,9 +27,6 @@
 #include "vmx.hpp"
 #include "x86.hpp"
 
-// The low-level BSP bring-up function.
-extern "C" [[noreturn]] void resume_bsp_long();
-
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
     if (not Acpi::valid_sleep_type (slp_typa, slp_typb) or
@@ -57,8 +54,8 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     Cpu::initial_tsc = rdtsc();
 
     // Prepare resume code. Need restore_low_memory later!
-    Lapic::prepare_bsp_resume();
-    Acpi::set_waking_vector(APBOOT_ADDR, Acpi::Wake_mode::REAL_MODE);
+    Acpi::set_waking_vector(Lapic::prepare_cpu_boot(Lapic::cpu_boot_type::BSP),
+                            Acpi::Wake_mode::REAL_MODE);
 
     // Flush the cache as mandated by the ACPI specification.
     wbinvd();
@@ -67,7 +64,12 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     Acpi::enter_sleep_state(slp_typa, slp_typb);
 
     // If we return, it was an S1 transition and we need to re-initialize.
-    resume_bsp_long();
+    //
+    // We can't just call __resume_bsp, because it lives in 1:1 mapped low
+    // memory and can be more than 2G away. That would result in a truncated
+    // relocation (failed link) in -mcmodel=kernel.
+    static mword const ptr = reinterpret_cast<mword>(__resume_bsp);
+    asm volatile ("call *%0" :: "m" (ptr));
 
     // Not reached.
 }

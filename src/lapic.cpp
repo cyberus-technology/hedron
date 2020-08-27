@@ -38,13 +38,7 @@ unsigned    Lapic::freq_bus;
 bool        Lapic::use_tsc_timer {false};
 unsigned    Lapic::cpu_park_count;
 
-static char __start_ap_backup[128];
-
-extern "C" char __start_ap[];
-extern "C" char __start_ap_end[];
-
-extern "C" char __resume_bsp[];
-extern "C" char __resume_bsp_end[];
+static char __start_cpu_backup[128];
 
 void Lapic::setup()
 {
@@ -53,29 +47,44 @@ void Lapic::setup()
     Pd::kern->claim_mmio_page (CPU_LOCAL_APIC, apic_base & ~PAGE_MASK);
 }
 
-void Lapic::prepare_ap_boot()
+uint32 Lapic::prepare_cpu_boot(cpu_boot_type type)
 {
-    assert (static_cast<size_t>(__start_ap_end - __start_ap) < sizeof(__start_ap_backup));
+    assert (static_cast<size_t>(__start_cpu_end - __start_cpu) < sizeof(__start_cpu_backup));
 
-    void * const low_memory {Hpt::remap (APBOOT_ADDR)};
+    char * const low_memory {static_cast<char *>(Hpt::remap (CPUBOOT_ADDR))};
 
-    memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
-    memcpy(low_memory,        __start_ap, sizeof(__start_ap_backup));
-}
+    memcpy(__start_cpu_backup, low_memory, sizeof(__start_cpu_backup));
+    memcpy(low_memory,        __start_cpu, sizeof(__start_cpu_backup));
 
-void Lapic::prepare_bsp_resume()
-{
-    assert (static_cast<size_t>(__resume_bsp_end - __resume_bsp) < sizeof(__start_ap_backup));
+    uint32 jmp_dst = 0;
 
-    void * const low_memory {Hpt::remap (APBOOT_ADDR)};
+    // Setup the correct initialization function depending on the boot type.
+    switch (type) {
+    case cpu_boot_type::AP:
+        jmp_dst = static_cast<uint32>(reinterpret_cast<mword>(__start_all));
+        break;
+    case cpu_boot_type::BSP:
+        jmp_dst = static_cast<uint32>(reinterpret_cast<mword>(__resume_bsp));
+        break;
+     }
 
-    memcpy(__start_ap_backup, low_memory, sizeof(__start_ap_backup));
-    memcpy(low_memory,        __resume_bsp, sizeof(__start_ap_backup));
+    memcpy(low_memory + __start_cpu_patch_jmp_dst, &jmp_dst, sizeof(jmp_dst));
+
+    // Apply relocations when the hypervisor wasn't loaded at its link address.
+    for (uint32 const *rel = __start_cpu_patch_rel; rel != __start_cpu_patch_rel_end; ++rel) {
+        int32 ptr_val;
+
+        memcpy(&ptr_val, low_memory + *rel, sizeof(ptr_val));
+        ptr_val += PHYS_RELOCATION;
+        memcpy(low_memory + *rel, &ptr_val, sizeof(ptr_val));
+    }
+
+    return CPUBOOT_ADDR;
 }
 
 void Lapic::restore_low_memory()
 {
-    memcpy(Hpt::remap (APBOOT_ADDR), __start_ap_backup, sizeof(__start_ap_backup));
+    memcpy(Hpt::remap (CPUBOOT_ADDR), __start_cpu_backup, sizeof(__start_cpu_backup));
 }
 
 void Lapic::init()
@@ -127,7 +136,7 @@ void Lapic::init()
     write (LAPIC_TMR_DCR, 0xb);
 
     if ((Cpu::bsp() = apic_base & 0x100)) {
-        prepare_ap_boot();
+        uint32 const boot_addr = prepare_cpu_boot(cpu_boot_type::AP);
 
         send_ipi (0, 0, DLV_INIT, DSH_EXC_SELF);
 
@@ -144,12 +153,12 @@ void Lapic::init()
 
         trace (TRACE_APIC, "TSC:%u kHz BUS:%u kHz", freq_tsc, freq_bus);
 
-        static_assert((APBOOT_ADDR & PAGE_MASK) == 0 and APBOOT_ADDR < (1 << 20),
-                      "The AP boot code needs to lie at a page boundary below 1 MB.");
+        // The AP boot code needs to lie at a page boundary below 1 MB.
+        assert((boot_addr & PAGE_MASK) == 0 and boot_addr < (1 << 20));
 
-        send_ipi (0, APBOOT_ADDR >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
+        send_ipi (0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
         Acpi::delay (1);
-        send_ipi (0, APBOOT_ADDR >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
+        send_ipi (0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
     set_lvt (LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, use_tsc_timer ? 2U << 17 : 0);

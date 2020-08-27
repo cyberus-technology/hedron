@@ -89,7 +89,6 @@ class Pci : public List<Pci>
         }
 
     public:
-        INIT
         Pci (unsigned, unsigned);
 
         static inline void *operator new (size_t) { return cache.alloc(); }
@@ -114,10 +113,8 @@ class Pci : public List<Pci>
             return true;
         }
 
-        INIT
         static void init ();
 
-        INIT
         static unsigned scan (unsigned bus = 0, unsigned level = 0, unsigned max_bus = 0);
 
         static inline unsigned phys_to_rid (Paddr p)

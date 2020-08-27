@@ -108,13 +108,10 @@ class Acpi_intr : public Acpi_apic
 class Acpi_table_madt : public Acpi_table
 {
     private:
-        INIT
         static void parse_lapic (Acpi_apic const *);
 
-        INIT
         static void parse_ioapic (Acpi_apic const *);
 
-        INIT
         void parse_entry (Acpi_apic::Type, void (*)(Acpi_apic const *)) const;
 
     public:
@@ -125,10 +122,8 @@ class Acpi_table_madt : public Acpi_table
         static inline bool sci_overridden = false;
         static inline bool pic_present = false;
 
-        INIT
         void parse() const;
 
-        INIT
         static void parse_intr (Acpi_apic const *);
 };
 

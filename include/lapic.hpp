@@ -164,20 +164,21 @@ class Lapic
 
         static void init();
 
-        INIT
         static void setup();
 
-        // Copy the AP boot code into low-memory.
-        //
-        // This needs to be called before APs are booted.
-        static void prepare_ap_boot();
+        enum class cpu_boot_type { AP, BSP };
 
-        // Copy the BSP resume code into low-memory (APBOOT_ADDR).
-        static void prepare_bsp_resume();
-
-        // Restore low-memory that was clobbered during AP bringup.
+        // Copy the CPU boot code into low-memory.
         //
-        // This needs to be called once all APs have successfully booted.
+        // This can be used to prepare either AP boot during normal boot and
+        // resume. It can also be used to prepare BSP boot during resume.
+        //
+        // Returns the physical memory location where the boot code was placed.
+        static uint32 prepare_cpu_boot(cpu_boot_type type);
+
+        // Restore low-memory that was clobbered during CPU bringup.
+        //
+        // This is the counterpart to prepare_cpu_boot.
         static void restore_low_memory();
 
         static void send_ipi (unsigned, unsigned, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);

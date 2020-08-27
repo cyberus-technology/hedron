@@ -42,7 +42,23 @@
 #define PAGE_SIZE       (1 << PAGE_BITS)
 #define PAGE_MASK       (PAGE_SIZE - 1)
 
+// The address at which the hypervisor is linked at.
 #define LOAD_ADDR       0x0000000004000000
+
+// The range of acceptable load addresses if the boot loader needs to relocate
+// us. These need to be 32-bit values.
+//
+// See the page table generation in start.S for the reason why we can't relocate
+// beyond 1G.
+#define LOAD_ADDR_MIN   0x0000000000200000
+#define LOAD_ADDR_MAX   0x000000003fffffff
+
+// The alignment in physical memory that the bootloader needs to provide.
+#define LOAD_ADDR_ALIGN 0x200000
+
+#ifdef __cplusplus
+static_assert(LOAD_ADDR % LOAD_ADDR_ALIGN == 0, "Link-time alignment is broken");
+#endif
 
 #define CANON_BOUND     0x0000800000000000
 #define USER_ADDR       0x00007ffffffff000
@@ -65,4 +81,14 @@
 #define END_SPACE_LIM   (~0UL + 1)
 
 // To boot APs, we need a piece of memory below 1MB to put the AP boot code.
-#define APBOOT_ADDR     0x1000
+#define CPUBOOT_ADDR    0x1000
+
+#define VIRT_TO_PHYS_OFFSET (LINK_ADDR - LOAD_ADDR)
+
+// Convert a virtual to a physical address without taking relocation into
+// account.
+#define VIRT_TO_PHYS_NORELOC(x) ((x) - VIRT_TO_PHYS_OFFSET)
+
+// Convert a physical to a virtual address without taking relocation into
+// account.
+#define PHYS_TO_VIRT_NORELOC(x) ((x) + VIRT_TO_PHYS_OFFSET)

@@ -82,10 +82,8 @@ class Console_vga : public Console
             COLOR_LIGHT_WHITE   = 0xf
         };
 
-        INIT
         Console_vga();
 
-        INIT
         void setup();
 
         inline unsigned spinner (unsigned id) { return id < 25 - num ? 24 - id : 0; }

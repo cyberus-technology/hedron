@@ -83,7 +83,6 @@ class Ioapic : public List<Ioapic>
         }
 
     public:
-        INIT
         Ioapic (Paddr, unsigned, unsigned);
 
         static void *operator new (size_t);

@@ -194,7 +194,7 @@ void Space_mem::insert_root (uint64 start, uint64 end, mword attr)
     }
 }
 
-INIT void Space_mem::claim (mword virt, unsigned o, mword attr, Paddr phys, bool exclusive)
+void Space_mem::claim (mword virt, unsigned o, mword attr, Paddr phys, bool exclusive)
 {
     assert (static_cast<Pd *>(this) == &Pd::kern);
     assert (&Hpt::boot_hpt() != &hpt);
@@ -209,7 +209,7 @@ INIT void Space_mem::claim (mword virt, unsigned o, mword attr, Paddr phys, bool
     }
 }
 
-INIT void Space_mem::claim_mmio_page (mword virt, Paddr phys, bool exclusive)
+void Space_mem::claim_mmio_page (mword virt, Paddr phys, bool exclusive)
 {
     claim (virt, PAGE_BITS, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_UC | Hpt::PTE_W | Hpt::PTE_P, phys, exclusive);
 }

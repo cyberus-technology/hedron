@@ -71,12 +71,12 @@ class Buddy
 
         inline mword virt_to_phys (mword virt)
         {
-            return virt - reinterpret_cast<mword>(&OFFSET);
+            return VIRT_TO_PHYS_NORELOC (virt) + PHYS_RELOCATION;
         }
 
         inline mword phys_to_virt (mword phys)
         {
-            return phys + reinterpret_cast<mword>(&OFFSET);
+            return PHYS_TO_VIRT_NORELOC (phys - PHYS_RELOCATION);
         }
 
     public:
@@ -89,8 +89,7 @@ class Buddy
 
         static Buddy allocator;
 
-        INIT
-        Buddy (mword phys, mword virt, mword f_addr, size_t size);
+        Buddy (mword virt, mword f_addr, size_t size);
 
         static void fill(void *dst, Fill fill_mem, size_t size);
 

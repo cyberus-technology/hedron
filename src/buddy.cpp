@@ -32,14 +32,15 @@ extern char _mempool_p, _mempool_l, _mempool_f, _mempool_e;
  * Buddy Allocator
  */
 INIT_PRIORITY (PRIO_BUDDY)
-Buddy Buddy::allocator (reinterpret_cast<mword>(&_mempool_p),
-                        reinterpret_cast<mword>(&_mempool_l),
+Buddy Buddy::allocator (reinterpret_cast<mword>(&_mempool_l),
                         reinterpret_cast<mword>(&_mempool_f),
                         reinterpret_cast<mword>(&_mempool_e) -
                         reinterpret_cast<mword>(&_mempool_l));
 
-Buddy::Buddy (mword phys, mword virt, mword f_addr, size_t size)
+Buddy::Buddy (mword virt, mword f_addr, size_t size)
 {
+    mword phys = virt_to_phys (virt);
+
     // Compute maximum aligned block size
     unsigned long bit = bit_scan_reverse (size);
 

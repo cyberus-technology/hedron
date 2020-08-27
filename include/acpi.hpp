@@ -155,10 +155,8 @@ class Acpi
         // S1) or execution contines at the waking vector (S2, S3).
         static void enter_sleep_state (uint8 slp_typa, uint8 slp_typb);
 
-        INIT
         static void setup();
 
         // Initialize ACPI after all tables have been parsed.
-        INIT
         static void init();
 };

@@ -36,13 +36,11 @@ class Acpi_rsdp
         uint64  xsdt_addr;
         uint8   extended_checksum;
 
-        INIT bool good_signature() const;
-        INIT bool good_checksum (size_t len = 20) const;
+        bool good_signature() const;
+        bool good_checksum (size_t len = 20) const;
 
-        INIT
         static Acpi_rsdp *find (mword, unsigned);
 
     public:
-        INIT
         static void parse (mword = 0);
 };

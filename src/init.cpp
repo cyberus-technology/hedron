@@ -44,7 +44,7 @@ static char const *get_boot_type (mword magic)
     }
 }
 
-extern "C" INIT REGPARM (2)
+extern "C"
 void init (mword magic, mword mbi)
 {
     // Setup 0-page and 1-page

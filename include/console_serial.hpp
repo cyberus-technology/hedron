@@ -49,7 +49,6 @@ class Console_serial : public Console
         void putc (int c);
 
     public:
-        INIT
         Console_serial();
 
         static Console_serial con;

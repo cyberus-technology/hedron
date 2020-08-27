@@ -43,16 +43,15 @@ Pd::Pd ()
     // It needs to match Hip::add_mhv and our linker script.
 
     // This the memory before the first ELF segment.
-    mark_avail_phys (0, LOAD_ADDR);
-
-    // The memory between the ELF segments.
-    mark_avail_phys (reinterpret_cast<mword>(&LOAD_E), reinterpret_cast<mword>(&LINK_P));
+    mark_avail_phys (0, LOAD_ADDR + PHYS_RELOCATION);
 
     // The memory after the second ELF segment to "infinity".
-    mark_avail_phys (reinterpret_cast<mword>(&LINK_E), 1ULL << hpt.max_order());
+    mark_avail_phys (reinterpret_cast<mword>(&LOAD_END) + PHYS_RELOCATION,
+                     1ULL << hpt.max_order());
 
     // HIP
-    mark_avail_phys (reinterpret_cast<mword>(&FRAME_H), reinterpret_cast<mword>(&FRAME_H) + PAGE_SIZE, 1);
+    Paddr frame_h = Buddy::ptr_to_phys (&PAGE_H);
+    mark_avail_phys (frame_h, frame_h + PAGE_SIZE, 1);
 
     // I/O Ports
     Space_pio::addreg (0, 1UL << 16, 7);

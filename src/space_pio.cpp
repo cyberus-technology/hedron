@@ -72,5 +72,5 @@ Tlb_cleanup Space_pio::update (Mdb *mdb, mword r)
 void Space_pio::page_fault (mword addr, mword error)
 {
     assert (!(error & Hpt::ERR_W));
-    Pd::current()->Space_mem::replace (addr, reinterpret_cast<Paddr>(&FRAME_1) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
+    Pd::current()->Space_mem::replace (addr, Buddy::ptr_to_phys (&PAGE_1) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
 }

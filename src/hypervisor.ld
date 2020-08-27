@@ -34,38 +34,41 @@ PHDRS
 
 SECTIONS
 {
+    /*
+     * The hypervisor is loaded at LOAD_ADDR (subject to relocation by the boot loader).
+     * During the boot process, we set up page tables to map LINK_ADDR to LOAD_ADDR.
+     */
+
     .init LOAD_ADDR :
     {
         *(.init.multiboot)
         *(.init)
-        *(.initdata)
     } : init = 0x90909090
-
     . = ALIGN(4K);
 
     PROVIDE (LOAD_E = .);
-    OFFSET = LINK_ADDR - ALIGN (2M);
-    PROVIDE (LINK_P = LINK_ADDR - OFFSET);
 
-    .text LINK_ADDR : AT (ADDR (.text) - OFFSET)
+    INIT_LEN = LOAD_E - LOAD_ADDR;
+
+    .text LINK_ADDR + INIT_LEN : AT (LOAD_ADDR + INIT_LEN)
     {
         *(.text.hot .text.hot.*)
         *(.text .text.* .gnu.linkonce.t.*)
     } : kern = 0x90909090
 
-    .rodata : AT (ADDR (.rodata) - OFFSET)
+    .rodata : AT (VIRT_TO_PHYS_NORELOC(ADDR (.rodata)))
     {
         *(.rodata .rodata.* .gnu.linkonce.r.*)
     } : kern
 
-    .fixup : AT (ADDR (.fixup) - OFFSET)
+    .fixup : AT (VIRT_TO_PHYS_NORELOC(ADDR (.fixup)))
     {
         PROVIDE (FIXUP_S = .);
         KEEP (*(.fixup))
         PROVIDE (FIXUP_E = .);
     } : kern
 
-    .init_array : AT (ADDR (.init_array) - OFFSET)
+    .init_array : AT (VIRT_TO_PHYS_NORELOC(ADDR (.init_array)))
     {
         PROVIDE (CTORS_C = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.65534) SORT_BY_INIT_PRIORITY(.ctors.00001)))
@@ -75,35 +78,35 @@ SECTIONS
         PROVIDE (CTORS_E = .);
     } : kern
 
-    .data : AT (ADDR (.data) - OFFSET)
+    .data : AT (VIRT_TO_PHYS_NORELOC(ADDR (.data)))
     {
         *(.data .data.* .gnu.linkonce.d.*)
     } : kern
 
-    .bss : AT (ADDR (.bss) - OFFSET)
+    .bss : AT (VIRT_TO_PHYS_NORELOC(ADDR (.bss)))
     {
         *(.bss .bss.* .gnu.linkonce.b.*)
 
         . = ALIGN(4K);
-        _mempool_l = .; PROVIDE (_mempool_p = _mempool_l - OFFSET);
+        _mempool_l = .;
 
-        PROVIDE (PAGE_0 = .); PROVIDE (FRAME_0 = . - OFFSET); . += 4K;
-        PROVIDE (PAGE_1 = .); PROVIDE (FRAME_1 = . - OFFSET); . += 4K;
-        PROVIDE (PAGE_H = .); PROVIDE (FRAME_H = . - OFFSET); . += 4K;
+        PROVIDE (PAGE_0 = .); . += 4K;
+        PROVIDE (PAGE_1 = .); . += 4K;
+        PROVIDE (PAGE_H = .); . += 4K;
 
         PROVIDE (PDBRV = .);
-        PROVIDE (PDBR  = . - OFFSET);
-        PROVIDE (LVL4  = . - OFFSET); . += 4K;
-        PROVIDE (LVL3L = . - OFFSET); . += 4K;
-        PROVIDE (LVL3H = . - OFFSET); . += 4K;
-        PROVIDE (LVL2L = . - OFFSET); . += 4K;
-        PROVIDE (LVL2H = . - OFFSET); . += 4K;
+        PROVIDE (PDBR  = VIRT_TO_PHYS_NORELOC(.));
+        PROVIDE (LVL4  = VIRT_TO_PHYS_NORELOC(.)); . += 4K;
+        PROVIDE (LVL3L = VIRT_TO_PHYS_NORELOC(.)); . += 4K;
+        PROVIDE (LVL3H = VIRT_TO_PHYS_NORELOC(.)); . += 4K;
+        PROVIDE (LVL2L = VIRT_TO_PHYS_NORELOC(.)); . += 4K;
+        PROVIDE (LVL2H = VIRT_TO_PHYS_NORELOC(.)); . += 4K;
         _mempool_f = .;
 
         . += CONFIG_KERNEL_MEMORY;
         . = ALIGN(4M);
 
-        PROVIDE (LINK_E = . - OFFSET);
+        PROVIDE (LOAD_END = VIRT_TO_PHYS_NORELOC(.));
 
         PROVIDE (_mempool_e = .);
 

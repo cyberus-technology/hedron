@@ -31,7 +31,7 @@ bool Cmdline::novga;
 bool Cmdline::novpid;
 bool Cmdline::noxsave;
 
-struct Cmdline::param_map const Cmdline::map[] INITDATA =
+struct Cmdline::param_map const Cmdline::map[] =
 {
     { "iommu",      &Cmdline::iommu     },
     { "serial",     &Cmdline::serial    },
