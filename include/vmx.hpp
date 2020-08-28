@@ -330,7 +330,11 @@ class Vmcs
             VMX_PREEMPT             = 52,
             VMX_INVVPID             = 53,
             VMX_WBINVD              = 54,
-            VMX_XSETBV              = 55
+            VMX_XSETBV              = 55,
+
+            // This is not a real VM exit, but we use it to signal VM entry
+            // failures.
+            VMX_FAIL_VMENTRY        = NUM_VMI - 3,
         };
 
         static inline void *operator new (size_t)
@@ -398,15 +402,6 @@ class Vmcs
         static inline void write (Encoding enc, mword val)
         {
             asm volatile ("vmwrite %0, %1" : : "rm" (val), "r" (static_cast<mword>(enc)) : "cc");
-        }
-
-        static inline void adjust_rip()
-        {
-            write (GUEST_RIP, read (GUEST_RIP) + read (EXI_INST_LEN));
-
-            uint32 intr = static_cast<uint32>(read (GUEST_INTR_STATE));
-            if (EXPECT_FALSE (intr & 3))
-                write (GUEST_INTR_STATE, intr & ~3);
         }
 
         static inline unsigned long vpid()

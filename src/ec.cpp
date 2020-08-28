@@ -275,15 +275,26 @@ void Ec::ret_user_vmresume()
         die ("Invalid XCR0");
     }
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
+    asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
-                  "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
-                  : : "m" (current()->regs) : "memory");
 
-    trace (0, "VM entry failed with error %#lx", Vmcs::read (Vmcs::VMX_INST_ERROR));
+                  // If we return from vmlaunch, we have an VM entry
+                  // failure. Deflect this to the normal exit handling.
 
-    die ("VMENTRY");
+                  "mov %[exi_reason], %%ecx;"
+                  "mov %[fail_vmentry], %%eax;"
+                  "vmwrite %%rax, %%rcx;"
+
+                  "jmp entry_vmx_failure;"
+
+                  :
+                  : [regs] "m" (current()->regs),
+                    [exi_reason] "i" (Vmcs::EXI_REASON),
+                    [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
+                  : "memory");
+
+    UNREACHED;
 }
 
 void Ec::ret_user_vmrun()

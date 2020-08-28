@@ -132,14 +132,6 @@ class Vmcb
             asm volatile ("vmsave %0" : : "a" (Buddy::ptr_to_phys (this)) : "memory");
         }
 
-        inline void adjust_rip (mword len)
-        {
-            rip += len;
-
-            if (int_shadow)
-                int_shadow = 0;
-        }
-
         static bool has_npt() { return Vmcb::svm_feature() & 1; }
         static bool has_urg() { return true; }
 
