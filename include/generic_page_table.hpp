@@ -87,11 +87,11 @@ class Generic_page_table
                 WARN_UNUSED_RESULT Mapping clamp(virt_t snd_base, ord_t snd_order) const
                 {
                     // The send order and this mapping need to be naturally aligned.
-                    assert (is_aligned_by_order (snd_base, snd_order));
-                    assert (is_aligned_by_order (vaddr,    order));
+                    assert_slow (is_aligned_by_order (snd_base, snd_order));
+                    assert_slow (is_aligned_by_order (vaddr,    order));
 
                     // snd_base must be inside the mapping or cover the mapping.
-                    assert ((snd_base ^ vaddr) >> max (order, snd_order) == 0);
+                    assert_slow ((snd_base ^ vaddr) >> max (order, snd_order) == 0);
 
                     // We know that both vaddr and snd_base are naturally aligned and we
                     // know that the region to clamp to is inside this mapping.
@@ -148,7 +148,7 @@ class Generic_page_table
         {
             static_assert ((ATTR::PTE_S & ATTR::mask) == 0,
                            "Can't have superpage bit in user configurable page table bits");
-            assert (not ((level == 0 or level >= leaf_levels_) and (entry & ATTR::PTE_S)));
+            assert_slow (not ((level == 0 or level >= leaf_levels_) and (entry & ATTR::PTE_S)));
 
             return (entry & ATTR::PTE_P) and level < leaf_levels_ and (entry & ATTR::PTE_S);
         }
@@ -160,7 +160,7 @@ class Generic_page_table
 
         Mapping lookup(virt_t vaddr, pte_pointer_t pte_p, level_t cur_level)
         {
-            assert (cur_level >= 0 and cur_level < max_levels_);
+            assert_slow (cur_level >= 0 and cur_level < max_levels_);
 
             pte_t  const entry {memory_.read (pte_p + virt_to_index (cur_level, vaddr))};
             phys_t const phys  {entry & ~ATTR::mask};
@@ -179,7 +179,7 @@ class Generic_page_table
         // hierarchy deeper with the same mappings.
         void fill_from_superpage(pte_pointer_t new_table, pte_t superpage_pte, level_t cur_level)
         {
-            assert (is_superpage(cur_level, superpage_pte));
+            assert_slow (is_superpage(cur_level, superpage_pte));
 
             pte_t attr_mask {cur_level == 1 ? static_cast<pte_t>(ATTR::PTE_S) : 0};
 
@@ -196,8 +196,8 @@ class Generic_page_table
         pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup, virt_t vaddr, level_t to_level, pte_pointer_t pte_p,
                                           level_t cur_level, bool create)
         {
-            assert (cur_level >= 0 and cur_level <  max_levels_);
-            assert (to_level  >= 0 and to_level  <= cur_level);
+            assert_slow (cur_level >= 0 and cur_level <  max_levels_);
+            assert_slow (to_level  >= 0 and to_level  <= cur_level);
 
             if (to_level == cur_level) {
                 return pte_p;
@@ -209,7 +209,7 @@ class Generic_page_table
             pte_t  entry   {memory_.read (entry_p)};
             phys_t phys    {entry & ~ATTR::mask};
 
-            assert (cur_level != 0);
+            assert_slow (cur_level != 0);
 
             // In case there is no mapping and we want to downgrade rights, we
             // can already stop.
@@ -245,7 +245,7 @@ class Generic_page_table
                 phys  = new_phys;
             }
 
-            assert (not is_leaf (cur_level, entry));
+            assert_slow (not is_leaf (cur_level, entry));
             return walk_down_and_split (cleanup, vaddr, to_level, page_alloc_.phys_to_pointer (phys),
                                         cur_level - 1, create);
         }
@@ -256,7 +256,7 @@ class Generic_page_table
         // page table.
         NOINLINE void cleanup(DEFERRED_CLEANUP &cleanup_state, pte_t pte, level_t cur_level)
         {
-            assert (cur_level >= 0 and cur_level < max_levels_);
+            assert_slow (cur_level >= 0 and cur_level < max_levels_);
 
             if (is_leaf (cur_level, pte)) {
                 if (pte & ATTR::PTE_P) {
@@ -272,7 +272,7 @@ class Generic_page_table
         // itself. Companion function to cleanup().
         void cleanup_table(DEFERRED_CLEANUP &cleanup_state, pte_pointer_t table, level_t cur_level)
         {
-            assert (cur_level > 0 and cur_level <= max_levels_);
+            assert_slow (cur_level > 0 and cur_level <= max_levels_);
 
             for (size_t i {0}; i < static_cast<size_t>(1) << BITS_PER_LEVEL; i++) {
                 cleanup(cleanup_state, memory_.read (table + i), cur_level - 1);
@@ -296,13 +296,13 @@ class Generic_page_table
         NOINLINE void fill_entries(DEFERRED_CLEANUP &cleanup_state, pte_pointer_t table, level_t cur_level,
                                    Mapping const &map)
         {
-            assert (table != nullptr);
-            assert (cur_level >= 0 and cur_level < max_levels_);
+            assert_slow (table != nullptr);
+            assert_slow (cur_level >= 0 and cur_level < max_levels_);
 
             ord_t const entry_order {level_order(cur_level)};
-            ord_t const table_order {level_order(cur_level + 1)};
+            [[maybe_unused]] ord_t const table_order {level_order(cur_level + 1)};
 
-            assert (map.order >= entry_order and map.order <= table_order);
+            assert_slow (map.order >= entry_order and map.order <= table_order);
 
             // The order of how many entries we need to update in this level.
             ord_t const updated_order {map.order - entry_order};
@@ -391,13 +391,13 @@ class Generic_page_table
         // page table, return an empty mapping (zero attributes).
         WARN_UNUSED_RESULT Mapping lookup(virt_t vaddr)
         {
-            assert (root_ != nullptr);
+            assert_slow (root_ != nullptr);
 
             Mapping const result {lookup (vaddr, root_, max_levels_ - 1)};
 
             // The end of the final translation will wrap to zero.
-            assert (result.vaddr <= vaddr and
-                    ((result.vaddr + result.size() == 0) or (result.vaddr + result.size()) > vaddr));
+            assert_slow (result.vaddr <= vaddr and
+                         ((result.vaddr + result.size() == 0) or (result.vaddr + result.size()) > vaddr));
             return result;
         }
 
@@ -406,9 +406,9 @@ class Generic_page_table
         //
         // Returns true, if the lookup succeeded. In this case, paddr will be
         // filled with the resulting physical address.
-        WARN_UNUSED_RESULT bool lookup_phys(virt_t vaddr, phys_t *paddr)
+        WARN_UNUSED_RESULT NONNULL bool lookup_phys(virt_t vaddr, phys_t *paddr)
         {
-            assert (paddr != nullptr);
+            assert_slow (paddr != nullptr);
 
             auto const m {lookup (vaddr)};
 
@@ -424,7 +424,7 @@ class Generic_page_table
         pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP &cleanup, virt_t vaddr,
                                           level_t to_level, bool create = true)
         {
-            assert (root_ != nullptr);
+            assert_slow (root_ != nullptr);
             return walk_down_and_split (cleanup, vaddr, to_level, root_, max_levels_ - 1, create);
         }
 
@@ -432,17 +432,17 @@ class Generic_page_table
         // is necessary.
         NOINLINE void update(DEFERRED_CLEANUP &cleanup, Mapping const &map)
         {
-            assert (root_ != nullptr);
-            assert (map.order >= PAGE_BITS and map.order <= max_order());
-            assert ((map.attr & ~ATTR::mask) == 0);
+            assert_slow (root_ != nullptr);
+            assert_slow (map.order >= PAGE_BITS and map.order <= max_order());
+            assert_slow ((map.attr & ~ATTR::mask) == 0);
 
-            ENTRY const align_mask {(static_cast<ENTRY>(1) << map.order) - 1};
-            assert ((map.vaddr & align_mask) == 0);
-            assert ((map.paddr & align_mask) == 0);
+            [[maybe_unused]] ENTRY const align_mask {(static_cast<ENTRY>(1) << map.order) - 1};
+            assert_slow ((map.vaddr & align_mask) == 0);
+            assert_slow ((map.paddr & align_mask) == 0);
 
             // We have to modify one or more entries in this level and below.
             level_t modified_level {(map.order - PAGE_BITS) / BITS_PER_LEVEL};
-            assert (modified_level < max_levels_);
+            assert_slow (modified_level < max_levels_);
 
             // Walk down the page table to find the relevant page table to
             // modify. If we encounter superpages on the way, split

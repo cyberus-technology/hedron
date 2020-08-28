@@ -22,13 +22,32 @@
 #pragma once
 
 #if __STDC_HOSTED__
+
+// In hosted builds (unit tests), all assertions map to the libc assert macro.
+
 #include "assert.h"
+#define assert_slow assert
+
 #else
+
+// In non-hosted builds, we always compile assertions unless they are marked as
+// slow. These assertions will not be included in release builds for performance
+// reasons.
+
 #include "console.hpp"
 
-#define assert(X)   do {                                                                                    \
-                        if (EXPECT_FALSE (!(X)))                                                            \
-                            Console::panic ("Assertion \"%s\" failed at %s:%d:%s", #X, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
-                    } while (0)
+#define assert(X) \
+    do {                                                                \
+        if (EXPECT_FALSE (!(X))) {                                      \
+            Console::panic ("Assertion \"%s\" failed at %s:%d:%s", #X,  \
+                        __FILE__, __LINE__, __PRETTY_FUNCTION__);       \
+        }                                                               \
+    } while (0)
+
+#ifdef NDEBUG
+#define assert_slow(X) do {} while (0)
+#else
+#define assert_slow(X) assert(X)
+#endif
 
 #endif  // __STDC_HOSTED__
