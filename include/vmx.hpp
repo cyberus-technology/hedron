@@ -39,7 +39,12 @@ class Vmcs
 
         CPULOCAL_ACCESSOR(vmcs, current);
 
-        CPULOCAL_ACCESSOR(vmcs, vpid_ctr);
+        // The VPID counter is used to generate VPIDs for new vCPUs.
+        //
+        // Because we allocate VPIDs from the CPU where it is created and not
+        // where it will run, we have to be able to access this value remotely.
+        CPULOCAL_REMOTE_ACCESSOR(vmcs, vpid_ctr);
+
         CPULOCAL_ACCESSOR(vmcs, basic);
         CPULOCAL_ACCESSOR(vmcs, ept_vpid);
         CPULOCAL_ACCESSOR(vmcs, ctrl_pin);

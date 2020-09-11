@@ -49,7 +49,7 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
     write (VMCS_LINK_PTR,    ~0ul);
     write (VMCS_LINK_PTR_HI, ~0ul);
 
-    write (VPID, ++vpid_ctr());
+    write (VPID, Atomic::add(remote_ref_vpid_ctr(cpu), 1U));
 
     write (EPTP,    static_cast<mword>(eptp));
     write (EPTP_HI, static_cast<mword>(eptp >> 32));
