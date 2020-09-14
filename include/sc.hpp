@@ -44,7 +44,7 @@ class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
 
         static Slab_cache cache;
 
-        CPULOCAL_ACCESSOR(sc, rq);
+        CPULOCAL_REMOTE_ACCESSOR(sc, rq);
         CPULOCAL_ACCESSOR(sc, list);
         CPULOCAL_ACCESSOR(sc, prio_top);
 
@@ -80,10 +80,11 @@ class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
         Sc (Pd *, mword, Ec *);
         Sc (Pd *, mword, Ec *, unsigned, unsigned, unsigned);
 
-        static inline Rq *remote (unsigned c)
-        {
-            return &Cpulocal::get_remote(c).sc_rq;
-        }
+        // Access the runqueue on a remote core.
+        //
+        // The returned pointer is valid forever as it points to statically
+        // allocated memory.
+        static Rq *remote (unsigned cpu) { return &remote_ref_rq (cpu); }
 
         void remote_enqueue(bool = true);
 
