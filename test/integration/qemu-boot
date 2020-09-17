@@ -44,6 +44,9 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     child = pexpect.spawn(qemu, args, encoding="utf-8")
     child.logfile = sys.stdout
 
+    # Workaround for https://github.com/pexpect/pexpect/issues/462
+    child.delayafterterminate = 1
+
     child.expect(
         r"Hedron Microhypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
         # This can be extremely slow on a busy host.
