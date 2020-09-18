@@ -209,7 +209,7 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             PERM_ALL = PERM_EC_CTRL | PERM_CREATE_SC | PERM_CREATE_PT,
         };
 
-        CPULOCAL_ACCESSOR(ec, current);
+        CPULOCAL_REMOTE_ACCESSOR(ec, current);
         CPULOCAL_ACCESSOR(ec, idle_ec);
 
         // Special constructor for the idle thread.
@@ -282,10 +282,11 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
         }
 
-        static inline Ec *remote (unsigned cpu)
-        {
-            return Atomic::load (Cpulocal::get_remote (cpu).ec_current);
-        }
+        // Access the current EC on a remote core.
+        //
+        // The returned pointer stays valid until the next transition to
+        // userspace.
+        static Ec *remote (unsigned cpu) { return remote_load_current (cpu); }
 
         NOINLINE
         void help (void (*c)())

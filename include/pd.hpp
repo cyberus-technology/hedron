@@ -61,7 +61,7 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
         }
 
     public:
-        CPULOCAL_ACCESSOR(pd, current);
+        CPULOCAL_REMOTE_ACCESSOR(pd, current);
         static No_destruct<Pd> kern;
 
         // The roottask is privileged and can map arbitrary physical memory that
@@ -119,10 +119,11 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
             target_hpt.make_current (Cpu::feature (Cpu::FEAT_PCID) ? pcid : 0);
         }
 
-        static inline Pd *remote (unsigned c)
-        {
-            return Cpulocal::get_remote(c).pd_current;
-        }
+        // Access the current PD on a remote core.
+        //
+        // The returned pointer stays valid until the next transition to
+        // userspace.
+        static Pd *remote (unsigned cpu) { return remote_load_current (cpu); }
 
         inline Space *subspace (Crd::Type t)
         {
