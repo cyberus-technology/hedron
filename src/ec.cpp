@@ -113,9 +113,28 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 Msr::Register::IA32_FS_BASE,
                 Msr::Register::IA32_GS_BASE,
                 Msr::Register::IA32_KERNEL_GS_BASE,
+
+                // This is a read-only MSR that indicates which CPU
+                // vulnerability mitigations are not required.
+                //
+                // This register should be configurable by userspace. See #124.
                 Msr::Register::IA32_ARCH_CAP,
+
+                // This is a read-write register that toggles
+                // speculation-related features on the current hyperthread.
+                //
+                // This register needs to be context-switched. See #126.
                 Msr::Register::IA32_SPEC_CTRL,
+
+                // This is a write-only MSR without state that can be used to
+                // issue commands to the branch predictor. So far this is used
+                // to trigger barriers for indirect branch prediction (see
+                // IBPB).
                 Msr::Register::IA32_PRED_CMD,
+
+                // This is a write-only MSR without state that can be used to
+                // invalidate CPU structures. This is (so far) only used to
+                // flush the L1D cache.
                 Msr::Register::IA32_FLUSH_CMD,
             };
 
