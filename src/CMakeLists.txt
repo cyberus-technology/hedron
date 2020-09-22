@@ -1,5 +1,10 @@
 set(HEAP_SIZE_MB 256 CACHE STRING "The amount of hypervisor heap space in MiB.")
 
+# Retpolines have a small impact on usual workloads, so we enable them
+# by default. Disabling retpolines opens up the possibility to do
+# Spectre v2 attacks against the hypervisor.
+option(ENABLE_RETPOLINE "Enable retpolines for Spectre v2 mitigation." ON)
+
 add_executable(hypervisor
   # Assembly sources
   entry.S  start.S
@@ -61,6 +66,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     -Wlogical-op
     -Wstrict-null-sentinel
     -Wframe-larger-than=256
+    $<$<BOOL:${ENABLE_RETPOLINE}>:-mindirect-branch=thunk>
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_options(hypervisor PRIVATE
@@ -69,6 +75,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-missing-noreturn	# See NORETURN_GCC in include/compiler.h
     -Wno-implicit-int-conversion
     -Wno-static-self-init
+    $<$<BOOL:${ENABLE_RETPOLINE}>:-mretpoline>
     )
 endif()
 
