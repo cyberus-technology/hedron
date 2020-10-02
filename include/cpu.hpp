@@ -59,6 +59,15 @@ class Cpu
             FEAT_CMP_LEGACY     = 161,
             FEAT_SVM            = 162,
             FEAT_XSAVEOPT       = 192,
+
+            FEAT_IBRS_IBPB      = 7*32 + 26,
+            FEAT_STIBP          = 7*32 + 27,
+            FEAT_L1D_FLUSH      = 7*32 + 28,
+            FEAT_ARCH_CAP       = 7*32 + 29,
+            FEAT_SSBD           = 7*32 + 31,
+
+            // Synthetic features that do not correspond to CPUID bits.
+            FEAT_IA32_SPEC_CTRL = 8*32,
         };
 
         enum
@@ -170,6 +179,10 @@ class Cpu
 
         static Cpu_info init();
 
+        // Partially update CPU features. This is useful after a microcode
+        // change that may have added features.
+        static void update_features();
+
         static inline bool feature (Feature f)
         {
             return features()[f / 32] & 1U << f % 32;
@@ -178,6 +191,14 @@ class Cpu
         static inline void defeature (Feature f)
         {
             features()[f / 32] &= ~(1U << f % 32);
+        }
+
+        static inline void set_feature (Feature f, bool on)
+        {
+            uint32 &value = features()[f / 32];
+            uint32 const mask = 1U << f % 32;
+
+            value = (value & ~mask) | (on ? mask : 0);
         }
 
         static inline void preempt_disable()

@@ -83,6 +83,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     } else {
         regs.dst_portal = NUM_VMI - 2;
         regs.xcr0 = Cpu::XCR0_X87;
+        regs.spec_ctrl = 0;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
             mword host_cr3 = pd->hpt.root() | (Cpu::feature (Cpu::FEAT_PCID) ? pd->did : 0);
@@ -123,7 +124,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 // This is a read-write register that toggles
                 // speculation-related features on the current hyperthread.
                 //
-                // This register needs to be context-switched. See #126.
+                // This register is context-switched. See vmresume for why this
+                // doesn't happen via guest_msr_area.
                 Msr::Register::IA32_SPEC_CTRL,
 
                 // This is a write-only MSR without state that can be used to
@@ -292,6 +294,15 @@ void Ec::ret_user_vmresume()
 
     if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
         die ("Invalid XCR0");
+    }
+
+    // If we knew for sure that SPEC_CTRL is available, we could load it via the
+    // MSR area (guest_msr_area). The problem is that older CPUs may boot with a
+    // microcode that doesn't expose SPEC_CTRL. It only becomes available once
+    // microcode is updated. So we manually context switch it instead.
+
+    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
+        Msr::write(Msr::IA32_SPEC_CTRL, current()->regs.spec_ctrl);
     }
 
     asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)

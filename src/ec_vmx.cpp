@@ -75,6 +75,22 @@ void Ec::vmx_extint()
 
 void Ec::handle_vmx()
 {
+    // To defend against Spectre v2 other kernels would stuff the return stack
+    // buffer (RSB) here to avoid the guest injecting branch targets. This is
+    // not necessary for us, because we start from a fresh stack and do not
+    // execute RET instructions without having a matching CALL.
+
+    // See the corresponding check in ret_user_vmresume for the rationale of
+    // manually context switching IA32_SPEC_CTRL.
+    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
+        current()->regs.spec_ctrl = Msr::read (Msr::IA32_SPEC_CTRL);
+
+        // Don't leak the guests SPEC_CTRL settings into the host and disable
+        // all hardware-based mitigations.  We do this early to avoid
+        // performance penalties due to enabled mitigation features.
+        Msr::write (Msr::IA32_SPEC_CTRL, 0);
+    }
+
     Cpu::hazard() |= HZD_DS_ES | HZD_TR;
     Cpu::setup_sysenter();
     Fpu::restore_xcr0();
