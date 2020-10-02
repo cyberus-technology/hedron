@@ -303,8 +303,11 @@ void Ec::ret_user_vmresume()
     // MSR area (guest_msr_area). The problem is that older CPUs may boot with a
     // microcode that doesn't expose SPEC_CTRL. It only becomes available once
     // microcode is updated. So we manually context switch it instead.
-
-    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
+    //
+    // Another complication is that userspace may set invalid bits and we don't
+    // have the knowledge to sanitize the value. To avoid dying with a #GP in
+    // the kernel, we just handle it and carry on.
+    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
         Msr::write(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 

@@ -83,12 +83,16 @@ void Ec::handle_vmx()
     // See the corresponding check in ret_user_vmresume for the rationale of
     // manually context switching IA32_SPEC_CTRL.
     if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
-        current()->regs.spec_ctrl = Msr::read (Msr::IA32_SPEC_CTRL);
+        mword const guest_spec_ctrl = Msr::read (Msr::IA32_SPEC_CTRL);
+
+        current()->regs.spec_ctrl = guest_spec_ctrl;
 
         // Don't leak the guests SPEC_CTRL settings into the host and disable
         // all hardware-based mitigations.  We do this early to avoid
         // performance penalties due to enabled mitigation features.
-        Msr::write (Msr::IA32_SPEC_CTRL, 0);
+        if (guest_spec_ctrl != 0) {
+            Msr::write (Msr::IA32_SPEC_CTRL, 0);
+        }
     }
 
     Cpu::hazard() |= HZD_DS_ES | HZD_TR;
