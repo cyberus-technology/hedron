@@ -24,12 +24,17 @@ uint64 Msr::read (Register msr)
     return (static_cast<uint64>(h) << 32) | l;
 }
 
-uint64 Msr::read_safe (Register msr)
+bool Msr::read_safe (Register msr, uint64 &val)
 {
     uint32 h {0}, l {0};
+    bool skipped;
+
     asm volatile (FIXUP_CALL(rdmsr)
-                  : "+a" (l), "+d" (h) : "c" (msr));
-    return (static_cast<uint64>(h) << 32) | l;
+                  : FIXUP_SKIPPED (skipped), "+a" (l), "+d" (h)
+                  : "c" (msr));
+
+    val = (static_cast<uint64>(h) << 32) | l;
+    return not skipped;
 }
 
 void Msr::write (Register msr, uint64 val)
@@ -37,10 +42,15 @@ void Msr::write (Register msr, uint64 val)
     asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
 }
 
-void Msr::write_safe (Register msr, uint64 val)
+bool Msr::write_safe (Register msr, uint64 val)
 {
+    bool skipped;
+
     asm volatile (FIXUP_CALL(wrmsr)
-                  : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
+                  : FIXUP_SKIPPED (skipped)
+                  : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
+
+    return not skipped;
 }
 
 // Below is the code for userspace MSR access. It is mostly used for platform
@@ -117,8 +127,7 @@ bool Msr::user_write (Register msr, uint64 val)
         return false;
     }
 
-    write_safe (msr, val);
-    return true;
+    return write_safe (msr, val);
 }
 
 bool Msr::user_read (Register msr, uint64 &val)
@@ -128,6 +137,5 @@ bool Msr::user_read (Register msr, uint64 &val)
         return false;
     }
 
-    val = read_safe (msr);
-    return true;
+    return read_safe (msr, val);
 }
