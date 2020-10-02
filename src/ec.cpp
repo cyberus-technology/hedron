@@ -282,17 +282,20 @@ void Ec::ret_user_vmresume()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmresume);
 
-    current()->regs.vmcs->make_current();
+    auto const &regs = current()->regs;
+
+    regs.vmcs->make_current();
 
     if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
         Pd::current()->gtlb.clr (Cpu::id());
         Pd::current()->ept.flush();
     }
 
-    if (EXPECT_FALSE (get_cr2() != current()->regs.cr2))
-        set_cr2 (current()->regs.cr2);
+    if (EXPECT_FALSE (get_cr2() != regs.cr2)) {
+        set_cr2 (regs.cr2);
+    }
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (regs.xcr0))) {
         die ("Invalid XCR0");
     }
 
@@ -302,7 +305,7 @@ void Ec::ret_user_vmresume()
     // microcode is updated. So we manually context switch it instead.
 
     if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
-        Msr::write(Msr::IA32_SPEC_CTRL, current()->regs.spec_ctrl);
+        Msr::write(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
     asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
@@ -319,7 +322,7 @@ void Ec::ret_user_vmresume()
                   "jmp entry_vmx_failure;"
 
                   :
-                  : [regs] "m" (current()->regs),
+                  : [regs] "m" (regs),
                     [exi_reason] "i" (Vmcs::EXI_REASON),
                     [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
                   : "memory");
