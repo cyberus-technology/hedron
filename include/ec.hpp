@@ -118,7 +118,11 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         NORETURN
         static inline void vmx_invlpg();
 
-        static bool fixup (mword &);
+        // Try to fixup a #GP in the kernel. See FIXUP_CALL for when this may be
+        // appropriate.
+        //
+        // Returns true, if the #GP was handled and normal operation can resume.
+        static bool fixup (Exc_regs *r);
 
         NOINLINE
         static void handle_hazard (mword, void (*)());

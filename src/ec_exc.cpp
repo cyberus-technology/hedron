@@ -49,7 +49,7 @@ void Ec::transfer_fpu (Ec *from_ec)
 
 bool Ec::handle_exc_gp (Exc_regs *r)
 {
-    if (fixup (r->REG(ip))) {
+    if (fixup (r)) {
         return true;
     }
 

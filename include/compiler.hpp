@@ -87,6 +87,8 @@
     #define EXPECT_FALSE(X)     __builtin_expect(!!(X), 0)
     #define EXPECT_TRUE(X)      __builtin_expect(!!(X), 1)
 
+    // Execute an assembly instruction that can cause a #GP. If so, the
+    // instruction will be skipped without effect.
     #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
                                 ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
 

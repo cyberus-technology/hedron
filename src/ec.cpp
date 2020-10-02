@@ -410,11 +410,11 @@ void Ec::root_invoke()
     ret_user_sysexit();
 }
 
-bool Ec::fixup (mword &eip)
+bool Ec::fixup (Exc_regs *regs)
 {
     for (mword *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2)
-        if (eip == *ptr) {
-            eip = *++ptr;
+        if (regs->REG(ip) == ptr[0]) {
+            regs->REG(ip) = ptr[1];
             return true;
         }
 
