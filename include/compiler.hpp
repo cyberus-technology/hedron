@@ -89,11 +89,21 @@
 
     // Execute an assembly instruction that can cause a #GP. If so, the
     // instruction will be skipped without effect.
-    #define FIXUP_CALL(insn)    "1: " #insn "; 2:\n" \
+    //
+    // Use a FIXUP_SKIPPED output constraint to find out whether the instruction
+    // was actually skipped.
+    //
+    // See Ec::fixup() for the code that repairs the #GP (and sets RFLAGS.CF).
+    #define FIXUP_CALL(insn)    "clc\n" \
+                                "1: " #insn "; 2:\n" \
                                 ".section .fixup,\"a\"; .align 8;" EXPAND (WORD) " 1b,2b; .previous"
+
+    // The inline assembly output constraint to use to capture whether an instruction
+    // executed via FIXUP_CALL was skipped.
+    #define FIXUP_SKIPPED(var) "=@ccc" (var)
 
     #define OFFSETOF(type, m)   __builtin_offsetof (type, m)
 
 #else
-        #error "Unknown compiler"
+    #error "Unknown compiler"
 #endif

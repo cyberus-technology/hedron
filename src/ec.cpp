@@ -412,11 +412,18 @@ void Ec::root_invoke()
 
 bool Ec::fixup (Exc_regs *regs)
 {
-    for (mword *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2)
-        if (regs->REG(ip) == ptr[0]) {
-            regs->REG(ip) = ptr[1];
-            return true;
+    for (mword const *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
+        if (regs->REG(ip) != ptr[0]) {
+            continue;
         }
+
+        // Indicate that the instruction was skipped by setting the flag and
+        // advance to the next instruction.
+        regs->REG(fl) |= Cpu::EFL_CF;
+        regs->REG(ip) = ptr[1];
+
+        return true;
+    }
 
     return false;
 }
