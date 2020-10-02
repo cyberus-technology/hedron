@@ -80,6 +80,8 @@ Cpu_info Cpu::check_features()
         cpu_info.platform = static_cast<unsigned>(Msr::read (Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
+    // EAX contains the highest supported CPUID leaf. Fall through from the
+    // highest supported to the lowest CPUID leaf.
     switch (static_cast<uint8>(eax)) {
         default:
             FALL_THROUGH;
