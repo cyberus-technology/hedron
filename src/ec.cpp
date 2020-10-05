@@ -308,7 +308,7 @@ void Ec::ret_user_vmresume()
     // have the knowledge to sanitize the value. To avoid dying with a #GP in
     // the kernel, we just handle it and carry on.
     if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
-        Msr::write(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
+        Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
     asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
