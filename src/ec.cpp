@@ -253,6 +253,22 @@ void Ec::ret_user_sysexit()
     UNREACHED;
 }
 
+void Ec::return_to_user()
+{
+    make_current();
+
+    // Set the stack to just behind the register block to be able to use push
+    // instructions to fill it. The assertion checks whether someone destroyed
+    // our fragile structure layout.
+    assert (static_cast<void *>(exc_regs() + 1) == &exc_regs()->ss + 1);
+
+    Tss::local().sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+    Cpulocal::set_sys_entry_stack (sys_regs() + 1);
+
+    // Reset the kernel stack and jump to the current continuation.
+    asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+}
+
 void Ec::ret_user_iret()
 {
     // No need to check HZD_DS_ES because IRET will reload both anyway
