@@ -118,7 +118,11 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         NORETURN
         static inline void vmx_invlpg();
 
-        static bool fixup (mword &);
+        // Try to fixup a #GP in the kernel. See FIXUP_CALL for when this may be
+        // appropriate.
+        //
+        // Returns true, if the #GP was handled and normal operation can resume.
+        static bool fixup (Exc_regs *r);
 
         NOINLINE
         static void handle_hazard (mword, void (*)());
@@ -268,19 +272,10 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             pd->make_current();
         }
 
-        NORETURN
-        inline void return_to_user()
-        {
-            make_current();
-
-            // Set the stack to just behind the register block to be able to use
-            // push instructions to fill it. System call entry points need to
-            // preserve less state.
-            Tss::local().sp0 = reinterpret_cast<mword>(exc_regs() + 1);
-            Cpulocal::set_sys_entry_stack (sys_regs() + 1);
-
-            asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
-        }
+        // Return to user via the current continuation.
+        //
+        // This function also resets the kernel stack.
+        NORETURN void return_to_user();
 
         // Access the current EC on a remote core.
         //

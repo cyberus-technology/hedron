@@ -126,10 +126,16 @@ class Msr
         static uint64 read (Register msr);
         static void write (Register msr, uint64 val);
 
-        // Same as read/write above, but any access that causes #GP is
-        // ignored. That means writes are dropped and reads return 0.
-        static uint64 read_safe (Register msr);
-        static void write_safe (Register msr, uint64 val);
+        // Access MSRs with safety net.
+        //
+        // These functions are similar to read/write above, but handle the case
+        // where the MSR access causes a #GP. In case everything worked fine,
+        // these functions return true.
+        //
+        // A false return value indicates a #GP. In this case, a write was
+        // dropped and a read reads a value of 0.
+        static bool write_safe (Register msr, uint64  val);
+        static bool read_safe  (Register msr, uint64 &val);
 
         // Access MSRs from userspace for passthrough PDs.
         static bool user_write (Register msr, uint64  val);

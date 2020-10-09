@@ -191,6 +191,7 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         cr3 = regs->read_cr<Vmcs> (3);
         cr4 = regs->read_cr<Vmcs> (4);
         xcr0 = regs->xcr0;
+        spec_ctrl = regs->spec_ctrl;
     }
 
     if (m & Mtd::DR)
@@ -380,6 +381,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
         regs->write_cr<Vmcs> (3, cr3);
         regs->write_cr<Vmcs> (4, cr4);
         regs->xcr0 = xcr0;
+        regs->spec_ctrl = spec_ctrl;
     }
 
     if (mtd & Mtd::DR)

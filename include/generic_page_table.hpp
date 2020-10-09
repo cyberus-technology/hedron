@@ -408,8 +408,6 @@ class Generic_page_table
         // filled with the resulting physical address.
         WARN_UNUSED_RESULT NONNULL bool lookup_phys(virt_t vaddr, phys_t *paddr)
         {
-            assert_slow (paddr != nullptr);
-
             auto const m {lookup (vaddr)};
 
             *paddr = m.present() ? ((vaddr & (m.size() - 1)) | m.paddr) : 0;

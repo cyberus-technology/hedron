@@ -119,12 +119,20 @@ class Exc_regs : public Sys_regs
                 mword   cr0_shadow;
                 mword   cr3_shadow;
                 mword   cr4_shadow;
+
+                // This member needs to have the same offset in the data
+                // structure as vec above. The code uses them interchangeably.
                 mword   dst_portal;
+
+                mword   spec_ctrl;
                 mword   nst_fault;
                 mword   nst_error;
                 uint32  exc_bitmap;
             };
         };
+
+        // There can be no data members after the union (and specifically the ss
+        // member), because entry.S assumes a fixed layout.
 
     private:
         enum Mode
