@@ -57,6 +57,17 @@ uint8       Cpu::acpi_id[NUM_CPU];
 uint8       Cpu::apic_id[NUM_CPU];
 Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
 
+static bool probe_spec_ctrl()
+{
+    uint64 ignore;
+
+    // Intel does not have a single CPUID bit that indicates whether SPEC_CTRL
+    // is available. Instead there are three so far (Cpu::FEAT_IBRS_IBPB,
+    // Cpu::FEAT_STIBP, Cpu::FEAT_SSBD). To avoid the situation where Intel
+    // decides to add more bits, we just probe for the existence of the MSR.
+    return Msr::read_safe (Msr::IA32_SPEC_CTRL, ignore);
+}
+
 Cpu_info Cpu::check_features()
 {
     Cpu_info cpu_info {};
@@ -80,6 +91,8 @@ Cpu_info Cpu::check_features()
         cpu_info.platform = static_cast<unsigned>(Msr::read (Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
+    // EAX contains the highest supported CPUID leaf. Fall through from the
+    // highest supported to the lowest CPUID leaf.
     switch (static_cast<uint8>(eax)) {
         default:
             FALL_THROUGH;
@@ -87,7 +100,7 @@ Cpu_info Cpu::check_features()
             cpuid(0xD, 1, features()[6], ebx, ecx, edx);
             FALL_THROUGH;
         case 0x7 ... 0xC:
-            cpuid (0x7, 0, eax, features()[3], ecx, edx);
+            cpuid (0x7, 0, eax, features()[3], ecx, features()[7]);
             FALL_THROUGH;
         case 0x6:
             cpuid (0x6, features()[2], ebx, ecx, edx);
@@ -149,11 +162,20 @@ Cpu_info Cpu::check_features()
         if (cpu_info.family > 0xf || (cpu_info.family == 0xf && cpu_info.model >= 0x40))
             Msr::write (Msr::AMD_IPMR, Msr::read (Msr::AMD_IPMR) & ~(3ul << 27));
 
+    set_feature (FEAT_IA32_SPEC_CTRL, probe_spec_ctrl());
+
     // Disable features based on command line arguments
     if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
     if (EXPECT_FALSE (Cmdline::noxsave)) { defeature (FEAT_XSAVE); }
 
     return cpu_info;
+}
+
+void Cpu::update_features()
+{
+    set_feature (FEAT_IA32_SPEC_CTRL, probe_spec_ctrl());
+
+    trace (TRACE_CPU, "SPEC_CTRL available: %d", feature (FEAT_IA32_SPEC_CTRL));
 }
 
 void Cpu::setup_thermal()

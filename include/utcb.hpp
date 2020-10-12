@@ -95,6 +95,7 @@ class Utcb_data
                 uint16          reserved_array[3];
 
                 uint64          cr0_mon, cr4_mon;
+                uint64          spec_ctrl;
             };
 
             mword data_begin;

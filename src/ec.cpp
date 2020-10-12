@@ -83,6 +83,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     } else {
         regs.dst_portal = NUM_VMI - 2;
         regs.xcr0 = Cpu::XCR0_X87;
+        regs.spec_ctrl = 0;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
             mword host_cr3 = pd->hpt.root() | (Cpu::feature (Cpu::FEAT_PCID) ? pd->did : 0);
@@ -113,9 +114,29 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
                 Msr::Register::IA32_FS_BASE,
                 Msr::Register::IA32_GS_BASE,
                 Msr::Register::IA32_KERNEL_GS_BASE,
+
+                // This is a read-only MSR that indicates which CPU
+                // vulnerability mitigations are not required.
+                //
+                // This register should be configurable by userspace. See #124.
                 Msr::Register::IA32_ARCH_CAP,
+
+                // This is a read-write register that toggles
+                // speculation-related features on the current hyperthread.
+                //
+                // This register is context-switched. See vmresume for why this
+                // doesn't happen via guest_msr_area.
                 Msr::Register::IA32_SPEC_CTRL,
+
+                // This is a write-only MSR without state that can be used to
+                // issue commands to the branch predictor. So far this is used
+                // to trigger barriers for indirect branch prediction (see
+                // IBPB).
                 Msr::Register::IA32_PRED_CMD,
+
+                // This is a write-only MSR without state that can be used to
+                // invalidate CPU structures. This is (so far) only used to
+                // flush the L1D cache.
                 Msr::Register::IA32_FLUSH_CMD,
             };
 
@@ -232,6 +253,22 @@ void Ec::ret_user_sysexit()
     UNREACHED;
 }
 
+void Ec::return_to_user()
+{
+    make_current();
+
+    // Set the stack to just behind the register block to be able to use push
+    // instructions to fill it. The assertion checks whether someone destroyed
+    // our fragile structure layout.
+    assert (static_cast<void *>(exc_regs() + 1) == &exc_regs()->ss + 1);
+
+    Tss::local().sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+    Cpulocal::set_sys_entry_stack (sys_regs() + 1);
+
+    // Reset the kernel stack and jump to the current continuation.
+    asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+}
+
 void Ec::ret_user_iret()
 {
     // No need to check HZD_DS_ES because IRET will reload both anyway
@@ -261,18 +298,33 @@ void Ec::ret_user_vmresume()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmresume);
 
-    current()->regs.vmcs->make_current();
+    auto const &regs = current()->regs;
+
+    regs.vmcs->make_current();
 
     if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
         Pd::current()->gtlb.clr (Cpu::id());
         Pd::current()->ept.flush();
     }
 
-    if (EXPECT_FALSE (get_cr2() != current()->regs.cr2))
-        set_cr2 (current()->regs.cr2);
+    if (EXPECT_FALSE (get_cr2() != regs.cr2)) {
+        set_cr2 (regs.cr2);
+    }
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
+    if (EXPECT_FALSE (not Fpu::load_xcr0 (regs.xcr0))) {
         die ("Invalid XCR0");
+    }
+
+    // If we knew for sure that SPEC_CTRL is available, we could load it via the
+    // MSR area (guest_msr_area). The problem is that older CPUs may boot with a
+    // microcode that doesn't expose SPEC_CTRL. It only becomes available once
+    // microcode is updated. So we manually context switch it instead.
+    //
+    // Another complication is that userspace may set invalid bits and we don't
+    // have the knowledge to sanitize the value. To avoid dying with a #GP in
+    // the kernel, we just handle it and carry on.
+    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
+        Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
     asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
@@ -289,7 +341,7 @@ void Ec::ret_user_vmresume()
                   "jmp entry_vmx_failure;"
 
                   :
-                  : [regs] "m" (current()->regs),
+                  : [regs] "m" (regs),
                     [exi_reason] "i" (Vmcs::EXI_REASON),
                     [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
                   : "memory");
@@ -391,13 +443,20 @@ void Ec::root_invoke()
     ret_user_sysexit();
 }
 
-bool Ec::fixup (mword &eip)
+bool Ec::fixup (Exc_regs *regs)
 {
-    for (mword *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2)
-        if (eip == *ptr) {
-            eip = *++ptr;
-            return true;
+    for (mword const *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
+        if (regs->REG(ip) != ptr[0]) {
+            continue;
         }
+
+        // Indicate that the instruction was skipped by setting the flag and
+        // advance to the next instruction.
+        regs->REG(fl) |= Cpu::EFL_CF;
+        regs->REG(ip) = ptr[1];
+
+        return true;
+    }
 
     return false;
 }

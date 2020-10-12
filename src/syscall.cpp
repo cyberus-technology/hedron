@@ -829,6 +829,10 @@ void Ec::sys_machine_ctrl_update_microcode()
     // at offset 48.
     auto kernel_addr {reinterpret_cast<mword>(Hpt::remap (r->update_address(), false)) + 48};
     Msr::write_safe(Msr::IA32_BIOS_UPDT_TRIG, kernel_addr);
+
+    // Microcode loads may expose new CPU features.
+    Cpu::update_features();
+
     sys_finish<Sys_regs::SUCCESS>();
 }
 
