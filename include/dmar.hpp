@@ -225,8 +225,7 @@ class Dmar : public Forward_list<Dmar>
             if (!(flags & 1))
                 gcmd &= ~GCMD_IRE;
 
-            Forward_list_range iommus {list};
-            for_each(iommus.begin(), iommus.end(), mem_fn_closure(&Dmar::command)(gcmd));
+            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::command)(gcmd));
         }
 
         static inline void set_irt (unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)

@@ -38,8 +38,7 @@ struct Pci::quirk_map Pci::map[] =
 Pci *Pci::find_dev (unsigned long r)
 {
     auto range = Forward_list_range (list);
-    auto it = find_if (range.begin(), range.end(),
-                       [r] (auto &pci) { return pci.rid == r; });
+    auto it = find_if (range, [r] (auto &pci) { return pci.rid == r; });
 
     return it != range.end() ? &*it : nullptr;
 }
@@ -55,9 +54,7 @@ Pci::Pci (unsigned r, unsigned l) : Forward_list<Pci> (list), reg_base (hwdev_ad
 
 void Pci::claim_all (Dmar *d)
 {
-    auto range = Forward_list_range (list);
-    for_each (range.begin(), range.end(),
-              [d] (Pci &pci) { if (not pci.dmar) { pci.dmar = d; } });
+    for_each (Forward_list_range {list}, [d] (Pci &pci) { if (not pci.dmar) { pci.dmar = d; } });
 }
 
 bool Pci::claim_dev (Dmar *d, unsigned r)
@@ -72,9 +69,9 @@ bool Pci::claim_dev (Dmar *d, unsigned r)
     // Find the range of devices with a deeper level than the current device in
     // the PCI hierarchy. Deeper means a numerically larger level.
     Forward_list_range devices {pci};
-    auto end = find_if(devices.begin(), devices.end(), [l] (Pci &dev) { return dev.lev <= l; });
+    auto end = find_if (devices, [l] (Pci &dev) { return dev.lev <= l; });
 
-    for_each(devices.begin(), end, [d] (Pci &dev) { dev.dmar = d; });
+    for_each (devices.begin(), end, [d] (Pci &dev) { dev.dmar = d; });
 
     return true;
 }

@@ -91,7 +91,7 @@ class Ioapic : public Forward_list<Ioapic>
         static inline bool claim_dev (unsigned r, unsigned i)
         {
             auto range = Forward_list_range (list);
-            auto it = find_if (range.begin(), range.end(),
+            auto it = find_if (range,
                                [i] (auto &ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
 
             if (it != range.end()) {

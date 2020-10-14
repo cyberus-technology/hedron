@@ -84,12 +84,10 @@ void Ioapic::restore()
 
 void Ioapic::save_all()
 {
-    Forward_list_range ioapics {list};
-    for_each(ioapics.begin(), ioapics.end(), mem_fn_closure(&Ioapic::save)());
+    for_each (Forward_list_range {list}, mem_fn_closure(&Ioapic::save)());
 }
 
 void Ioapic::restore_all()
 {
-    Forward_list_range ioapics {list};
-    for_each(ioapics.begin(), ioapics.end(), mem_fn_closure(&Ioapic::restore)());
+    for_each (Forward_list_range {list}, mem_fn_closure(&Ioapic::restore)());
 }
