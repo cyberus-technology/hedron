@@ -22,14 +22,6 @@
 #include "cmdline.hpp"
 #include "string.hpp"
 
-bool Cmdline::iommu;
-bool Cmdline::serial;
-bool Cmdline::spinner;
-bool Cmdline::nodl;
-bool Cmdline::nopcid;
-bool Cmdline::novga;
-bool Cmdline::novpid;
-
 struct Cmdline::param_map const Cmdline::map[] =
 {
     { "iommu",      &Cmdline::iommu     },
