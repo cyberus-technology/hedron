@@ -37,23 +37,23 @@ static void xsave_enable(uint64 xcr0)
 
 void Fpu::probe()
 {
-    if (Cpu::feature(Cpu::FEAT_XSAVE)) {
-        uint32 valid_xcr0_lo, valid_xcr0_hi, current_context, discard;
-        uint64 xcr0;
-
-        cpuid (0xD, 0, valid_xcr0_lo, discard, discard, valid_xcr0_hi);
-
-        xcr0 = static_cast<uint64>(valid_xcr0_lo) << 32 | valid_xcr0_lo;
-        xcr0 &= supported_xsave_state;
-        xsave_enable (xcr0);
-
-        cpuid (0xD, 0, discard, current_context, discard, discard);
-
-        Fpu::config = { xcr0, current_context,
-                        Cpu::feature (Cpu::FEAT_XSAVEOPT) ? Fpu::Mode::XSAVEOPT : Fpu::Mode::XSAVE };
-    } else {
-        Fpu::config = { 0, 512, Fpu::Mode::FXSAVE };
+    if (not Cpu::feature(Cpu::FEAT_XSAVE)) {
+        Console::panic ("Need XSAVE-capable CPU");
     }
+
+    uint32 valid_xcr0_lo, valid_xcr0_hi, current_context, discard;
+    uint64 xcr0;
+
+    cpuid (0xD, 0, valid_xcr0_lo, discard, discard, valid_xcr0_hi);
+
+    xcr0 = static_cast<uint64>(valid_xcr0_lo) << 32 | valid_xcr0_lo;
+    xcr0 &= supported_xsave_state;
+    xsave_enable (xcr0);
+
+    cpuid (0xD, 0, discard, current_context, discard, discard);
+
+    Fpu::config = { xcr0, current_context,
+        Cpu::feature (Cpu::FEAT_XSAVEOPT) ? Fpu::Mode::XSAVEOPT : Fpu::Mode::XSAVE };
 
     static Slab_cache fpu_cache {Fpu::config.context_size, 64};
     cache = &fpu_cache;
@@ -61,9 +61,7 @@ void Fpu::probe()
 
 void Fpu::init()
 {
-    if (config.mode != Mode::FXSAVE) {
-        xsave_enable(config.xsave_scb);
-    }
+    xsave_enable(config.xsave_scb);
 }
 
 void Fpu::save()
@@ -78,9 +76,6 @@ void Fpu::save()
     case Mode::XSAVE:
         asm volatile ("xsave %0" : "=m" (*data) : "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
         break;
-    case Mode::FXSAVE:
-        asm volatile ("fxsave %0" : "=m" (*data));
-        break;
     }
 }
 
@@ -89,15 +84,7 @@ void Fpu::load()
     uint32 xsave_scb_hi {static_cast<uint32>(config.xsave_scb >> 32)};
     uint32 xsave_scb_lo {static_cast<uint32>(config.xsave_scb)};
 
-    switch (config.mode) {
-    case Mode::XSAVEOPT:
-    case Mode::XSAVE:
-        asm volatile ("xrstor %0" : : "m" (*data), "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
-        break;
-    case Mode::FXSAVE:
-        asm volatile ("fxrstor %0" : : "m" (*data));
-        break;
-    }
+    asm volatile ("xrstor %0" : : "m" (*data), "d" (xsave_scb_hi), "a" (xsave_scb_lo) : "memory");
 }
 
 static bool is_valid_xcr0 (uint64 xsave_scb, uint64 xcr0)
@@ -120,10 +107,6 @@ static bool is_valid_xcr0 (uint64 xsave_scb, uint64 xcr0)
 
 bool Fpu::load_xcr0 (uint64 xcr0)
 {
-    if (EXPECT_FALSE (not Cpu::feature (Cpu::FEAT_XSAVE))) {
-        return true;
-    }
-
     if (EXPECT_FALSE (not is_valid_xcr0 (config.xsave_scb, xcr0))) {
         return false;
     }
@@ -134,10 +117,6 @@ bool Fpu::load_xcr0 (uint64 xcr0)
 
 void Fpu::restore_xcr0()
 {
-    if (EXPECT_FALSE (not Cpu::feature (Cpu::FEAT_XSAVE))) {
-        return;
-    }
-
     set_xcr (0, config.xsave_scb);
 }
 

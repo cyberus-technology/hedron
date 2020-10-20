@@ -45,7 +45,6 @@ class Cmdline
         static bool nopcid;
         static bool novga;
         static bool novpid;
-        static bool noxsave;
 
         static void init (char const *);
 };

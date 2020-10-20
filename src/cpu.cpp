@@ -166,7 +166,6 @@ Cpu_info Cpu::check_features()
 
     // Disable features based on command line arguments
     if (EXPECT_FALSE (Cmdline::nopcid))  { defeature (FEAT_PCID);  }
-    if (EXPECT_FALSE (Cmdline::noxsave)) { defeature (FEAT_XSAVE); }
 
     return cpu_info;
 }

@@ -29,7 +29,6 @@ bool Cmdline::nodl;
 bool Cmdline::nopcid;
 bool Cmdline::novga;
 bool Cmdline::novpid;
-bool Cmdline::noxsave;
 
 struct Cmdline::param_map const Cmdline::map[] =
 {
@@ -40,7 +39,6 @@ struct Cmdline::param_map const Cmdline::map[] =
     { "nopcid",     &Cmdline::nopcid    },
     { "novga",      &Cmdline::novga     },
     { "novpid",     &Cmdline::novpid    },
-    { "noxsave",    &Cmdline::noxsave   },
 };
 
 char const *Cmdline::get_arg (char const **line, unsigned &len)
