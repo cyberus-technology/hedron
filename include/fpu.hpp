@@ -49,7 +49,6 @@ class Fpu
         enum class Mode : uint8 {
             XSAVEOPT,
             XSAVE,
-            FXSAVE,
         };
 
         struct FpuConfig {

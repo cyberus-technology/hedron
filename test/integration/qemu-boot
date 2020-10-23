@@ -13,8 +13,10 @@ QEMU = "qemu-system-x86_64"
 QEMU_DEFAULT_ARGS = [
     "-machine",
     "q35,accel=tcg",
+    # Disable features that TCG doesn't support to avoid ugly warnings
+    # in the test.
     "-cpu",
-    "Westmere",
+    "SandyBridge,-x2apic,-avx,-tsc-deadline",
     "-m",
     "2048",
     "-serial",

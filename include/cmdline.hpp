@@ -38,14 +38,13 @@ class Cmdline
         static char const *get_arg (char const **, unsigned &);
 
     public:
-        static bool iommu;
-        static bool serial;
-        static bool spinner;
-        static bool nodl;
-        static bool nopcid;
-        static bool novga;
-        static bool novpid;
-        static bool noxsave;
+        static inline bool iommu;
+        static inline bool serial;
+        static inline bool spinner;
+        static inline bool nodl;
+        static inline bool nopcid;
+        static inline bool novga;
+        static inline bool novpid;
 
         static void init (char const *);
 };

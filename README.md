@@ -35,8 +35,9 @@ Supported platforms
 The Hedron microhypervisor runs on single- and multi-processor x86 machines
 that support ACPI.
 
-Recommended Intel CPUs are Intel Core processors starting with the Sandy Bridge
-microarchitecture. AMD support is experimental and currently not actively used.
+Recommended Intel CPUs are Intel Core processors starting with the
+Sandy Bridge microarchitecture. AMD support is experimental and
+currently not actively used.
 
 The virtualization features are available on:
 
