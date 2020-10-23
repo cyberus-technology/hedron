@@ -92,6 +92,11 @@ TEST_CASE ("Algorithms work on lists", "[list]")
 TEST_CASE("Range-based for works on lists", "[list]")
 {
     Test_list test_list {1, 2, 3};
+    std::vector<int> result;
 
-    CHECK (Forward_list_range (test_list.head) == std::vector<int> {1, 2, 3});
+    for (auto const &el : Forward_list_range (test_list.head)) {
+        result.push_back(el.value);
+    }
+
+    CHECK (result == std::vector<int> {1, 2, 3});
 }
