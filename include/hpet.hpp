@@ -43,7 +43,7 @@ class Hpet : public Forward_list<Hpet>
         static inline bool claim_dev (unsigned r, unsigned i)
         {
             auto range = Forward_list_range {list};
-            auto it = find_if (range, [i] (auto &hpet) { return hpet.rid == 0 && hpet.id == i; });
+            auto it = find_if (range, [i] (auto const &hpet) { return hpet.rid == 0 && hpet.id == i; });
 
             if (it != range.end()) {
                 it->rid = static_cast<uint16>(r);
@@ -56,7 +56,7 @@ class Hpet : public Forward_list<Hpet>
         static inline unsigned phys_to_rid (Paddr p)
         {
             auto range = Forward_list_range (list);
-            auto it = find_if (range, [p] (auto &hpet) { return hpet.phys == p; });
+            auto it = find_if (range, [p] (auto const &hpet) { return hpet.phys == p; });
 
             return it != range.end() ? it->rid : ~0U;
         }

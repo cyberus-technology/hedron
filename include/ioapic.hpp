@@ -92,7 +92,7 @@ class Ioapic : public Forward_list<Ioapic>
         {
             auto range = Forward_list_range (list);
             auto it = find_if (range,
-                               [i] (auto &ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
+                               [i] (auto const &ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
 
             if (it != range.end()) {
                 it->rid = static_cast<uint16> (r);
