@@ -21,8 +21,9 @@
 
 #include "list.hpp"
 #include "slab.hpp"
+#include "algorithm.hpp"
 
-class Hpet : public List<Hpet>
+class Hpet : public Forward_list<Hpet>
 {
     friend class Hip;
 
@@ -35,27 +36,28 @@ class Hpet : public List<Hpet>
         static Slab_cache   cache;
 
     public:
-        explicit inline Hpet (Paddr p, unsigned i) : List<Hpet> (list), phys (p), id (i), rid (0) {}
+        explicit inline Hpet (Paddr p, unsigned i) : Forward_list<Hpet> (list), phys (p), id (i), rid (0) {}
 
         static inline void *operator new (size_t) { return cache.alloc(); }
 
         static inline bool claim_dev (unsigned r, unsigned i)
         {
-            for (Hpet *hpet = list; hpet; hpet = hpet->next)
-                if (hpet->rid == 0 && hpet->id == i) {
-                    hpet->rid = static_cast<uint16>(r);
-                    return true;
-                }
+            auto range = Forward_list_range {list};
+            auto it = find_if (range, [i] (auto const &hpet) { return hpet.rid == 0 && hpet.id == i; });
 
-            return false;
+            if (it != range.end()) {
+                it->rid = static_cast<uint16>(r);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         static inline unsigned phys_to_rid (Paddr p)
         {
-            for (Hpet *hpet = list; hpet; hpet = hpet->next)
-                if (hpet->phys == p)
-                    return hpet->rid;
+            auto range = Forward_list_range (list);
+            auto it = find_if (range, [p] (auto const &hpet) { return hpet.phys == p; });
 
-            return ~0U;
+            return it != range.end() ? it->rid : ~0U;
         }
 };

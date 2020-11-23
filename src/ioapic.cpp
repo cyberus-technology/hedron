@@ -35,7 +35,7 @@ void *Ioapic::operator new (size_t size)
     return Buddy::allocator.alloc (0, Buddy::NOFILL);
 }
 
-Ioapic::Ioapic (Paddr p, unsigned i, unsigned g) : List<Ioapic> (list), paddr(uint32(p)), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), gsi_base (g), id (i), rid (0)
+Ioapic::Ioapic (Paddr p, unsigned i, unsigned g) : Forward_list<Ioapic> (list), paddr(uint32(p)), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), gsi_base (g), id (i), rid (0)
 {
     Pd::kern->claim_mmio_page (reg_base, p & ~PAGE_MASK);
 
@@ -84,14 +84,10 @@ void Ioapic::restore()
 
 void Ioapic::save_all()
 {
-    for (Ioapic *cur = list; cur; cur = cur->next) {
-        cur->save();
-    }
+    for_each (Forward_list_range {list}, mem_fn_closure(&Ioapic::save)());
 }
 
 void Ioapic::restore_all()
 {
-    for (Ioapic *cur = list; cur; cur = cur->next) {
-        cur->restore();
-    }
+    for_each (Forward_list_range {list}, mem_fn_closure(&Ioapic::restore)());
 }

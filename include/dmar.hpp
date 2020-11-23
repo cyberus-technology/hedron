@@ -22,7 +22,9 @@
 
 #include "list.hpp"
 #include "slab.hpp"
+#include "util.hpp"
 #include "x86.hpp"
+#include "algorithm.hpp"
 
 class Pd;
 
@@ -79,7 +81,7 @@ class Dmar_irt
         static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
 };
 
-class Dmar : public List<Dmar>
+class Dmar : public Forward_list<Dmar>
 {
     private:
         mword const         reg_base;
@@ -223,8 +225,7 @@ class Dmar : public List<Dmar>
             if (!(flags & 1))
                 gcmd &= ~GCMD_IRE;
 
-            for (Dmar *dmar = list; dmar; dmar = dmar->next)
-                dmar->command (gcmd);
+            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::command)(gcmd));
         }
 
         static inline void set_irt (unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)

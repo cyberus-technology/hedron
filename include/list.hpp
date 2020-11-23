@@ -18,15 +18,67 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
+
+#if __STDC_HOSTED__
+#include <iterator>
+#endif
 
 template <typename T>
-class List
+class Forward_list_iterator
 {
-    protected:
+        T *ptr;
+
+    public:
+
+        using difference_type = ptrdiff_t;
+        using value_type = T;
+        using pointer = T*;
+        using reference = T&;
+
+#if __STDC_HOSTED__
+        using iterator_category = std::forward_iterator_tag;
+#endif
+
+        Forward_list_iterator(T *ptr_)
+            : ptr {ptr_}
+        {}
+
+        T &operator*() const { return *ptr; }
+        T *operator->() const { return ptr; }
+
+        Forward_list_iterator &operator++()
+        {
+            ptr = ptr->next;
+            return *this;
+        }
+
+        bool operator==(Forward_list_iterator<T> const &rhs) const { return ptr == rhs.ptr; }
+        bool operator!=(Forward_list_iterator<T> const &rhs) const { return not (*this == rhs); }
+};
+
+template <typename T>
+class Forward_list_range
+{
+        T *ptr;
+
+    public:
+        Forward_list_range(T *ptr_) : ptr{ptr_} {}
+
+        Forward_list_iterator<T> begin() const { return {ptr}; }
+        Forward_list_iterator<T> end()   const { return {nullptr}; }
+};
+
+template <typename T>
+class Forward_list
+{
+    private:
+        friend class Forward_list_iterator<T>;
+
         T *next;
 
     public:
-        explicit inline List (T *&list) : next (nullptr)
+        explicit inline Forward_list (T *&list) : next (nullptr)
         {
             T **ptr;
 

@@ -34,7 +34,7 @@ Dmar_ctx *  Dmar::ctx = new Dmar_ctx;
 Dmar_irt *  Dmar::irt = new Dmar_irt;
 uint32      Dmar::gcmd = GCMD_TE;
 
-Dmar::Dmar (Paddr p) : List<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), invq (static_cast<Dmar_qi *>(Buddy::allocator.alloc (ord, Buddy::FILL_0))), invq_idx (0)
+Dmar::Dmar (Paddr p) : Forward_list<Dmar> (list), reg_base ((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)), invq (static_cast<Dmar_qi *>(Buddy::allocator.alloc (ord, Buddy::FILL_0))), invq_idx (0)
 {
     Pd::kern->claim_mmio_page (reg_base, p & ~PAGE_MASK);
 
@@ -122,9 +122,9 @@ void Dmar::vector (unsigned vector)
 {
     unsigned msi = vector - VEC_MSI;
 
-    if (EXPECT_TRUE (msi == 0))
-        for (Dmar *dmar = list; dmar; dmar = dmar->next)
-            dmar->fault_handler();
+    if (EXPECT_TRUE (msi == 0)) {
+        for_each (Forward_list_range {list}, mem_fn_closure(&Dmar::fault_handler)());
+    }
 
     Lapic::eoi();
 }

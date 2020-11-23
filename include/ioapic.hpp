@@ -26,8 +26,9 @@
 #include "list.hpp"
 #include "lock_guard.hpp"
 #include "static_vector.hpp"
+#include "algorithm.hpp"
 
-class Ioapic : public List<Ioapic>
+class Ioapic : public Forward_list<Ioapic>
 {
     private:
         uint32   const      paddr;
@@ -89,22 +90,25 @@ class Ioapic : public List<Ioapic>
 
         static inline bool claim_dev (unsigned r, unsigned i)
         {
-            for (Ioapic *ioapic = list; ioapic; ioapic = ioapic->next)
-                if (ioapic->rid == 0 && ioapic->id == i) {
-                    ioapic->rid  = static_cast<uint16>(r);
-                    return true;
-                }
+            auto range = Forward_list_range (list);
+            auto it = find_if (range,
+                               [i] (auto const &ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
 
-            return false;
+            if (it != range.end()) {
+                it->rid = static_cast<uint16> (r);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         static inline void add_to_hip (Hip_ioapic *&entry)
         {
-            for (Ioapic *ioapic = list; ioapic; ioapic = ioapic->next) {
-                entry->id = ioapic->read_id_reg();
-                entry->version = ioapic->read_version_reg();
-                entry->gsi_base = ioapic->get_gsi();
-                entry->base = ioapic->get_paddr();
+            for (auto &ioapic : Forward_list_range (list)) {
+                entry->id = ioapic.read_id_reg();
+                entry->version = ioapic.read_version_reg();
+                entry->gsi_base = ioapic.get_gsi();
+                entry->base = ioapic.get_paddr();
                 entry++;
             }
         }

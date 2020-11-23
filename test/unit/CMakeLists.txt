@@ -2,8 +2,18 @@ message(STATUS "Building tests: Check the README file for instructions on disabl
 find_package(Catch2 REQUIRED)
 
 add_executable(test_unit
-  algorithm.cpp atomic.cpp bitmap.cpp main.cpp math.cpp mtrr.cpp page_table.cpp static_vector.cpp string.cpp
-  unique_ptr.cpp vmx_msr_bitmap.cpp
+  algorithm.cpp
+  atomic.cpp
+  bitmap.cpp
+  list.cpp
+  main.cpp
+  math.cpp
+  mtrr.cpp
+  page_table.cpp
+  static_vector.cpp
+  string.cpp
+  unique_ptr.cpp
+  vmx_msr_bitmap.cpp
   )
 target_link_libraries(test_unit Catch2::Catch2)
 
