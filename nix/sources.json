@@ -5,10 +5,10 @@
         "homepage": null,
         "owner": "cyberus-technology",
         "repo": "cbspkgs-public",
-        "rev": "f9bbb52c896fc147eb8711b31f01c78383b376c7",
-        "sha256": "0b6kcvn52r49gaakg8h4h1hqvrvl5vhzz94320w506q65c35bbgw",
+        "rev": "4a683437550c7055b5239b2202667118ede98e88",
+        "sha256": "1c6hgvx8615q4y2f6iznys3wql7p6p7dixlyk5525nb46f4ak9l0",
         "type": "tarball",
-        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/f9bbb52c896fc147eb8711b31f01c78383b376c7.tar.gz",
+        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/4a683437550c7055b5239b2202667118ede98e88.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "cmake-modules": {
