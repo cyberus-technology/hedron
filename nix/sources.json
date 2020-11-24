@@ -5,10 +5,10 @@
         "homepage": null,
         "owner": "cyberus-technology",
         "repo": "cbspkgs-public",
-        "rev": "f9bbb52c896fc147eb8711b31f01c78383b376c7",
-        "sha256": "0b6kcvn52r49gaakg8h4h1hqvrvl5vhzz94320w506q65c35bbgw",
+        "rev": "4a683437550c7055b5239b2202667118ede98e88",
+        "sha256": "1c6hgvx8615q4y2f6iznys3wql7p6p7dixlyk5525nb46f4ak9l0",
         "type": "tarball",
-        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/f9bbb52c896fc147eb8711b31f01c78383b376c7.tar.gz",
+        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/4a683437550c7055b5239b2202667118ede98e88.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "cmake-modules": {
@@ -24,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-unstable",
+        "branch": "nixos-20.09",
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
-        "repo": "nixpkgs-channels",
-        "rev": "dc80d7bc4a244120b3d766746c41c0d9c5f81dfa",
-        "sha256": "0dy0mp7alc7m34zxall14x42qx9yjm7b0m6psgmw0lb6j1iy1pla",
+        "repo": "nixpkgs",
+        "rev": "9da0758c1cd4724cf09fd48fee11413f88c48c8d",
+        "sha256": "1n8wy4a5hfrx3fqxlxkwnganb5y1l450v36255jj58j7fkcys6ss",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/dc80d7bc4a244120b3d766746c41c0d9c5f81dfa.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/9da0758c1cd4724cf09fd48fee11413f88c48c8d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
