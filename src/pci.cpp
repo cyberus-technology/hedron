@@ -65,11 +65,13 @@ bool Pci::claim_dev (Dmar *d, unsigned r)
         return false;
 
     unsigned l = pci->lev;
-
-    // Find the range of devices with a deeper level than the current device in
-    // the PCI hierarchy. Deeper means a numerically larger level.
     Forward_list_range devices {pci};
-    auto end = find_if (devices, [l] (Pci const &dev) { return dev.lev <= l; });
+
+    // Find all following devices with a deeper level in the PCI hierarchy than
+    // the current device. Deeper means a numerically larger level.
+    assert (devices.begin() != devices.end());
+    auto end = find_if (++devices.begin(), devices.end(),
+                        [l] (Pci const &dev) { return dev.lev <= l; });
 
     for_each (devices.begin(), end, [d] (Pci &dev) { dev.dmar = d; });
 
