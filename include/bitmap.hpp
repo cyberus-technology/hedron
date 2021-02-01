@@ -66,6 +66,6 @@ public:
         return {bitmap[idx / sizeof(bitmap[0]) / 8], idx % (sizeof(bitmap[0]) * 8)};
     }
 
-protected:
+private:
     T bitmap[align_up(NUMBER_OF_BITS, sizeof(T) * 8) / 8 / sizeof(T)];
 };
