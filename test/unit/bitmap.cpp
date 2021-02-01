@@ -20,7 +20,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <vector>
 
 TEST_CASE("Bit_accessor sets correct bits", "[bitmap]")
@@ -77,5 +79,55 @@ TEST_CASE("Bit_accessor sets correct bits", "[bitmap]")
             memcpy(bitmap_storage.data(), &bitmap, sizeof(decltype(bitmap_storage)::value_type) * bitmap_storage.size());
             CHECK(bitmap_storage == bitmap_compare);
         }
+    }
+}
+
+TEST_CASE("Bitmap iterators work", "[bitmap]")
+{
+    constexpr size_t SIZE {8};
+    Bitmap<mword, SIZE> bitmap {false};
+
+    SECTION("Iterators have basic sanity") {
+        CHECK(bitmap.begin() == bitmap.begin());
+        CHECK(bitmap.end() == bitmap.end());
+
+        CHECK(++bitmap.begin() != bitmap.begin());
+
+        CHECK(bitmap.begin() != bitmap.end());
+        CHECK(bitmap.size() == SIZE);
+    }
+
+    SECTION("Iterators can be advanced") {
+        auto it = bitmap.begin();
+        std::advance(it, SIZE);
+        CHECK(it == bitmap.end());
+    }
+
+    SECTION("Iterators can be referenced") {
+        bitmap.set(1, true);
+        CHECK_FALSE(*bitmap.begin());
+        CHECK(*++bitmap.begin());
+    }
+}
+
+TEST_CASE("Bitmap can be used as simple array of bits", "[bitmap]")
+{
+    constexpr size_t SIZE {8};
+
+    SECTION("Inializer works") {
+        Bitmap<mword, SIZE> bitmap_false {false};
+        std::all_of(bitmap_false.begin(), bitmap_false.end(), [] (bool b) { return not b; });
+
+        Bitmap<mword, SIZE> bitmap_true {true};
+        std::all_of(bitmap_true.begin(), bitmap_true.end(), [] (bool b) { return b; });
+    }
+
+    SECTION("Set bit works") {
+        Bitmap<mword, SIZE> bitmap {false};
+
+        CHECK(not bitmap[5]);
+
+        bitmap[5] = true;
+        CHECK(bitmap[5]);
     }
 }
