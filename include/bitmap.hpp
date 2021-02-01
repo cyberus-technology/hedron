@@ -30,42 +30,42 @@
 template <typename T, size_t NUMBER_OF_BITS>
 class Bitmap
 {
-public:
-    /// Helper to simulate a bool reference
-    class Bit_accessor
-    {
     public:
-        Bit_accessor(T &raw_, size_t bitpos_) : raw(raw_), bitpos(bitpos_)
+        /// Helper to simulate a bool reference
+        class Bit_accessor
         {
-            assert(bitpos_ < sizeof(T) * 8);
+            public:
+                Bit_accessor(T &raw_, size_t bitpos_) : raw(raw_), bitpos(bitpos_)
+                {
+                    assert(bitpos_ < sizeof(T) * 8);
+                }
+
+                /// Assigns val to the corresponding bit
+                void operator=(const bool val)
+                {
+                    raw &= ~(1u << bitpos);
+                    raw |= val * (1u << bitpos);
+                }
+
+            private:
+                T &raw;
+                size_t bitpos {static_cast<size_t>(-1)};
+        };
+
+        explicit Bitmap(bool initial_value)
+        {
+            memset(bitmap, initial_value * 0xFF, sizeof(bitmap));
         }
 
-        /// Assigns val to the corresponding bit
-        void operator=(const bool val)
+        /// Obtain a bool-reference like object to access bit idx
+        Bit_accessor operator[](size_t idx)
         {
-            raw &= ~(1u << bitpos);
-            raw |= val * (1u << bitpos);
+            assert(idx < NUMBER_OF_BITS);
+            assert(idx < sizeof(bitmap) * 8);
+
+            return {bitmap[idx / sizeof(bitmap[0]) / 8], idx % (sizeof(bitmap[0]) * 8)};
         }
 
     private:
-        T &raw;
-        size_t bitpos {static_cast<size_t>(-1)};
-    };
-
-    explicit Bitmap(bool initial_value)
-    {
-        memset(bitmap, initial_value * 0xFF, sizeof(bitmap));
-    }
-
-    /// Obtain a bool-reference like object to access bit idx
-    Bit_accessor operator[](size_t idx)
-    {
-        assert(idx < NUMBER_OF_BITS);
-        assert(idx < sizeof(bitmap) * 8);
-
-        return {bitmap[idx / sizeof(bitmap[0]) / 8], idx % (sizeof(bitmap[0]) * 8)};
-    }
-
-private:
-    T bitmap[align_up(NUMBER_OF_BITS, sizeof(T) * 8) / 8 / sizeof(T)];
+        T bitmap[align_up(NUMBER_OF_BITS, sizeof(T) * 8) / 8 / sizeof(T)];
 };
