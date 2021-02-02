@@ -130,7 +130,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
     unsigned cpu_row;
     uint32   cpu_features[9];
     bool     cpu_bsp;
-    bool     cpu_preemption;
+    bool     cpu_preempt_enabled;
 
     // Machine-check variables
     unsigned mca_banks;

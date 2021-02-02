@@ -31,7 +31,7 @@ class Lock_guard
         uint8 pre;
 
     public:
-        inline Lock_guard (T &l) : _lock (l), pre(Cpu::preempt_status())
+        inline Lock_guard (T &l) : _lock (l), pre(Cpu::preemptible())
         {
             if (pre)
                 Cpu::preempt_disable();

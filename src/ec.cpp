@@ -283,7 +283,7 @@ void Ec::ret_user_iret()
 
 void Ec::chk_kern_preempt()
 {
-    if (!Cpu::preemption())
+    if (!Cpu::preempt_enabled())
         return;
 
     if (Cpu::hazard() & HZD_SCHED) {
