@@ -93,6 +93,4 @@ void init (mword magic, mword mbi)
     Tss::setup();
     Lapic::setup();
     Hip::build (magic, mbi);
-
-    Console_vga::con.setup();
 }

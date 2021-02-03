@@ -118,16 +118,8 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // Statistics
     unsigned counter_ipi[NUM_IPI];
-    unsigned counter_lvt[NUM_LVT];
-    unsigned counter_gsi[NUM_GSI];
-    unsigned counter_exc[NUM_EXC];
-    unsigned counter_vmi[NUM_VMI];
-    unsigned counter_schedule;
-    unsigned counter_helping;
-    uint64   counter_cycles_idle;
 
     // CPU-related variables (that are not performance critical)
-    unsigned cpu_row;
     uint32   cpu_features[9];
     bool     cpu_bsp;
     bool     cpu_preempt_enabled;

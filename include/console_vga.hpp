@@ -59,9 +59,15 @@ class Console_vga : public Console
             memset (reinterpret_cast<void *>(HV_GLOBAL_FBUF + 160 * r), 0, 160);
         }
 
-        void putc (int c);
+        void putc (int c) override;
 
-    public:
+        static inline void set_page (unsigned page)
+        {
+            page <<= 11;    // due to odd/even addressing
+            write (START_ADDR_HI, static_cast<uint8>(page >> 8));
+            write (START_ADDR_LO, static_cast<uint8>(page));
+        }
+
         enum Color
         {
             COLOR_BLACK         = 0x0,
@@ -82,23 +88,13 @@ class Console_vga : public Console
             COLOR_LIGHT_WHITE   = 0xf
         };
 
-        Console_vga();
-
-        void setup();
-
-        inline unsigned spinner (unsigned id) { return id < 25 - num ? 24 - id : 0; }
-
         inline void put (unsigned long r, unsigned long c, Color color, int x)
         {
             *reinterpret_cast<unsigned short volatile *>(HV_GLOBAL_FBUF + r * 160 + c * 2) = static_cast<unsigned short>(color << 8 | x);
         }
 
-        static inline void set_page (unsigned page)
-        {
-            page <<= 11;    // due to odd/even addressing
-            write (START_ADDR_HI, static_cast<uint8>(page >> 8));
-            write (START_ADDR_LO, static_cast<uint8>(page));
-        }
+    public:
+        Console_vga();
 
         static Console_vga con;
 };

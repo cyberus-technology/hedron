@@ -25,6 +25,7 @@
 
 #include "acpi.hpp"
 #include "cmdline.hpp"
+#include "counter.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
@@ -215,8 +216,6 @@ void Lapic::timer_handler()
 
 void Lapic::lvt_vector (unsigned vector)
 {
-    unsigned lvt = vector - VEC_LVT;
-
     switch (vector) {
         case VEC_LVT_TIMER: timer_handler(); break;
         case VEC_LVT_ERROR: error_handler(); break;
@@ -225,8 +224,6 @@ void Lapic::lvt_vector (unsigned vector)
     }
 
     eoi();
-
-    Counter::print<1,16> (++Counter::lvt()[lvt], Console_vga::COLOR_LIGHT_BLUE, lvt + SPN_LVT);
 }
 
 void Lapic::park_handler()
@@ -250,5 +247,7 @@ void Lapic::ipi_vector (unsigned vector)
 
     eoi();
 
-    Counter::print<1,16> (++Counter::ipi()[ipi], Console_vga::COLOR_LIGHT_GREEN, ipi + SPN_IPI);
+    // This is used in the TLB shootdown logic in Space_mem::shootdown() to wait
+    // for the shootdown IPI to arrive.
+    ++Counter::ipi()[ipi];
 }

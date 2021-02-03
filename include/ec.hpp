@@ -26,7 +26,6 @@
 #pragma once
 
 #include "math.hpp"
-#include "counter.hpp"
 #include "cpulocal.hpp"
 #include "fpu.hpp"
 #include "lock_guard.hpp"
@@ -288,7 +287,6 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         {
             if (EXPECT_TRUE (cont != dead)) {
 
-                Counter::print<1,16> (++Counter::helping(), Console_vga::COLOR_LIGHT_WHITE, SPN_HLP);
                 current()->cont = c;
 
                 if (EXPECT_TRUE (++Sc::ctr_loop() < 100))

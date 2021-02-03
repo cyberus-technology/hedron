@@ -36,21 +36,6 @@ Console_vga::Console_vga() : num (25), row (0), col (0)
     enable();
 }
 
-void Console_vga::setup()
-{
-    if (Cmdline::novga || !Cmdline::spinner)
-        return;
-
-    for (unsigned c = 0; c < min (Cpu::online, 12U); c++) {
-
-        if (row == --num)
-            clear_row (row--);
-
-        for (unsigned i = SPN_GSI; i < 80; i++)
-            put (num, i, COLOR_LIGHT_BLACK, ((i - SPN_GSI) & 0xf)["0123456789ABCDEF"]);
-    }
-}
-
 void Console_vga::putc (int c)
 {
     if (EXPECT_FALSE (c == '\f')) {

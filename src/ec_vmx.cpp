@@ -101,8 +101,6 @@ void Ec::handle_vmx()
 
     mword reason = Vmcs::read (Vmcs::EXI_REASON) & 0xff;
 
-    Counter::vmi()[reason]++;
-
     switch (reason) {
         case Vmcs::VMX_EXC_NMI:     vmx_exception();
         case Vmcs::VMX_EXTINT:      vmx_extint();

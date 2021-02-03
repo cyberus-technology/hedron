@@ -171,7 +171,6 @@ class Cpu
 
         CPULOCAL_CONST_ACCESSOR(cpu, id);
         CPULOCAL_ACCESSOR(cpu, hazard);
-        CPULOCAL_ACCESSOR(cpu, row);
 
         CPULOCAL_ACCESSOR(cpu, features);
         CPULOCAL_ACCESSOR(cpu, bsp);
