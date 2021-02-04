@@ -171,11 +171,16 @@ class Cpu
 
         CPULOCAL_CONST_ACCESSOR(cpu, id);
         CPULOCAL_ACCESSOR(cpu, hazard);
-        CPULOCAL_ACCESSOR(cpu, row);
 
         CPULOCAL_ACCESSOR(cpu, features);
         CPULOCAL_ACCESSOR(cpu, bsp);
-        CPULOCAL_ACCESSOR(cpu, preemption);
+
+        /// This flag is true when preemption has been enabled via preempt_enable().
+        ///
+        /// In contrast to preemptible() which only checks whether RFLAGS.IF is
+        /// set, this boolean also works when the interrupt flag has been
+        /// disabled by actually taking an interrupt.
+        CPULOCAL_ACCESSOR(cpu, preempt_enabled);
 
         static Cpu_info init();
 
@@ -203,21 +208,23 @@ class Cpu
 
         static inline void preempt_disable()
         {
-            assert (preemption());
+            assert (preempt_enabled());
 
             asm volatile ("cli" : : : "memory");
-            preemption() = false;
+            preempt_enabled() = false;
         }
 
         static inline void preempt_enable()
         {
-            assert (!preemption());
+            assert (!preempt_enabled());
 
-            preemption() = true;
+            preempt_enabled() = true;
             asm volatile ("sti" : : : "memory");
         }
 
-        static inline bool preempt_status()
+        /// Check whether the CPU is _actually_ preemptible by returning
+        /// RFLAGS.IF. See also the description of preempt_enabled above.
+        static inline bool preemptible()
         {
             mword flags = 0;
             asm volatile ("pushf; pop %0" : "=r" (flags));

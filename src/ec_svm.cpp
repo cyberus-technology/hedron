@@ -54,8 +54,6 @@ void Ec::handle_svm()
             break;
     }
 
-    Counter::vmi()[reason]++;
-
     switch (reason) {
 
         case 0x40 ... 0x5f:     // Exception

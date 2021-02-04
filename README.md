@@ -125,7 +125,6 @@ They must be separated by spaces.
 
 - *iommu*	- Enables DMA and interrupt remapping.
 - *serial*	- Enables the microhypervisor to drive the serial console.
-- *spinner*	- Enables event spinners.
 - *nopcid*	- Disables TLB tags for address spaces.
 - *novga*  	- Disables VGA console.
 - *novpid* 	- Disables TLB tags for virtual machines.

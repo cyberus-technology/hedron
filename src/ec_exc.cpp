@@ -92,8 +92,6 @@ void Ec::handle_exc (Exc_regs *r)
 {
     assert (r->vec == r->dst_portal);
 
-    Counter::exc()[r->vec]++;
-
     switch (r->vec) {
 
         case Cpu::EXC_GP:

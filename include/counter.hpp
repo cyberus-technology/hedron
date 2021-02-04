@@ -28,26 +28,9 @@ class Counter
 {
     public:
         CPULOCAL_ACCESSOR(counter, ipi);
-        CPULOCAL_ACCESSOR(counter, lvt);
-        CPULOCAL_ACCESSOR(counter, gsi);
-        CPULOCAL_ACCESSOR(counter, exc);
-        CPULOCAL_ACCESSOR(counter, vmi);
-        CPULOCAL_ACCESSOR(counter, schedule);
-        CPULOCAL_ACCESSOR(counter, helping);
-        CPULOCAL_ACCESSOR(counter, cycles_idle);
-
-        static void dump();
 
         static inline unsigned remote (unsigned cpu, unsigned ipi)
         {
             return Atomic::load (Cpulocal::get_remote (cpu).counter_ipi[ipi]);
-        }
-
-        template <unsigned D, unsigned B>
-        static void print (mword val, Console_vga::Color c, unsigned col)
-        {
-            if (EXPECT_FALSE (Cpu::row()))
-                for (unsigned i = 0; i < D; i++, val /= B)
-                    Console_vga::con.put (Cpu::row(), col - i, c, !i || val ? (val % B)["0123456789ABCDEF"] : ' ');
         }
 };

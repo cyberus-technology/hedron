@@ -149,13 +149,13 @@ void Space_mem::shootdown()
 
         Lapic::send_ipi (cpu, VEC_IPI_RKE);
 
-        if (!Cpu::preemption())
+        if (!Cpu::preempt_enabled())
             asm volatile ("sti" : : : "memory");
 
         while (Counter::remote (cpu, 1) == ctr)
             pause();
 
-        if (!Cpu::preemption())
+        if (!Cpu::preempt_enabled())
             asm volatile ("cli" : : : "memory");
     }
 }

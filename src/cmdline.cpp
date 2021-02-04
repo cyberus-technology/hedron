@@ -26,7 +26,6 @@ struct Cmdline::param_map const Cmdline::map[] =
 {
     { "iommu",      &Cmdline::iommu     },
     { "serial",     &Cmdline::serial    },
-    { "spinner",    &Cmdline::spinner   },
     { "nodl",       &Cmdline::nodl      },
     { "nopcid",     &Cmdline::nopcid    },
     { "novga",      &Cmdline::novga     },
