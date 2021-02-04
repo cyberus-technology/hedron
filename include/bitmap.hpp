@@ -18,6 +18,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "atomic.hpp"
 #include "math.hpp"
 #include "string.hpp"
 #include "types.hpp"
@@ -41,7 +42,8 @@ class Bitmap
         static size_t bit_index (size_t i) { return i % BITS_PER_WORD; }
         static T      bit_mask  (size_t i) { return static_cast<T>(1) << bit_index(i); }
 
-        T bitmap_[align_up(NUMBER_OF_BITS, BITS_PER_WORD) / BITS_PER_WORD];
+        static constexpr size_t WORDS {align_up(NUMBER_OF_BITS, BITS_PER_WORD) / BITS_PER_WORD};
+        T bitmap_[WORDS];
         static_assert(sizeof(bitmap_) * 8 >= NUMBER_OF_BITS, "Bitmap backing store too small for requests size");
 
     public:
@@ -62,6 +64,21 @@ class Bitmap
                 void operator=(bool val)
                 {
                     bitmap_.set(pos_, val);
+                }
+
+                bool atomic_fetch() const
+                {
+                    return bitmap_.atomic_fetch(pos_);
+                }
+
+                bool atomic_fetch_set()
+                {
+                    return bitmap_.atomic_fetch_set(pos_);
+                }
+
+                void atomic_clear()
+                {
+                    bitmap_.atomic_clear(pos_);
                 }
 
                 operator bool() const
@@ -164,5 +181,34 @@ class Bitmap
         {
             assert(i < NUMBER_OF_BITS);
             return bitmap_[word_index(i)] & bit_mask(i);
+        }
+
+        /// Atomically set a bit in the bitmap and return its old value.
+        bool atomic_fetch(size_t i) const
+        {
+            assert(i < NUMBER_OF_BITS);
+            return Atomic::load (bitmap_[word_index(i)]) & bit_mask(i);
+        }
+
+        /// Atomically set a bit in the bitmap and return its old value.
+        bool atomic_fetch_set(size_t i)
+        {
+            assert(i < NUMBER_OF_BITS);
+            return Atomic::test_set_bit (bitmap_[word_index(i)], bit_index(i));
+        }
+
+        /// Atomically clear a single bit in the bitmap.
+        void atomic_clear(size_t i)
+        {
+            assert(i < NUMBER_OF_BITS);
+            Atomic::clr_mask (bitmap_[word_index(i)], bit_mask(i));
+        }
+
+        /// Atomically merge two bitmaps.
+        void atomic_union(Bitmap const &other)
+        {
+            for (size_t i = 0; i < WORDS; i++) {
+                Atomic::set_mask (bitmap_[i], other.bitmap_[i]);
+            }
         }
 };
