@@ -20,23 +20,20 @@
 
 #pragma once
 
-#include "atomic.hpp"
+#include "bitmap.hpp"
 #include "types.hpp"
 
 class Cpuset
 {
     private:
-        mword val;
-        static_assert(NUM_CPU <= sizeof(val) * 8, "NUM_CPU is too large");
+        Bitmap<mword, NUM_CPU> bits {false};
 
     public:
-        inline explicit Cpuset() : val (0) {}
+        bool chk (unsigned cpu) const { return bits.atomic_fetch(cpu); }
 
-        inline bool chk (unsigned cpu) const { return val & 1UL << cpu; }
+        bool set (unsigned cpu) { return bits[cpu].atomic_fetch_set(); }
 
-        inline bool set (unsigned cpu) { return !Atomic::test_set_bit (val, cpu); }
+        void clr (unsigned cpu) { bits[cpu].atomic_clear(); }
 
-        inline void clr (unsigned cpu) { Atomic::clr_mask (val, 1UL << cpu); }
-
-        inline void merge (Cpuset &s) { Atomic::set_mask (val, s.val); }
+        void merge (Cpuset &s) { bits.atomic_union(s.bits); }
 };
