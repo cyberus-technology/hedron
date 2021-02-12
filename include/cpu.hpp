@@ -53,6 +53,7 @@ class Cpu
             FEAT_PCID           = 49,
             FEAT_TSC_DEADLINE   = 56,
             FEAT_XSAVE          = 58,
+            FEAT_FSGSBASE       = 96,
             FEAT_SMEP           = 103,
             FEAT_SMAP           = 116,
             FEAT_1GB_PAGES      = 154,
@@ -107,6 +108,7 @@ class Cpu
             CR4_OSXMMEXCPT  = 1UL << 10,        // 0x400
             CR4_VMXE        = 1UL << 13,        // 0x2000
             CR4_SMXE        = 1UL << 14,        // 0x4000
+            CR4_FSGSBASE    = 1UL << 16,        // 0x10000
             CR4_PCIDE       = 1UL << 17,        // 0x20000
             CR4_OSXSAVE     = 1UL << 18,        // 0x40000
             CR4_SMEP        = 1UL << 20,        // 0x100000
