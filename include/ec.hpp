@@ -256,8 +256,28 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             regs.ARG_3 = cnt;
         }
 
+        inline void save_fsgs_base()
+        {
+            // The kernel switched GS_BASE and KERNEL_GS_BASE on kernel entry.
+            // Thus, the user applications GS_BASE value currently resides in
+            // KERNEL_GS_BASE and the values will be switched again on kernel
+            // exit.
+            regs.gs_base = Msr::read(Msr::IA32_KERNEL_GS_BASE);
+            regs.fs_base = Msr::read(Msr::IA32_FS_BASE);
+        }
+
+        inline void load_fsgs_base()
+        {
+            // See documentation of save_fsgs_base().
+            Msr::write(Msr::IA32_KERNEL_GS_BASE, regs.gs_base);
+            Msr::write(Msr::IA32_FS_BASE, regs.fs_base);
+        }
+
         inline void make_current()
         {
+            current()->save_fsgs_base();
+            load_fsgs_base();
+
             transfer_fpu(current());
 
             if (EXPECT_FALSE (current()->del_rcu()))

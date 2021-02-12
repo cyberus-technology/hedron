@@ -218,6 +218,8 @@ class Cpu_regs : public Exc_regs
     public:
         uint64  tsc_offset;
         mword   mtd;
+        mword   fs_base;
+        mword   gs_base;
 
         inline mword hazard() const { return hzd; }
 
