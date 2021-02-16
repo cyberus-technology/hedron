@@ -92,6 +92,7 @@ class Sys_regs
 
         inline void set_sp (mword sp) { ARG_SP = sp; }
 };
+static_assert(OFFSETOF(Sys_regs, cr2) == OFS_CR2);
 
 class Exc_regs : public Sys_regs
 {
@@ -217,6 +218,8 @@ class Cpu_regs : public Exc_regs
     public:
         uint64  tsc_offset;
         mword   mtd;
+        mword   fs_base;
+        mword   gs_base;
 
         inline mword hazard() const { return hzd; }
 

@@ -16,7 +16,7 @@ QEMU_DEFAULT_ARGS = [
     # Disable features that TCG doesn't support to avoid ugly warnings
     # in the test.
     "-cpu",
-    "SandyBridge,-x2apic,-avx,-tsc-deadline",
+    "IvyBridge,-x2apic,-avx,-tsc-deadline,-f16c",
     "-m",
     "2048",
     "-serial",

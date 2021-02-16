@@ -262,7 +262,16 @@ void Ec::return_to_user()
     // our fragile structure layout.
     assert (static_cast<void *>(exc_regs() + 1) == &exc_regs()->ss + 1);
 
-    Tss::local().sp0 = reinterpret_cast<mword>(exc_regs() + 1);
+    auto kern_sp {reinterpret_cast<mword>(exc_regs() + 1)};
+
+    // Set the stack pointer used when entering the kernel on interrupts or
+    // exceptions. The Intel SDM Vol.3 chapter 6.14.2 describes that the
+    // Interrupt Stack Frame must be 16 bytes aligned. Otherwise, the processor
+    // can arbitrarily realign the RSP. Because our entry code depends on the
+    // RSP not being realigned, we check for correct alignment here.
+    assert (is_aligned_by_order(kern_sp, 4));
+    Tss::local().sp0 = kern_sp;
+
     Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.

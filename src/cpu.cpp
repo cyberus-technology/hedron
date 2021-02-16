@@ -231,6 +231,11 @@ Cpu_info Cpu::init()
     if (feature (FEAT_SMEP)) { cr4 |= Cpu::CR4_SMEP;  }
     if (feature (FEAT_SMAP)) { cr4 |= Cpu::CR4_SMAP;  }
 
+    if (!feature (FEAT_FSGSBASE)) {
+        Console::panic ("Need FSGSBASE-capable CPU");
+    }
+    cr4 |= Cpu::CR4_FSGSBASE;
+
     set_cr4 (cr4);
 
     // Some BIOSes don't enable VMX and lock the feature control MSR
