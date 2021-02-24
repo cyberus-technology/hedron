@@ -205,6 +205,11 @@ class Bitmap
         }
 
         /// Atomically merge two bitmaps.
+        ///
+        /// Note: This function is safe to be called concurrently, i.e. it is
+        /// safe to merge into a single bitmap from different CPUs, _but_ it
+        /// will do updates word-by-word. This means that an observer can see
+        /// partial results.
         void atomic_union(Bitmap const &other)
         {
             for (size_t i = 0; i < WORDS; i++) {

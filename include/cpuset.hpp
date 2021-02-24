@@ -35,5 +35,10 @@ class Cpuset
 
         void clr (unsigned cpu) { bits[cpu].atomic_clear(); }
 
-        void merge (Cpuset &s) { bits.atomic_union(s.bits); }
+        /// Merge another Cpuset into this one. This effectively calculates the
+        /// union of both sets.
+        ///
+        /// See the note at Bitmap::atomic_union for the properties of this
+        /// function with respect to concurrency.
+        void merge (Cpuset const &s) { bits.atomic_union(s.bits); }
 };
