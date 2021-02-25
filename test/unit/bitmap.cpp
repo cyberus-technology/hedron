@@ -20,7 +20,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <vector>
 
 TEST_CASE("Bit_accessor sets correct bits", "[bitmap]")
@@ -77,5 +79,112 @@ TEST_CASE("Bit_accessor sets correct bits", "[bitmap]")
             memcpy(bitmap_storage.data(), &bitmap, sizeof(decltype(bitmap_storage)::value_type) * bitmap_storage.size());
             CHECK(bitmap_storage == bitmap_compare);
         }
+    }
+}
+
+TEST_CASE("Bitmap iterators work", "[bitmap]")
+{
+    constexpr size_t SIZE {8};
+    Bitmap<mword, SIZE> bitmap {false};
+
+    SECTION("Iterators have basic sanity") {
+        CHECK(bitmap.begin() == bitmap.begin());
+        CHECK(bitmap.end() == bitmap.end());
+
+        CHECK(++bitmap.begin() != bitmap.begin());
+
+        CHECK(bitmap.begin() != bitmap.end());
+        CHECK(bitmap.size() == SIZE);
+    }
+
+    SECTION("Iterators can be advanced") {
+        auto it = bitmap.begin();
+        std::advance(it, SIZE);
+        CHECK(it == bitmap.end());
+    }
+
+    SECTION("Iterators can be referenced") {
+        bitmap.set(1, true);
+        CHECK_FALSE(*bitmap.begin());
+        CHECK(*++bitmap.begin());
+    }
+}
+
+TEST_CASE("Bitmap can be used as simple array of bits", "[bitmap]")
+{
+    constexpr size_t SIZE {8};
+
+    SECTION("Inializer works") {
+        Bitmap<mword, SIZE> bitmap_false {false};
+        std::all_of(bitmap_false.begin(), bitmap_false.end(), [] (bool b) { return not b; });
+
+        Bitmap<mword, SIZE> bitmap_true {true};
+        std::all_of(bitmap_true.begin(), bitmap_true.end(), [] (bool b) { return b; });
+    }
+
+    SECTION("Set bit works") {
+        Bitmap<mword, SIZE> bitmap {false};
+
+        CHECK(not bitmap[5]);
+
+        bitmap[5] = true;
+        CHECK(bitmap[5]);
+    }
+}
+
+TEST_CASE("Bitmap atomic operations work", "[bitmap]")
+{
+    // We make the bitmap larger than a single mword.
+    constexpr size_t SIZE {128};
+    Bitmap<mword, SIZE> bitmap {false};
+
+    SECTION("atomic_fetch works") {
+        CHECK(bitmap.atomic_fetch(100) == bitmap[100]);
+        bitmap[100] = true;
+        CHECK(bitmap.atomic_fetch(100) == bitmap[100]);
+    }
+
+    SECTION("atomic_fetch_set works") {
+        CHECK(bitmap.atomic_fetch_set(100) == false);
+        CHECK(bitmap[100] == true);
+        CHECK(bitmap.atomic_fetch_set(100) == true);
+    }
+
+    SECTION("atomic_clear works") {
+        // Clearing a cleared bit.
+        bitmap[100].atomic_clear();
+        CHECK(bitmap[100] == false);
+
+        // Clearing a set bit.
+        bitmap[100] = true;
+        bitmap[100].atomic_clear();
+        CHECK(bitmap[100] == false);
+    }
+
+    SECTION("atomic_union works") {
+        Bitmap<mword, SIZE> empty_bitmap {false};
+        Bitmap<mword, SIZE> other_bitmap {false};
+        other_bitmap[17] = true;
+        other_bitmap[100] = true;
+
+        // Merging into a bitmap with all false values.
+        bitmap.atomic_union(other_bitmap);
+        CHECK(std::equal(bitmap.begin(), bitmap.end(), other_bitmap.begin(), other_bitmap.end()));
+
+        // Merging all false values results in no change.
+        bitmap.atomic_union(other_bitmap);
+        CHECK(std::equal(bitmap.begin(), bitmap.end(), other_bitmap.begin(), other_bitmap.end()));
+
+        // Merging in a single bit only changes that bit.
+        Bitmap<mword, SIZE> single_bit {false};
+        single_bit[7] = true;
+
+        Bitmap<mword, SIZE> reference {false};
+        reference[7] = true;
+        reference[17] = true;
+        reference[100] = true;
+
+        bitmap.atomic_union(single_bit);
+        CHECK(std::equal(bitmap.begin(), bitmap.end(), reference.begin(), reference.end()));
     }
 }
