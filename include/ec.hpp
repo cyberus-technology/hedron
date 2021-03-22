@@ -261,16 +261,24 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
             // The kernel switched GS_BASE and KERNEL_GS_BASE on kernel entry.
             // Thus, the user applications GS_BASE value currently resides in
             // KERNEL_GS_BASE and the values will be switched again on kernel
-            // exit.
-            regs.gs_base = Msr::read(Msr::IA32_KERNEL_GS_BASE);
-            regs.fs_base = Msr::read(Msr::IA32_FS_BASE);
+            // exit. Therefore, we must wrap rdgsbase with swapgs in order to
+            // get the correct value. This is still faster than using rdmsr
+            // with KERNEL_GS_BASE directly.
+            swapgs();
+            regs.gs_base = rdgsbase();
+            swapgs();
+
+            regs.fs_base = rdfsbase();
         }
 
         inline void load_fsgs_base()
         {
             // See documentation of save_fsgs_base().
-            Msr::write(Msr::IA32_KERNEL_GS_BASE, regs.gs_base);
-            Msr::write(Msr::IA32_FS_BASE, regs.fs_base);
+            swapgs();
+            wrgsbase(regs.gs_base);
+            swapgs();
+
+            wrfsbase(regs.fs_base);
         }
 
         inline void make_current()
