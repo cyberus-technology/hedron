@@ -283,8 +283,10 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
 
         inline void make_current()
         {
-            current()->save_fsgs_base();
-            load_fsgs_base();
+            if (current() != this) {
+                current()->save_fsgs_base();
+                load_fsgs_base();
+            }
 
             transfer_fpu(current());
 
