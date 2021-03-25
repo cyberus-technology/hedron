@@ -122,3 +122,30 @@ inline void set_xcr(uint32 n, mword val)
 {
     asm volatile ("xsetbv" :: "c" (n), "a" (static_cast<uint32>(val)), "d" (val >> 32));
 }
+
+inline void swapgs()
+{
+    asm volatile ("swapgs");
+}
+
+#define CONCAT3(A,B,C) A ## B ## C
+
+#define WR_SEGMENT_BASE(seg)                               \
+    inline void CONCAT3(wr,seg,base) (uint64 value)      \
+    {                                                      \
+        asm volatile ("wr" #seg "base %0" :: "r" (value)); \
+    }
+
+#define RD_SEGMENT_BASE(seg)                               \
+    inline uint64 CONCAT3(rd,seg,base) ()                \
+    {                                                      \
+        uint64 value;                                    \
+        asm volatile ("rd" #seg "base %0" : "=r" (value)); \
+        return value;                                      \
+    }
+
+WR_SEGMENT_BASE(fs)
+RD_SEGMENT_BASE(fs)
+
+WR_SEGMENT_BASE(gs)
+RD_SEGMENT_BASE(gs)
