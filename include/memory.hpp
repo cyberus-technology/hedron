@@ -43,7 +43,7 @@
 #define PAGE_MASK       (PAGE_SIZE - 1)
 
 // The address at which the hypervisor is linked at.
-#define LOAD_ADDR       0x0000000004000000
+#define LOAD_ADDR       0x0000000006600000
 
 // The range of acceptable load addresses if the boot loader needs to relocate
 // us. These need to be 32-bit values.
