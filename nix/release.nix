@@ -16,8 +16,8 @@
 # To build a unit test coverage report, build the coverage attribute:
 #     nix-build nix/release.nix -A coverage
 { sources ? import ./sources.nix
+, pkgs ? import sources.nixpkgs {}
 , cbspkgs ? import sources.cbspkgs-public {}
-, pkgs ? cbspkgs.pkgs
 }:
 
 let
@@ -30,7 +30,7 @@ let
   #
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
-  buildConfs = pkgs.cbspkgs.lib.cartesian.cartesianProductFromSet {
+  buildConfs = cbspkgs.lib.cartesian.cartesianProductFromSet {
     cc = attrsToList { inherit (pkgs) clang_9 clang_10 gcc7 gcc8 gcc9 gcc10; };
     buildType = [ "Debug" "Release" ];
   };
