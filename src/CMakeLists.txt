@@ -34,6 +34,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_property(TARGET hypervisor PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
 endif()
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-fcf-protection=none CXX_SUPPORTS_CET)
+
 target_compile_options(hypervisor PRIVATE
   # Optimization
   $<IF:$<CONFIG:Debug>,-Og,-Os>
@@ -49,6 +52,9 @@ target_compile_options(hypervisor PRIVATE
   -mno-sse
   -mno-mmx
   -mno-3dnow
+
+  # Some compilers have CET hard-enabled and this breaks our build.
+  $<$<BOOL:${CXX_SUPPORTS_CET}>:-fcf-protection=none>
 
   # Warnings
   -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion

@@ -4,21 +4,14 @@ stages:
 
 # Job description helpers
 
-.in_ubuntu_bionic:
-  image: ubuntu:bionic
+.in_ubuntu:
+  image: ubuntu:hirsute
   variables:
     DEBIAN_FRONTEND: 'noninteractive'
 
 .with_ubuntu_builddeps:
-  variables:
-    CATCH_VERSION: 'v2.9.1'
   before_script:
-    - apt-get update && apt-get -y install gcc g++ pkg-config python3 python3-distutils git ninja-build curl
-    - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    - python3 get-pip.py
-    - pip install --upgrade cmake
-    - rm -rf ../Catch2 && git clone --depth=1 --single-branch -b $CATCH_VERSION https://github.com/catchorg/Catch2.git ../Catch2
-    - ( cd ../Catch2 && cmake -Bbuild -H. -DBUILD_TESTING=OFF && make -C build && make -C build install )
+    - apt-get update && apt-get -y install gcc g++ git ninja-build cmake catch2 pkg-config
 
 .with_ubuntu_testdeps:
   before_script:
@@ -121,19 +114,19 @@ build:fedora-clang:
     - .build_debug
     - .except_for_releases
 
-build:bionic:
+build:ubuntu:
   extends:
-    - .in_ubuntu_bionic
+    - .in_ubuntu
     - .with_ubuntu_builddeps
     - .build_release
     - .except_for_releases
 
-build:bionic-make:
+build:ubuntu-make:
   stage: build
   variables:
       BUILD_TYPE: 'Debug'
   extends:
-    - .in_ubuntu_bionic
+    - .in_ubuntu
     - .with_ubuntu_builddeps
     - .build_variant_with_make
     - .except_for_releases
@@ -167,11 +160,11 @@ integration_test:fedora-clang:
     - .integration_test_variant
     - .except_for_releases
 
-integration_test:bionic:
+integration_test:ubuntu:
   dependencies:
-    - build:bionic
+    - build:ubuntu
   extends:
-    - .in_ubuntu_bionic
+    - .in_ubuntu
     - .with_ubuntu_testdeps
     - .integration_test_variant
     - .except_for_releases
