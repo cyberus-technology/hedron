@@ -235,10 +235,13 @@ Hypercalls are identified by these values.
 | `HC_CREATE_EC`                     | 3       |
 | `HC_REVOKE`                        | 7       |
 | `HC_PD_CTRL`                       | 8       |
+| `HC_EC_CTRL`                       | 9       |
 | `HC_MACHINE_CTRL`                  | 15      |
 |------------------------------------|---------|
 | `HC_PD_CTRL_DELEGATE`              | 2       |
 | `HC_PD_CTRL_MSR_ACCESS`            | 3       |
+|------------------------------------|---------|
+| `HC_EC_CTRL_RECALL`                | 0       |
 |------------------------------------|---------|
 | `HC_MACHINE_CTRL_SUSPEND`          | 0       |
 | `HC_MACHINE_CTRL_UPDATE_MICROCODE` | 1       |
@@ -309,6 +312,47 @@ exception numbers.
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## ec_ctrl
+
+The `ec_ctrl` system call allows to interact with execution contexts.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                                   |
+|------------|--------------------|---------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_EC_CTRL`.                                                       |
+| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_EC_CTRL_*` to select one of the `ec_ctrl_*` calls below. |
+| ARG1[63:8] | EC Selector        | A capability selector in the current PD that points to an EC.                   |
+| ...        | ...                |                                                                                 |
+
+### Out
+
+See the specific `ec_ctrl` sub-operation.
+
+## ec_ctrl_recall
+
+`ec_ctrl_recall` forces the given execution context to enter its
+recall exception handler via its recall exception portal as soon as
+possible. ECs can be recalled from any CPU, not only the CPU on which
+they are scheduled to run.
+
+The common use case for recall is to force a vCPU into its `RECALL`
+handler to be able to inject interrupts into a virtual machine.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                 |
+|------------|--------------------|---------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_EC_CTRL`.                                     |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
+| ARG1[63:8] | EC Selector        | A capability selector in the current PD that points to an EC. |
+
+### Out
+
+| *Register* | *Content* | *Description*                                |
+|------------|-----------|----------------------------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
 ## create_pd
 

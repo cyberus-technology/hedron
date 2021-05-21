@@ -578,7 +578,7 @@ void Ec::sys_ec_ctrl()
     Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current()->sys_regs());
 
     switch (r->op()) {
-        case 0:
+        case Sys_ec_ctrl::RECALL:
         {
             Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), Ec::PERM_EC_CTRL);
 
