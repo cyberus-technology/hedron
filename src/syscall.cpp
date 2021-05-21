@@ -598,11 +598,6 @@ void Ec::sys_ec_ctrl()
             break;
         }
 
-        case 1: /* yield */
-            current()->cont = sys_finish<Sys_regs::SUCCESS>;
-            Sc::schedule (false, false);
-            break;
-
         default:
             sys_finish<Sys_regs::BAD_PAR>();
     }

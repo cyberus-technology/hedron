@@ -48,7 +48,7 @@ class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
         CPULOCAL_ACCESSOR(sc, list);
         CPULOCAL_ACCESSOR(sc, prio_top);
 
-        void ready_enqueue (uint64, bool, bool = true);
+        void ready_enqueue (uint64, bool);
 
         void ready_dequeue (uint64);
 
@@ -92,7 +92,7 @@ class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
         static void rke_handler();
 
         NORETURN
-        static void schedule (bool = false, bool = true);
+        static void schedule (bool = false);
 
         static inline void *operator new (size_t) { return cache.alloc(); }
 
