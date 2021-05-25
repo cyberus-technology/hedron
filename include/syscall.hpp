@@ -186,9 +186,12 @@ class Sys_reply : public Sys_regs
 class Sys_ec_ctrl : public Sys_regs
 {
     public:
-        inline unsigned long ec() const { return ARG_1 >> 8; }
+        enum ctrl_op
+        {
+            RECALL,
+        };
 
-        inline unsigned long cnt() const { return ARG_2; }
+        inline unsigned long ec() const { return ARG_1 >> 8; }
 
         inline unsigned op() const { return flags() & 0x3; }
 };

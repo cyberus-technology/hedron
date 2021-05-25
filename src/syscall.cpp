@@ -578,7 +578,7 @@ void Ec::sys_ec_ctrl()
     Sys_ec_ctrl *r = static_cast<Sys_ec_ctrl *>(current()->sys_regs());
 
     switch (r->op()) {
-        case 0:
+        case Sys_ec_ctrl::RECALL:
         {
             Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()), Ec::PERM_EC_CTRL);
 
@@ -597,36 +597,6 @@ void Ec::sys_ec_ctrl()
             }
             break;
         }
-
-        case 1: /* yield */
-            current()->cont = sys_finish<Sys_regs::SUCCESS>;
-            Sc::schedule (false, false);
-            break;
-
-        case 2: /* helping */
-        {
-            Ec *ec = capability_cast<Ec>(Space_obj::lookup (r->ec()));
-
-            if (EXPECT_FALSE (not ec)) {
-                sys_finish<Sys_regs::BAD_CAP>();
-            }
-
-            if (EXPECT_FALSE(ec->cpu != current()->cpu))
-                sys_finish<Sys_regs::BAD_CPU>();
-
-            if (EXPECT_FALSE(!ec->utcb || ec->blocked() || ec->partner || ec->pd != Ec::current()->pd || (r->cnt() != ec->utcb->tls)))
-                sys_finish<Sys_regs::BAD_PAR>();
-
-            current()->cont = sys_finish<Sys_regs::SUCCESS>;
-            ec->return_to_user();
-
-            break;
-        }
-
-        case 3: /* re-schedule */
-            current()->cont = sys_finish<Sys_regs::SUCCESS>;
-            Sc::schedule (false, true);
-            break;
 
         default:
             sys_finish<Sys_regs::BAD_PAR>();
