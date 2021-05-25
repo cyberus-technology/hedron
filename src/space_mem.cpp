@@ -145,14 +145,14 @@ void Space_mem::shootdown()
             continue;
         }
 
-        unsigned ctr = Counter::remote (cpu, 1);
+        unsigned ctr = Counter::remote_tlb_shootdown (cpu);
 
         Lapic::send_ipi (cpu, VEC_IPI_RKE);
 
         if (!Cpu::preempt_enabled())
             asm volatile ("sti" : : : "memory");
 
-        while (Counter::remote (cpu, 1) == ctr)
+        while (Counter::remote_tlb_shootdown (cpu) == ctr)
             pause();
 
         if (!Cpu::preempt_enabled())

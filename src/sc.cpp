@@ -19,6 +19,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "counter.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "stdio.hpp"
@@ -179,6 +180,24 @@ void Sc::rrq_handler()
 
 void Sc::rke_handler()
 {
+    // By increasing the TLB shootdown handler, we tell Space_mem::shootdown()
+    // that this CPU is going to perform any necessary TLB invalidations before
+    // returning to userspace.
+    //
+    // We increase the counter as early as possible to avoid making the
+    // shootdown loop wait for longer than needed.
+
+    Atomic::add (Counter::tlb_shootdown(), static_cast<uint32>(1));
+
+    // In case of host TLB invalidations, we need to enforce that we go through
+    // the scheduler, because there we call Pd::make_current, which performs the
+    // invalidation. Otherwise, we would re-enter userspace directly from the
+    // interrupt handler.
+    //
+    // For guest TLB invalidations, there is no need to go through the
+    // scheduler, because ret_user_vmresume / ret_user_vmrun will take care of
+    // guest TLB invalidations unconditionally.
+
     if (Pd::current()->Space_mem::htlb.chk (Cpu::id()))
         Cpu::hazard() |= HZD_SCHED;
 }

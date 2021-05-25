@@ -25,7 +25,6 @@
 
 #include "acpi.hpp"
 #include "cmdline.hpp"
-#include "counter.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
@@ -236,8 +235,6 @@ void Lapic::park_handler()
 
 void Lapic::ipi_vector (unsigned vector)
 {
-    unsigned ipi = vector - VEC_IPI;
-
     switch (vector) {
         case VEC_IPI_RRQ: Sc::rrq_handler(); break;
         case VEC_IPI_RKE: Sc::rke_handler(); break;
@@ -246,8 +243,4 @@ void Lapic::ipi_vector (unsigned vector)
     }
 
     eoi();
-
-    // This is used in the TLB shootdown logic in Space_mem::shootdown() to wait
-    // for the shootdown IPI to arrive.
-    ++Counter::ipi()[ipi];
 }
