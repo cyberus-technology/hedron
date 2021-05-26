@@ -48,7 +48,9 @@ class Space_mem
         // this Space_mem's Hpt cached in their TLB.
         Cpuset stale_host_tlb;
 
-        Cpuset gtlb;
+        // A bitmask of all CPUs that may have stale guest page table mappings
+        // of this Space_mem's ept or npt cached in their TLB.
+        Cpuset stale_guest_tlb;
 
         static unsigned did_ctr;
 
