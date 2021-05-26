@@ -313,7 +313,11 @@ void Ec::ret_user_vmresume()
 
     if (EXPECT_FALSE (Pd::current()->stale_guest_tlb.chk (Cpu::id()))) {
         Pd::current()->stale_guest_tlb.clr (Cpu::id());
-        Pd::current()->ept.flush();
+
+        // We have to use an INVEPT here as opposed to INVVPID, because the
+        // paging structures might have changed and INVVPID does not flush
+        // guest-physical mappings.
+        Pd::current()->ept.invalidate();
     }
 
     if (EXPECT_FALSE (get_cr2() != regs.cr2)) {
