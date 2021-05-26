@@ -294,7 +294,7 @@ void Pd::del_crd (Pd *pd, Crd del, Crd &crd, mword sub, mword hot)
 
     if (cleanup.need_tlb_flush() && rt == Crd::OBJ)
         /* if FRAME_0 got replaced by real pages we have to tell all cpus, done below by shootdown */
-        this->htlb.merge (cpus);
+        this->stale_host_tlb.merge (cpus);
 
     if (cleanup.need_tlb_flush()) {
         shootdown();

@@ -110,7 +110,7 @@ Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base,
 
     if (cleanup.need_tlb_flush()) {
         if (sub & Space::SUBSPACE_GUEST) { gtlb.merge (cpus); }
-        if (sub & Space::SUBSPACE_HOST)  { htlb.merge (cpus); }
+        if (sub & Space::SUBSPACE_HOST)  { stale_host_tlb.merge (cpus); }
     }
 
     return cleanup;
@@ -137,7 +137,7 @@ void Space_mem::shootdown()
 
         Pd *pd = Pd::remote (cpu);
 
-        if (!pd->htlb.chk (cpu) && !pd->gtlb.chk (cpu))
+        if (!pd->stale_host_tlb.chk (cpu) && !pd->gtlb.chk (cpu))
             continue;
 
         if (Cpu::id() == cpu) {

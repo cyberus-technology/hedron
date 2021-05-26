@@ -198,6 +198,6 @@ void Sc::rke_handler()
     // scheduler, because ret_user_vmresume / ret_user_vmrun will take care of
     // guest TLB invalidations unconditionally.
 
-    if (Pd::current()->Space_mem::htlb.chk (Cpu::id()))
+    if (Pd::current()->Space_mem::stale_host_tlb.chk (Cpu::id()))
         Cpu::hazard() |= HZD_SCHED;
 }
