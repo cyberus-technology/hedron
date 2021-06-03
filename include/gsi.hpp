@@ -44,6 +44,8 @@ class Gsi
 
         static void setup();
 
+        static void set_polarity (unsigned gsi, bool level, bool active_low);
+
         static uint64 set (unsigned, unsigned = 0, unsigned = 0);
 
         static void mask (unsigned);

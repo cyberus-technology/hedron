@@ -249,6 +249,9 @@ class Sys_assign_gsi : public Sys_regs
 
         inline mword si() const { return ARG_4; }
 
+        inline bool level() const { return ARG_3 & (1ull << 32); }
+        inline bool active_low() const { return ARG_3 & (1ull << 33); }
+
         inline void set_msi (uint64 val)
         {
             ARG_2 = static_cast<mword>(val >> 32);

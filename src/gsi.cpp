@@ -49,6 +49,12 @@ void Gsi::setup()
     }
 }
 
+void Gsi::set_polarity (unsigned gsi, bool level, bool active_low)
+{
+    gsi_table[gsi].trg = level;
+    gsi_table[gsi].pol = active_low;
+}
+
 uint64 Gsi::set (unsigned gsi, unsigned cpu, unsigned rid)
 {
     uint32 msi_addr = 0, msi_data = 0, aid = Cpu::apic_id[cpu];
