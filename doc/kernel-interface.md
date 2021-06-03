@@ -506,12 +506,13 @@ the individual subsections below.
 
 GSIs referencing I/O APIC pins can be routed directly to the specified CPU and
 interfaced with using the specified interrupt semaphore. In addition to the CPU,
-the trigger mode and polarity settings are configured according to the
-corresponding bits in the parameter. This is required because the default
-settings derived from the specification and the ACPI MADT table might be
-overridden by other sources (e.g., ACPI device descriptions) unknown to the
-hypervisor. The driver of the device connected to the interrupt is expected to
-know and communicate the correct settings when assigning the GSI.
+the trigger mode and polarity settings can be configured according to the
+corresponding bits in the parameter, if the "override configuration" flag is
+set. This is required because the default settings derived from the
+specification and the ACPI MADT table might be overridden by other sources
+(e.g., ACPI device descriptions) unknown to the hypervisor. The driver of the
+device connected to the interrupt is expected to know and communicate the
+correct settings when assigning the GSI.
 
 ### Message Signaled Interrupts (MSIs)
 
@@ -531,6 +532,7 @@ device and configure the IOMMU correctly, if enabled.
 | *Register* | *Content*               | *Description*                                                                               |
 |------------|-------------------------|---------------------------------------------------------------------------------------------|
 | ARG1[3:0]  | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
+| ARG1[4]    | Override configuration  | Indicates that the trigger mode and polarity settings are valid (I/O APIC pins only).       |
 | ARG1[63:8] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
 | ARG2       | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
 | ARG3[31:0] | CPU number              | The CPU number this GSI should be routed to.                                                |
