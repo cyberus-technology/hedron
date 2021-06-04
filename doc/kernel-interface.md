@@ -536,8 +536,8 @@ device and configure the IOMMU correctly, if enabled.
 | ARG1[63:8] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
 | ARG2       | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
 | ARG3[31:0] | CPU number              | The CPU number this GSI should be routed to.                                                |
-| ARG3[32]   | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level/edge; only for I/O APIC pins).             |
-| ARG3[33]   | Interrupt Polarity      | The polarity setting of the interrupt (low/high; only for I/O APIC pins).                   |
+| ARG3[32]   | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level=1/edge=0); only for I/O APIC pins).        |
+| ARG3[33]   | Interrupt Polarity      | The polarity setting of the interrupt (low=1/high=0; only for I/O APIC pins).               |
 | ARG4       | Signal Semaphore        | **Deprecated**, specify as ~0ull.                                                           |
 
 ### Out
