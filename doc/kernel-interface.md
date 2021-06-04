@@ -236,6 +236,7 @@ Hypercalls are identified by these values.
 | `HC_REVOKE`                        | 7       |
 | `HC_PD_CTRL`                       | 8       |
 | `HC_EC_CTRL`                       | 9       |
+| `HC_ASSIGN_GSI`                    | 14      |
 | `HC_MACHINE_CTRL`                  | 15      |
 |------------------------------------|---------|
 | `HC_PD_CTRL_DELEGATE`              | 2       |
@@ -494,6 +495,58 @@ revoking all rights at the same time. It will be removed, use
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## assign_gsi
+
+The `assign_gsi` system call is used to route global system interrupts to the
+specified CPU. The behavior is specific to the type of interrupt as described in
+the individual subsections below.
+
+### I/O APIC Interrupt Pins
+
+GSIs referencing I/O APIC pins can be routed directly to the specified CPU and
+interfaced with using the specified interrupt semaphore. In addition to the CPU,
+the trigger mode and polarity settings can be configured according to the
+corresponding bits in the parameter, if the "override configuration" flag is
+set. This is required because the default settings derived from the
+specification and the ACPI MADT table might be overridden by other sources
+(e.g., ACPI device descriptions) unknown to the hypervisor. The driver of the
+device connected to the interrupt is expected to know and communicate the
+correct settings when assigning the GSI.
+
+### Message Signaled Interrupts (MSIs)
+
+MSIs work slightly differently in that they need to be configured in the
+respective devices. This happens in the PCI configuration space (or the MSI-X
+BAR) or the MMIO space in case of the HPET. In order for the driver of the
+device to know what values to program, the hypervisor will return the resulting
+MSI address/data combination to the caller. Programming these values into the
+device will ensure that interrupts triggered by these settings end up in the
+specified interrupt semaphore. The driver validates the ownership to the
+hypervisor by specifying the mapping to the configuration space or MMIO region
+belonging to the device. This is also used to derive the requestor ID of the
+device and configure the IOMMU correctly, if enabled.
+
+### In
+
+| *Register* | *Content*               | *Description*                                                                               |
+|------------|-------------------------|---------------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
+| ARG1[4]    | Override configuration  | Indicates that the trigger mode and polarity settings are valid (I/O APIC pins only).       |
+| ARG1[63:8] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
+| ARG2       | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
+| ARG3[31:0] | CPU number              | The CPU number this GSI should be routed to.                                                |
+| ARG3[32]   | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level=1/edge=0); only for I/O APIC pins).        |
+| ARG3[33]   | Interrupt Polarity      | The polarity setting of the interrupt (low=1/high=0; only for I/O APIC pins).               |
+| ARG4       | Signal Semaphore        | **Deprecated**, specify as ~0ull.                                                           |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+| OUT2       | MSI address        | The MSI address to program into the device (PCI/HPET only). |
+| OUT3       | MSI data           | The MSI data to program into the device (PCI/HPET only).    |
 
 ## machine_ctrl
 

@@ -744,6 +744,10 @@ void Ec::sys_assign_gsi()
         sys_finish<Sys_regs::BAD_DEV>();
     }
 
+    if (r->has_configuration_override() and Gsi::gsi_table[gsi].ioapic) {
+        Gsi::set_polarity (gsi, r->level(), r->active_low());
+    }
+
     r->set_msi (Gsi::set (gsi, r->cpu(), rid));
 
     sys_finish<Sys_regs::SUCCESS>();
