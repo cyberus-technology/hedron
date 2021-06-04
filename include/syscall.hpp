@@ -256,7 +256,6 @@ class Sys_assign_gsi : public Sys_regs
         inline bool level() const { return ARG_3 & TRIGGER_MODE_LEVEL; }
         inline bool active_low() const { return ARG_3 & POLARITY_LOW; }
 
-
         inline mword si() const { return ARG_4; }
 
         inline void set_msi (uint64 val)
