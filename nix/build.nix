@@ -35,9 +35,9 @@ stdenv.mkDerivation {
     echo "doc-pdf manual $out/share/doc/specification.pdf" >> $out/nix-support/hydra-build-products
   '';
 
-  meta = with stdenv.lib; {
+  meta = {
     description = "Hedron microhypervisor by Cyberus Technology";
     homepage = "https://github.com/cyberus-technology/hedron";
-    license = licenses.gpl2;
+    license = lib.licenses.gpl2;
   };
 }
