@@ -32,18 +32,18 @@ patches by Genode Labs developed as part of their NOVA fork.
 Supported platforms
 -------------------
 
-The Hedron microhypervisor runs on single- and multi-processor x86 machines
-that support ACPI.
+The Hedron microhypervisor runs on single- and multi-processor x86
+machines that support ACPI, XSAVE and FSGSBASE.
 
-Recommended Intel CPUs are Intel Core processors starting with the
-Sandy Bridge microarchitecture. AMD support is experimental and
-currently not actively used.
+Recommended Intel CPUs are Intel Core processors starting with the Ivy
+Bridge microarchitecture. AMD support is experimental and currently
+not actively used.
 
 The virtualization features are available on:
 
-- Intel CPUs with VMX and nested paging (EPT).
+- Intel CPUs with VMX and nested paging (EPT),
 
-- AMD CPUs with SVM and nested paging (NPT),
+- AMD CPUs with SVM and nested paging (NPT).
 
 
 Building from source code
