@@ -69,6 +69,11 @@ class Refptr
         T * const ptr {nullptr};
 
     public:
+        // Prevent default copy operations to avoid letting the reference count
+        // go out of sync.
+        Refptr &operator= (Refptr const &) = delete;
+        Refptr (Refptr const &) = delete;
+
         operator T*() const     { return ptr; }
         T * operator->() const  { return ptr; }
 
