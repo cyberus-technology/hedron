@@ -74,13 +74,13 @@ Opinions are welcome!
 ### Hypercall Number Shortage
 
 The hypercall ABI reserves 4 bits for hypercall numbers in the first
-hypercall argument (`RAX`). The remaining bits in `RAX` are used for
+hypercall argument (`RDI`). The remaining bits in `RDI` are used for
 flags (4 bits) and a capability selector (56 bits). The 4-bit
 hypercall numbers allow for 16 different hypercalls, which are already
 all used. This leaves no space to add the two new hypercalls required
 for KPages.
 
-I propose to extend the hypercall number part of `RAX` to 8 bits. This
+I propose to extend the hypercall number part of `RDI` to 8 bits. This
 still leaves 52 bits for capability selectors on 64-bit
 machines. (Incidentally, this also matches with the former use of
 capability selectors as page/frame numbers.)
