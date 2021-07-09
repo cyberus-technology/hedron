@@ -29,7 +29,7 @@ class Refcount
         uint32 ref {1};
 
     public:
-        inline bool add_ref()
+        bool add_ref()
         {
             for (uint32 r; (r = ref); )
                 if (Atomic::cmp_swap (ref, r, r + 1))
@@ -38,17 +38,17 @@ class Refcount
             return false;
         }
 
-        inline bool del_ref()
+        bool del_ref()
         {
             return Atomic::sub (ref, 1U) == 0;
         }
 
-        inline bool last_ref()
+        bool last_ref()
         {
             return Atomic::load (ref) == 1;
         }
 
-        inline bool del_rcu()
+        bool del_rcu()
         {
             if (last_ref())
                 return true;
@@ -72,9 +72,9 @@ class Refptr
         operator T*() const     { return ptr; }
         T * operator->() const  { return ptr; }
 
-        inline Refptr (T *p) : ptr (p->add_ref() ? p : nullptr) {}
+        Refptr (T *p) : ptr (p->add_ref() ? p : nullptr) {}
 
-        inline ~Refptr()
+        ~Refptr()
         {
             if (!ptr)
                 return;
