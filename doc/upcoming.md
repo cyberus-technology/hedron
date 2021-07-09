@@ -138,3 +138,95 @@ The User Page Destination (also called `MAP_USER_PAGE_IN_OWNER` in the
 code), which allows selecting which PD a UTCB/vLAPIC is mapped in,
 will be removed. Its functionality can be achieved by userspace
 choosing where to map the kernel page.
+
+# New Kernel Object: `VCPU`
+
+Execution Contexts (ECs) currently do double-duty as both normal host
+threads and vCPUs. Whether a EC represents a host thread or vCPU
+depends on the `vCPU` flag when the EC is created. Interaction with
+both types is largely similar. Whereas normal threads signal page
+faults and other exceptions via exception IPC, vCPUs use exception IPC
+to deliver VM exits.
+
+Receiving VM exits as IPC leads to convoluted code in userspace to set
+up vCPUs. Each possible VM exit reason needs its own portal, even
+though most VM exit handlers will go through common code before VM
+exit type specific code runs. An additional issue with the current
+design is that these VM exit handlers have no good point where the
+libc can setup thread-local storage for them.
+
+The largest issue with the current vCPU design is the inability to
+execute different vCPUs on the same thread. At the moment, when SVP
+wants to execute a different vCPU in the context of a VM Exit handler,
+we go through a complicated dance of copying UTCB content and
+semaphores.
+
+The solution we have arrived in informal discussion between @gonzo and
+@jstecklina is to abandon the concept of these "active" vCPUs and go
+to a model that resembles what other hypervisors are doing. In this
+"passive" mode, vCPUs are kernel objects that are distinct from ECs
+and only run when a thread calls a `run_vcpu` hypercall on them.
+
+This simplifies a list of things:
+
+- vCPUs can float between physical CPUs and userspace does not have to
+  worry about TLB flushing issues when vCPUs migrate,
+- the `create_ec` API (and its implementation) becomes simpler,
+  because it only deals with normal threads,
+- userspace does not need to setup any portals or local ECs for
+  handling VM exits,
+- userspace can setup a vCPU with a handful lines of code,
+- userspace can freely choose different vCPUs to run on the same EC,
+- the Hedron-defined startup and recall VM exit reasons go away,
+- the UTCB does not need to do double-duty as VMCS storage area,
+- KPages can be used to hold vCPU state, vLAPIC page and guest FPU
+  state,
+- the `Mtd::FPU` functionality is not necessary anymore, because
+  userspace can access FPU state directly,
+- ...
+
+## Design Issues
+
+Introducing a vCPU kernel object type triggers the same design issues
+around hypercall IDs and permission bits as introducing the KPage
+object type. As KPages are somehwat required to introduce vCPU
+objects, we assume these have found a decent solution.
+
+We need to align on how the `recall` operation works with vCPUs. I
+propose modifying `recall` to work on vCPU objects as well. When a
+vCPU is recalled, the vCPU will exit to userspace with a host IRQ VM
+Exit. Alternatively, we introduce a `vcpu_ctrl_poke` system call that
+offers to poke the vCPU. This would leave the `recall` system call
+unaffected.
+
+Support for vCPU objects will likely be done for Intel VT only. AMD
+SVM support will be largely disabled initially. This might not be a
+completely bad thing, because AMD SVM has been unused in Hedron for a
+long time and should not be used without inspecting the existing code
+for correctness.
+
+We need to decide how to handle partial VMCS updates. This is
+currently handled by `Mtd` bits. One option is to abandon `Mtd`s for
+state transfer from VMCS to host (this assumes reading state is cheap)
+and only use a bitmap of updated fields when invoking `run_vcpu`. If
+we want to retain functionality to partially copy state from VMCS to
+the host, we can offer a `vcpu_ctrl` option to configure the bitmap
+per VM exit.
+
+## New System Call: `create_vcpu`
+
+To be written.
+
+## New System Call: `vcpu_ctrl`
+
+This will have a `run_vcpu` sub-operation.
+
+To be written.
+
+## Modified System Call: `create_ec`
+
+To be written.
+
+## Modified System Call: `ec_ctrl_recall`
+
+To be written.
