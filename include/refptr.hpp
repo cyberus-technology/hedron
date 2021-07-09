@@ -66,7 +66,7 @@ template <typename T>
 class Refptr
 {
     private:
-        T * const ptr;
+        T * const ptr {nullptr};
 
     public:
         operator T*() const     { return ptr; }
