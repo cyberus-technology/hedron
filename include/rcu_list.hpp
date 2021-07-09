@@ -26,7 +26,12 @@ class Rcu_elem
 {
     public:
         Rcu_elem *next;
+
+        /// This callback is called when the object has no known references
+        /// anymore and must reclaim the object.
         void (*func)(Rcu_elem *);
+
+        /// This callback is called when the object is handed to Rcu::call().
         void (*pre_func)(Rcu_elem *);
 
         explicit Rcu_elem (void (*f)(Rcu_elem *), void (*pf) (Rcu_elem *) = nullptr) : next (nullptr), func (f), pre_func(pf) {}
