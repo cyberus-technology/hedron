@@ -43,7 +43,7 @@ class Kobject : public Mdb
         }
 
     private:
-        Type objtype;
+        Type const objtype;
 
     protected:
         Spinlock lock;
