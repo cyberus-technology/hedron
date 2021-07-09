@@ -51,7 +51,8 @@ are already occupied (SM, PT, SC, EC, PD). To solve this, there are
 several options.
 
 We either need to start to bundle these bits (PT+EC+SC sounds like a
-reasonable combination).
+reasonable combination or just have a single permission bit that
+governs creation of any kernel objects).
 
 We can widen the permission bits to 6 bits. This wastes space in the
 hypervisor's capability spaces, because permission bits are kept in
