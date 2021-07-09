@@ -26,11 +26,9 @@
 class Refcount
 {
     private:
-        uint32 ref;
+        uint32 ref {1};
 
     public:
-        inline Refcount() : ref (1) {}
-
         inline bool add_ref()
         {
             for (uint32 r; (r = ref); )
