@@ -126,7 +126,7 @@ class Hpt : public Hpt_page_table
         static void *remap (Paddr phys, bool use_boot_hpt = true);
 
         // Atomically change a 4K page mapping to point to a new frame. Return
-        // the old frame it pointed to.
+        // the physical address that backs vaddr.
         Paddr replace (mword vaddr, mword paddr);
 
         // Create a page table from existing page table structures.
