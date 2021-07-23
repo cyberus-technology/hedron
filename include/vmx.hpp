@@ -425,8 +425,8 @@ class Vmcs
         static void init();
 };
 
-
-struct PACKED Msr_entry
+// A single-entry in the MSR save/load area. See struct Msr_area below.
+struct Msr_entry
 {
     uint32 msr_index;
     uint32 reserved;
@@ -435,7 +435,13 @@ struct PACKED Msr_entry
     Msr_entry(uint32 index)
     : msr_index(index), reserved(0), msr_data(0) { }
 };
+static_assert(sizeof(Msr_entry) == 16,
+              "MSR area entry does not conform to specification.");
 
+// The MSR save/load area that is referenced from a VMCS.
+//
+// This struct must have a layout as it is described in the Intel SDM Vol. 3
+// Section 24.8.2 "VM-Entry Controls for MSRs".
 struct Msr_area
 {
     enum { MSR_COUNT = 4 };
@@ -456,3 +462,5 @@ struct Msr_area
         Buddy::allocator.free (reinterpret_cast<mword>(obj));
     }
 };
+static_assert(sizeof(Msr_area) == Msr_area::MSR_COUNT * sizeof(Msr_entry),
+              "MSR area size does not match the MSR count.");
