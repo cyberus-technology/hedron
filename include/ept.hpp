@@ -81,8 +81,12 @@ class Ept : public Ept_page_table
         // Convert a HPT mapping into a mapping for the EPT.
         static Mapping convert_mapping(Hpt::Mapping const &hpt_mapping);
 
-        // Do a single-context invalidation for this EPT.
-        void flush()
+        // Invalidate TLB entries derived from this EPT using invept.
+        //
+        // This function must be called when the EPT paging structures are
+        // changed. It does a single-context invalidation of guest-physical
+        // mappings for this EPT.
+        void invalidate()
         {
             struct { uint64 eptp, rsvd; } const desc { vmcs_eptp(), 0 };
             static_assert(sizeof(desc) == 16, "INVEPT descriptor layout is broken");

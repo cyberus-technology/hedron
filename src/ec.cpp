@@ -311,9 +311,13 @@ void Ec::ret_user_vmresume()
 
     regs.vmcs->make_current();
 
-    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
-        Pd::current()->gtlb.clr (Cpu::id());
-        Pd::current()->ept.flush();
+    if (EXPECT_FALSE (Pd::current()->stale_guest_tlb.chk (Cpu::id()))) {
+        Pd::current()->stale_guest_tlb.clr (Cpu::id());
+
+        // We have to use an INVEPT here as opposed to INVVPID, because the
+        // paging structures might have changed and INVVPID does not flush
+        // guest-physical mappings.
+        Pd::current()->ept.invalidate();
     }
 
     if (EXPECT_FALSE (get_cr2() != regs.cr2)) {
@@ -364,8 +368,8 @@ void Ec::ret_user_vmrun()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_vmrun);
 
-    if (EXPECT_FALSE (Pd::current()->gtlb.chk (Cpu::id()))) {
-        Pd::current()->gtlb.clr (Cpu::id());
+    if (EXPECT_FALSE (Pd::current()->stale_guest_tlb.chk (Cpu::id()))) {
+        Pd::current()->stale_guest_tlb.clr (Cpu::id());
         current()->regs.vmcb->tlb_control = 1;
     }
 

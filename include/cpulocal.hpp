@@ -117,7 +117,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
     uint32   vmcb_svm_feature;
 
     // Statistics
-    unsigned counter_ipi[NUM_IPI];
+    uint32   counter_tlb_shootdown;
 
     // CPU-related variables (that are not performance critical)
     uint32   cpu_features[9];

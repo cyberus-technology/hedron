@@ -41,9 +41,16 @@ class Space_mem
 
         mword did;
 
+        // A bitmask of CPUs that have at least one EC in this PD.
         Cpuset cpus;
-        Cpuset htlb;
-        Cpuset gtlb;
+
+        // A bitmask of all CPUs that may have stale host page table mappings of
+        // this Space_mem's Hpt cached in their TLB.
+        Cpuset stale_host_tlb;
+
+        // A bitmask of all CPUs that may have stale guest page table mappings
+        // of this Space_mem's ept or npt cached in their TLB.
+        Cpuset stale_guest_tlb;
 
         static unsigned did_ctr;
 

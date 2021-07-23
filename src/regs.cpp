@@ -87,14 +87,6 @@ template <> void Exc_regs::tlb_flush<Vmcs>(bool full) const
         Vpid::flush (full ? Vpid::CONTEXT_GLOBAL : Vpid::CONTEXT_NOGLOBAL, vpid);
 }
 
-template <> void Exc_regs::tlb_flush<Vmcs>(mword addr) const
-{
-    mword vpid = Vmcs::vpid();
-
-    if (vpid)
-        Vpid::flush (Vpid::ADDRESS, vpid, addr);
-}
-
 template <typename T>
 Exc_regs::Mode Exc_regs::mode() const
 {

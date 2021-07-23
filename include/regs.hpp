@@ -200,7 +200,6 @@ class Exc_regs : public Sys_regs
         template <typename T> void nst_ctrl ();
 
         template <typename T> void tlb_flush (bool) const;
-        template <typename T> void tlb_flush (mword) const;
 
         template <typename T> mword read_cr (unsigned) const;
         template <typename T> void write_cr (unsigned, mword);

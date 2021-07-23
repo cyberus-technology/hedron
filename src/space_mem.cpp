@@ -109,8 +109,8 @@ Tlb_cleanup Space_mem::delegate (Space_mem *snd, mword snd_base, mword rcv_base,
     }
 
     if (cleanup.need_tlb_flush()) {
-        if (sub & Space::SUBSPACE_GUEST) { gtlb.merge (cpus); }
-        if (sub & Space::SUBSPACE_HOST)  { htlb.merge (cpus); }
+        if (sub & Space::SUBSPACE_GUEST) { stale_guest_tlb.merge (cpus); }
+        if (sub & Space::SUBSPACE_HOST)  { stale_host_tlb.merge (cpus); }
     }
 
     return cleanup;
@@ -137,7 +137,7 @@ void Space_mem::shootdown()
 
         Pd *pd = Pd::remote (cpu);
 
-        if (!pd->htlb.chk (cpu) && !pd->gtlb.chk (cpu))
+        if (!pd->stale_host_tlb.chk (cpu) && !pd->stale_guest_tlb.chk (cpu))
             continue;
 
         if (Cpu::id() == cpu) {
@@ -145,14 +145,14 @@ void Space_mem::shootdown()
             continue;
         }
 
-        unsigned ctr = Counter::remote (cpu, 1);
+        unsigned ctr = Counter::remote_tlb_shootdown (cpu);
 
         Lapic::send_ipi (cpu, VEC_IPI_RKE);
 
         if (!Cpu::preempt_enabled())
             asm volatile ("sti" : : : "memory");
 
-        while (Counter::remote (cpu, 1) == ctr)
+        while (Counter::remote_tlb_shootdown (cpu) == ctr)
             pause();
 
         if (!Cpu::preempt_enabled())

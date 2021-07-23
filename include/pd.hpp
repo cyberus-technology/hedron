@@ -93,8 +93,8 @@ class Pd : public Typed_kobject<Kobject::Type::PD>, public Refcount, public Spac
         {
             mword pcid = did;
 
-            if (EXPECT_FALSE (htlb.chk (Cpu::id())))
-                htlb.clr (Cpu::id());
+            if (EXPECT_FALSE (stale_host_tlb.chk (Cpu::id())))
+                stale_host_tlb.clr (Cpu::id());
 
             else {
 
