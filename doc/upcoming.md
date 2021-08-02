@@ -227,7 +227,45 @@ per VM exit.
 
 ## New System Call: `create_vcpu`
 
-To be written.
+This system call creates a new vCPU object. vCPUs correspond to a VMCS
+in Hedron. Each vCPU executes with the guest page table of its parent
+PD.
+
+### Layout of the vCPU State Page
+
+The layout of the vCPU State Page will be similar to the current UTCB
+layout for vCPUs to ease transition. The UTCB header will not be used.
+
+### Layout of the FPU State Page
+
+The FPU state page contains the state of the vCPU's FPU as if saved by
+`XSAVE`. The layout of this region is determined by hardware. See the
+Intel SDM Vol. 1 Chapter 13.4 "XSAVE Area".
+
+### Layout of the vLAPIC Page
+
+The vLAPIC page contains the state of the virtual LAPIC as it is
+needed for hardware-accelerated Local APIC emulation. The layout of
+this page is determined by hardware. See the Intel SDM Vol. 3 Chapter
+29 "APIC Virtualization and Virtual Interrupts".
+
+### In
+
+| *Register* | *Content*                 | *Description*                                                                             |
+|------------|---------------------------|-------------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                             |
+| ARG1[4]    | Use APIC Access Page      | Whether a vCPU should respect the APIC Access Page. Ignored if no vLAPIC page is created. |
+| ARG1[7:5]  | Reserved                  | Must be zero.                                                                             |
+| ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created EC.          |
+| ARG2       | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.                   |
+| ARG3       | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                         |
+| ARG4       | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                                     |
+| ARG5       | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                             |
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
 
 ## New System Call: `vcpu_ctrl`
 
@@ -237,7 +275,7 @@ To be written.
 
 ## Modified System Call: `create_ec`
 
-To be written.
+The vCPU flag is removed together with all vCPU related functionality.
 
 ## Modified System Call: `ec_ctrl_recall`
 
