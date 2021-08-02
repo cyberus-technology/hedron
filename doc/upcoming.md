@@ -45,6 +45,10 @@ userspace and the kernel.
 
 ### Permission Bit Shortage
 
+See [this
+ticket](https://gitlab.vpn.cyberus-technology.de/supernova-core/hedron/-/issues/147)
+for the latest discussion.
+
 PDs use their 5 permission bits in a capability pointer to check
 whether a PD can create a specific kernel object type. These 5 bits
 are already occupied (SM, PT, SC, EC, PD). To solve this, there are
@@ -74,6 +78,10 @@ Opinions are welcome!
 
 ### Hypercall Number Shortage
 
+See [this
+ticket](https://gitlab.vpn.cyberus-technology.de/supernova-core/hedron/-/issues/144)
+for the latest discussion.
+
 The hypercall ABI reserves 4 bits for hypercall numbers in the first
 hypercall argument (`RDI`). The remaining bits in `RDI` are used for
 flags (4 bits) and a capability selector (56 bits). The 4-bit
@@ -87,6 +95,10 @@ machines. (Incidentally, this also matches with the former use of
 capability selectors as page/frame numbers.)
 
 ## New System Call: `create_kp`
+
+See [this
+ticket](https://gitlab.vpn.cyberus-technology.de/supernova-core/hedron/-/issues/99)
+for the latest discussion.
 
 Create a new kernel page object. This object is used for shared memory
 between kernel and userspace. Kernel pages can be mapped to userspace
