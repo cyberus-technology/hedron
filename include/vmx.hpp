@@ -424,6 +424,7 @@ class Vmcs
         static bool has_urg()       { return ctrl_cpu()[1].clr & CPU_URG; }
         static bool has_vnmi()      { return ctrl_pin().clr & PIN_VIRT_NMI; }
         static bool has_msr_bmp()   { return ctrl_cpu()[0].clr & CPU_MSR_BITMAP; }
+        static bool has_vmx_preemption_timer() { return ctrl_pin().clr & PIN_PREEMPT_TIMER; }
 
         static void init();
 };

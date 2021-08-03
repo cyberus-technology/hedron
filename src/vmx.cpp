@@ -123,7 +123,12 @@ void Vmcs::init()
     // - Unrestricted Guest (URG)
     // - Guest PAT
     // - MSR Bitmap
-    if (not has_ept() or not has_urg() or not has_guest_pat() or not has_msr_bmp()) {
+    if (not has_ept() or
+        not has_urg() or
+        not has_guest_pat() or
+        not has_msr_bmp() or
+        not has_vmx_preemption_timer()) {
+
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
