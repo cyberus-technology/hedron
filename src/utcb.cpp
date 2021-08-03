@@ -28,6 +28,7 @@
 #include "regs.hpp"
 #include "svm.hpp"
 #include "vmx.hpp"
+#include "vmx_preemption_timer.hpp"
 #include "x86.hpp"
 
 bool Utcb::load_exc (Cpu_regs *regs)
@@ -236,6 +237,10 @@ bool Utcb::load_vmx (Cpu_regs *regs)
         tsc_aux = static_cast<uint32>(Msr::read (Msr::IA32_TSC_AUX));
     }
 
+    if (mtd & Mtd::TSC_TIMEOUT) {
+        tsc_timeout = vmx_timer::get();
+    }
+
     if (m & Mtd::EFER_PAT) {
         efer = Vmcs::read (Vmcs::GUEST_EFER);
         pat  = Vmcs::read (Vmcs::GUEST_PAT);
@@ -431,6 +436,16 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     if (mtd & Mtd::TSC) {
         Vmcs::write (Vmcs::TSC_OFFSET, tsc_off);
         Msr::write (Msr::IA32_TSC_AUX, tsc_aux);
+    }
+
+    if (mtd & Mtd::TSC_TIMEOUT) {
+        if (tsc_timeout != ~0ull) {
+            vmx_timer::activate();
+
+            vmx_timer::set(tsc_timeout);
+        } else {
+            vmx_timer::deactivate();
+        }
     }
 
     if (mtd & Mtd::EFER_PAT) {

@@ -31,6 +31,7 @@
 #include "stdio.hpp"
 #include "tss.hpp"
 #include "vmx.hpp"
+#include "vmx_preemption_timer.hpp"
 #include "x86.hpp"
 
 Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev (basic().revision)
@@ -126,6 +127,8 @@ void Vmcs::init()
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
+
+    vmx_timer::init();
 
     ept_vpid().val = Msr::read (Msr::IA32_VMX_EPT_VPID);
 

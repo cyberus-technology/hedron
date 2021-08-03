@@ -176,6 +176,7 @@ class Vmcs
             GUEST_ACTV_STATE        = 0x4826ul,
             GUEST_SMBASE            = 0x4828ul,
             GUEST_SYSENTER_CS       = 0x482aul,
+            VMX_PREEMPT_TIMER       = 0x482eul,
 
             // 32-Bit Host State Fields
             HOST_SYSENTER_CS        = 0x4c00ul,
@@ -243,6 +244,7 @@ class Vmcs
             EXI_LOAD_PAT            = 1UL << 19,
             EXI_SAVE_EFER           = 1UL << 20,
             EXI_LOAD_EFER           = 1UL << 21,
+            EXI_SAVE_PREEMPT_TIMER  = 1UL << 22,
         };
 
         enum Ctrl_ent
@@ -257,6 +259,7 @@ class Vmcs
             PIN_EXTINT              = 1ul << 0,
             PIN_NMI                 = 1ul << 3,
             PIN_VIRT_NMI            = 1ul << 5,
+            PIN_PREEMPT_TIMER       = 1ul << 6,
         };
 
         enum Ctrl0
