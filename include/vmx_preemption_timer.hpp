@@ -29,6 +29,12 @@ class vmx_timer
 public:
     static void init()
     {
+        /**
+         * Intel SDM Vol 3, 25.5.1. VMX-Preemption Timer
+         * The VMX-preemption timer counts down at rate proportional to that of the timestamp counter (TSC). Specifically,
+         * the timer counts down by 1 every time bit X in the TSC changes due to a TSC increment. The value of X is in the
+         * range 0–31 and can be determined by consulting the VMX capability MSR IA32_VMX_MISC (see Appendix A.6).
+         */
         auto ia32_vmx_misc {Msr::read (Msr::IA32_VMX_CTRL_MISC)};
         auto timer_ratio   {ia32_vmx_misc & 0x1f};
 
