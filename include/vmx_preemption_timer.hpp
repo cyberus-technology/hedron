@@ -32,7 +32,7 @@ public:
         auto ia32_vmx_misc {Msr::read (Msr::IA32_VMX_CTRL_MISC)};
         auto timer_ratio   {ia32_vmx_misc & 0x1f};
 
-        timer_shift() = timer_ratio;
+        timer_shift() = static_cast<uint8>(timer_ratio);
     }
 
     static bool active()
@@ -75,9 +75,32 @@ public:
         Vmcs::write (Vmcs::EXI_CONTROLS, exi);
     }
 
-    static void set(uint64 val)
+    static void set(uint64 relative_timeout)
     {
-        auto max_timeout {static_cast<uint32>(val >> timer_shift())};
+        // Calculate the preemption timeout value from TSC value and the timer
+        // shift. Shift the given value to the right and rounding the result
+        // up if any of the lower bits are set. The function takes care that we
+        // do not overflow in case we round up.
+        const auto calc_timeout = [](uint64 tsc_value, uint8 shift) -> uint32 {
+            constexpr auto MAX_UINT32 {mask (sizeof(uint32) * 8)};
+            const     auto SHIFT_MASK {mask (shift)};
+
+            auto round_up {(tsc_value & SHIFT_MASK) == 0 ? 0u : 1u};
+            auto shifted  {tsc_value >> shift};
+
+            return static_cast<uint32>(shifted >= MAX_UINT32 ? shifted : shifted + round_up);
+        };
+
+        /**
+         * The VMCS field of the timer is only 32bit wide. This means that we
+         * need to cut off the upper bits of the timeout. For a userspace VMM,
+         * this means that there is the possibility that the timer fires
+         * earlier than expected.
+         * On the other hand, we lose precision because the provided value is
+         * shifted by timer_shift. The shifted value is rounded up so the timer
+         * does not fire too early due to the precision loss.
+         */
+        auto max_timeout {calc_timeout (relative_timeout, timer_shift())};
 
         Vmcs::write (Vmcs::VMX_PREEMPT_TIMER, max_timeout);
     }
