@@ -439,13 +439,7 @@ bool Utcb::save_vmx (Cpu_regs *regs)
     }
 
     if (mtd & Mtd::TSC_TIMEOUT) {
-        if (tsc_timeout != ~0ull) {
-            vmx_timer::activate();
-
-            vmx_timer::set(tsc_timeout);
-        } else {
-            vmx_timer::deactivate();
-        }
+        vmx_timer::set (tsc_timeout);
     }
 
     if (mtd & Mtd::EFER_PAT) {

@@ -39,8 +39,8 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
     make_current();
 
     uint64 eptp = ept.vmcs_eptp();
-    uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI;
-    uint32 exi = EXI_INTA;
+    uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
+    uint32 exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER;
     uint32 ent = 0;
 
     write (PF_ERROR_MASK, 0);
@@ -90,6 +90,8 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
 
     write (HOST_RSP, esp);
     write (HOST_RIP, reinterpret_cast<mword>(&entry_vmx));
+
+    vmx_timer::set (~0ull);
 }
 
 void Vmcs::init()

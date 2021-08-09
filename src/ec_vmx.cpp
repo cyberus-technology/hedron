@@ -24,6 +24,7 @@
 #include "lapic.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
+#include "vmx_preemption_timer.hpp"
 
 void Ec::vmx_exception()
 {
@@ -107,6 +108,16 @@ void Ec::handle_vmx()
         case Vmcs::VMX_EPT_VIOLATION:
             current()->regs.nst_error = Vmcs::read (Vmcs::EXI_QUALIFICATION);
             current()->regs.nst_fault = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
+            break;
+        case Vmcs::VMX_PREEMPT:
+            // Whenever a preemption timer exit occurs we set the value to the
+            // maximum possible. This allows to always keep the preemption
+            // timer active while keeping spurious timer exits for the user to
+            // a minimum in case the user does not program the timer. Not
+            // re-setting the timer leads to continuous timeout exits because
+            // the timer value stays at 0. Keeping the timer active all the
+            // time has the advantage of minimizing high-latency VMCS updates.
+            vmx_timer::set (~0ull);
             break;
     }
 
