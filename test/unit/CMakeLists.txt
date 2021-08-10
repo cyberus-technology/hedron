@@ -14,6 +14,7 @@ add_executable(test_unit
   string.cpp
   unique_ptr.cpp
   vmx_msr_bitmap.cpp
+  vmx_preemption_timer.cpp
   )
 target_link_libraries(test_unit Catch2::Catch2)
 

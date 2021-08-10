@@ -27,6 +27,31 @@ class vmx_timer
     CPULOCAL_ACCESSOR(vmx, timer_shift);
 
 public:
+    // Calculate the preemption timeout value from the relative TSC ticks and
+    // the timer shift.
+    static uint32 calc_timeout(uint64 tsc_ticks, uint8 shift)
+    {
+        constexpr auto MAX_UINT32 {~static_cast<uint32>(0)};
+
+        uint64 precision_mask {(static_cast<uint64>(1) << shift) - 1};
+
+        // If we overflow 64bits adding our precision_mask we need the
+        // maximum possible timeout.
+        if (tsc_ticks + precision_mask < tsc_ticks) {
+            return MAX_UINT32;
+        }
+
+        // Shift the given value to the right and rounding the
+        // result up if any of the lower bits are set.
+        uint64 rel_timeout {(tsc_ticks + precision_mask) >> shift};
+
+        bool wrapped {rel_timeout != static_cast<uint32>(rel_timeout)};
+
+        // In case the shifted value still does not fit into 32bits we use the
+        // maximum possible timeout.
+        return wrapped ? MAX_UINT32 : static_cast<uint32>(rel_timeout);
+    }
+
     static void init()
     {
         /**
@@ -43,20 +68,6 @@ public:
 
     static void set(uint64 relative_timeout)
     {
-        // Calculate the preemption timeout value from TSC value and the timer
-        // shift. Shift the given value to the right and rounding the result
-        // up if any of the lower bits are set. The function takes care that we
-        // do not overflow in case we round up.
-        const auto calc_timeout = [](uint64 tsc_value, uint8 shift) -> uint32 {
-            constexpr auto MAX_UINT32 {mask (sizeof(uint32) * 8)};
-            const     auto SHIFT_MASK {mask (shift)};
-
-            auto round_up {(tsc_value & SHIFT_MASK) == 0 ? 0u : 1u};
-            auto shifted  {tsc_value >> shift};
-
-            return static_cast<uint32>(shifted >= MAX_UINT32 ? shifted : shifted + round_up);
-        };
-
         /**
          * The VMCS field of the timer is only 32bit wide. This means that we
          * need to cut off the upper bits of the timeout. For a userspace VMM,
