@@ -217,6 +217,7 @@ Cpu_info Cpu::init()
         Fpu::probe();
 
         Hpt::set_supported_leaf_levels (feature (FEAT_1GB_PAGES) ? 3 : 2);
+        Dpt::lower_supported_leaf_levels (feature (FEAT_1GB_PAGES) ? 3 : 2);
     }
 
     if (EXPECT_TRUE (feature (FEAT_ACPI)))
