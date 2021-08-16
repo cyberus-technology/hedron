@@ -91,9 +91,22 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
     write (HOST_RIP, reinterpret_cast<mword>(&entry_vmx));
 }
 
+bool Vmcs::try_enable_vmx()
+{
+    auto feature_ctrl = Msr::read (Msr::IA32_FEATURE_CONTROL);
+
+    // Some BIOSes don't enable VMX, but leave the lock bit unset. In this case,
+    // we try to enable it ourselves.
+    if (not (feature_ctrl & Msr::FEATURE_LOCKED)) {
+            Msr::write (Msr::IA32_FEATURE_CONTROL, feature_ctrl | Msr::FEATURE_VMX_O_SMX | Msr::FEATURE_LOCKED);
+    }
+
+    return !!(Msr::read (Msr::IA32_FEATURE_CONTROL) & Msr::FEATURE_VMX_O_SMX);
+}
+
 void Vmcs::init()
 {
-    if (not Cpu::feature (Cpu::FEAT_VMX) or (Msr::read (Msr::IA32_FEATURE_CONTROL) & 0x5) != 0x5) {
+    if (not Cpu::feature (Cpu::FEAT_VMX) or not try_enable_vmx()) {
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
