@@ -422,6 +422,11 @@ class Vmcs
         static bool has_vnmi()      { return ctrl_pin().clr & PIN_VIRT_NMI; }
         static bool has_msr_bmp()   { return ctrl_cpu()[0].clr & CPU_MSR_BITMAP; }
 
+        /// Try to enable VMX, if it was not enabled.
+        ///
+        /// Returns true, if successful.
+        static bool try_enable_vmx();
+
         static void init();
 };
 

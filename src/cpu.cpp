@@ -239,12 +239,6 @@ Cpu_info Cpu::init()
 
     set_cr4 (cr4);
 
-    // Some BIOSes don't enable VMX and lock the feature control MSR
-    auto feature_ctrl = Msr::read (Msr::IA32_FEATURE_CONTROL);
-    if (!(feature_ctrl & Msr::FEATURE_LOCKED)) {
-        Msr::write (Msr::IA32_FEATURE_CONTROL, feature_ctrl | Msr::FEATURE_VMX_O_SMX | Msr::FEATURE_LOCKED);
-    }
-
     Vmcs::init();
     Vmcb::init();
 
