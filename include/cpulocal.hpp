@@ -110,6 +110,8 @@ struct alignas(PAGE_SIZE) Per_cpu {
     mword vmcs_fix_cr4_clr;
     mword vmcs_fix_cr4_mon;
 
+    uint8 vmx_timer_shift;
+
     // SVM-related variables
     Paddr    vmcb_root;
     unsigned vmcb_asid_ctr;

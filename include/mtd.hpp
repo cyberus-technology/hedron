@@ -56,6 +56,7 @@ class Mtd
             PDPTE           = 1UL << 21,
             GPR_R8_R15      = 1UL << 22,
             SYSCALL_SWAPGS  = 1UL << 23,
+            TSC_TIMEOUT     = 1UL << 24,
 
             VINTR           = 1UL << 26,
             EOI             = 1UL << 27,

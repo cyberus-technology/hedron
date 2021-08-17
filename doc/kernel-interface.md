@@ -185,6 +185,25 @@ used to send and receive message data and architectural state via IPC.
 The UTCB is 4KiB in size. It's detailed layout is given in
 `include/utcb.hpp`.
 
+### TSC Timeout
+
+The `tsc_timeout` utcb field in addition to the `Mtd::TSC_TIMEOUT` MTD bit
+allow to specify a relative timeout value. The `tsc_timeout` value counts down
+at a rate proportional to the TSC. After it reaches zero it stops counting and
+a VM exit is generated.
+
+Due to architectural restrictions the `tsc_timeout` value will be saved in a
+32bit value. This means that if a user specifies a timeout larger than what
+fits into 32bits the timer might fire earlier than expected. To get the timeout
+delivered at the intended time the user has to re-arm the timer with the actual
+time left.
+
+On the other hand the internal precision is lower than what can be specified
+and the timeout is rounded up to the internal precision.
+
+Further, if the user does not program the TSC timeout there might be a TSC
+timeout related spurious VM exit which can be ignored.
+
 ## Virtual LAPIC (vLAPIC) Page
 
 vLAPIC pages belong to Execution Contexts. A vCPU may have exactly one

@@ -96,6 +96,7 @@ class Utcb_data
 
                 uint64          cr0_mon, cr4_mon;
                 uint64          spec_ctrl;
+                uint64          tsc_timeout;
             };
 
             mword data_begin;

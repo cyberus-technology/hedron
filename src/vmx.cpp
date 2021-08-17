@@ -31,6 +31,7 @@
 #include "stdio.hpp"
 #include "tss.hpp"
 #include "vmx.hpp"
+#include "vmx_preemption_timer.hpp"
 #include "x86.hpp"
 
 Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev (basic().revision)
@@ -38,8 +39,8 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
     make_current();
 
     uint64 eptp = ept.vmcs_eptp();
-    uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI;
-    uint32 exi = EXI_INTA;
+    uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
+    uint32 exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER;
     uint32 ent = 0;
 
     write (PF_ERROR_MASK, 0);
@@ -89,6 +90,8 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, Ept const &ept, unsigned cpu) : rev
 
     write (HOST_RSP, esp);
     write (HOST_RIP, reinterpret_cast<mword>(&entry_vmx));
+
+    vmx_timer::set (~0ull);
 }
 
 bool Vmcs::try_enable_vmx()
@@ -135,10 +138,17 @@ void Vmcs::init()
     // - Unrestricted Guest (URG)
     // - Guest PAT
     // - MSR Bitmap
-    if (not has_ept() or not has_urg() or not has_guest_pat() or not has_msr_bmp()) {
+    if (not has_ept() or
+        not has_urg() or
+        not has_guest_pat() or
+        not has_msr_bmp() or
+        not has_vmx_preemption_timer()) {
+
         Hip::clr_feature (Hip::FEAT_VMX);
         return;
     }
+
+    vmx_timer::init();
 
     ept_vpid().val = Msr::read (Msr::IA32_VMX_EPT_VPID);
 
