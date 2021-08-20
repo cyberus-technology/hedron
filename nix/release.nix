@@ -69,8 +69,8 @@ let
     )
     hedronBuildSet;
 
-  default-release = hedronBuildSet.gcc9-release;
-  default-debug = hedronBuildSet.gcc9-debug;
+  default-release = hedronBuildSet.gcc10-release;
+  default-debug = hedronBuildSet.gcc10-debug;
 in
 {
   hedron = pkgs.recurseIntoAttrs {
