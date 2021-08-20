@@ -103,6 +103,14 @@ endif()
 set(HYPERVISOR-LINKER-SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld)
 set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.ld)
 
+# The way DEPFILE paths are used has changed in CMake 3.20. Avoid the
+# warning.
+#
+# See https://cmake.org/cmake/help/latest/policy/CMP0116.html
+if(POLICY CMP0116)
+  cmake_policy(SET CMP0116 OLD)
+endif()
+
 # In order to let the build system reason about the dependencies
 # (header files) of preprocessed linker scripts, cmake needs to
 # determine those dependencies so we don't have to specify them
@@ -115,12 +123,18 @@ set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.ld)
 # The only reasonable solution right now is to duplicate this custom
 # command depending on the generator.
 if(CMAKE_GENERATOR STREQUAL "Ninja")
+  file(RELATIVE_PATH HYPERVISOR-LINKER-SCRIPT-TARGET
+    ${CMAKE_BINARY_DIR} ${HYPERVISOR-LINKER-SCRIPT})
+
   add_custom_command(
     OUTPUT ${HYPERVISOR-LINKER-SCRIPT}
     MAIN_DEPENDENCY ${HYPERVISOR-LINKER-SOURCE}
     DEPFILE ${HYPERVISOR-LINKER-SCRIPT}.d
     COMMAND ${CMAKE_CXX_COMPILER}
     ARGS
+    -MD
+    -MF ${HYPERVISOR-LINKER-SCRIPT}.d
+    -MT ${HYPERVISOR-LINKER-SCRIPT-TARGET}
     -x c -E ${HYPERVISOR-LINKER-SOURCE} -P
     -o ${HYPERVISOR-LINKER-SCRIPT}
     -I ${CMAKE_SOURCE_DIR}/include
