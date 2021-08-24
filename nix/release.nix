@@ -31,7 +31,7 @@ let
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
   buildConfs = cbspkgs.lib.cartesian.cartesianProductFromSet {
-    cc = attrsToList { inherit (pkgs) clang_9 clang_10 gcc7 gcc8 gcc9 gcc10; };
+    cc = attrsToList { inherit (pkgs) clang_9 clang_10 clang_11 gcc7 gcc8 gcc9 gcc10 gcc11; };
     buildType = [ "Debug" "Release" ];
   };
 
@@ -69,8 +69,8 @@ let
     )
     hedronBuildSet;
 
-  default-release = hedronBuildSet.gcc9-release;
-  default-debug = hedronBuildSet.gcc9-debug;
+  default-release = hedronBuildSet.gcc10-release;
+  default-debug = hedronBuildSet.gcc10-debug;
 in
 {
   hedron = pkgs.recurseIntoAttrs {
