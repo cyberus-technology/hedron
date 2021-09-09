@@ -26,7 +26,7 @@
 #include "stdio.hpp"
 #include "string.hpp"
 
-extern char _mempool_p, _mempool_l, _mempool_f, _mempool_e;
+extern char _mempool_l, _mempool_f, _mempool_e;
 
 /*
  * Buddy Allocator
