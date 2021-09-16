@@ -18,6 +18,7 @@
 #include "acpi.hpp"
 #include "acpi_facs.hpp"
 #include "atomic.hpp"
+#include "dmar.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
@@ -29,9 +30,7 @@
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
-    if (not Acpi::valid_sleep_type (slp_typa, slp_typb) or
-        // We don't support suspending with IOMMU yet. See issue #120.
-        (Hip::feature() & Hip::FEAT_IOMMU)) {
+    if (not Acpi::valid_sleep_type (slp_typa, slp_typb)) {
         return;
     }
 
@@ -100,6 +99,8 @@ void Suspend::resume_bsp()
     Acpi::set_facs (saved_facs);
 
     Ioapic::restore_all();
+
+    Dmar::enable();
 
     Atomic::store (Suspend::in_progress, false);
 }
