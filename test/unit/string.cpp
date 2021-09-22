@@ -15,6 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "string.hpp"
 #include "string_impl.hpp"
 
 #include <array>
@@ -82,5 +83,18 @@ TEST_CASE ("String prefix match", "[string]")
 
     SECTION ("zero length prefix match") {
         CHECK (impl_strnmatch (prefix, string, 0));
+    };
+}
+
+// This test tests the FILENAME macro, which is backed-up
+// by the function "past_last_slash"
+TEST_CASE ("FILENAME macro works")
+{
+    int const len = 10;
+    // +1: null byte
+    char const expected[len + 1] = "string.cpp";
+
+    SECTION ("matches") {
+        CHECK (impl_strnmatch(expected, FILENAME, len));
     };
 }
