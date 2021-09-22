@@ -322,7 +322,7 @@ exception numbers.
 | ARG1[7]     | User Page Destination | If 0, the UTCB / vLAPIC page will be mapped in the parent PD, otherwise it's mapped in the current PD.      |
 | ARG1[63:8]  | Destination Selector  | A capability selector in the current PD that will point to the newly created EC.                            |
 | ARG2        | Parent PD             | A capability selector to a PD domain in which the new EC will execute in.                                   |
-| ARG3[11:0]  |                       | Unused. Needs to be zero.                                                                                   |
+| ARG3[11:0]  | CPU number            | Number between 0..MAX (depends on implementation, see `config.hpp`) *Note: ECs are CPU-local.*              |
 | ARG3[63:12] | UTCB / vLAPIC Page    | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
 | ARG4        | Stack Pointer         | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
 | ARG5        | Event Base            | The Event Base of the newly created EC.                                                                     |
