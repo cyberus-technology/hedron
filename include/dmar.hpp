@@ -235,6 +235,11 @@ class Dmar : public Forward_list<Dmar>
 
         static bool ire() { return gcmd & GCMD_IRE; }
 
+        static void flush_all_contexts()
+        {
+            for_each (Forward_list_range {list}, mem_fn_closure(&Dmar::flush_ctx)());
+        }
+
         void assign (unsigned long, Pd *);
 
         REGPARM (1)
