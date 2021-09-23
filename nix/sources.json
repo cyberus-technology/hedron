@@ -1,26 +1,14 @@
 {
-    "cbspkgs-public": {
-        "branch": "master",
-        "description": null,
-        "homepage": null,
-        "owner": "cyberus-technology",
-        "repo": "cbspkgs-public",
-        "rev": "bd2595d37d94a6e83111c4a09b8c80bf67507ba8",
-        "sha256": "109zpjnc75kygmw62dxhwbm1m8zkg429igbcnkw0rg070nlr46fr",
-        "type": "tarball",
-        "url": "https://github.com/cyberus-technology/cbspkgs-public/archive/bd2595d37d94a6e83111c4a09b8c80bf67507ba8.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "cmake-modules": {
         "branch": "master",
         "description": "Additional CMake functionality. Most of the modules are from Ryan Pavlik (https://github.com/rpavlik/cmake-modules)",
         "homepage": "",
         "owner": "bilke",
         "repo": "cmake-modules",
-        "rev": "aaec0a65cfbf5e467e201cec21e87c601b76ac26",
-        "sha256": "057kgxfskw4y7jda00dkrrv4s332zh13kfihfg594bm1xngpj47j",
+        "rev": "d98828f54f6974717798e63195cfbf08fe2daad0",
+        "sha256": "1wss05g08c1czw52dg7f9cnw43q8x915f75qhkjmh6pdr71l36zd",
         "type": "tarball",
-        "url": "https://github.com/bilke/cmake-modules/archive/aaec0a65cfbf5e467e201cec21e87c601b76ac26.tar.gz",
+        "url": "https://github.com/bilke/cmake-modules/archive/d98828f54f6974717798e63195cfbf08fe2daad0.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -29,10 +17,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a1007637cea374bd1bafd754cfd5388894c49129",
-        "sha256": "0qnnrn2ahlvxgamwybjafdafaj8mjs6dl91ml5b8bh1v9aj313vl",
+        "rev": "83413f47809790e4ca012e314e7782adeae36cf2",
+        "sha256": "0md5ynzxaw9gx81gh4d0120yjb0jrcydvxf0nsym402qfbhpchx0",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/a1007637cea374bd1bafd754cfd5388894c49129.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/83413f47809790e4ca012e314e7782adeae36cf2.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

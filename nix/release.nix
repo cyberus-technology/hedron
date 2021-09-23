@@ -17,7 +17,6 @@
 #     nix-build nix/release.nix -A coverage
 { sources ? import ./sources.nix
 , pkgs ? import sources.nixpkgs {}
-, cbspkgs ? import sources.cbspkgs-public {}
 }:
 
 let
@@ -30,8 +29,8 @@ let
   #
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
-  buildConfs = cbspkgs.lib.cartesian.cartesianProductFromSet {
-    cc = attrsToList { inherit (pkgs) clang_9 clang_10 clang_11 gcc7 gcc8 gcc9 gcc10 gcc11; };
+  buildConfs = pkgs.lib.cartesianProductOfSets {
+    cc = attrsToList { inherit (pkgs) clang_9 clang_10 clang_11 clang_12 gcc7 gcc8 gcc9 gcc10 gcc11; };
     buildType = [ "Debug" "Release" ];
   };
 
