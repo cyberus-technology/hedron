@@ -48,6 +48,20 @@ Dmar::Dmar (Paddr p) : Forward_list<Dmar> (list), reg_base ((hwdev_addr -= PAGE_
     assert (page_table_levels() >= leaf_levels);
     Dpt::lower_supported_leaf_levels (leaf_levels);
 
+    if (ir()) {
+      gcmd |= GCMD_IRE;
+    }
+
+    if (qi()) {
+      gcmd |= GCMD_QIE;
+    }
+
+    // FIXME: This is too early to know whether IR should be enabled. See #158.
+    init();
+}
+
+void Dmar::init ()
+{
     write<uint32>(REG_FEADDR, 0xfee00000 | Cpu::apic_id[0] << 12);
     write<uint32>(REG_FEDATA, VEC_MSI_DMAR);
     write<uint32>(REG_FECTL,  0);
@@ -55,17 +69,16 @@ Dmar::Dmar (Paddr p) : Forward_list<Dmar> (list), reg_base ((hwdev_addr -= PAGE_
     write<uint64>(REG_RTADDR, Buddy::ptr_to_phys (ctx));
     command (GCMD_SRTP);
 
-    if (ir()) {
+    if (ire()) {
         write<uint64>(REG_IRTA, Buddy::ptr_to_phys (irt) | 7);
         command (GCMD_SIRTP);
-        gcmd |= GCMD_IRE;
     }
 
-    if (qi()) {
+    if (qie()) {
+        invq_idx = 0;
         write<uint64>(REG_IQT, 0);
         write<uint64>(REG_IQA, Buddy::ptr_to_phys (invq));
         command (GCMD_QIE);
-        gcmd |= GCMD_QIE;
     }
 }
 

@@ -215,11 +215,21 @@ class Dmar : public Forward_list<Dmar>
 
         void fault_handler();
 
+        /// Configure the basic DMAR unit registers.
+        void init();
     public:
         Dmar (Paddr);
 
         static inline void *operator new (size_t) { return cache.alloc(); }
 
+        /// Enable the DMAR unit, including re-initialization of registers (e.g. after suspend).
+        static inline void enable()
+        {
+            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::init)());
+            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::command)(gcmd));
+        }
+
+        /// Enable the DMAR unit with given feature flags from ACPI tables.
         static inline void enable (unsigned flags)
         {
             if (!(flags & 1))
@@ -234,6 +244,8 @@ class Dmar : public Forward_list<Dmar>
         }
 
         static bool ire() { return gcmd & GCMD_IRE; }
+
+        static bool qie() { return gcmd & GCMD_QIE; }
 
         static void flush_all_contexts()
         {
