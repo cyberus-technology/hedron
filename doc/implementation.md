@@ -79,9 +79,45 @@ page tables that are created.
 
 ![](images/memlayout.png)
 
-## Read-Copy Update (RCU)
+## Memory Reclamation and Read-Copy Update (RCU)
 
-... write me ...
+Hedron manages freeing of kernel memory using reference counts and a
+variant of Read-Copy-Update (RCU). There are [great resources on
+RCU](https://en.wikipedia.org/wiki/Read-copy-update) that give an
+overview of RCU itself. Despite RCU being a synchronization mechanism,
+Hedron uses it mostly to defer reclamation of resources until the
+hypervisor does not hold references anymore. Hedron uses transitions
+to userspace as quiescent states.
+
+The main design goal of RCU in Hedron is to minimize costly atomic
+reference count updates for normal kernel operations. Reference counts
+to objects do not need to be adjusted, if the caller does not generate
+new references to these objects that persist across exiting the kernel
+to userspace.
+
+All kernel objects that participate in RCU have an
+[intrusive](https://www.data-structures-in-practice.com/intrusive-linked-lists/)
+RCU list pointer via `Rcu_elem`. This class also adds two callbacks
+(`free` and `pre_free`) that can perform cleanup at different
+times. These callbacks will be explained below.
+
+Objects that are managed via RCU also typically carry an intrusive
+reference count via `Refcount`. When references to these objects are
+created/destroyed, the reference count needs to be manually adjusted
+via `add_ref`, `del_ref`, or `del_rcu`. See their respective
+descriptions for concrete usage instructions.
+
+Once the `Refcount` operations indicate that the object is ready for
+destruction, the caller needs to hand it to `Rcu::call()`, which
+places it in the hands of the RCU subsystem for cleanup. `Rcu::call()`
+will immediately call the `pre_free` callback. At this point, other
+parts of the hypervisor **might still have references** to the object
+until they exit to userspace.
+
+Once RCU has observed all cores exiting to userspace (or being idle),
+it will call the `free` callback of the object. The `free` callback is
+in charge of actually deleting the object and thus reclaiming its
+memory for further use.
 
 ## Kernel Memory Layout
 

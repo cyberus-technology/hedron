@@ -21,6 +21,10 @@
 #include "cpulocal.hpp"
 #include "rcu_list.hpp"
 
+/// The central Read-Copy-Update implementation.
+///
+/// See doc/implementation.md for a longer description of how RCU works in
+/// Hedron.
 class Rcu
 {
     private:
@@ -48,6 +52,12 @@ class Rcu
         static void invoke_batch();
 
     public:
+
+        /// Declare the passed object ready for reclamation.
+        ///
+        /// This will immediately call its pre_func callback. Once the
+        /// hypervisor has gone through quiescent states on all CPUs, the free
+        /// callback of the object is called.
         static inline bool call (Rcu_elem *e) {
             if (e->pre_func)
                 e->pre_func(e);
