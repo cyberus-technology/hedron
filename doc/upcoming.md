@@ -204,15 +204,18 @@ around hypercall IDs and permission bits as introducing the KPage
 object type. As KPages are somehwat required to introduce vCPU
 objects, we assume these have found a decent solution.
 
-We need to align on how the `recall` operation works with vCPUs. I
-propose modifying `recall` to work on vCPU objects as well. When a
-vCPU is recalled, the vCPU will exit to userspace with a host IRQ VM
-Exit. Alternatively, we introduce a `vcpu_ctrl_poke` system call that
-offers to poke the vCPU. This would leave the `recall` system call
-unaffected.
+We need to align on how the `recall` operation works with vCPUs. One
+option is to modify `recall` to work on vCPU objects as well. But
+since event injection into vCPUs should just make the vCPU exit and
+not the thread go through its recall portal, this seems like an
+awkward solution. As such, I propose a new `vcpu_ctrl_poke` system
+call. This system call makes the affected vCPU exit to userspace. The
+exit that is actually encountered in userspace may be any VM exit that
+currently happened and picked up the "poke" request or if no exit was
+happening, userspace would see a host IRQ VM exit.
 
-Support for vCPU objects will likely be done for Intel VT only. AMD
-SVM support will be largely disabled initially. This might not be a
+Support for vCPU objects will be done for Intel VT only. AMD SVM
+support will be largely disabled initially. This might not be a
 completely bad thing, because AMD SVM has been unused in Hedron for a
 long time and should not be used without inspecting the existing code
 for correctness.
