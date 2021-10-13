@@ -239,6 +239,9 @@ PD.
 The layout of the vCPU State Page will be similar to the current UTCB
 layout for vCPUs to ease transition. The UTCB header will not be used.
 
+An exit reason field is added that contains the content of the exit
+reason VMCS field for Intel CPUs.
+
 ### Layout of the FPU State Page
 
 The FPU state page contains the state of the vCPU's FPU as if saved by
@@ -259,11 +262,12 @@ this page is determined by hardware. See the Intel SDM Vol. 3 Chapter
 | ARG1[3:0]  | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                             |
 | ARG1[4]    | Use APIC Access Page      | Whether a vCPU should respect the APIC Access Page. Ignored if no vLAPIC page is created. |
 | ARG1[7:5]  | Reserved                  | Must be zero.                                                                             |
-| ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created EC.          |
+| ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created vCPU.          |
 | ARG2       | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.                   |
 | ARG3       | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                         |
 | ARG4       | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                                     |
 | ARG5       | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                             |
+
 ### Out
 
 | *Register* | *Content* | *Description*           |
@@ -272,9 +276,68 @@ this page is determined by hardware. See the Intel SDM Vol. 3 Chapter
 
 ## New System Call: `vcpu_ctrl`
 
-This will have a `run_vcpu` sub-operation.
+The `vcpu_ctrl` system call allows to interact with vCPU objects.
 
-To be written.
+### In
+
+| *Register* | *Content*          | *Description*                                                                       |
+|------------|--------------------|-------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                                         |
+| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_VCPU_CTRL_*` to select one of the `vcpu_ctrl_*` calls below. |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.                      |
+| ...        | ...                |                                                                                     |
+
+### Out
+
+See the specific `vcpu_ctrl` sub-operation.
+
+## New System Call: `vcpu_ctrl_run`
+
+This system call runs the given vCPU until a vCPU exit happens or the
+vCPU is poked with `vcpu_ctrl_poke`. The MTD parameter controls which
+state the hypervisor needs to copy into the underlying hardware data
+structures.
+
+When this system call returns successfully, the exit reason can be
+read from the vCPU state page.
+
+vCPUs can be executed using this system call from any EC on any host
+CPU, but only one at a time. Attempts to run the same vCPU object
+concurrently will fail.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                           |
+|------------|--------------------|-------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                             |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_VCPU_CTRL_RUN`.                                  |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.          |
+| ARG2       | Modified State MTD | A MTD bitfield that has set bits for each vCPU state that was modified. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## New System Call: `vcpu_ctrl_poke`
+
+Causes the specified vCPU to exit as soon as possible. The exit reason
+may be any exit reason including host IRQ exit.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                  |
+|------------|--------------------|----------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                    |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_VCPU_CTRL_POKE`.                               |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
 
 ## Modified System Call: `create_ec`
 
@@ -282,4 +345,4 @@ The vCPU flag is removed together with all vCPU related functionality.
 
 ## Modified System Call: `ec_ctrl_recall`
 
-To be written.
+This system call will not work on vCPU objects.
