@@ -90,11 +90,16 @@ TEST_CASE ("String prefix match", "[string]")
 // by the function "past_last_slash"
 TEST_CASE ("FILENAME macro works")
 {
-    int const len = 10;
-    // +1: null byte
-    char const expected[len + 1] = "string.cpp";
+    SECTION ("past_last_slash works") {
+        CHECK (past_last_slash("/a/b/c") == std::string("c"));
+        CHECK (past_last_slash("///") == std::string(""));
+        CHECK (past_last_slash("//") == std::string(""));
+        CHECK (past_last_slash("/") == std::string(""));
+        CHECK (past_last_slash("") == std::string(""));
+        CHECK (past_last_slash("///foo") == std::string("foo"));
+    }
 
-    SECTION ("matches") {
-        CHECK (impl_strnmatch(expected, FILENAME, len));
+    SECTION ("macro matches") {
+        CHECK (std::string("string.cpp") == FILENAME);
     };
 }
