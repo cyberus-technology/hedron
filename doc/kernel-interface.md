@@ -250,6 +250,8 @@ Hypercalls are identified by these values.
 
 | *Constant*                         | *Value* |
 |------------------------------------|---------|
+| `HC_CALL`                          | 0       |
+| `HC_REPLY`                         | 1       |
 | `HC_CREATE_PD`                     | 2       |
 | `HC_CREATE_EC`                     | 3       |
 | `HC_REVOKE`                        | 7       |
@@ -283,6 +285,42 @@ Most hypercalls return a status value in OUT1. The following status values are d
 | `BAD_DEV` | 8       | An invalid device ID was passed                                  |
 
 # System Call Reference
+
+## call
+
+Performs an IPC call to a PT. Because a PT is permanently bound to an EC, 
+and ECs belongs to specific CPUs, the PT must be bound to the same CPU 
+as the caller. All data is transferred via the UTCB. The SC is donated to 
+the callee. Thus, the complete time it takes to handle the call is accounted
+to the caller until the callee replies.
+
+### In
+
+| *Register*  | *Content*             | *Description*                                   |
+|-------------|-----------------------|-------------------------------------------------|
+| ARG1[3:0]   | System Call Number    | Needs to be `HC_CALL`.                          |
+| ARG1[7:4]   | Flags                 | 0 for blocking, 1 for non-blocking              |
+| ARG1[63:8]  | Portal selector       | Capability selector of the destination portal   |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## reply
+
+Replies to a PT call by sending data via the UTCB of the callee local EC to the UTCB of the caller EC.
+Only makes sense in portal handlers, such as exception handlers or other application-specific 
+IPC endpoints. It's undefined behaviour, if you execute this syscall in a global EC. Reply must be called, after
+the promised functionality of the portal was fulfilled. This system call does not return. The caller
+returns from its `call` system call instead.
+
+### In
+
+| *Register*  | *Content*             | *Description*                                   |
+|-------------|-----------------------|-------------------------------------------------|
+| ARG1[3:0]   | System Call Number    | Needs to be `HC_REPLY`.                         |
 
 ## create_ec
 
