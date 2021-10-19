@@ -15,6 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "string.hpp"
 #include "string_impl.hpp"
 
 #include <array>
@@ -82,5 +83,23 @@ TEST_CASE ("String prefix match", "[string]")
 
     SECTION ("zero length prefix match") {
         CHECK (impl_strnmatch (prefix, string, 0));
+    };
+}
+
+// This test tests the FILENAME macro, which is backed-up
+// by the function "past_last_slash"
+TEST_CASE ("FILENAME macro works")
+{
+    SECTION ("past_last_slash works") {
+        CHECK (past_last_slash("/a/b/c") == std::string("c"));
+        CHECK (past_last_slash("///") == std::string(""));
+        CHECK (past_last_slash("//") == std::string(""));
+        CHECK (past_last_slash("/") == std::string(""));
+        CHECK (past_last_slash("") == std::string(""));
+        CHECK (past_last_slash("///foo") == std::string("foo"));
+    }
+
+    SECTION ("macro matches") {
+        CHECK (std::string("string.cpp") == FILENAME);
     };
 }
