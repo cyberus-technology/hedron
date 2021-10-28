@@ -244,6 +244,11 @@ System call parameters are passed in registers. The following register names are
 | `OUT1`         | `RDI`             |
 | `OUT2`         | `RSI`             |
 
+## Modified Registers
+
+Only registers listed above are modified by the kernel. Note that `RCX` and `R11` are modified by
+the CPU as part of executing the `SYSCALL` instruction.
+
 ## Hypercall Numbers
 
 Hypercalls are identified by these values.
