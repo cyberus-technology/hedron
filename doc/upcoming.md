@@ -252,16 +252,16 @@ Intel SDM Vol. 1 Chapter 13.4 "XSAVE Area".
 
 The vLAPIC page contains the state of the virtual LAPIC as it is
 needed for hardware-accelerated Local APIC emulation. The layout of
-this page is determined by hardware. See the Intel SDM Vol. 3 Chapter
-29 "APIC Virtualization and Virtual Interrupts".
+this page is determined by hardware. When a vLAPIC page is provided,
+the vCPU will also respect the APIC access page. See the Intel SDM
+Vol. 3 Chapter 29 "APIC Virtualization and Virtual Interrupts".
 
 ### In
 
 | *Register* | *Content*                 | *Description*                                                                             |
 |------------|---------------------------|-------------------------------------------------------------------------------------------|
 | ARG1[3:0]  | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                             |
-| ARG1[4]    | Use APIC Access Page      | Whether a vCPU should respect the APIC Access Page. Ignored if no vLAPIC page is created. |
-| ARG1[7:5]  | Reserved                  | Must be zero.                                                                             |
+| ARG1[7:4]  | Reserved                  | Must be zero.                                                                             |
 | ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created vCPU.          |
 | ARG2       | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.                   |
 | ARG3       | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                         |
