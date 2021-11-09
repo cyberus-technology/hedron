@@ -119,7 +119,7 @@ it will call the `free` callback of the object. The `free` callback is
 in charge of actually deleting the object and thus reclaiming its
 memory for further use.
 
-## Hypervisor Information Page (HIP) building
+## Building the Hypervisor Information Page (HIP)
 
 The HIP is built in several stages to reflect the information required
 by the user land to perform properly. During ACPI table parsing, the

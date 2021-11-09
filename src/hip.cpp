@@ -50,9 +50,8 @@ void Hip::build (mword magic, mword addr)
     h->ioapic_size       = static_cast<uint16>(sizeof (Hip_ioapic));
     h->mem_offs          = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
     h->mem_size          = static_cast<uint16>(sizeof (Hip_mem));
-    // Other flags may have been added already earlier in the boot
-    // process, so we preserve them.
-    // These flags might be modified again when the processor
+    // Other flags may have been added already earlier in the boot process, so
+    // we preserve them. These flags will be modified again when the processor
     // initialization finds certain features to be missing/unusable.
     h->api_flg          |= FEAT_VMX | FEAT_SVM;
     h->api_ver           = CFG_VER;
