@@ -138,6 +138,7 @@ void Vmcs::init()
     // - Unrestricted Guest (URG)
     // - Guest PAT
     // - MSR Bitmap
+    // - VMX preemption timer
     if (not has_ept() or
         not has_urg() or
         not has_guest_pat() or
