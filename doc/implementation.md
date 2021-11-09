@@ -119,6 +119,33 @@ it will call the `free` callback of the object. The `free` callback is
 in charge of actually deleting the object and thus reclaiming its
 memory for further use.
 
+## Hypervisor Information Page (HIP) building
+
+The HIP is built in several stages to reflect the information required
+by the user land to perform properly. During ACPI table parsing, the
+IOMMU feature flag is set according to the hardware and command-line
+parameter presence.
+
+The next stage is the explicit `Hip::build()` function that is called
+from the `init()` function after all the Multiboot information is set
+and previous initialization/discovery (e.g., of the I/O APICs). This
+step populates the default fields like signature, version, offsets,
+and the I/O APIC as well as memory descriptors. The flags field is
+also adjusted to reflect the boot platform (UEFI or not) and the
+virtualization flags (VMX and SVM) are initialized to being present.
+
+In a third stage, each processor goes through its initialization
+routine and removes any features that are not present or usable. For
+example, if a processor has no VMX or SVM capability, or lacks
+essential features (e.g., EPT, URG, etc. in the VMX case), the
+corresponding flag in the HIP is cleared at this point. Lastly,
+it adds itself to the HIP's CPU descriptors before the bootstrap
+processor finalizes the HIP to indicate no further modifications are
+accepted because that step calculates the checksum.
+
+**Note that the finalization is currently not enforced in any way
+  other than the checksum!**
+
 ## Kernel Memory Layout
 
 ... write me ...
