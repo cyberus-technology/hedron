@@ -49,8 +49,6 @@ void Ec::handle_svm()
             break;
         case 0x400:             // NPT
             reason = NUM_VMI - 4;
-            current()->regs.nst_error = static_cast<mword>(current()->regs.vmcb->exitinfo1);
-            current()->regs.nst_fault = static_cast<mword>(current()->regs.vmcb->exitinfo2);
             break;
     }
 

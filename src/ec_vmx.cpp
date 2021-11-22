@@ -105,10 +105,6 @@ void Ec::handle_vmx()
     switch (reason) {
         case Vmcs::VMX_EXC_NMI:     vmx_exception();
         case Vmcs::VMX_EXTINT:      vmx_extint();
-        case Vmcs::VMX_EPT_VIOLATION:
-            current()->regs.nst_error = Vmcs::read (Vmcs::EXI_QUALIFICATION);
-            current()->regs.nst_fault = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
-            break;
         case Vmcs::VMX_PREEMPT:
             // Whenever a preemption timer exit occurs we set the value to the
             // maximum possible. This allows to always keep the preemption

@@ -126,8 +126,6 @@ class Exc_regs : public Sys_regs
                 mword   dst_portal;
 
                 mword   spec_ctrl;
-                mword   nst_fault;
-                mword   nst_error;
                 uint32  exc_bitmap;
             };
         };
