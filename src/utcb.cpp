@@ -205,13 +205,8 @@ bool Utcb::load_vmx (Cpu_regs *regs)
     }
 
     if (m & Mtd::QUAL) {
-        if (regs->dst_portal == 48) {
-            qual[0] = regs->nst_error;
-            qual[1] = regs->nst_fault;
-        } else {
-            qual[0] = Vmcs::read (Vmcs::EXI_QUALIFICATION);
-            qual[1] = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
-        }
+        qual[0] = Vmcs::read (Vmcs::EXI_QUALIFICATION);
+        qual[1] = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
     }
 
     if (m & Mtd::INJ) {
@@ -569,13 +564,8 @@ bool Utcb::load_svm (Cpu_regs *regs)
     }
 
     if (m & Mtd::QUAL) {
-        if (regs->dst_portal == NUM_VMI - 4) {
-            qual[0] = regs->nst_error;
-            qual[1] = regs->nst_fault;
-        } else {
-            qual[0] = vmcb->exitinfo1;
-            qual[1] = vmcb->exitinfo2;
-        }
+        qual[0] = vmcb->exitinfo1;
+        qual[1] = vmcb->exitinfo2;
     }
 
     if (m & Mtd::INJ) {
