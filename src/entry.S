@@ -184,7 +184,7 @@ ret_from_interrupt:     testb   $3, OFS_CS (%rbx)
                         jnz     ret_user_iret
                         LOAD_GPR
                         add     $(6 * PTR_SIZE), %rsp
-                        RET_USER_EXC
+                        iretq
 
 /*
  * System-Call Entry

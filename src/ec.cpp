@@ -285,7 +285,7 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR LOAD_SEG swapgs; iretq;) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }

@@ -87,5 +87,3 @@
                         mov     $0x200, PREG(r11);       \
                         swapgs;                         \
                         sysretq;
-
-#define RET_USER_EXC    iretq;
