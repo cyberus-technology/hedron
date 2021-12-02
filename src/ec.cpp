@@ -62,8 +62,8 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             regs.ds  = SEL_USER_DATA;
             regs.es  = SEL_USER_DATA;
             regs.ss  = SEL_USER_DATA;
-            regs.REG(fl) = Cpu::EFL_IF;
-            regs.REG(sp) = s;
+            regs.rfl = Cpu::EFL_IF;
+            regs.rsp = s;
         } else
             regs.set_sp (s);
 
@@ -168,7 +168,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
-            regs.REG(ax) = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));
+            regs.rax = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));
 
             regs.nst_ctrl<Vmcb>();
             cont = send_msg<ret_user_vmrun>;
@@ -248,7 +248,7 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
@@ -275,7 +275,7 @@ void Ec::return_to_user()
     Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.
-    asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+    asm volatile ("mov %%gs:0," EXPAND (PREG(rsp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
 }
 
 void Ec::ret_user_iret()
@@ -285,7 +285,7 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
@@ -329,7 +329,7 @@ void Ec::ret_user_vmresume()
         Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
-    asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
+    asm volatile ("lea %[regs]," EXPAND (PREG(rsp); LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
 
@@ -366,16 +366,16 @@ void Ec::ret_user_vmrun()
         die ("Invalid XCR0");
     }
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
+    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR)
                   "clgi;"
                   "sti;"
-                  "vmload " EXPAND (PREG(ax);)
-                  "vmrun " EXPAND (PREG(ax);)
-                  "vmsave " EXPAND (PREG(ax);)
+                  "vmload " EXPAND (PREG(rax);)
+                  "vmrun " EXPAND (PREG(rax);)
+                  "vmsave " EXPAND (PREG(rax);)
                   EXPAND (SAVE_GPR)
-                  "mov %1," EXPAND (PREG(ax);)
-                  "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
-                  "vmload " EXPAND (PREG(ax);)
+                  "mov %1," EXPAND (PREG(rax);)
+                  "mov %%gs:0," EXPAND (PREG(rsp);) // Per_cpu::self
+                  "vmload " EXPAND (PREG(rax);)
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
@@ -444,14 +444,14 @@ void Ec::root_invoke()
 bool Ec::fixup (Exc_regs *regs)
 {
     for (mword const *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
-        if (regs->REG(ip) != ptr[0]) {
+        if (regs->rip != ptr[0]) {
             continue;
         }
 
         // Indicate that the instruction was skipped by setting the flag and
         // advance to the next instruction.
-        regs->REG(fl) |= Cpu::EFL_CF;
-        regs->REG(ip) = ptr[1];
+        regs->rfl |= Cpu::EFL_CF;
+        regs->rip = ptr[1];
 
         return true;
     }
@@ -462,8 +462,8 @@ bool Ec::fixup (Exc_regs *regs)
 void Ec::die (char const *reason, Exc_regs *r)
 {
     if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
-        trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
-               current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
+        trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)",
+               current(), Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
     } else
         trace (0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);

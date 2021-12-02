@@ -47,14 +47,14 @@ class Sys_regs
                 mword   r10;
                 mword   r9;
                 mword   r8;
-                mword   REG(di);
-                mword   REG(si);
-                mword   REG(bp);
+                mword   rdi;
+                mword   rsi;
+                mword   rbp;
                 mword   cr2;
-                mword   REG(bx);
-                mword   REG(dx);
-                mword   REG(cx);
-                mword   REG(ax);
+                mword   rbx;
+                mword   rdx;
+                mword   rcx;
+                mword   rax;
             };
             mword gpr[NUM_GPR];
         };
@@ -105,10 +105,10 @@ class Exc_regs : public Sys_regs
                 mword   ds;
                 mword   err;
                 mword   vec;
-                mword   REG(ip);
+                mword   rip;
                 mword   cs;
-                mword   REG(fl);
-                mword   REG(sp);
+                mword   rfl;
+                mword   rsp;
                 mword   ss;
             };
             struct {

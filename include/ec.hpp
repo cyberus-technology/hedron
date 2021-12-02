@@ -189,8 +189,8 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
 
         inline void redirect_to_iret()
         {
-            regs.REG(sp) = regs.ARG_SP;
-            regs.REG(ip) = regs.ARG_IP;
+            regs.rsp = regs.ARG_SP;
+            regs.rip = regs.ARG_IP;
         }
 
         void load_fpu();
