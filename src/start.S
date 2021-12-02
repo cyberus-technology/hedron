@@ -321,7 +321,7 @@ __resume_bsp:
  */
 __start_all_hi:
                         INIT_STATE
-                        test    %REG(bx), %REG(bx)
+                        test    %rbx, %rbx
                         je      2f
 
                         /*
@@ -329,20 +329,20 @@ __start_all_hi:
                          */
                         mov     %ebp, PHYS_RELOCATION
 
-                        mov     %REG(ax), %REG(di)
-                        mov     %REG(bx), %REG(si)
+                        mov     %rax, %rdi
+                        mov     %rbx, %rsi
 
                         call    init
                         jmp     3f
 
 1:                      pause
-2:                      xchg    %REG(bx), boot_lock
-                        test    %REG(bx), %REG(bx)
+2:                      xchg    %rbx, boot_lock
+                        test    %rbx, %rbx
                         je      1b
 
 3:
                         call    setup_cpulocal
-                        mov     %REG(ax), %REG(sp)
+                        mov     %rax, %rsp
 
                         call    bootstrap
                         ud2a
@@ -355,7 +355,7 @@ __start_all_hi:
 __resume_bsp_hi:        INIT_STATE
 
                         call    setup_cpulocal
-                        mov     %REG(ax), %REG(sp)
+                        mov     %rax, %rsp
 
                         call    resume_bsp
 
