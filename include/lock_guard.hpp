@@ -28,13 +28,12 @@ class Lock_guard
 {
     private:
         T &_lock;
-        uint8 pre;
 
     public:
-        inline Lock_guard (T &l) : _lock (l), pre(Cpu::preemptible())
+        inline Lock_guard (T &l) : _lock (l)
         {
-            if (pre)
-                Cpu::preempt_disable();
+            // Attempting to grab a lock while preemptible. This is a bug.
+            assert (!Cpu::preemptible());
 
             _lock.lock();
         }
@@ -42,8 +41,5 @@ class Lock_guard
         inline ~Lock_guard()
         {
             _lock.unlock();
-
-            if (pre)
-                Cpu::preempt_enable();
         }
 };

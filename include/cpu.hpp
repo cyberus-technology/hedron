@@ -177,13 +177,6 @@ class Cpu
         CPULOCAL_ACCESSOR(cpu, features);
         CPULOCAL_ACCESSOR(cpu, bsp);
 
-        /// This flag is true when preemption has been enabled via preempt_enable().
-        ///
-        /// In contrast to preemptible() which only checks whether RFLAGS.IF is
-        /// set, this boolean also works when the interrupt flag has been
-        /// disabled by actually taking an interrupt.
-        CPULOCAL_ACCESSOR(cpu, preempt_enabled);
-
         static Cpu_info init();
 
         // Partially update CPU features. This is useful after a microcode
@@ -206,22 +199,6 @@ class Cpu
             uint32 const mask = 1U << f % 32;
 
             value = (value & ~mask) | (on ? mask : 0);
-        }
-
-        static inline void preempt_disable()
-        {
-            assert (preempt_enabled());
-
-            asm volatile ("cli" : : : "memory");
-            preempt_enabled() = false;
-        }
-
-        static inline void preempt_enable()
-        {
-            assert (!preempt_enabled());
-
-            preempt_enabled() = true;
-            asm volatile ("sti" : : : "memory");
         }
 
         /// Check whether the CPU is _actually_ preemptible by returning
