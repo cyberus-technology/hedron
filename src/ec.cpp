@@ -246,7 +246,7 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
-    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %0, %%rsp;" EXPAND (LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
@@ -338,7 +338,8 @@ void Ec::ret_user_vmresume()
         Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
-    asm volatile ("lea %[regs]," EXPAND (PREG(rsp); LOAD_GPR)
+    asm volatile ("lea %[regs], %%rsp;"
+                  EXPAND (LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
 
@@ -375,16 +376,17 @@ void Ec::ret_user_vmrun()
         die ("Invalid XCR0");
     }
 
-    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR)
+    asm volatile ("lea %0, %%rsp;"
+                  EXPAND (LOAD_GPR)
                   "clgi;"
                   "sti;"
-                  "vmload " EXPAND (PREG(rax);)
-                  "vmrun " EXPAND (PREG(rax);)
-                  "vmsave " EXPAND (PREG(rax);)
+                  "vmload %%rax;"
+                  "vmrun %%rax;"
+                  "vmsave %%rax;"
                   EXPAND (SAVE_GPR)
-                  "mov %1," EXPAND (PREG(rax);)
-                  "mov %%gs:0," EXPAND (PREG(rsp);) // Per_cpu::self
-                  "vmload " EXPAND (PREG(rax);)
+                  "mov %1, %%rax;"
+                  "mov %%gs:0, %%rsp;" // Per_cpu::self
+                  "vmload %%rax;"
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
