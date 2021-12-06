@@ -79,8 +79,3 @@
                         pop     PREG(rdx);                \
                         pop     PREG(rcx);                \
                         pop     PREG(rax);
-
-#define RET_USER_HYP    mov     PREG(r11), PREG(rsp);     \
-                        mov     $0x200, PREG(r11);       \
-                        swapgs;                         \
-                        sysretq;

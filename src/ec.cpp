@@ -246,7 +246,12 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
-    asm volatile ("lea %0, %%rsp;" EXPAND (LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %[regs], %%rsp;"
+                  EXPAND (LOAD_GPR)
+                  "mov %%r11, %%rsp;"
+                  "mov $0x200, %%r11;"
+                  "swapgs;"
+                  "sysretq;" : : [regs] "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
