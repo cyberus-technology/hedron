@@ -285,7 +285,20 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(rsp); LOAD_GPR LOAD_SEG swapgs; iretq;) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %[regs], %%rsp\n"
+
+                  // Load all general-purpose registers now that RSP points at
+                  // the beginning of an Exc_regs structure.
+                  EXPAND (LOAD_GPR)
+
+                  // At this point, RSP points to GS in Exc_regs. We need to
+                  // skip the segments, the unused vector and error code.
+                  "add %[seg_size], %%rsp\n"
+
+                  // Now RSP points to RIP in Exc_regs. This is a normal IRET
+                  // frame.
+                  "swapgs\n"
+                  "iretq\n" : : [regs] "m" (current()->regs), [seg_size] "i" (6 * PTR_SIZE) : "memory");
 
     UNREACHED;
 }

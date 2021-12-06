@@ -47,7 +47,6 @@
 #define OFS_CS          0xb8
 
 #define SAVE_SEG        sub     $(4 * PTR_SIZE), PREG(rsp);
-#define LOAD_SEG        add     $(6 * PTR_SIZE), PREG(rsp);
 
 #define SAVE_GPR        push    PREG(rax);               \
                         push    PREG(rcx);               \
