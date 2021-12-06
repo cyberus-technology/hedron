@@ -53,6 +53,9 @@ class Crd
         inline mword value() const { return val; }
 };
 
+// A typed IPC item used to transfer capabilities.
+//
+// See `enum Kind` for possible variants of capability transfers.
 class Xfer
 {
     private:
@@ -80,10 +83,14 @@ class Xfer
 
         inline Kind kind() const { return Kind (xfer_meta & 0x3); }
 
-        // The lowest bit is the HOST subspace and it is currently inverted to
-        // allow userspace from before this bit was introduced to continue to
-        // function.
+        // Which subspaces are the target of this mapping.
+        //
+        // The lowest bit is the HOST subspace and it is currently inverted for
+        // backward compatibility.
         inline mword subspaces() const { return ((xfer_meta >> 8) & 0x7) ^ 1; }
 
+        // If true, the source should be the kernel PD.
+        //
+        // See "hypervisor" flag in Delegate Flags in the specification.
         inline bool from_kern() const { return flags() & 0x800; }
 };

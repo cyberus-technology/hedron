@@ -32,6 +32,7 @@
 
 struct Cpu_info;
 
+// The description of a single CPU (hardware thread) in the HIP.
 class Hip_cpu
 {
     public:
@@ -44,6 +45,15 @@ class Hip_cpu
         Cpu::lapic_info_t lapic_info;
 };
 
+// A memory area that is in use when the kernel passes control to the roottask.
+//
+// The kind of the region is given by its type field. This field is an E820 map
+// type. In addition to standard E820 memory types, the type can also be
+// MB_MODULE or HYPERVISOR.
+//
+// MB_MODULE indicates that this memory module is a Multiboot module. HYPERVISOR
+// is a physical memory region that is claimed by the kernel and cannot be used
+// by userspace.
 class Hip_mem
 {
     public:
@@ -52,9 +62,17 @@ class Hip_mem
             MB_MODULE   = -2u
         };
 
+        // The start address of the module in physical memory.
         uint64  addr;
         uint64  size;
+
+        // The type of the memory region. See description above.
         uint32  type;
+
+        // For Multiboot modules, the aux field is the physical address of a
+        // C-style string. This string is the command line of the multiboot
+        // module. If it is zero, there is no command line. For other types of
+        // memory regions, this field is not used and must be zero.
         uint32  aux;
 };
 
@@ -162,13 +180,25 @@ class Hip
 
         static void build_mbi2 (Hip_mem *&, mword);
 
+        // Add a memory region description to the HIP.
+        //
+        // The mem parameter is an output parameter and the resulting memory map
+        // item, is added there.
         template <typename T>
-        static void add_mem (Hip_mem *&, T const *);
+        static void add_mem (Hip_mem *&mem, T const *map);
 
+        // Add a special memory region describing a multiboot module to the HIP.
+        //
+        // The aux parameter is the physical address of the command line. See
+        // add_mem for the mem parameter.
         template <typename T>
-        static void add_mod (Hip_mem *&, T const *, uint32);
+        static void add_mod (Hip_mem *&mem, T const *mod, uint32 aux);
 
-        static void add_mhv (Hip_mem *&);
+        // Add a special memory region describing memory claimed by the kernel
+        // itself to the HIP.
+        //
+        // This function must be called exactly once. See add_mem for the mem parameter.
+        static void add_mhv (Hip_mem *&mem);
 
         static void add_cpu (Cpu_info const &);
 

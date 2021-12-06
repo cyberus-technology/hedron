@@ -160,21 +160,21 @@ A port I/O CRD refers to a range of x86 I/O ports.
 | `CRD[11:7]`  | Order       | Describes the size of this region as power-of-two of individual capabilities.            |
 | `CRD[63:12]` | Base        | The first capability selector. This number must be naturally aligned by order.           |
 
-## Hotspot
+## Delegate Flags
 
-A hotspot is used to disambiguate send and receive windows for
-delegations. The hotspot carries additional information for some types
-of mappings as well.
+Delegate flags are specified as an unsigned 64-bit value. The flags
+describe how capabilities are be transferred. It is used in the
+`pd_ctrl_delegate` syscall.
 
-| *Field*      | *Content*  | *Description*                                                                                                  |
-|--------------|------------|----------------------------------------------------------------------------------------------------------------|
-| `HOT[0]`     | Type       | Must be `1`                                                                                                    |
-| `HOT[7:1]`   | Reserved   | Must be `0`                                                                                                    |
-| `HOT[8]`     | !Host      | Mapping needs to go into (0) / not into (1) host page table. Only valid for memory and I/O delegations.        |
-| `HOT[9]`     | Guest      | Mapping needs to go into (1) / not into (0) guest page table / IO space. Valid for memory and I/O delegations. |
-| `HOT[10]`    | Device     | Mapping needs to go into (1) / not into (0) device page table. Only valid for memory delegations.              |
-| `HOT[11]`    | Hypervisor | Source is actually hypervisor PD. Only valid when used by the roottask, silently ignored otherwise.            |
-| `HOT[63:12]` | Hotspot    | The hotspot used to disambiguate send and receive windows.                                                     |
+| *Field*           | *Content*  | *Description*                                                                                                  |
+|-------------------|------------|----------------------------------------------------------------------------------------------------------------|
+| `DLGFLAGS[0]`     | Type       | Must be `1`                                                                                                    |
+| `DLGFLAGS[7:1]`   | Reserved   | Must be `0`                                                                                                    |
+| `DLGFLAGS[8]`     | !Host      | Mapping needs to go into (0) / not into (1) host page table. Only valid for memory and I/O delegations.        |
+| `DLGFLAGS[9]`     | Guest      | Mapping needs to go into (1) / not into (0) guest page table / IO space. Valid for memory and I/O delegations. |
+| `DLGFLAGS[10]`    | Device     | Mapping needs to go into (1) / not into (0) device page table. Only valid for memory delegations.              |
+| `DLGFLAGS[11]`    | Hypervisor | Source is actually hypervisor PD. Only valid when used by the roottask, silently ignored otherwise.            |
+| `DLGFLAGS[63:12]` | Hotspot    | The hotspot used to disambiguate send and receive windows.                                                     |
 
 ## User Thread Control Block (UTCB)
 
@@ -494,7 +494,7 @@ page table.
 | ARG1[63:8] | Source PD          | A capability selector for the source protection domain to copy access rights and capabilites from. |
 | ARG2       | Destination PD     | A capability selector for the destination protection domain that will receive these rights.        |
 | ARG3       | Source CRD         | A capability range descriptor describing the send window in the source PD.                         |
-| ARG4       | Hotspot            | The hotspot to disambiguate when send and receive windows have a different size.                   |
+| ARG4       | Delegate Flags     | See [Delegate Flags](#delegate-flags) section.                                                     |
 | ARG5       | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.                 |
 
 ### Out
