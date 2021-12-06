@@ -21,10 +21,8 @@
 
 #ifdef __ASSEMBLER__
 #define PREG(X)         %X
-#define PSEG(X)         %X
 #else
 #define PREG(X)         %%X
-#define PSEG(X)         %%X
 #endif
 
 #define ARCH            "x86_64"
