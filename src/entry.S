@@ -51,7 +51,7 @@ handlers:
 .endm
 
 .macro                  SAVE_STATE
-                        SAVE_SEG
+                        // RSP must point to the _end_ of a Sys_regs structure.
                         SAVE_GPR
                         mov     %rsp, %rbx
                         cld
@@ -183,7 +183,7 @@ entry_ipi:              push    $0
 ret_from_interrupt:     testb   $3, OFS_CS (%rbx)
                         jnz     ret_user_iret
                         LOAD_GPR
-                        add     $(6 * PTR_SIZE), %rsp
+                        add     $(2 * PTR_SIZE), %rsp
                         iretq
 
 /*

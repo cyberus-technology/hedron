@@ -43,10 +43,8 @@
 #define ARG_4           rax
 #define ARG_5           r8
 #define OFS_CR2         0x58
-#define OFS_VEC         0xa8
-#define OFS_CS          0xb8
-
-#define SAVE_SEG        sub     $(4 * PTR_SIZE), PREG(rsp);
+#define OFS_VEC         0x88
+#define OFS_CS          0x98
 
 #define SAVE_GPR        push    PREG(rax);               \
                         push    PREG(rcx);               \

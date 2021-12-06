@@ -99,10 +99,6 @@ class Exc_regs : public Sys_regs
     public:
         union {
             struct {
-                mword   gs;
-                mword   fs;
-                mword   es;
-                mword   ds;
                 mword   err;
                 mword   vec;
                 mword   rip;
@@ -110,20 +106,27 @@ class Exc_regs : public Sys_regs
                 mword   rfl;
                 mword   rsp;
                 mword   ss;
+
+                // The RSP on kernel entry via interrupt or exception will point
+                // right here behind SS. The processor pushes SS, RSP, RFL, CS
+                // and RIP as part of switching from Ring 3 to Ring 0.
+                //
+                // See Ec::return_to_user for the path back.
             };
             struct {
                 union {
                     Vmcs *  vmcs;
                     Vmcb *  vmcb;
                 };
-                uint64  xcr0;
-                mword   cr0_shadow;
-                mword   cr3_shadow;
-                mword   cr4_shadow;
 
                 // This member needs to have the same offset in the data
                 // structure as vec above. The code uses them interchangeably.
                 mword   dst_portal;
+
+                uint64  xcr0;
+                mword   cr0_shadow;
+                mword   cr3_shadow;
+                mword   cr4_shadow;
 
                 mword   spec_ctrl;
                 uint32  exc_bitmap;
@@ -206,6 +209,9 @@ class Exc_regs : public Sys_regs
 
         template <typename T> mword linear_address (mword) const;
 };
+static_assert(OFFSETOF(Exc_regs, vec) == OFS_VEC);
+static_assert(OFFSETOF(Exc_regs, cs) == OFS_CS);
+static_assert(OFFSETOF(Exc_regs, vec) == OFFSETOF(Exc_regs, dst_portal));
 
 class Cpu_regs : public Exc_regs
 {

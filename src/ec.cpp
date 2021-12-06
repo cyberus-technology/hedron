@@ -59,8 +59,6 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     if (not (creation_flags & CREATE_VCPU)) {
         if (glb) {
             regs.cs  = SEL_USER_CODE;
-            regs.ds  = SEL_USER_DATA;
-            regs.es  = SEL_USER_DATA;
             regs.ss  = SEL_USER_DATA;
             regs.rfl = Cpu::EFL_IF;
             regs.rsp = s;
@@ -257,25 +255,23 @@ void Ec::return_to_user()
 {
     make_current();
 
-    // Set the stack to just behind the register block to be able to use push
-    // instructions to fill it. The assertion checks whether someone destroyed
-    // our fragile structure layout.
-    assert (static_cast<void *>(exc_regs() + 1) == &exc_regs()->ss + 1);
+    // Set the stack behind the iret frame in Exc_regs for entry via
+    // interrupts.
+    auto const kern_sp {reinterpret_cast<mword>(&exc_regs()->ss + 1)};
 
-    auto kern_sp {reinterpret_cast<mword>(exc_regs() + 1)};
-
-    // Set the stack pointer used when entering the kernel on interrupts or
-    // exceptions. The Intel SDM Vol.3 chapter 6.14.2 describes that the
-    // Interrupt Stack Frame must be 16 bytes aligned. Otherwise, the processor
-    // can arbitrarily realign the RSP. Because our entry code depends on the
-    // RSP not being realigned, we check for correct alignment here.
+    // The Intel SDM Vol.3 chapter 6.14.2 describes that the Interrupt Stack
+    // Frame must be 16 bytes aligned. Otherwise, the processor can arbitrarily
+    // realign the RSP. Because our entry code depends on the RSP not being
+    // realigned, we check for correct alignment here.
     assert (is_aligned_by_order(kern_sp, 4));
     Tss::local().sp0 = kern_sp;
 
+    // This is where registers will be pushed in the system call entry path.
+    // See entry_sysenter.
     Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.
-    asm volatile ("mov %%gs:0," EXPAND (PREG(rsp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+    asm volatile ("mov %%gs:0, %%rsp; jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
 }
 
 void Ec::ret_user_iret()
@@ -291,14 +287,14 @@ void Ec::ret_user_iret()
                   // the beginning of an Exc_regs structure.
                   EXPAND (LOAD_GPR)
 
-                  // At this point, RSP points to GS in Exc_regs. We need to
-                  // skip the segments, the unused vector and error code.
-                  "add %[seg_size], %%rsp\n"
+                  // At this point, RSP points to `err` in Exc_regs. We need to
+                  // skip the unused vector and error code.
+                  "add %[vec_size], %%rsp\n"
 
                   // Now RSP points to RIP in Exc_regs. This is a normal IRET
                   // frame.
                   "swapgs\n"
-                  "iretq\n" : : [regs] "m" (current()->regs), [seg_size] "i" (6 * PTR_SIZE) : "memory");
+                  "iretq\n" : : [regs] "m" (current()->regs), [vec_size] "i" (2 * PTR_SIZE) : "memory");
 
     UNREACHED;
 }
