@@ -29,7 +29,8 @@ ENTRY(__start_bsp)
 PHDRS
 {
     init    PT_LOAD;
-    kern    PT_LOAD;
+    kern_rx PT_LOAD FLAGS(5);
+    kern_rw PT_LOAD FLAGS(6);
 }
 
 SECTIONS
@@ -54,19 +55,19 @@ SECTIONS
     {
         *(.text.hot .text.hot.*)
         *(.text .text.* .gnu.linkonce.t.*)
-    } : kern = 0x90909090
+    } : kern_rx = 0x90909090
 
     .rodata : AT (VIRT_TO_PHYS_NORELOC(ADDR (.rodata)))
     {
         *(.rodata .rodata.* .gnu.linkonce.r.*)
-    } : kern
+    } : kern_rx
 
     .fixup : AT (VIRT_TO_PHYS_NORELOC(ADDR (.fixup)))
     {
         PROVIDE (FIXUP_S = .);
         KEEP (*(.fixup))
         PROVIDE (FIXUP_E = .);
-    } : kern
+    } : kern_rx
 
     .init_array : AT (VIRT_TO_PHYS_NORELOC(ADDR (.init_array)))
     {
@@ -76,12 +77,27 @@ SECTIONS
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array .ctors))
         PROVIDE (CTORS_E = .);
-    } : kern
+    } : kern_rx
+
+    .superpage_align : AT (VIRT_TO_PHYS_NORELOC(ADDR (.superpage_align))){
+        /* Align to the next huge page to avoid mapping writable data executable. */
+        . = ALIGN(2M);
+
+        /* End of executable kernel address space */
+        PROVIDE (LOAD_EXEC_END = VIRT_TO_PHYS_NORELOC(.));
+    } : kern_rx
+
+    /*
+     * There must be no gap between kern_rx and kern_rw. Otherwise, the kernel will
+     * claim more memory in the memory map (see Hip::add_mhv) than what the ELF segments
+     * claim. This leads to confusion when the memory map has to be constructed before
+     * the kernel starts (UEFI).
+     */
 
     .data : AT (VIRT_TO_PHYS_NORELOC(ADDR (.data)))
     {
         *(.data .data.* .gnu.linkonce.d.*)
-    } : kern
+    } : kern_rw
 
     .bss : AT (VIRT_TO_PHYS_NORELOC(ADDR (.bss)))
     {
@@ -110,7 +126,7 @@ SECTIONS
 
         PROVIDE (_mempool_e = .);
 
-    } : kern
+    } : kern_rw
 
     /DISCARD/ :
     {
