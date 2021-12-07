@@ -366,9 +366,6 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
         HOT NORETURN_GCC
         static void ret_user_iret() asm ("ret_user_iret");
 
-        HOT
-        static void chk_kern_preempt() asm ("chk_kern_preempt");
-
         NORETURN_GCC
         static void ret_user_vmresume();
 

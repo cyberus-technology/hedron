@@ -290,17 +290,6 @@ void Ec::ret_user_iret()
     UNREACHED;
 }
 
-void Ec::chk_kern_preempt()
-{
-    if (!Cpu::preempt_enabled())
-        return;
-
-    if (Cpu::hazard() & HZD_SCHED) {
-        Cpu::preempt_disable();
-        Sc::schedule();
-    }
-}
-
 void Ec::ret_user_vmresume()
 {
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);

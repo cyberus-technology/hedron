@@ -124,7 +124,6 @@ struct alignas(PAGE_SIZE) Per_cpu {
     // CPU-related variables (that are not performance critical)
     uint32   cpu_features[9];
     bool     cpu_bsp;
-    bool     cpu_preempt_enabled;
 
     // Machine-check variables
     unsigned mca_banks;

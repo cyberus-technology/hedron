@@ -145,7 +145,6 @@ void Pd::revoke (mword const base, mword const ord, mword const attr, bool self)
                 (self && !(x->node_attr & attr)) ||
                 (!self && ((mdb == node) || (d + 1 == x->dpth) || !(x->node_attr & attr))));
         assert (x->dpth > node->dpth ? (x->dpth == node->dpth + 1) : true);
-        assert (not Cpu::preempt_enabled());
 
         for (Mdb *ptr;; node = ptr) {
             if (node->remove_node() && static_cast<S *>(node->space)->tree_remove (node))
