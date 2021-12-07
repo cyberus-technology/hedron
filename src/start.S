@@ -118,7 +118,7 @@ __boot_gdt__:
                         mov     $0x6b8, %edx
                         mov     %edi, %eax /* restore - used by multiboot */
                         mov     %edx, %cr4
-                        lea     PDBR(\rel), %edx // XXX This is probably not good for anything except boot
+                        lea     PDBR(\rel), %edx
                         mov     %edx, %cr3
                         mov     $0x80010023, %edx
                         mov     %edx, %cr0
