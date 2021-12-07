@@ -259,16 +259,41 @@ __start_bsp:
 
                         /*
                          * Loop for each PDT entry.
+                         *
+                         * These mappings cover the whole high kernel address space. We
+                         * first map all executable pages and then writable pages (as non-executable).
                          */
 
                         mov     $LOAD_END, %edx
                         sub     $LOAD_ADDR, %edx
-                        shr     $21, %edx
+                        shr     $21, %edx // Total 2MB pages
+
+                        mov     $LOAD_EXEC_END, %esi
+                        sub     $LOAD_ADDR, %esi
+                        shr     $21, %esi // Executable 2MB pages
 
                         lea     (LOAD_ADDR + 0xe3)(%ebp), %ecx
                         PGIDX_HI LINK_ADDR, 1, %edi
 
 .next_pdt_entry:
+                        test    %esi, %esi
+                        jz .no_exec_pages_left
+
+                        /*
+                         * Mark page executable.
+                         */
+                        movl    $0, (4 + LVL2H)(%ebp, %edi, 8)
+
+                        dec     %esi
+                        jmp .exec_pages_left
+
+.no_exec_pages_left:
+                        /*
+                         * Mark page non-executable.
+                         */
+                        movl    $(1 << 31 /* XD */), (4 + LVL2H)(%ebp, %edi, 8)
+.exec_pages_left:
+
                         mov     %ecx, LVL2H(%ebp, %edi, 8)
 
                         inc     %edi // Next PDT entry
