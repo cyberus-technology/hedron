@@ -191,7 +191,15 @@ ret_from_interrupt:     testb   $3, OFS_CS (%rbx)
  */
 .align                  4, 0x90
 .globl                  entry_sysenter
-entry_sysenter:         mov     %rsp, %r11
+entry_sysenter:
+
+                        /*
+                         * Syscall saves userspace RFLAGS in R11, but we do not
+                         * need to save it, because we just set a default value when
+                         * returning. This leaves R11 free to save the user RSP.
+                         */
+                        mov     %rsp, %r11
+
                         swapgs
                         mov     %gs:8, %rsp // Per_cpu::sys_entry_stack
                         SAVE_GPR

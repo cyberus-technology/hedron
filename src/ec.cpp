@@ -248,9 +248,26 @@ void Ec::ret_user_sysexit()
 
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
+
+                  // Restore the user stack and RFLAGS. SYSRET loads RFLAGS from
+                  // R11. See entry_sysenter.
                   "mov %%r11, %%rsp;"
                   "mov $0x200, %%r11;"
+
                   "swapgs;"
+
+                  // When sysret triggers a #GP, it is delivered before the
+                  // switch to Ring3. Because we have already restored the user
+                  // stack pointer, this is dangerous. We would execute Ring0
+                  // code with a user accessible stack.
+                  //
+                  // See for example the Xen writeup about this problem:
+                  // https://xenproject.org/2012/06/13/the-intel-sysret-privilege-escalation/
+                  //
+                  // This issue is prevented by preventing user mappings at the
+                  // canonical boundary by setting USER_ADDR to one page before
+                  // the boundary and thus the RIP we return to cannot be
+                  // uncanonical.
                   "sysretq;" : : [regs] "m" (current()->regs) : "memory");
 
     UNREACHED;
@@ -276,7 +293,7 @@ void Ec::return_to_user()
     Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.
-    asm volatile ("mov %%gs:0, %%rsp; jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+    asm volatile ("mov %%gs:0, %%rsp; jmp *%[cont]" : : [cont] "q" (cont) : "memory"); UNREACHED;
 }
 
 void Ec::ret_user_iret()

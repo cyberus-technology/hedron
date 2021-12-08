@@ -61,7 +61,11 @@ static_assert(LOAD_ADDR % LOAD_ADDR_ALIGN == 0, "Link-time alignment is broken")
 #endif
 
 #define CANON_BOUND     0x0000800000000000
+
+// User virtual memory mappings can only be below this address. See
+// Ec::ret_user_exit.
 #define USER_ADDR       0x00007ffffffff000
+
 #define LINK_ADDR       0xffffffff88000000
 #define CPU_LOCAL       0xffffffffbfe00000
 #define SPC_LOCAL       0xffffffffc0000000
