@@ -47,17 +47,17 @@ handlers:
 .endm
 
 .macro                  RESTORE_STACK
-                        mov     %gs:0, %REG(sp) // Per_cpu::self
+                        mov     %gs:0, %rsp // Per_cpu::self
 .endm
 
 .macro                  SAVE_STATE
-                        SAVE_SEG
+                        // RSP must point to the _end_ of a Sys_regs structure.
                         SAVE_GPR
-                        mov     %REG(sp), %REG(bx)
+                        mov     %rsp, %rbx
                         cld
 
                         // If CS[1:0] != 0, we come from userspace.
-                        testb   $0x3, OFS_CS(%REG(sp))
+                        testb   $0x3, OFS_CS(%rsp)
                         jz      1f
                         swapgs
                         RESTORE_STACK
@@ -72,7 +72,7 @@ INTRGATE                \DPL
 
 .macro                  EXCEPTION_ERROR VEC, DPL
 INTRGATE                \DPL
-                        push    (%REG(sp))
+                        push    (%rsp)
                         movq    $\VEC, 8(%rsp)
                         jmp     entry_exc_error
 .endm
@@ -82,9 +82,9 @@ INTRGATE                \DPL
  */
 entry_exc:              push    $0
 entry_exc_error:        SAVE_STATE
-                        mov     %cr2, %REG(ax)
-                        mov     %REG(ax), OFS_CR2 (%REG(bx))
-                        mov     %REG(bx), %ARG_1
+                        mov     %cr2, %rax
+                        mov     %rax, OFS_CR2 (%rbx)
+                        mov     %rbx, %ARG_1
                         call    exc_handler
                         jmp     ret_from_interrupt
 
@@ -125,7 +125,7 @@ INTRGATE                0
 
 entry_gsi:              push    $0
                         SAVE_STATE
-                        mov     OFS_VEC (%REG(bx)), %ARG_1
+                        mov     OFS_VEC (%rbx), %ARG_1
                         call    gsi_vector
                         jmp     ret_from_interrupt
 
@@ -141,7 +141,7 @@ INTRGATE                0
 
 entry_lvt:              push    $0
                         SAVE_STATE
-                        mov     OFS_VEC (%REG(bx)), %ARG_1
+                        mov     OFS_VEC (%rbx), %ARG_1
                         call    lvt_vector
                         jmp     ret_from_interrupt
 
@@ -157,7 +157,7 @@ INTRGATE                0
 
 entry_msi:              push    $0
                         SAVE_STATE
-                        mov     OFS_VEC (%REG(bx)), %ARG_1
+                        mov     OFS_VEC (%rbx), %ARG_1
                         call    msi_vector
                         jmp     ret_from_interrupt
 
@@ -173,27 +173,35 @@ INTRGATE                0
 
 entry_ipi:              push    $0
                         SAVE_STATE
-                        mov     OFS_VEC (%REG(bx)), %ARG_1
+                        mov     OFS_VEC (%rbx), %ARG_1
                         call    ipi_vector
                         jmp     ret_from_interrupt
 
 /*
  * Interrupt Return
  */
-ret_from_interrupt:     testb   $3, OFS_CS (%REG(bx))
+ret_from_interrupt:     testb   $3, OFS_CS (%rbx)
                         jnz     ret_user_iret
                         LOAD_GPR
-                        add     $(6 * PTR_SIZE), %REG(sp)
-                        RET_USER_EXC
+                        add     $(2 * PTR_SIZE), %rsp
+                        iretq
 
 /*
  * System-Call Entry
  */
 .align                  4, 0x90
 .globl                  entry_sysenter
-entry_sysenter:         mov     PREG(sp), PREG(11)
+entry_sysenter:
+
+                        /*
+                         * Syscall saves userspace RFLAGS in R11, but we do not
+                         * need to save it, because we just set a default value when
+                         * returning. This leaves R11 free to save the user RSP.
+                         */
+                        mov     %rsp, %r11
+
                         swapgs
-                        mov     %gs:8, PREG(sp) // Per_cpu::sys_entry_stack
+                        mov     %gs:8, %rsp // Per_cpu::sys_entry_stack
                         SAVE_GPR
                         RESTORE_STACK
                         jmp     syscall_handler
@@ -211,7 +219,7 @@ entry_sysenter:         mov     PREG(sp), PREG(11)
 .globl                  entry_vmx
 .globl                  entry_vmx_failure
 entry_vmx:              SAVE_GPR
-                        mov     %cr2, %REG(ax)
-                        mov     %REG(ax), OFS_CR2 (%REG(sp))
+                        mov     %cr2, %rax
+                        mov     %rax, OFS_CR2 (%rsp)
 entry_vmx_failure:      RESTORE_STACK
                         jmp     vmx_handler

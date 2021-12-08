@@ -72,6 +72,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     -Wlogical-op
     -Wstrict-null-sentinel
     -Wframe-larger-than=256
+    # We need offsetof to work for static assertions of Exc_regs layout.
+    -Wno-invalid-offsetof
     $<$<BOOL:${ENABLE_RETPOLINE}>:-mindirect-branch=thunk>
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

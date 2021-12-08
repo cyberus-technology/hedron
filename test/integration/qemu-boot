@@ -125,9 +125,9 @@ if __name__ == "__main__":
 
         qemu_args += [
             "-drive",
-            "if=pflash,format=raw,readonly,file={}".format(ovmf_code),
+            "if=pflash,format=raw,readonly=on,file={}".format(ovmf_code),
             "-drive",
-            "if=pflash,format=raw,readonly,file={}".format(ovmf_data),
+            "if=pflash,format=raw,readonly=on,file={}".format(ovmf_data),
         ]
 
     try:

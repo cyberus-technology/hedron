@@ -59,11 +59,9 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
     if (not (creation_flags & CREATE_VCPU)) {
         if (glb) {
             regs.cs  = SEL_USER_CODE;
-            regs.ds  = SEL_USER_DATA;
-            regs.es  = SEL_USER_DATA;
             regs.ss  = SEL_USER_DATA;
-            regs.REG(fl) = Cpu::EFL_IF;
-            regs.REG(sp) = s;
+            regs.rfl = Cpu::EFL_IF;
+            regs.rsp = s;
         } else
             regs.set_sp (s);
 
@@ -168,7 +166,7 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
-            regs.REG(ax) = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));
+            regs.rax = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));
 
             regs.nst_ctrl<Vmcb>();
             cont = send_msg<ret_user_vmrun>;
@@ -248,7 +246,29 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %[regs], %%rsp;"
+                  EXPAND (LOAD_GPR)
+
+                  // Restore the user stack and RFLAGS. SYSRET loads RFLAGS from
+                  // R11. See entry_sysenter.
+                  "mov %%r11, %%rsp;"
+                  "mov $0x200, %%r11;"
+
+                  "swapgs;"
+
+                  // When sysret triggers a #GP, it is delivered before the
+                  // switch to Ring3. Because we have already restored the user
+                  // stack pointer, this is dangerous. We would execute Ring0
+                  // code with a user accessible stack.
+                  //
+                  // See for example the Xen writeup about this problem:
+                  // https://xenproject.org/2012/06/13/the-intel-sysret-privilege-escalation/
+                  //
+                  // This issue is prevented by preventing user mappings at the
+                  // canonical boundary by setting USER_ADDR to one page before
+                  // the boundary and thus the RIP we return to cannot be
+                  // uncanonical.
+                  "sysretq;" : : [regs] "m" (current()->regs) : "memory");
 
     UNREACHED;
 }
@@ -257,25 +277,23 @@ void Ec::return_to_user()
 {
     make_current();
 
-    // Set the stack to just behind the register block to be able to use push
-    // instructions to fill it. The assertion checks whether someone destroyed
-    // our fragile structure layout.
-    assert (static_cast<void *>(exc_regs() + 1) == &exc_regs()->ss + 1);
+    // Set the stack behind the iret frame in Exc_regs for entry via
+    // interrupts.
+    auto const kern_sp {reinterpret_cast<mword>(&exc_regs()->ss + 1)};
 
-    auto kern_sp {reinterpret_cast<mword>(exc_regs() + 1)};
-
-    // Set the stack pointer used when entering the kernel on interrupts or
-    // exceptions. The Intel SDM Vol.3 chapter 6.14.2 describes that the
-    // Interrupt Stack Frame must be 16 bytes aligned. Otherwise, the processor
-    // can arbitrarily realign the RSP. Because our entry code depends on the
-    // RSP not being realigned, we check for correct alignment here.
+    // The Intel SDM Vol.3 chapter 6.14.2 describes that the Interrupt Stack
+    // Frame must be 16 bytes aligned. Otherwise, the processor can arbitrarily
+    // realign the RSP. Because our entry code depends on the RSP not being
+    // realigned, we check for correct alignment here.
     assert (is_aligned_by_order(kern_sp, 4));
     Tss::local().sp0 = kern_sp;
 
+    // This is where registers will be pushed in the system call entry path.
+    // See entry_sysenter.
     Cpulocal::set_sys_entry_stack (sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.
-    asm volatile ("mov %%gs:0," EXPAND (PREG(sp);) "jmp *%0" : : "q" (cont) : "memory"); UNREACHED;
+    asm volatile ("mov %%gs:0, %%rsp; jmp *%[cont]" : : [cont] "q" (cont) : "memory"); UNREACHED;
 }
 
 void Ec::ret_user_iret()
@@ -285,7 +303,20 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_iret);
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG swapgs; RET_USER_EXC) : : "m" (current()->regs) : "memory");
+    asm volatile ("lea %[regs], %%rsp\n"
+
+                  // Load all general-purpose registers now that RSP points at
+                  // the beginning of an Exc_regs structure.
+                  EXPAND (LOAD_GPR)
+
+                  // At this point, RSP points to `err` in Exc_regs. We need to
+                  // skip the unused vector and error code.
+                  "add %[vec_size], %%rsp\n"
+
+                  // Now RSP points to RIP in Exc_regs. This is a normal IRET
+                  // frame.
+                  "swapgs\n"
+                  "iretq\n" : : [regs] "m" (current()->regs), [vec_size] "i" (2 * PTR_SIZE) : "memory");
 
     UNREACHED;
 }
@@ -329,7 +360,8 @@ void Ec::ret_user_vmresume()
         Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
-    asm volatile ("lea %[regs]," EXPAND (PREG(sp); LOAD_GPR)
+    asm volatile ("lea %[regs], %%rsp;"
+                  EXPAND (LOAD_GPR)
                   "vmresume;"
                   "vmlaunch;"
 
@@ -366,16 +398,17 @@ void Ec::ret_user_vmrun()
         die ("Invalid XCR0");
     }
 
-    asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR)
+    asm volatile ("lea %0, %%rsp;"
+                  EXPAND (LOAD_GPR)
                   "clgi;"
                   "sti;"
-                  "vmload " EXPAND (PREG(ax);)
-                  "vmrun " EXPAND (PREG(ax);)
-                  "vmsave " EXPAND (PREG(ax);)
+                  "vmload %%rax;"
+                  "vmrun %%rax;"
+                  "vmsave %%rax;"
                   EXPAND (SAVE_GPR)
-                  "mov %1," EXPAND (PREG(ax);)
-                  "mov %%gs:0," EXPAND (PREG(sp);) // Per_cpu::self
-                  "vmload " EXPAND (PREG(ax);)
+                  "mov %1, %%rax;"
+                  "mov %%gs:0, %%rsp;" // Per_cpu::self
+                  "vmload %%rax;"
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
@@ -444,14 +477,14 @@ void Ec::root_invoke()
 bool Ec::fixup (Exc_regs *regs)
 {
     for (mword const *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
-        if (regs->REG(ip) != ptr[0]) {
+        if (regs->rip != ptr[0]) {
             continue;
         }
 
         // Indicate that the instruction was skipped by setting the flag and
         // advance to the next instruction.
-        regs->REG(fl) |= Cpu::EFL_CF;
-        regs->REG(ip) = ptr[1];
+        regs->rfl |= Cpu::EFL_CF;
+        regs->rip = ptr[1];
 
         return true;
     }
@@ -462,8 +495,8 @@ bool Ec::fixup (Exc_regs *regs)
 void Ec::die (char const *reason, Exc_regs *r)
 {
     if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
-        trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx EIP:%#lx CR2:%#lx ERR:%#lx (%s)",
-               current(), Sc::current(), r->vec, r->cs, r->REG(ip), r->cr2, r->err, reason);
+        trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)",
+               current(), Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
     } else
         trace (0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)",
                current(), Sc::current(), r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
