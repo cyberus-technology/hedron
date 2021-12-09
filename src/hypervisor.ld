@@ -31,6 +31,14 @@ PHDRS
     init    PT_LOAD;
     kern_rx PT_LOAD FLAGS(5);
     kern_rw PT_LOAD FLAGS(6);
+
+    /*
+     * We could add a kern_ro section for all non-executable and read-only data here as
+     * well, but at the moment the page table generation code in start.S is too limited
+     * to handle this.
+     *
+     * See #171.
+    */
 }
 
 SECTIONS
