@@ -30,7 +30,7 @@ Slab_cache Pd::cache(sizeof(Pd), 32);
 ALIGNED(32) No_destruct<Pd> Pd::kern;
 
 // Constructor for the initial kernel PD.
-Pd::Pd() : Typed_kobject(static_cast<Space_obj*>(this))
+Pd::Pd() : Typed_kobject(static_cast<Space_obj*>(this)), Space_pio(this)
 {
     auto mark_avail_phys = [this](uint64 start, uint64 end, mword attr = 0x7) {
         Space_mem::insert_root(start >> PAGE_BITS, end >> PAGE_BITS, attr);
@@ -57,7 +57,8 @@ Pd::Pd() : Typed_kobject(static_cast<Space_obj*>(this))
 
 Pd::Pd(Pd* own, mword sel, mword a, int creation_flags)
     : Typed_kobject(static_cast<Space_obj*>(own), sel, a, free, pre_free), Space_mem(Hpt::boot_hpt()),
-      is_priv(creation_flags & IS_PRIVILEGED), is_passthrough(creation_flags & IS_PASSTHROUGH)
+      Space_pio(this), is_priv(creation_flags & IS_PRIVILEGED),
+      is_passthrough(creation_flags & IS_PASSTHROUGH)
 {
 }
 
