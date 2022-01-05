@@ -5,6 +5,9 @@ set(HEAP_SIZE_MB 256 CACHE STRING "The amount of hypervisor heap space in MiB.")
 # Spectre v2 attacks against the hypervisor.
 option(ENABLE_RETPOLINE "Enable retpolines for Spectre v2 mitigation." ON)
 
+# See tools/check-elf-segments.
+option(ENABLE_ELF_SEGMENT_CHECKS "Check ELF after building for obvious linking errors." OFF)
+
 add_executable(hypervisor
   # Assembly sources
   entry.S  start.S
@@ -166,6 +169,14 @@ target_link_options(hypervisor PRIVATE
   -Wl,--defsym=CONFIG_KERNEL_MEMORY=${HEAP_SIZE_MB}M
   -Wl,-T ${HYPERVISOR-LINKER-SCRIPT}
   )
+
+if(ENABLE_ELF_SEGMENT_CHECKS)
+  add_custom_command(TARGET hypervisor POST_BUILD
+    COMMAND ${CMAKE_SOURCE_DIR}/tools/check-elf-segments $<TARGET_FILE:hypervisor>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Checking hypervisor binary..."
+    )
+endif()
 
 install(TARGETS hypervisor DESTINATION share/NOVA COMPONENT Hedron_Application)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.elf32

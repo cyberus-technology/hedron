@@ -3,6 +3,7 @@
   catch2,
   cmake,
   nix-gitignore,
+  python3,
   lib,
   buildType ? "Debug",
   # Specify a kernel heap size in MiB. This overrides the default and
@@ -17,15 +18,26 @@ stdenv.mkDerivation {
   name = "hedron";
   src = nix-gitignore.gitignoreSourcePure ([".git\nnix\n"] ++ gitIgnores) ./..;
 
-  nativeBuildInputs = [ cmake ];
+  nativeBuildInputs = [
+    cmake
+
+    # For tools/check-elf-segments.
+    (python3.withPackages(ps: [ ps.pyelftools ]))
+  ];
+
   checkInputs = [ catch2 ];
 
   cmakeBuildType = buildType;
-  cmakeFlags = lib.optional (heapSizeMiB != null) "-DHEAP_SIZE_MB=${toString heapSizeMiB}";
+  cmakeFlags = [ "-DENABLE_ELF_SEGMENT_CHECKS:bool=ON" ]
+               ++ lib.optional (heapSizeMiB != null) "-DHEAP_SIZE_MB=${toString heapSizeMiB}";
 
   hardeningDisable = [ "all" ];
   enableParallelBuilding = true;
   doCheck = true;
+
+  postPatch = ''
+    patchShebangs tools/check-elf-segments
+  '';
 
   postInstall = ''
     mkdir -p $out/nix-support $out/share
