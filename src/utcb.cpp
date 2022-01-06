@@ -24,6 +24,7 @@
 #include "barrier.hpp"
 #include "config.hpp"
 #include "cpu.hpp"
+#include "ec.hpp"
 #include "mtd.hpp"
 #include "regs.hpp"
 #include "svm.hpp"
@@ -219,7 +220,7 @@ bool Utcb::load_vmx(Cpu_regs* regs)
     }
 
     if (m & Mtd::INJ) {
-        if (regs->dst_portal == 33 || regs->dst_portal == NUM_VMI - 1) {
+        if (regs->dst_portal == 33 || regs->dst_portal == VMI_RECALL) {
             intr_info = static_cast<uint32>(Vmcs::read(Vmcs::ENT_INTR_INFO));
             intr_error = static_cast<uint32>(Vmcs::read(Vmcs::ENT_INTR_ERROR));
         } else {
@@ -578,7 +579,7 @@ bool Utcb::load_svm(Cpu_regs* regs)
     }
 
     if (m & Mtd::INJ) {
-        if (regs->dst_portal == NUM_VMI - 3 || regs->dst_portal == NUM_VMI - 1)
+        if (regs->dst_portal == Vmcb::SVM_INVALID_STATE || regs->dst_portal == VMI_RECALL)
             inj = vmcb->inj_control;
         else
             inj = vmcb->exitintinfo;

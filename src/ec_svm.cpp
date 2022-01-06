@@ -45,10 +45,10 @@ void Ec::handle_svm()
 
     switch (reason) {
     case -1UL: // Invalid state
-        reason = NUM_VMI - 3;
+        reason = Vmcb::SVM_INVALID_STATE;
         break;
     case 0x400: // NPT
-        reason = NUM_VMI - 4;
+        reason = Vmcb::SVM_NPT_FAULT;
         break;
     }
 
