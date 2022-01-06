@@ -30,7 +30,7 @@ let
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
   buildConfs = pkgs.lib.cartesianProductOfSets {
-    cc = attrsToList { inherit (pkgs) clang_9 clang_10 clang_11 clang_12 gcc7 gcc8 gcc9 gcc10 gcc11; };
+    cc = attrsToList { inherit (pkgs) clang_9 clang_10 clang_11 clang_12 clang_13 gcc7 gcc8 gcc9 gcc10 gcc11; };
     buildType = [ "Debug" "Release" ];
   };
 
