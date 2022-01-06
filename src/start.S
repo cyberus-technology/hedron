@@ -212,14 +212,15 @@ __start_bsp:
                          * memory. A high-level description of this code lives in
                          * doc/implementation.md.
                          *
-                         * Prepare the low 1 GiB of virtual memory.
+                         * Prepare the low 1 GiB of virtual memory. Because this memory has to be
+                         * executable, we make it read-only to not create X+W memory.
                          */
 
-                        lea     (LVL3L + 0x27)(%ebp), %ecx // PML4 entry
+                        lea     (LVL3L + 0x21)(%ebp), %ecx // PML4 entry
                         PGIDX_LO %ebp, LOAD_ADDR, 3, %edi
                         mov     %ecx, LVL4(%ebp, %edi, 8)
 
-                        lea     (LVL2L + 0x27)(%ebp), %ecx // PDPT entry
+                        lea     (LVL2L + 0x21)(%ebp), %ecx // PDPT entry
                         PGIDX_LO %ebp, LOAD_ADDR, 2, %edi
                         mov     %ecx, LVL3L(%ebp, %edi, 8)
 
@@ -231,7 +232,7 @@ __start_bsp:
                          * end up with a window of 1 GiB for now.
                          */
 
-                        mov     $0xe3, %ecx // PDT entry
+                        mov     $0xe1, %ecx // PDT entry
                         xor     %edi, %edi
                         PGIDX_LO %edi, CPUBOOT_ADDR, 1, %edi
                         mov     %ecx, LVL2L(%ebp, %edi, 8)
@@ -240,7 +241,7 @@ __start_bsp:
                          * Create identity map for LOAD_ADDR + PHYS_RELOCATION.
                          */
 
-                        lea     (LOAD_ADDR + 0xe3)(%ebp), %ecx // PDT entry
+                        lea     (LOAD_ADDR + 0xe1)(%ebp), %ecx // PDT entry
                         PGIDX_LO %ebp, LOAD_ADDR, 1, %edi
                         mov     %ecx, LVL2L(%ebp, %edi, 8)
 
