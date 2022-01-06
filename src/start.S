@@ -113,6 +113,14 @@ __boot_gdt__:
                         mov     %eax, %edi /* backup - used by multiboot */
                         mov     $0xc0000080, %ecx
                         rdmsr
+
+                        /*
+                         * Enable the following features in IA32_EFER:
+                         *
+                         * - the SYSCALL/SYSRET instructions,
+                         * - the page table NX bits,
+                         * - IA-32e (64-bit) mode.
+                         */
                         or      $0x901, %eax
                         wrmsr
                         mov     $0x6b8, %edx
@@ -167,6 +175,29 @@ __boot_gdt__:
 .endm
 
 __start_bsp:
+                        /*
+                         * Check important CPU features without which it makes no sense to continue.
+                         * This is currently not exhaustive. If we find a missing feature, we try to
+                         * reset the box.
+                         *
+                         * We need to make sure not to clobber RAX and RBX as they hold information from
+                         * the bootloader.
+                         */
+                        mov     %eax, %esi
+                        mov     %ebx, %edi
+
+                        mov     $0x80000001, %eax
+                        cpuid
+
+                        /* Is NX available? */
+                        bt $20, %edx
+                        jc .nx_ok
+                        ud2a
+.nx_ok:
+
+                        mov     %esi, %eax
+                        mov     %edi, %ebx
+
                         /*
                          * When we enter here, we do not know our physical location in memory.
                          * The bootloader may have relocated us.
