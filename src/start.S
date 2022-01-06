@@ -272,6 +272,12 @@ __start_bsp:
                         sub     $LOAD_ADDR, %esi
                         shr     $21, %esi // Executable 2MB pages
 
+                        /*
+                         * ECX contains the lower 32-bit of the page table entry. Each entry covers 2 MiB
+                         * (PS is set).
+                         *
+                         * Permissions are set to present and writable (and accessed and dirty).
+                         */
                         lea     (LOAD_ADDR + 0xe3)(%ebp), %ecx
                         PGIDX_HI LINK_ADDR, 1, %edi
 
@@ -280,22 +286,23 @@ __start_bsp:
                         jz .no_exec_pages_left
 
                         /*
-                         * Mark page executable.
+                         * Mark page executable and read-only by masking the writable bit.
                          */
                         movl    $0, (4 + LVL2H)(%ebp, %edi, 8)
+                        mov     %ecx, LVL2H(%ebp, %edi, 8)
+                        andl    $~2, LVL2H(%ebp, %edi, 8)
 
                         dec     %esi
-                        jmp .exec_pages_left
+                        jmp .pdt_entry_done
 
 .no_exec_pages_left:
                         /*
-                         * Mark page non-executable.
+                         * Mark page non-executable and read-writable.
                          */
                         movl    $(1 << 31 /* XD */), (4 + LVL2H)(%ebp, %edi, 8)
-.exec_pages_left:
-
                         mov     %ecx, LVL2H(%ebp, %edi, 8)
 
+.pdt_entry_done:
                         inc     %edi // Next PDT entry
                         add     $(1 << 21), %ecx // Next 2MB page
 
