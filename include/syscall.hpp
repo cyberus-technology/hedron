@@ -22,7 +22,12 @@
 
 #pragma once
 
+#include "arch.hpp"
+#include "crd.hpp"
+#include "mtd.hpp"
 #include "qpd.hpp"
+#include "regs.hpp"
+#include "types.hpp"
 
 class Sys_call : public Sys_regs
 {
