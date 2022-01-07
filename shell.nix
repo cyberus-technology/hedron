@@ -2,6 +2,9 @@
 , nixpkgs ? sources.nixpkgs
 , pkgs ? import nixpkgs { }}:
 
+let
+  release = import ./nix/release.nix { inherit sources pkgs; };
+in
 pkgs.mkShell {
 
   # A compiler invoked from a nix-shell is a wrapper which may add unexpected
@@ -13,7 +16,7 @@ pkgs.mkShell {
   # These can be debugged via `NIX_DEBUG=1 <command>`.
   hardeningDisable = [ "all" ];
 
-  inputsFrom = [ (import ./.) ];
+  inputsFrom = [ release.hedron.builds.default-debug release.hedron.stylecheck ];
 
   buildInputs = [ pkgs.niv ];
 }

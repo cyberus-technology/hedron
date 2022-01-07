@@ -15,6 +15,9 @@
 #
 # To build a unit test coverage report, build the coverage attribute:
 #     nix-build nix/release.nix -A coverage
+#
+# To check if your cpp and hpp files need formatting, run:
+#     nix-build nix/release.nix -A hedron.stylecheck
 { sources ? import ./sources.nix
 , pkgs ? import sources.nixpkgs {}
 }:
@@ -78,6 +81,7 @@ in
     } // hedronBuildSet;
 
     inherit default-release;
+    stylecheck = pkgs.callPackage ./stylecheck.nix {};
 
     integration-test = pkgs.recurseIntoAttrs testBuilds;
 

@@ -1,0 +1,9 @@
+---
+AccessModifierOffset: -4
+BreakBeforeBraces: Linux
+ColumnLimit: 110
+IndentWidth: 4
+SortIncludes: true
+SpacesInSquareBrackets: false
+Standard: Cpp11
+UseTab: Never
