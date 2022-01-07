@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "cpulocal.hpp"
 #include "utcb.hpp"
 
 class Vmcb
