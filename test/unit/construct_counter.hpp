@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "types.hpp"
+
 // Count calls to the constructor and destructor of this class.
 //
 // This is a useful helper to test whether library code properly frees
