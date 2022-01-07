@@ -1,8 +1,13 @@
 ---
 AccessModifierOffset: -4
+AllowShortEnumsOnASingleLine: false
 BreakBeforeBraces: Linux
 ColumnLimit: 110
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
 IndentWidth: 4
+PointerAlignment: Left
+ReferenceAlignment: Left
 SortIncludes: true
 SpacesInSquareBrackets: false
 Standard: Cpp11
