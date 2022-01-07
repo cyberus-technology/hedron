@@ -2,21 +2,29 @@
 # compilers and with different tools.
 #
 # To build Hedron with all supported compilers in all supported build
-# configations, you can do (from the repository root):
-#     nix-build nix/release.nix -A hedron
+# configurations, you can do (from the repository root):
+#
+#     nix-build nix/release.nix -A hedron.builds
 #
 # To build Hedron only with a specific compiler, you can specify this as
 # well:
-#     nix-build nix/release.nix -A hedron.clang_8-release
 #
-# Integration tests work similarly:
-#     nix-build nix/release.nix -A integration-test
-#     nix-build nix/release.nix -A integration-test.gcc8-debug
+#     nix-build nix/release.nix -A hedron.builds.clang_13-release
+#
+# The available compilers should autocomplete, if Nix was set up
+# correctly in your environment.
+#
+# Each build variant from above has a corresponding integration-test
+# attribute:
+#
+#     nix-build nix/release.nix -A hedron.integration-test.clang_13-release
 #
 # To build a unit test coverage report, build the coverage attribute:
-#     nix-build nix/release.nix -A coverage
 #
-# To check if your cpp and hpp files need formatting, run:
+#     nix-build nix/release.nix -A hedron.coverage
+#
+# To check if any files need reformatting, run:
+#
 #     nix-build nix/release.nix -A hedron.stylecheck
 { sources ? import ./sources.nix
 , pkgs ? import sources.nixpkgs {}
