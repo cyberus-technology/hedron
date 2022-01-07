@@ -28,17 +28,11 @@
 #include "vmx.hpp"
 #include "vpid.hpp"
 
-template <> mword Exc_regs::get_g_cs_dl<Vmcb>()         const { return static_cast<mword>(vmcb->cs.ar) >> 9 & 0x3; }
-template <> mword Exc_regs::get_g_flags<Vmcb>()         const { return static_cast<mword>(vmcb->rflags); }
-template <> mword Exc_regs::get_g_efer<Vmcb>()          const { return static_cast<mword>(vmcb->efer); }
 template <> mword Exc_regs::get_g_cr0<Vmcb>()           const { return static_cast<mword>(vmcb->cr0); }
 template <> mword Exc_regs::get_g_cr2<Vmcb>()           const { return static_cast<mword>(vmcb->cr2); }
 template <> mword Exc_regs::get_g_cr3<Vmcb>()           const { return static_cast<mword>(vmcb->cr3); }
 template <> mword Exc_regs::get_g_cr4<Vmcb>()           const { return static_cast<mword>(vmcb->cr4); }
 
-template <> mword Exc_regs::get_g_cs_dl<Vmcs>()         const { return Vmcs::read (Vmcs::GUEST_AR_CS) >> 13 & 0x3; }
-template <> mword Exc_regs::get_g_flags<Vmcs>()         const { return Vmcs::read (Vmcs::GUEST_RFLAGS); }
-template <> mword Exc_regs::get_g_efer<Vmcs>()          const { return Vmcs::read (Vmcs::GUEST_EFER); }
 template <> mword Exc_regs::get_g_cr0<Vmcs>()           const { return Vmcs::read (Vmcs::GUEST_CR0); }
 template <> mword Exc_regs::get_g_cr2<Vmcs>()           const { return cr2; }
 template <> mword Exc_regs::get_g_cr3<Vmcs>()           const { return Vmcs::read (Vmcs::GUEST_CR3); }
@@ -85,26 +79,6 @@ template <> void Exc_regs::tlb_flush<Vmcs>(bool full) const
 
     if (vpid)
         Vpid::flush (full ? Vpid::CONTEXT_GLOBAL : Vpid::CONTEXT_NOGLOBAL, vpid);
-}
-
-template <typename T>
-Exc_regs::Mode Exc_regs::mode() const
-{
-    if (!(get_cr0<T>() & Cpu::CR0_PE))
-        return MODE_REAL;
-
-    if (get_g_flags<T>() & Cpu::EFL_VM)
-        return MODE_VM86;
-
-    mword dl = get_g_cs_dl<T>();
-
-    return (get_g_efer<T>() & Cpu::EFER_LMA) && (dl & 1) ? MODE_PROT_64 : dl & 2 ? MODE_PROT_32 : MODE_PROT_16;
-}
-
-template <typename T>
-mword Exc_regs::linear_address (mword val) const
-{
-    return mode<T>() == MODE_PROT_64 ? val : val & 0xffffffff;
 }
 
 template <typename T>
@@ -350,8 +324,6 @@ template <> void Exc_regs::write_efer<Vmcs> (mword val)
         Vmcs::write (Vmcs::ENT_CONTROLS, Vmcs::read (Vmcs::ENT_CONTROLS) & ~Vmcs::ENT_GUEST_64);
 }
 
-template mword Exc_regs::linear_address<Vmcb> (mword) const;
-template mword Exc_regs::linear_address<Vmcs> (mword) const;
 template mword Exc_regs::read_cr<Vmcb> (unsigned) const;
 template mword Exc_regs::read_cr<Vmcs> (unsigned) const;
 template void Exc_regs::write_cr<Vmcb> (unsigned, mword);

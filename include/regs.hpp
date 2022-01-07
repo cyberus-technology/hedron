@@ -137,20 +137,6 @@ class Exc_regs : public Sys_regs
         // member), because entry.S assumes a fixed layout.
 
     private:
-        enum Mode
-        {
-            MODE_REAL       = 0,
-            MODE_VM86       = 1,
-            MODE_PROT_16    = 2,
-            MODE_PROT_32    = 4,
-            MODE_PROT_64    = 8,
-        };
-
-        template <typename T> Mode mode() const;
-
-        template <typename T> mword get_g_cs_dl() const;
-        template <typename T> mword get_g_flags() const;
-        template <typename T> mword get_g_efer() const;
 
         template <typename T> mword get_g_cr0() const;
         template <typename T> mword get_g_cr2() const;
@@ -206,8 +192,6 @@ class Exc_regs : public Sys_regs
         template <typename T> void write_cr (unsigned, mword);
 
         template <typename T> void write_efer (mword);
-
-        template <typename T> mword linear_address (mword) const;
 };
 static_assert(OFFSETOF(Exc_regs, vec) == OFS_VEC);
 static_assert(OFFSETOF(Exc_regs, cs) == OFS_CS);
