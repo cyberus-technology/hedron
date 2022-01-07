@@ -19,11 +19,13 @@
 
 #pragma once
 
+// clang-format off
 #ifdef __ASSEMBLER__
 #define PREG(X)         %X
 #else
 #define PREG(X)         %%X
 #endif
+// clang-format on
 
 #define ARCH            "x86_64"
 #define WORD            .quad
