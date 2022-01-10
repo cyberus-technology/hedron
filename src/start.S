@@ -113,12 +113,20 @@ __boot_gdt__:
                         mov     %eax, %edi /* backup - used by multiboot */
                         mov     $0xc0000080, %ecx
                         rdmsr
+
+                        /*
+                         * Enable the following features in IA32_EFER:
+                         *
+                         * - the SYSCALL/SYSRET instructions,
+                         * - the page table NX bits,
+                         * - IA-32e (64-bit) mode.
+                         */
                         or      $0x901, %eax
                         wrmsr
                         mov     $0x6b8, %edx
                         mov     %edi, %eax /* restore - used by multiboot */
                         mov     %edx, %cr4
-                        lea     PDBR(\rel), %edx // XXX This is probably not good for anything except boot
+                        lea     PDBR(\rel), %edx
                         mov     %edx, %cr3
                         mov     $0x80010023, %edx
                         mov     %edx, %cr0
@@ -168,6 +176,29 @@ __boot_gdt__:
 
 __start_bsp:
                         /*
+                         * Check important CPU features without which it makes no sense to continue.
+                         * This is currently not exhaustive. If we find a missing feature, we try to
+                         * reset the box.
+                         *
+                         * We need to make sure not to clobber RAX and RBX as they hold information from
+                         * the bootloader.
+                         */
+                        mov     %eax, %esi
+                        mov     %ebx, %edi
+
+                        mov     $0x80000001, %eax
+                        cpuid
+
+                        /* Is NX available? */
+                        bt $20, %edx
+                        jc .nx_ok
+                        ud2a
+.nx_ok:
+
+                        mov     %esi, %eax
+                        mov     %edi, %ebx
+
+                        /*
                          * When we enter here, we do not know our physical location in memory.
                          * The bootloader may have relocated us.
                          *
@@ -212,14 +243,15 @@ __start_bsp:
                          * memory. A high-level description of this code lives in
                          * doc/implementation.md.
                          *
-                         * Prepare the low 1 GiB of virtual memory.
+                         * Prepare the low 1 GiB of virtual memory. Because this memory has to be
+                         * executable, we make it read-only to not create X+W memory.
                          */
 
-                        lea     (LVL3L + 0x27)(%ebp), %ecx // PML4 entry
+                        lea     (LVL3L + 0x21)(%ebp), %ecx // PML4 entry
                         PGIDX_LO %ebp, LOAD_ADDR, 3, %edi
                         mov     %ecx, LVL4(%ebp, %edi, 8)
 
-                        lea     (LVL2L + 0x27)(%ebp), %ecx // PDPT entry
+                        lea     (LVL2L + 0x21)(%ebp), %ecx // PDPT entry
                         PGIDX_LO %ebp, LOAD_ADDR, 2, %edi
                         mov     %ecx, LVL3L(%ebp, %edi, 8)
 
@@ -231,7 +263,7 @@ __start_bsp:
                          * end up with a window of 1 GiB for now.
                          */
 
-                        mov     $0xe3, %ecx // PDT entry
+                        mov     $0xe1, %ecx // PDT entry
                         xor     %edi, %edi
                         PGIDX_LO %edi, CPUBOOT_ADDR, 1, %edi
                         mov     %ecx, LVL2L(%ebp, %edi, 8)
@@ -240,7 +272,7 @@ __start_bsp:
                          * Create identity map for LOAD_ADDR + PHYS_RELOCATION.
                          */
 
-                        lea     (LOAD_ADDR + 0xe3)(%ebp), %ecx // PDT entry
+                        lea     (LOAD_ADDR + 0xe1)(%ebp), %ecx // PDT entry
                         PGIDX_LO %ebp, LOAD_ADDR, 1, %edi
                         mov     %ecx, LVL2L(%ebp, %edi, 8)
 
@@ -259,18 +291,50 @@ __start_bsp:
 
                         /*
                          * Loop for each PDT entry.
+                         *
+                         * These mappings cover the whole high kernel address space. We
+                         * first map all executable pages and then writable pages (as non-executable).
                          */
 
                         mov     $LOAD_END, %edx
                         sub     $LOAD_ADDR, %edx
-                        shr     $21, %edx
+                        shr     $21, %edx // Total 2MB pages
 
+                        mov     $LOAD_EXEC_END, %esi
+                        sub     $LOAD_ADDR, %esi
+                        shr     $21, %esi // Executable 2MB pages
+
+                        /*
+                         * ECX contains the lower 32-bit of the page table entry. Each entry covers 2 MiB
+                         * (PS is set).
+                         *
+                         * Permissions are set to present and writable (and accessed and dirty).
+                         */
                         lea     (LOAD_ADDR + 0xe3)(%ebp), %ecx
                         PGIDX_HI LINK_ADDR, 1, %edi
 
 .next_pdt_entry:
+                        test    %esi, %esi
+                        jz .no_exec_pages_left
+
+                        /*
+                         * Mark page executable and read-only by masking the writable bit.
+                         */
+                        movl    $0, (4 + LVL2H)(%ebp, %edi, 8)
+                        mov     %ecx, LVL2H(%ebp, %edi, 8)
+                        andl    $~2, LVL2H(%ebp, %edi, 8)
+
+                        dec     %esi
+                        jmp .pdt_entry_done
+
+.no_exec_pages_left:
+                        /*
+                         * Mark page non-executable and read-writable.
+                         */
+                        movl    $(1 << 31 /* XD */), (4 + LVL2H)(%ebp, %edi, 8)
                         mov     %ecx, LVL2H(%ebp, %edi, 8)
 
+.pdt_entry_done:
                         inc     %edi // Next PDT entry
                         add     $(1 << 21), %ecx // Next 2MB page
 

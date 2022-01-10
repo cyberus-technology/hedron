@@ -2,9 +2,13 @@
 # -*- Mode: Python -*-
 
 import argparse
+import collections
 import os.path
 import pexpect
+import pexpect.replwrap
+import re
 import sys
+import tempfile
 
 DEFAULT_CPUS = 4
 DEFAULT_MEM = 512
@@ -29,6 +33,92 @@ QEMU_DEFAULT_ARGS = [
 ]
 
 
+def qemu_monitor_server_arg(socket_name):
+    """
+    Return the command line arguments for Qemu to open a monitor AF_LOCAL
+    socket with the given name.
+    """
+
+    assert "," not in socket_name
+
+    return ["-monitor", "unix:{},server,nowait".format(socket_name)]
+
+
+PageTableEntry = collections.namedtuple(
+    "PageTableEntry", ["start_va", "start_pa", "attrs"]
+)
+
+# Matches lines like these:
+#
+# ffffffff98200000: 0000000016800000 X-PDA---W
+# ffffffffbfdfe000: 00000000fec00000 XG-DAC--W
+#
+# We capture 'start_va` `start_pa` and `attrs`.
+RE_PageTableEntry = re.compile(
+    r"(?P<start_va>[0-9a-fA-F]{16}): (?P<start_pa>[0-9a-fA-F]{16}) (?P<attrs>[X-][G-][P-][D-][A-][C-][T-][U-][W-])"
+)
+
+
+def parse_page_table_entry(line):
+    """
+    Parse a single line of `info tlb` output into a PageTableEntry.
+
+    The input 'fffffff98200000: 0000000016800000 X-PDA---W' would become
+    the PageTableEntry(0xfffffff98200000, 0x16800000, 'XPDAW').
+    """
+
+    m = re.match(RE_PageTableEntry, line)
+    if not m:
+        sys.exit("Line '{}' is not a qemu page table entry?".format(line))
+
+    return PageTableEntry(
+        start_va=int(m["start_va"], 16),
+        start_pa=int(m["start_pa"], 16),
+        attrs=m["attrs"].replace("-", ""),
+    )
+
+
+def parse_page_table(dump):
+    """
+    Parse the output of `info tlb` from Qemu's monitor into a list of
+    PageTableEntry objects.
+    """
+
+    lines = dump.splitlines()
+
+    # For some reason we get a bit of our command echoed back?
+    if len(lines) > 0 and "info tlb" in lines[0]:
+        lines = lines[1:]
+
+    # Ignore empty lines.
+    lines = [l for l in lines if l]
+
+    return [parse_page_table_entry(l) for l in lines]
+
+
+def check_page_table(pt):
+    """
+    Check the kernel page table for obvious issues.
+
+    This function exits the process when issues are found.
+    """
+
+    if not next((pte for pte in pt if pte.start_pa == 0xFEE00000), None):
+        sys.exit(
+            "Kernel page table does not contain a mapping for the Local APIC? This test may be broken!"
+        )
+
+    # We want to find pages that violate the X^W rule. Pages can be
+    # either writable or executable (or neither), never both.
+    #
+    # Beware: Qemu reports non-executable mappings as 'X'.
+    xw_mappings = [pte for pte in pt if "X" not in pte.attrs and "W" in pte.attrs]
+    if len(xw_mappings) != 0:
+        sys.exit(
+            "Kernel has writable AND executable memory mappings: {}".format(xw_mappings)
+        )
+
+
 def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     """
     Run qemu with the specified flags and check whether Hedron is booted
@@ -43,7 +133,10 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
 
     assert expect_multiboot_version in [1, 2]
 
-    child = pexpect.spawn(qemu, args, encoding="utf-8")
+    monitor_socket = tempfile.mktemp()
+    child = pexpect.spawn(
+        qemu, args + qemu_monitor_server_arg(monitor_socket), encoding="utf-8"
+    )
     child.logfile = sys.stdout
 
     # Workaround for https://github.com/pexpect/pexpect/issues/462
@@ -55,8 +148,18 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
         timeout=120,
     )
 
+    # Qemu is now definitely up. Connect to the monitor.
+    monitor_repl = pexpect.replwrap.REPLWrapper(
+        pexpect.spawn("nc", ["-U", monitor_socket], encoding="utf-8"), "(qemu) ", None
+    )
+
+    ## Tests
+
     for cpu in range(expect_cpus):
         child.expect(r"CORE:", timeout=5)
+
+    page_table_dump = monitor_repl.run_command("info tlb")
+    check_page_table(parse_page_table(page_table_dump))
 
     child.expect(r"Killed EC:.*\(No ELF\)", timeout=5)
     child.close()

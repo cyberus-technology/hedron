@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+from elftools.elf.elffile import ELFFile
+
+
+def eprint(*args, **kwargs):
+    """A helper function to print to stderr. Works like print()."""
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Check hypervisor ELF")
+    parser.add_argument("hypervisor", help="The filename of the hypervisor ELF")
+
+    args = parser.parse_args()
+
+    print("Checking hypervisor ELF '{}' for obvious issues.".format(args.hypervisor))
+
+    with open(args.hypervisor, "rb") as hv_file:
+        elf = ELFFile(hv_file)
+        load_segments = [s for s in elf.iter_segments() if s.header.p_type == "PT_LOAD"]
+
+        expected_load_segments = 3
+        if len(load_segments) != expected_load_segments:
+            eprint(
+                "Failure: ELF has {} segments instead of {}. Please update this script.".format(
+                    len(load_segments), expected_load_segments
+                )
+            )
+            sys.exit(1)
+
+        # The two "high" segments in the hypervisor ELF must be contiguous in physical memory. If there is
+        # space between the two segments, an UEFI loader might not know whether this is usable memory or
+        # not. By having them contiguous this question does not arise.
+        #
+        # See also Hip::add_mhv in src/hip.cpp.
+        if (
+            load_segments[1].header.p_paddr + load_segments[1].header.p_memsz
+            != load_segments[2].header.p_paddr
+        ):
+            eprint(
+                "Failure: ELF high segments are not contiguous. This is an error in the linker script."
+            )
+            sys.exit(1)
+
+    print("Looks good. 👍")
+
+
+if __name__ == "__main__":
+    main()
