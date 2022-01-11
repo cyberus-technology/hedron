@@ -246,6 +246,7 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE (hzd))
         handle_hazard (hzd, ret_user_sysexit);
 
+    // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
 
@@ -269,6 +270,7 @@ void Ec::ret_user_sysexit()
                   // the boundary and thus the RIP we return to cannot be
                   // uncanonical.
                   "sysretq;" : : [regs] "m" (current()->regs) : "memory");
+    // clang-format on
 
     UNREACHED;
 }
@@ -360,6 +362,7 @@ void Ec::ret_user_vmresume()
         Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
+    // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
                   "vmresume;"
@@ -379,6 +382,7 @@ void Ec::ret_user_vmresume()
                     [exi_reason] "i" (Vmcs::EXI_REASON),
                     [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
                   : "memory");
+    // clang-format on
 
     UNREACHED;
 }
@@ -398,6 +402,7 @@ void Ec::ret_user_vmrun()
         die ("Invalid XCR0");
     }
 
+    // clang-format off
     asm volatile ("lea %0, %%rsp;"
                   EXPAND (LOAD_GPR)
                   "clgi;"
@@ -413,6 +418,7 @@ void Ec::ret_user_vmrun()
                   "stgi;"
                   "jmp svm_handler;"
                   : : "m" (current()->regs), "m" (Vmcb::root) : "memory");
+    // clang-format on
 
     UNREACHED;
 }
