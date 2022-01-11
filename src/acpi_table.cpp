@@ -20,25 +20,19 @@
 #include "algorithm.hpp"
 #include "stdio.hpp"
 
-uint8 Acpi_table::do_checksum(const void *table, size_t len)
+uint8 Acpi_table::do_checksum(const void* table, size_t len)
 {
-    return static_cast<uint8>(accumulate(static_cast<uint8 const *>(table),
-                                         static_cast<uint8 const *>(table) + len,
-                                         0));
+    return static_cast<uint8>(
+        accumulate(static_cast<uint8 const*>(table), static_cast<uint8 const*>(table) + len, 0));
 }
 
-bool Acpi_table::good_checksum (Paddr addr) const
+bool Acpi_table::good_checksum(Paddr addr) const
 {
-    bool valid {do_checksum() == 0};
+    bool valid{do_checksum() == 0};
 
-    trace (TRACE_ACPI, "%.4s:%#010llx REV:%2d TBL:%8.8s OEM:%6.6s LEN:%5u (%s)",
-           reinterpret_cast<char const *>(&signature),
-           static_cast<uint64>(addr),
-           revision,
-           oem_table_id,
-           oem_id,
-           length,
-           valid ? "ok" : "bad");
+    trace(TRACE_ACPI, "%.4s:%#010llx REV:%2d TBL:%8.8s OEM:%6.6s LEN:%5u (%s)",
+          reinterpret_cast<char const*>(&signature), static_cast<uint64>(addr), revision, oem_table_id,
+          oem_id, length, valid ? "ok" : "bad");
 
     return valid;
 }

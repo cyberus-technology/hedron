@@ -20,240 +20,248 @@
 
 #pragma once
 
+#include "algorithm.hpp"
 #include "list.hpp"
 #include "slab.hpp"
 #include "util.hpp"
 #include "x86.hpp"
-#include "algorithm.hpp"
 
 class Pd;
 
 class Dmar_qi
 {
-    private:
-        uint64 lo, hi;
+private:
+    uint64 lo, hi;
 
-    public:
-        Dmar_qi (uint64 l = 0, uint64 h = 0) : lo (l), hi (h) {}
+public:
+    Dmar_qi(uint64 l = 0, uint64 h = 0) : lo(l), hi(h) {}
 };
 
 class Dmar_qi_ctx : public Dmar_qi
 {
-    public:
-        Dmar_qi_ctx() : Dmar_qi (0x1 | 1UL << 4) {}
+public:
+    Dmar_qi_ctx() : Dmar_qi(0x1 | 1UL << 4) {}
 };
 
 class Dmar_qi_tlb : public Dmar_qi
 {
-    public:
-        Dmar_qi_tlb() : Dmar_qi (0x2 | 1UL << 4) {}
+public:
+    Dmar_qi_tlb() : Dmar_qi(0x2 | 1UL << 4) {}
 };
 
 class Dmar_qi_iec : public Dmar_qi
 {
-    public:
-        Dmar_qi_iec() : Dmar_qi (0x4 | 1UL << 4) {}
+public:
+    Dmar_qi_iec() : Dmar_qi(0x4 | 1UL << 4) {}
 };
 
 class Dmar_ctx
 {
-    private:
-        uint64 lo, hi;
+private:
+    uint64 lo, hi;
 
-    public:
-        inline bool present() const { return lo & 1; }
+public:
+    inline bool present() const { return lo & 1; }
 
-        inline Paddr addr() const { return static_cast<Paddr>(lo) & ~PAGE_MASK; }
+    inline Paddr addr() const { return static_cast<Paddr>(lo) & ~PAGE_MASK; }
 
-        inline void set (uint64 h, uint64 l) { hi = h; lo = l; clflush (this); }
+    inline void set(uint64 h, uint64 l)
+    {
+        hi = h;
+        lo = l;
+        clflush(this);
+    }
 
-        static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
+    static inline void* operator new(size_t)
+    {
+        return clflush(Buddy::allocator.alloc(0, Buddy::FILL_0), PAGE_SIZE);
+    }
 };
 
 class Dmar_irt
 {
-    private:
-        uint64 lo, hi;
+private:
+    uint64 lo, hi;
 
-    public:
-        inline void set (uint64 h, uint64 l) { hi = h; lo = l; clflush (this); }
+public:
+    inline void set(uint64 h, uint64 l)
+    {
+        hi = h;
+        lo = l;
+        clflush(this);
+    }
 
-        static inline void *operator new (size_t) { return clflush (Buddy::allocator.alloc (0, Buddy::FILL_0), PAGE_SIZE); }
+    static inline void* operator new(size_t)
+    {
+        return clflush(Buddy::allocator.alloc(0, Buddy::FILL_0), PAGE_SIZE);
+    }
 };
 
 class Dmar : public Forward_list<Dmar>
 {
-    private:
-        mword const         reg_base;
-        uint64              cap;
-        uint64              ecap;
-        Dmar_qi *           invq;
-        unsigned            invq_idx;
+private:
+    mword const reg_base;
+    uint64 cap;
+    uint64 ecap;
+    Dmar_qi* invq;
+    unsigned invq_idx;
 
-        static Dmar_ctx *   ctx;
-        static Dmar_irt *   irt;
-        static uint32       gcmd;
+    static Dmar_ctx* ctx;
+    static Dmar_irt* irt;
+    static uint32 gcmd;
 
-        static Dmar *       list;
-        static Slab_cache   cache;
+    static Dmar* list;
+    static Slab_cache cache;
 
-        static unsigned const ord = 0;
-        static unsigned const cnt = (PAGE_SIZE << ord) / sizeof (Dmar_qi);
+    static unsigned const ord = 0;
+    static unsigned const cnt = (PAGE_SIZE << ord) / sizeof(Dmar_qi);
 
-        enum Reg
-        {
-            REG_VER     = 0x0,
-            REG_CAP     = 0x8,
-            REG_ECAP    = 0x10,
-            REG_GCMD    = 0x18,
-            REG_GSTS    = 0x1c,
-            REG_RTADDR  = 0x20,
-            REG_CCMD    = 0x28,
-            REG_FSTS    = 0x34,
-            REG_FECTL   = 0x38,
-            REG_FEDATA  = 0x3c,
-            REG_FEADDR  = 0x40,
-            REG_IQH     = 0x80,
-            REG_IQT     = 0x88,
-            REG_IQA     = 0x90,
-            REG_IRTA    = 0xb8,
-        };
+    enum Reg
+    {
+        REG_VER = 0x0,
+        REG_CAP = 0x8,
+        REG_ECAP = 0x10,
+        REG_GCMD = 0x18,
+        REG_GSTS = 0x1c,
+        REG_RTADDR = 0x20,
+        REG_CCMD = 0x28,
+        REG_FSTS = 0x34,
+        REG_FECTL = 0x38,
+        REG_FEDATA = 0x3c,
+        REG_FEADDR = 0x40,
+        REG_IQH = 0x80,
+        REG_IQT = 0x88,
+        REG_IQA = 0x90,
+        REG_IRTA = 0xb8,
+    };
 
-        enum Tlb
-        {
-            REG_IVA     = 0x0,
-            REG_IOTLB   = 0x8,
-        };
+    enum Tlb
+    {
+        REG_IVA = 0x0,
+        REG_IOTLB = 0x8,
+    };
 
-        enum Cmd
-        {
-            GCMD_SIRTP  = 1UL << 24,
-            GCMD_IRE    = 1UL << 25,
-            GCMD_QIE    = 1UL << 26,
-            GCMD_SRTP   = 1UL << 30,
-            GCMD_TE     = 1UL << 31,
-        };
+    enum Cmd
+    {
+        GCMD_SIRTP = 1UL << 24,
+        GCMD_IRE = 1UL << 25,
+        GCMD_QIE = 1UL << 26,
+        GCMD_SRTP = 1UL << 30,
+        GCMD_TE = 1UL << 31,
+    };
 
-        inline unsigned nfr() const { return static_cast<unsigned>(cap >> 40 & 0xff) + 1; }
+    inline unsigned nfr() const { return static_cast<unsigned>(cap >> 40 & 0xff) + 1; }
 
-        inline mword fro() const { return static_cast<mword>(cap >> 20 & 0x3ff0) + reg_base; }
+    inline mword fro() const { return static_cast<mword>(cap >> 20 & 0x3ff0) + reg_base; }
 
-        inline mword iro() const { return static_cast<mword>(ecap >> 4 & 0x3ff0) + reg_base; }
+    inline mword iro() const { return static_cast<mword>(ecap >> 4 & 0x3ff0) + reg_base; }
 
-        inline unsigned ir() const { return static_cast<unsigned>(ecap) & 0x8; }
+    inline unsigned ir() const { return static_cast<unsigned>(ecap) & 0x8; }
 
-        inline unsigned qi() const { return static_cast<unsigned>(ecap) & 0x2; }
+    inline unsigned qi() const { return static_cast<unsigned>(ecap) & 0x2; }
 
-        // Return the number of supported page table levels.
-        int page_table_levels() const;
+    // Return the number of supported page table levels.
+    int page_table_levels() const;
 
-        template <typename T>
-        inline T read (Reg reg)
-        {
-            return *reinterpret_cast<T volatile *>(reg_base + reg);
-        }
+    template <typename T> inline T read(Reg reg) { return *reinterpret_cast<T volatile*>(reg_base + reg); }
 
-        template <typename T>
-        inline void write (Reg reg, T val)
-        {
-            *reinterpret_cast<T volatile *>(reg_base + reg) = val;
-        }
+    template <typename T> inline void write(Reg reg, T val)
+    {
+        *reinterpret_cast<T volatile*>(reg_base + reg) = val;
+    }
 
-        template <typename T>
-        inline T read (Tlb tlb)
-        {
-            return *reinterpret_cast<T volatile *>(iro() + tlb);
-        }
+    template <typename T> inline T read(Tlb tlb) { return *reinterpret_cast<T volatile*>(iro() + tlb); }
 
-        template <typename T>
-        inline void write (Tlb tlb, T val)
-        {
-            *reinterpret_cast<T volatile *>(iro() + tlb) = val;
-        }
+    template <typename T> inline void write(Tlb tlb, T val)
+    {
+        *reinterpret_cast<T volatile*>(iro() + tlb) = val;
+    }
 
-        inline void read (unsigned frr, uint64 &hi, uint64 &lo)
-        {
-            lo = *reinterpret_cast<uint64 volatile *>(fro() + frr * 16);
-            hi = *reinterpret_cast<uint64 volatile *>(fro() + frr * 16 + 8);
-            *reinterpret_cast<uint64 volatile *>(fro() + frr * 16 + 8) = 1ULL << 63;
-        }
+    inline void read(unsigned frr, uint64& hi, uint64& lo)
+    {
+        lo = *reinterpret_cast<uint64 volatile*>(fro() + frr * 16);
+        hi = *reinterpret_cast<uint64 volatile*>(fro() + frr * 16 + 8);
+        *reinterpret_cast<uint64 volatile*>(fro() + frr * 16 + 8) = 1ULL << 63;
+    }
 
-        inline void command (uint32 val)
-        {
-            write<uint32>(REG_GCMD, val);
-            while ((read<uint32>(REG_GSTS) & val) != val)
+    inline void command(uint32 val)
+    {
+        write<uint32>(REG_GCMD, val);
+        while ((read<uint32>(REG_GSTS) & val) != val)
+            pause();
+    }
+
+    inline void qi_submit(Dmar_qi const& q)
+    {
+        invq[invq_idx] = q;
+        invq_idx = (invq_idx + 1) % cnt;
+        write<uint64>(REG_IQT, invq_idx << 4);
+    };
+
+    inline void qi_wait()
+    {
+        for (uint64 v = read<uint64>(REG_IQT); v != read<uint64>(REG_IQH); pause())
+            ;
+    }
+
+    inline void flush_ctx()
+    {
+        if (qi()) {
+            qi_submit(Dmar_qi_ctx());
+            qi_submit(Dmar_qi_tlb());
+            qi_wait();
+        } else {
+            write<uint64>(REG_CCMD, 1ULL << 63 | 1ULL << 61);
+            while (read<uint64>(REG_CCMD) & (1ULL << 63))
+                pause();
+            write<uint64>(REG_IOTLB, 1ULL << 63 | 1ULL << 60);
+            while (read<uint64>(REG_IOTLB) & (1ULL << 63))
                 pause();
         }
+    }
 
-        inline void qi_submit (Dmar_qi const &q)
-        {
-            invq[invq_idx] = q;
-            invq_idx = (invq_idx + 1) % cnt;
-            write<uint64>(REG_IQT, invq_idx << 4);
-        };
+    void fault_handler();
 
-        inline void qi_wait()
-        {
-            for (uint64 v = read<uint64>(REG_IQT); v != read<uint64>(REG_IQH); pause()) ;
-        }
+    /// Configure the basic DMAR unit registers.
+    void init();
 
-        inline void flush_ctx()
-        {
-            if (qi()) {
-                qi_submit (Dmar_qi_ctx());
-                qi_submit (Dmar_qi_tlb());
-                qi_wait();
-            } else {
-                write<uint64>(REG_CCMD, 1ULL << 63 | 1ULL << 61);
-                while (read<uint64>(REG_CCMD) & (1ULL << 63))
-                    pause();
-                write<uint64>(REG_IOTLB, 1ULL << 63 | 1ULL << 60);
-                while (read<uint64>(REG_IOTLB) & (1ULL << 63))
-                    pause();
-            }
-        }
+public:
+    Dmar(Paddr);
 
-        void fault_handler();
+    static inline void* operator new(size_t) { return cache.alloc(); }
 
-        /// Configure the basic DMAR unit registers.
-        void init();
-    public:
-        Dmar (Paddr);
+    /// Enable the DMAR unit, including re-initialization of registers (e.g. after suspend).
+    static inline void enable()
+    {
+        for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::init)());
+        for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::command)(gcmd));
+    }
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
+    /// Enable the DMAR unit with given feature flags from ACPI tables.
+    static inline void enable(unsigned flags)
+    {
+        if (!(flags & 1))
+            gcmd &= ~GCMD_IRE;
 
-        /// Enable the DMAR unit, including re-initialization of registers (e.g. after suspend).
-        static inline void enable()
-        {
-            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::init)());
-            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::command)(gcmd));
-        }
+        for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::command)(gcmd));
+    }
 
-        /// Enable the DMAR unit with given feature flags from ACPI tables.
-        static inline void enable (unsigned flags)
-        {
-            if (!(flags & 1))
-                gcmd &= ~GCMD_IRE;
+    static inline void set_irt(unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
+    {
+        irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
+    }
 
-            for_each(Forward_list_range {list}, mem_fn_closure(&Dmar::command)(gcmd));
-        }
+    static bool ire() { return gcmd & GCMD_IRE; }
 
-        static inline void set_irt (unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
-        {
-            irt[i].set (1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
-        }
+    static bool qie() { return gcmd & GCMD_QIE; }
 
-        static bool ire() { return gcmd & GCMD_IRE; }
+    static void flush_all_contexts()
+    {
+        for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::flush_ctx)());
+    }
 
-        static bool qie() { return gcmd & GCMD_QIE; }
+    void assign(unsigned long, Pd*);
 
-        static void flush_all_contexts()
-        {
-            for_each (Forward_list_range {list}, mem_fn_closure(&Dmar::flush_ctx)());
-        }
-
-        void assign (unsigned long, Pd *);
-
-        REGPARM (1)
-        static void vector (unsigned) asm ("msi_vector");
+    REGPARM(1)
+    static void vector(unsigned) asm("msi_vector");
 };

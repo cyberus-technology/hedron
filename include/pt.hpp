@@ -27,31 +27,29 @@ class Ec;
 
 class Pt : public Typed_kobject<Kobject::Type::PT>
 {
-    private:
-        static Slab_cache cache;
+private:
+    static Slab_cache cache;
 
-        static void free (Rcu_elem * a) {
-            delete static_cast<Pt *>(a);
-        }
+    static void free(Rcu_elem* a) { delete static_cast<Pt*>(a); }
 
-    public:
+public:
+    // Capability permission bitmask.
+    enum
+    {
+        PERM_CTRL = 1U << 0,
+        PERM_CALL = 1U << 1,
+    };
 
-        // Capability permission bitmask.
-        enum {
-            PERM_CTRL = 1U << 0,
-            PERM_CALL = 1U << 1,
-        };
+    Refptr<Ec> const ec;
+    Mtd const mtd;
+    mword const ip;
+    mword id;
 
-        Refptr<Ec> const ec;
-        Mtd        const mtd;
-        mword      const ip;
-        mword      id;
+    Pt(Pd*, mword, Ec*, Mtd, mword);
 
-        Pt (Pd *, mword, Ec *, Mtd, mword);
+    inline void set_id(mword i) { id = i; }
 
-        inline void set_id (mword i) { id = i; }
+    static inline void* operator new(size_t) { return cache.alloc(); }
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
-
-        static inline void operator delete (void *ptr) { cache.free (ptr); }
+    static inline void operator delete(void* ptr) { cache.free(ptr); }
 };

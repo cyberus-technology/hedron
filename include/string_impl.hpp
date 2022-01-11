@@ -22,44 +22,35 @@
 
 #include <stddef.h>
 
-inline void *impl_memcpy (void *d, void const *s, size_t n)
+inline void* impl_memcpy(void* d, void const* s, size_t n)
 {
-    void *dummy;
-    asm volatile ("rep; movsb"
-                  : "=D" (dummy), "+S" (s), "+c" (n)
-                  : "0" (d)
-                  : "memory");
+    void* dummy;
+    asm volatile("rep; movsb" : "=D"(dummy), "+S"(s), "+c"(n) : "0"(d) : "memory");
     return d;
 }
 
-inline void *impl_memmove (void *d, void const *s, size_t n)
+inline void* impl_memmove(void* d, void const* s, size_t n)
 {
     if (d < s) {
         return impl_memcpy(d, s, n);
     } else {
-        char       *d_end = static_cast<char       *>(d) + n - 1;
-        char const *s_end = static_cast<char const *>(s) + n - 1;
+        char* d_end = static_cast<char*>(d) + n - 1;
+        char const* s_end = static_cast<char const*>(s) + n - 1;
 
-        asm volatile ("std; rep movsb; cld"
-                      : "+S" (s_end), "+D" (d_end), "+c" (n)
-                      :
-                      : "memory");
+        asm volatile("std; rep movsb; cld" : "+S"(s_end), "+D"(d_end), "+c"(n) : : "memory");
 
         return d;
     }
 }
 
-inline void *impl_memset (void *d, int c, size_t n)
+inline void* impl_memset(void* d, int c, size_t n)
 {
-    void *dummy;
-    asm volatile ("rep; stosb"
-                  : "=D" (dummy), "+c" (n)
-                  : "0" (d), "a" (c)
-                  : "memory");
+    void* dummy;
+    asm volatile("rep; stosb" : "=D"(dummy), "+c"(n) : "0"(d), "a"(c) : "memory");
     return d;
 }
 
-inline bool impl_strnmatch (char const *s1, char const *s2, size_t n)
+inline bool impl_strnmatch(char const* s1, char const* s2, size_t n)
 {
     while (n && *s1 == *s2)
         s1++, s2++, n--;

@@ -21,9 +21,9 @@
 
 TEST_CASE("Atomic read-modify-write operations return new value")
 {
-    const int old_value {128};
-    int value_to_modify {old_value};
+    const int old_value{128};
+    int value_to_modify{old_value};
 
-    SECTION ("add") { CHECK (Atomic::add(value_to_modify, 1) == old_value + 1); };
-    SECTION ("sub") { CHECK (Atomic::sub(value_to_modify, 1) == old_value - 1); };
+    SECTION("add") { CHECK(Atomic::add(value_to_modify, 1) == old_value + 1); };
+    SECTION("sub") { CHECK(Atomic::sub(value_to_modify, 1) == old_value - 1); };
 }

@@ -25,13 +25,13 @@
  */
 class Acpi_scope
 {
-    public:
-        uint8       type;
-        uint8       length;
-        uint16      reserved;
-        uint8       id, b, d, f;
+public:
+    uint8 type;
+    uint8 length;
+    uint16 reserved;
+    uint8 id, b, d, f;
 
-        inline unsigned rid() const { return b << 8 | d << 3 | f; }
+    inline unsigned rid() const { return b << 8 | d << 3 | f; }
 };
 
 /*
@@ -39,16 +39,16 @@ class Acpi_scope
  */
 class Acpi_remap
 {
-    public:
-        uint16      type;
-        uint16      length;
+public:
+    uint16 type;
+    uint16 length;
 
-        enum Type
-        {
-            DMAR    = 0,
-            RMRR    = 1,
-            ATSR    = 2
-        };
+    enum Type
+    {
+        DMAR = 0,
+        RMRR = 1,
+        ATSR = 2
+    };
 };
 
 /*
@@ -56,14 +56,14 @@ class Acpi_remap
  */
 class Acpi_dmar : public Acpi_remap
 {
-    public:
-        uint8       flags;
-        uint8       reserved;
-        uint16      segment;
-        uint64      phys;
-        Acpi_scope  scope[];
+public:
+    uint8 flags;
+    uint8 reserved;
+    uint16 segment;
+    uint64 phys;
+    Acpi_scope scope[];
 
-        void parse() const;
+    void parse() const;
 };
 
 /*
@@ -71,14 +71,14 @@ class Acpi_dmar : public Acpi_remap
  */
 class Acpi_rmrr : public Acpi_remap
 {
-    public:
-        uint16      reserved;
-        uint16      segment;
-        uint64      base;
-        uint64      limit;
-        Acpi_scope  scope[];
+public:
+    uint16 reserved;
+    uint16 segment;
+    uint64 base;
+    uint64 limit;
+    Acpi_scope scope[];
 
-        void parse() const;
+    void parse() const;
 };
 
 /*
@@ -86,13 +86,13 @@ class Acpi_rmrr : public Acpi_remap
  */
 class Acpi_atsr : public Acpi_remap
 {
-    public:
-        uint8       flags;
-        uint8       reserved;
-        uint16      segment;
-        Acpi_scope  scope[];
+public:
+    uint8 flags;
+    uint8 reserved;
+    uint16 segment;
+    Acpi_scope scope[];
 
-        void parse() const;
+    void parse() const;
 };
 
 /*
@@ -100,11 +100,11 @@ class Acpi_atsr : public Acpi_remap
  */
 class Acpi_table_dmar : public Acpi_table
 {
-    public:
-        uint8       haw;
-        uint8       flags;
-        uint8       reserved[10];
-        Acpi_remap  remap[];
+public:
+    uint8 haw;
+    uint8 flags;
+    uint8 reserved[10];
+    Acpi_remap remap[];
 
-        void parse() const;
+    void parse() const;
 };

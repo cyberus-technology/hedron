@@ -25,49 +25,46 @@
 #include "memory.hpp"
 #include "string.hpp"
 
-#define trace(T,format,...)                                         \
-do {                                                                \
-    if (EXPECT_FALSE ((trace_mask & (T)) == (T))) {                 \
-        mword __esp;                                                \
-        Console::print ("[%2ld][%s:%d] " format,                    \
-                static_cast<long>(((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR \
-                 ? Cpu::id() : ~0UL),                               \
-                 FILENAME,                                          \
-                 __LINE__,                                          \
-                 ## __VA_ARGS__);                                   \
-    }                                                               \
-} while (0)
+#define trace(T, format, ...)                                                                                \
+    do {                                                                                                     \
+        if (EXPECT_FALSE((trace_mask & (T)) == (T))) {                                                       \
+            mword __esp;                                                                                     \
+            Console::print(                                                                                  \
+                "[%2ld][%s:%d] " format,                                                                     \
+                static_cast<long>(                                                                           \
+                    ((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR ? Cpu::id() : ~0UL),    \
+                FILENAME, __LINE__, ##__VA_ARGS__);                                                          \
+        }                                                                                                    \
+    } while (0)
 
 /*
  * Definition of trace events
  */
-enum {
-    TRACE_CPU       = 1UL << 0,
-    TRACE_IOMMU     = 1UL << 1,
-    TRACE_APIC      = 1UL << 2,
-    TRACE_VMX       = 1UL << 4,
-    TRACE_SVM       = 1UL << 5,
-    TRACE_ACPI      = 1UL << 8,
-    TRACE_MEMORY    = 1UL << 13,
-    TRACE_PCI       = 1UL << 14,
-    TRACE_SCHEDULE  = 1UL << 16,
-    TRACE_DEL       = 1UL << 18,
-    TRACE_REV       = 1UL << 19,
-    TRACE_RCU       = 1UL << 20,
-    TRACE_SYSCALL   = 1UL << 30,
-    TRACE_ERROR     = 1UL << 31,
+enum
+{
+    TRACE_CPU = 1UL << 0,
+    TRACE_IOMMU = 1UL << 1,
+    TRACE_APIC = 1UL << 2,
+    TRACE_VMX = 1UL << 4,
+    TRACE_SVM = 1UL << 5,
+    TRACE_ACPI = 1UL << 8,
+    TRACE_MEMORY = 1UL << 13,
+    TRACE_PCI = 1UL << 14,
+    TRACE_SCHEDULE = 1UL << 16,
+    TRACE_DEL = 1UL << 18,
+    TRACE_REV = 1UL << 19,
+    TRACE_RCU = 1UL << 20,
+    TRACE_SYSCALL = 1UL << 30,
+    TRACE_ERROR = 1UL << 31,
 };
 
 /*
  * Enabled trace events
  */
-unsigned const trace_mask =
-                            TRACE_CPU       |
-                            TRACE_IOMMU     |
+unsigned const trace_mask = TRACE_CPU | TRACE_IOMMU |
 #ifdef DEBUG
-//                            TRACE_APIC      |
-                            TRACE_VMX       |
-                            TRACE_SVM       |
+                            //                            TRACE_APIC      |
+                            TRACE_VMX | TRACE_SVM |
 //                            TRACE_ACPI      |
 //                            TRACE_MEMORY    |
 //                            TRACE_PCI       |
@@ -77,5 +74,4 @@ unsigned const trace_mask =
 //                            TRACE_RCU       |
 //                            TRACE_SYSCALL   |
 #endif
-                            TRACE_ERROR     |
-                            0;
+                            TRACE_ERROR | 0;

@@ -24,25 +24,25 @@
 
 class Eh
 {
-    public:
-        uint32  ei_magic;
-        uint8   ei_class, ei_data, ei_version, ei_osabi, ei_abiversion, ei_pad[7];
-        uint16  type, machine;
-        uint32  version;
-        mword   entry, ph_offset, sh_offset;
-        uint32  flags;
-        uint16  eh_size, ph_size, ph_count, sh_size, sh_count, strtab;
+public:
+    uint32 ei_magic;
+    uint8 ei_class, ei_data, ei_version, ei_osabi, ei_abiversion, ei_pad[7];
+    uint16 type, machine;
+    uint32 version;
+    mword entry, ph_offset, sh_offset;
+    uint32 flags;
+    uint16 eh_size, ph_size, ph_count, sh_size, sh_count, strtab;
 };
 
 class Ph32
 {
-    public:
-        uint32  type, f_offs, v_addr, p_addr, f_size, m_size, flags, align;
+public:
+    uint32 type, f_offs, v_addr, p_addr, f_size, m_size, flags, align;
 };
 
 class Ph64
 {
-    public:
-        uint32  type, flags;
-        uint64  f_offs, v_addr, p_addr, f_size, m_size, align;
+public:
+    uint32 type, flags;
+    uint64 f_offs, v_addr, p_addr, f_size, m_size, align;
 };

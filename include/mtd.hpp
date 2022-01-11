@@ -26,45 +26,45 @@
 
 class Mtd
 {
-    public:
-        mword val;
+public:
+    mword val;
 
-        enum Item
-        {
-            // IPC
-            GPR_ACDB        = 1UL << 0,
-            GPR_BSD         = 1UL << 1,
-            RSP             = 1UL << 2,
-            RIP_LEN         = 1UL << 3,
-            RFLAGS          = 1UL << 4,
-            DS_ES           = 1UL << 5,
-            FS_GS           = 1UL << 6,
-            CS_SS           = 1UL << 7,
-            TR              = 1UL << 8,
-            LDTR            = 1UL << 9,
-            GDTR            = 1UL << 10,
-            IDTR            = 1UL << 11,
-            CR              = 1UL << 12,
-            DR              = 1UL << 13,
-            SYSENTER        = 1UL << 14,
-            QUAL            = 1UL << 15,
-            CTRL            = 1UL << 16,
-            INJ             = 1UL << 17,
-            STA             = 1UL << 18,
-            TSC             = 1UL << 19,
-            EFER_PAT        = 1UL << 20,
-            PDPTE           = 1UL << 21,
-            GPR_R8_R15      = 1UL << 22,
-            SYSCALL_SWAPGS  = 1UL << 23,
-            TSC_TIMEOUT     = 1UL << 24,
+    enum Item
+    {
+        // IPC
+        GPR_ACDB = 1UL << 0,
+        GPR_BSD = 1UL << 1,
+        RSP = 1UL << 2,
+        RIP_LEN = 1UL << 3,
+        RFLAGS = 1UL << 4,
+        DS_ES = 1UL << 5,
+        FS_GS = 1UL << 6,
+        CS_SS = 1UL << 7,
+        TR = 1UL << 8,
+        LDTR = 1UL << 9,
+        GDTR = 1UL << 10,
+        IDTR = 1UL << 11,
+        CR = 1UL << 12,
+        DR = 1UL << 13,
+        SYSENTER = 1UL << 14,
+        QUAL = 1UL << 15,
+        CTRL = 1UL << 16,
+        INJ = 1UL << 17,
+        STA = 1UL << 18,
+        TSC = 1UL << 19,
+        EFER_PAT = 1UL << 20,
+        PDPTE = 1UL << 21,
+        GPR_R8_R15 = 1UL << 22,
+        SYSCALL_SWAPGS = 1UL << 23,
+        TSC_TIMEOUT = 1UL << 24,
 
-            VINTR           = 1UL << 26,
-            EOI             = 1UL << 27,
-            TPR             = 1UL << 28,
+        VINTR = 1UL << 26,
+        EOI = 1UL << 27,
+        TPR = 1UL << 28,
 
-            TLB             = 1UL << 30,
-            FPU             = 1UL << 31,
-        };
+        TLB = 1UL << 30,
+        FPU = 1UL << 31,
+    };
 
-        inline explicit Mtd (mword v) : val (v) {}
+    inline explicit Mtd(mword v) : val(v) {}
 };

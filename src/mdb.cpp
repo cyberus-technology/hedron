@@ -16,17 +16,17 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "lock_guard.hpp"
 #include "mdb.hpp"
+#include "lock_guard.hpp"
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Mdb::cache (sizeof (Mdb), 16);
+INIT_PRIORITY(PRIO_SLAB)
+Slab_cache Mdb::cache(sizeof(Mdb), 16);
 
 Spinlock Mdb::lock;
 
-bool Mdb::insert_node (Mdb *p, mword a)
+bool Mdb::insert_node(Mdb* p, mword a)
 {
-    Lock_guard <Spinlock> guard (lock);
+    Lock_guard<Spinlock> guard(lock);
 
     if (!p->alive())
         return false;
@@ -42,9 +42,9 @@ bool Mdb::insert_node (Mdb *p, mword a)
     return true;
 }
 
-void Mdb::demote_node (mword a)
+void Mdb::demote_node(mword a)
 {
-    Lock_guard <Spinlock> guard (lock);
+    Lock_guard<Spinlock> guard(lock);
 
     node_attr &= ~a;
 }
@@ -54,7 +54,7 @@ bool Mdb::remove_node()
     if (node_attr)
         return false;
 
-    Lock_guard <Spinlock> guard (lock);
+    Lock_guard<Spinlock> guard(lock);
 
     if (!alive())
         return false;

@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "types.hpp"
 #include "queue.hpp"
+#include "types.hpp"
 
 class Sm;
 
@@ -26,22 +26,22 @@ class Si
 {
     friend class Queue<Si>;
 
-    private:
-        Sm *        sm;
-        Si *        prev;
-        Si *        next;
+private:
+    Sm* sm;
+    Si* prev;
+    Si* next;
 
-    public:
-        mword const value;
+public:
+    mword const value;
 
-        Si (Sm *, mword);
-        ~Si();
+    Si(Sm*, mword);
+    ~Si();
 
-        inline bool is_signal() const { return sm; }
+    inline bool is_signal() const { return sm; }
 
-        inline bool queued() const { return next; }
+    inline bool queued() const { return next; }
 
-        void chain(Sm *s);
+    void chain(Sm* s);
 
-        void submit();
+    void submit();
 };

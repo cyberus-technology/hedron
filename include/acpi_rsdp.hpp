@@ -26,21 +26,21 @@
  */
 class Acpi_rsdp
 {
-    private:
-        uint32  signature[2];
-        uint8   checksum;
-        char    oem_id[6];
-        uint8   revision;
-        uint32  rsdt_addr;
-        uint32  length;
-        uint64  xsdt_addr;
-        uint8   extended_checksum;
+private:
+    uint32 signature[2];
+    uint8 checksum;
+    char oem_id[6];
+    uint8 revision;
+    uint32 rsdt_addr;
+    uint32 length;
+    uint64 xsdt_addr;
+    uint8 extended_checksum;
 
-        bool good_signature() const;
-        bool good_checksum (size_t len = 20) const;
+    bool good_signature() const;
+    bool good_checksum(size_t len = 20) const;
 
-        static Acpi_rsdp *find (mword, unsigned);
+    static Acpi_rsdp* find(mword, unsigned);
 
-    public:
-        static void parse (mword = 0);
+public:
+    static void parse(mword = 0);
 };

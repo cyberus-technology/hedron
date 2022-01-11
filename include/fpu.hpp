@@ -25,50 +25,51 @@
 
 class Fpu
 {
-    private:
-        struct FxsaveHdr {
-            uint16 fcw;
-            uint16 fsw;
-            uint8 ftw;
-            uint8 res_;
-            uint16 fop;
-            uint64 fip;
-            uint64 fdp;
-            uint32 mxcsr;
-            uint32 mxcsr_mask;
-        };
+private:
+    struct FxsaveHdr {
+        uint16 fcw;
+        uint16 fsw;
+        uint8 ftw;
+        uint8 res_;
+        uint16 fop;
+        uint64 fip;
+        uint64 fdp;
+        uint32 mxcsr;
+        uint32 mxcsr_mask;
+    };
 
-        struct FpuCtx {
-            FxsaveHdr legacy_hdr;
-        };
+    struct FpuCtx {
+        FxsaveHdr legacy_hdr;
+    };
 
-        FpuCtx *data;
+    FpuCtx* data;
 
-        static Slab_cache *cache;
+    static Slab_cache* cache;
 
-        enum class Mode : uint8 {
-            XSAVEOPT,
-            XSAVE,
-        };
+    enum class Mode : uint8
+    {
+        XSAVEOPT,
+        XSAVE,
+    };
 
-        struct FpuConfig {
-            uint64 xsave_scb;   // State-Component Bitmap
-            size_t context_size;
-            Mode mode;
-        };
+    struct FpuConfig {
+        uint64 xsave_scb; // State-Component Bitmap
+        size_t context_size;
+        Mode mode;
+    };
 
-        static FpuConfig config;
+    static FpuConfig config;
 
-    public:
-        static void probe();
-        static void init();
+public:
+    static void probe();
+    static void init();
 
-        void save();
-        void load();
+    void save();
+    void load();
 
-        static bool load_xcr0 (uint64 xcr0);
-        static void restore_xcr0();
+    static bool load_xcr0(uint64 xcr0);
+    static void restore_xcr0();
 
-        Fpu();
-        ~Fpu() { cache->free (data); }
+    Fpu();
+    ~Fpu() { cache->free(data); }
 };

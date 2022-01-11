@@ -23,79 +23,73 @@
 #include "config.hpp"
 #include "cpu.hpp"
 #include "cpuset.hpp"
-#include "hpt.hpp"
 #include "dpt.hpp"
 #include "ept.hpp"
+#include "hpt.hpp"
 #include "space.hpp"
 #include "tlb_cleanup.hpp"
 
 class Space_mem
 {
-    public:
-        Hpt hpt;
+public:
+    Hpt hpt;
 
-        Dpt dpt;
+    Dpt dpt;
 
-        Ept ept;
-        Hpt npt;
+    Ept ept;
+    Hpt npt;
 
-        mword did;
+    mword did;
 
-        // A bitmask of CPUs that have at least one EC in this PD.
-        Cpuset cpus;
+    // A bitmask of CPUs that have at least one EC in this PD.
+    Cpuset cpus;
 
-        // A bitmask of all CPUs that may have stale host page table mappings of
-        // this Space_mem's Hpt cached in their TLB.
-        Cpuset stale_host_tlb;
+    // A bitmask of all CPUs that may have stale host page table mappings of
+    // this Space_mem's Hpt cached in their TLB.
+    Cpuset stale_host_tlb;
 
-        // A bitmask of all CPUs that may have stale guest page table mappings
-        // of this Space_mem's ept or npt cached in their TLB.
-        Cpuset stale_guest_tlb;
+    // A bitmask of all CPUs that may have stale guest page table mappings
+    // of this Space_mem's ept or npt cached in their TLB.
+    Cpuset stale_guest_tlb;
 
-        static unsigned did_ctr;
+    static unsigned did_ctr;
 
-        // Constructor for the initial kernel memory space. The HPT doubles as
-        // database, which memory is safe to give to userspace.
-        Space_mem() : hpt (Hpt::make_golden_hpt()), did (Atomic::add (did_ctr, 1U)) {}
+    // Constructor for the initial kernel memory space. The HPT doubles as
+    // database, which memory is safe to give to userspace.
+    Space_mem() : hpt(Hpt::make_golden_hpt()), did(Atomic::add(did_ctr, 1U)) {}
 
-        // Constructor for normal memory spaces. The hpt parameter is the source
-        // page table to populate kernel mappings.
-        explicit Space_mem(Hpt &src) : hpt (src.deep_copy (LINK_ADDR, SPC_LOCAL)), did (Atomic::add (did_ctr, 1U)) {}
+    // Constructor for normal memory spaces. The hpt parameter is the source
+    // page table to populate kernel mappings.
+    explicit Space_mem(Hpt& src) : hpt(src.deep_copy(LINK_ADDR, SPC_LOCAL)), did(Atomic::add(did_ctr, 1U)) {}
 
-        NONNULL inline bool lookup (mword virt, Paddr *phys)
-        {
-            return hpt.lookup_phys (virt, phys);
-        }
+    NONNULL inline bool lookup(mword virt, Paddr* phys) { return hpt.lookup_phys(virt, phys); }
 
-        inline void insert (mword virt, unsigned o, mword attr, Paddr phys)
-        {
-            hpt.update ({virt, phys, attr, static_cast<Hpt::ord_t>(o + PAGE_BITS)});
-        }
+    inline void insert(mword virt, unsigned o, mword attr, Paddr phys)
+    {
+        hpt.update({virt, phys, attr, static_cast<Hpt::ord_t>(o + PAGE_BITS)});
+    }
 
-        inline Paddr replace (mword v, Paddr p)
-        {
-            return hpt.replace (v, p);
-        }
+    inline Paddr replace(mword v, Paddr p) { return hpt.replace(v, p); }
 
-        void insert_root (uint64, uint64, mword = 0x7);
+    void insert_root(uint64, uint64, mword = 0x7);
 
-        // Claim a page for kernel use.
-        //
-        // Create a mapping for a physical memory region in the kernel page
-        // tables and, if exclusive is true, prevent userspace from mapping this
-        // page. order is given as byte order.
-        void claim (mword virt, unsigned o, mword attr, Paddr phys, bool exclusive);
+    // Claim a page for kernel use.
+    //
+    // Create a mapping for a physical memory region in the kernel page
+    // tables and, if exclusive is true, prevent userspace from mapping this
+    // page. order is given as byte order.
+    void claim(mword virt, unsigned o, mword attr, Paddr phys, bool exclusive);
 
-        // Convenience wrapper around claim() for single MMIO pages.
-        void claim_mmio_page (mword virt, Paddr phys, bool exclusive = true);
+    // Convenience wrapper around claim() for single MMIO pages.
+    void claim_mmio_page(mword virt, Paddr phys, bool exclusive = true);
 
-        // Delegate memory from one memory space to another.
-        Tlb_cleanup delegate (Space_mem *snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub);
+    // Delegate memory from one memory space to another.
+    Tlb_cleanup delegate(Space_mem* snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub);
 
-        // Revoke specific rights from a region of memory.
-        Tlb_cleanup revoke (mword vaddr, mword ord, mword attr);
+    // Revoke specific rights from a region of memory.
+    Tlb_cleanup revoke(mword vaddr, mword ord, mword attr);
 
-        static void shootdown();
+    static void shootdown();
 
-        void init (unsigned);
+    void init(unsigned);
 };

@@ -36,7 +36,7 @@ void Bootstrap::bootstrap()
     bool const is_initial_boot = not Ec::idle_ec();
 
     if (Cpu_info cpu_info = Cpu::init(); is_initial_boot) {
-        Hip::add_cpu (cpu_info);
+        Hip::add_cpu(cpu_info);
     }
 
     // Let the next CPU initialize itself. From now one, we can only touch
@@ -58,7 +58,7 @@ void Bootstrap::bootstrap()
     // post for details:
     //
     // https://community.intel.com/t5/Processors/Missing-TSC-deadline-interrupt-after-suspend-resume-and-using/td-p/287889
-    Msr::write (Msr::IA32_TSC, Cpu::initial_tsc);
+    Msr::write(Msr::IA32_TSC, Cpu::initial_tsc);
 
     if (Cpu::bsp()) {
         // All CPUs are online. Time to restore the low memory that we've
@@ -80,27 +80,29 @@ void Bootstrap::bootstrap()
 
 void Bootstrap::wait_for_all_cpus()
 {
-    for (Atomic::add (barrier, 1UL); Atomic::load (barrier) != Cpu::online; pause()) ;
+    for (Atomic::add(barrier, 1UL); Atomic::load(barrier) != Cpu::online; pause())
+        ;
 }
 
 void Bootstrap::create_idle_ec()
 {
     Timeout_budget::init();
 
-    Ec::idle_ec() = new Ec (Pd::current() = &Pd::kern, Cpu::id());
+    Ec::idle_ec() = new Ec(Pd::current() = &Pd::kern, Cpu::id());
     Ec::current() = Ec::idle_ec();
 
     Ec::current()->add_ref();
     Pd::current()->add_ref();
-    Space_obj::insert_root (Sc::current() = new Sc (&Pd::kern, Cpu::id(), Ec::current()));
+    Space_obj::insert_root(Sc::current() = new Sc(&Pd::kern, Cpu::id(), Ec::current()));
     Sc::current()->add_ref();
 }
 
 void Bootstrap::create_roottask()
 {
-    ALIGNED(32) static No_destruct<Pd> root (&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
+    ALIGNED(32) static No_destruct<Pd> root(&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
 
-    Ec *root_ec = new Ec (&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
-    Sc *root_sc = new Sc (&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
+    Ec* root_ec =
+        new Ec(&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
+    Sc* root_sc = new Sc(&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
     root_sc->remote_enqueue();
 }

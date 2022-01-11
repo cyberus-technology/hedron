@@ -24,8 +24,7 @@ enum class Cpu_vendor : unsigned
     AMD,
 };
 
-struct Cpu_info
-{
+struct Cpu_info {
     unsigned package;
     unsigned core;
     unsigned thread;

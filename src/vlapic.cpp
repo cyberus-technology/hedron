@@ -15,23 +15,23 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "vlapic.hpp"
 #include "assert.hpp"
 #include "buddy.hpp"
-#include "vlapic.hpp"
 
-static_assert(sizeof (Vlapic) == PAGE_SIZE, "Virtual LAPIC page can only be page sized");
+static_assert(sizeof(Vlapic) == PAGE_SIZE, "Virtual LAPIC page can only be page sized");
 
-void *Vlapic::operator new (size_t size)
+void* Vlapic::operator new(size_t size)
 {
-    assert (size == sizeof (Vlapic));
+    assert(size == sizeof(Vlapic));
 
-    return Buddy::allocator.alloc (0, Buddy::FILL_0);
+    return Buddy::allocator.alloc(0, Buddy::FILL_0);
 }
 
-void Vlapic::operator delete (void *ptr)
+void Vlapic::operator delete(void* ptr)
 {
-    mword const ptr_int {reinterpret_cast<mword>(ptr)};
+    mword const ptr_int{reinterpret_cast<mword>(ptr)};
 
-    assert ((ptr_int & PAGE_MASK) == 0);
-    Buddy::allocator.free (reinterpret_cast<mword>(ptr));
+    assert((ptr_int & PAGE_MASK) == 0);
+    Buddy::allocator.free(reinterpret_cast<mword>(ptr));
 }

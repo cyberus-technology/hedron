@@ -27,24 +27,24 @@
 
 class Idt : public Descriptor
 {
-    private:
-        uint32 val[sizeof (mword) / 2];
+private:
+    uint32 val[sizeof(mword) / 2];
 
-        inline void set (Type type, unsigned dpl, unsigned selector, mword offset)
-        {
-            val[0] = static_cast<uint32>(selector << 16 | (offset & 0xffff));
-            val[1] = static_cast<uint32>((offset & 0xffff0000) | 1u << 15 | dpl << 13 | type);
-            val[2] = static_cast<uint32>(offset >> 32);
-        }
+    inline void set(Type type, unsigned dpl, unsigned selector, mword offset)
+    {
+        val[0] = static_cast<uint32>(selector << 16 | (offset & 0xffff));
+        val[1] = static_cast<uint32>((offset & 0xffff0000) | 1u << 15 | dpl << 13 | type);
+        val[2] = static_cast<uint32>(offset >> 32);
+    }
 
-    public:
-        static Idt idt[VEC_MAX];
+public:
+    static Idt idt[VEC_MAX];
 
-        static void build();
+    static void build();
 
-        static inline void load()
-        {
-            Pseudo_descriptor desc {sizeof (idt) - 1, reinterpret_cast<mword>(idt)};
-            asm volatile ("lidt %0" : : "m" (desc));
-        }
+    static inline void load()
+    {
+        Pseudo_descriptor desc{sizeof(idt) - 1, reinterpret_cast<mword>(idt)};
+        asm volatile("lidt %0" : : "m"(desc));
+    }
 };

@@ -33,131 +33,131 @@ using Hpt_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_c
 // whether pages can be delegated (PTE_NODELEG).
 class Hpt : public Hpt_page_table
 {
-    private:
+private:
+    // The number of leaf levels we support.
+    static level_t supported_leaf_levels;
 
-        // The number of leaf levels we support.
-        static level_t supported_leaf_levels;
+    static void flush()
+    {
+        mword cr3;
+        asm volatile("mov %%cr3, %0; mov %0, %%cr3" : "=&r"(cr3));
+    }
 
-        static void flush()
-        {
-            mword cr3;
-            asm volatile ("mov %%cr3, %0; mov %0, %%cr3" : "=&r" (cr3));
-        }
+    using Hpt_page_table::Hpt_page_table;
 
-        using Hpt_page_table::Hpt_page_table;
+public:
+    enum : mword
+    {
+        // The bitmask covers legal memory type values as we get them from
+        // the MTRRs.
+        MT_MASK = 0b111UL,
+    };
 
-    public:
+    enum : ord_t
+    {
+        PTE_MT_SHIFT = 53,
+    };
 
-        enum : mword {
-            // The bitmask covers legal memory type values as we get them from
-            // the MTRRs.
-            MT_MASK = 0b111UL,
-        };
+    enum : pte_t
+    {
+        PTE_P = 1ULL << 0,
+        PTE_W = 1ULL << 1,
+        PTE_U = 1ULL << 2,
+        PTE_UC = 1ULL << 4,
+        PTE_S = 1ULL << 7,
+        PTE_G = 1ULL << 8,
 
-        enum : ord_t {
-            PTE_MT_SHIFT = 53,
-        };
+        PTE_A = 1ULL << 5,
+        PTE_D = 1ULL << 6,
 
-        enum : pte_t {
-            PTE_P  = 1ULL << 0,
-            PTE_W  = 1ULL << 1,
-            PTE_U  = 1ULL << 2,
-            PTE_UC = 1ULL << 4,
-            PTE_S  = 1ULL << 7,
-            PTE_G  = 1ULL << 8,
+        // We encode memory types in available bits.
+        PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
 
-            PTE_A  = 1ULL << 5,
-            PTE_D  = 1ULL << 6,
+        PTE_PAT0 = 1ULL << 3,
+        PTE_PAT1 = 1ULL << 4,
+        PTE_PAT2 = 1ULL << 7, // Only valid in leaf level (otherwise it's bit 12)
 
-            // We encode memory types in available bits.
-            PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
+        // Prevent pages from being delegated. This is useful for pages that
+        // the kernel needs to be able to reclaim from userspace (e.g. UTCBs,
+        // vLAPIC pages).
+        PTE_NODELEG = 1ULL << 56,
 
-            PTE_PAT0 = 1ULL << 3,
-            PTE_PAT1 = 1ULL << 4,
-            PTE_PAT2 = 1ULL << 7, // Only valid in leaf level (otherwise it's bit 12)
+        PTE_NX = 1ULL << 63,
+    };
 
-            // Prevent pages from being delegated. This is useful for pages that
-            // the kernel needs to be able to reclaim from userspace (e.g. UTCBs,
-            // vLAPIC pages).
-            PTE_NODELEG = 1ULL << 56,
+    enum : uint32
+    {
+        ERR_W = 1U << 1,
+        ERR_U = 1U << 2,
+    };
 
-            PTE_NX = 1ULL << 63,
-        };
+    static constexpr pte_t all_rights{PTE_P | PTE_W | PTE_U | PTE_A | PTE_D};
+    static constexpr pte_t mask{PTE_NX | PTE_MT_MASK | PTE_NODELEG | PTE_UC | PTE_G | all_rights};
 
-        enum : uint32 {
-            ERR_W = 1U << 1,
-            ERR_U = 1U << 2,
-        };
+    // Adjust the number of leaf levels to the given value.
+    static void set_supported_leaf_levels(level_t level);
 
-        static constexpr pte_t all_rights {PTE_P | PTE_W | PTE_U | PTE_A | PTE_D};
-        static constexpr pte_t mask {PTE_NX | PTE_MT_MASK | PTE_NODELEG | PTE_UC | PTE_G | all_rights};
+    // Return a structural copy of this page table for the given virtual
+    // address range.
+    Hpt deep_copy(mword vaddr_start, mword vaddr_end);
 
-        // Adjust the number of leaf levels to the given value.
-        static void set_supported_leaf_levels(level_t level);
+    void make_current(mword pcid)
+    {
+        mword phys_root{root()};
 
-        // Return a structural copy of this page table for the given virtual
-        // address range.
-        Hpt deep_copy(mword vaddr_start, mword vaddr_end);
+        assert(leaf_levels() <= supported_leaf_levels);
+        assert((phys_root & PAGE_MASK) == 0);
 
-        void make_current (mword pcid)
-        {
-            mword phys_root {root()};
+        asm volatile("mov %0, %%cr3" : : "r"(phys_root | pcid) : "memory");
+    }
 
-            assert (leaf_levels() <= supported_leaf_levels);
-            assert ((phys_root & PAGE_MASK) == 0);
+    // The limit of how much memory can be accessed safely after remap().
+    static const size_t remap_guaranteed_size;
 
-            asm volatile ("mov %0, %%cr3" : : "r" (phys_root | pcid) : "memory");
-        }
+    // Temporarily map the given physical memory.
+    //
+    // Establish a temporary mapping for the given physical address in a
+    // special kernel virtual address region reserved for this
+    // usecase. Return a pointer to access this memory. phys does not need
+    // to be aligned.
+    //
+    // If use_boot_hpt is true, the mapping is established in the boot page
+    // tables. If not, use the current Pd's kernel address space.
+    //
+    // The returned pointer is valid until the next remap call (on any core).
+    static void* remap(Paddr phys, bool use_boot_hpt = true);
 
-        // The limit of how much memory can be accessed safely after remap().
-        static const size_t remap_guaranteed_size;
+    // Atomically change a 4K page mapping to point to a new frame. Return
+    // the physical address that backs vaddr.
+    Paddr replace(mword vaddr, mword paddr);
 
-        // Temporarily map the given physical memory.
-        //
-        // Establish a temporary mapping for the given physical address in a
-        // special kernel virtual address region reserved for this
-        // usecase. Return a pointer to access this memory. phys does not need
-        // to be aligned.
-        //
-        // If use_boot_hpt is true, the mapping is established in the boot page
-        // tables. If not, use the current Pd's kernel address space.
-        //
-        // The returned pointer is valid until the next remap call (on any core).
-        static void *remap (Paddr phys, bool use_boot_hpt = true);
+    // Create a page table from existing page table structures.
+    explicit Hpt(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
 
-        // Atomically change a 4K page mapping to point to a new frame. Return
-        // the physical address that backs vaddr.
-        Paddr replace (mword vaddr, mword paddr);
+    // Create a page table from scratch.
+    Hpt() : Hpt_page_table(4, supported_leaf_levels) {}
 
-        // Create a page table from existing page table structures.
-        explicit Hpt(pte_pointer_t rootp) : Hpt_page_table(4, supported_leaf_levels, rootp) {}
+    // Create the page table that is (ab)used as physical memory
+    // database. This is never actually used as a page table by the CPU, so
+    // we can pretend to have really large pages to save valuable kernel
+    // memory.
+    static Hpt make_golden_hpt() { return Hpt(4, 4); }
 
-        // Create a page table from scratch.
-        Hpt() : Hpt_page_table(4, supported_leaf_levels) {}
+    // Convert mapping database attributes to page table attributes.
+    static pte_t hw_attr(mword a);
 
-        // Create the page table that is (ab)used as physical memory
-        // database. This is never actually used as a page table by the CPU, so
-        // we can pretend to have really large pages to save valuable kernel
-        // memory.
-        static Hpt make_golden_hpt() { return Hpt (4, 4); }
+    // Return the intersection of rights from source and
+    // desired. Metainformation (memory type) is carried forward from
+    // source.
+    static pte_t merge_hw_attr(pte_t source, pte_t desired);
 
-        // Convert mapping database attributes to page table attributes.
-        static pte_t hw_attr(mword a);
+    // Return the PAT memory type of a HPT page table entry.
+    static mword attr_to_pat(pte_t source)
+    {
+        return ((source & PTE_PAT0) ? 1U << 0 : 0) | ((source & PTE_PAT1) ? 1U << 1 : 0) |
+               ((source & PTE_PAT2) ? 1U << 2 : 0);
+    }
 
-        // Return the intersection of rights from source and
-        // desired. Metainformation (memory type) is carried forward from
-        // source.
-        static pte_t merge_hw_attr(pte_t source, pte_t desired);
-
-        // Return the PAT memory type of a HPT page table entry.
-        static mword attr_to_pat(pte_t source)
-        {
-            return
-                ((source & PTE_PAT0) ? 1U << 0 : 0) |
-                ((source & PTE_PAT1) ? 1U << 1 : 0) |
-                ((source & PTE_PAT2) ? 1U << 2 : 0);
-        }
-
-        // The boot page table as constructed in start.S.
-        static Hpt &boot_hpt();
+    // The boot page table as constructed in start.S.
+    static Hpt& boot_hpt();
 };

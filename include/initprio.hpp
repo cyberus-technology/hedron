@@ -20,9 +20,9 @@
 
 #pragma once
 
-#define AFTER(X)        (X + 1)
+#define AFTER(X) (X + 1)
 
-#define PRIO_GLOBAL     100
-#define PRIO_BUDDY      AFTER (PRIO_GLOBAL)
-#define PRIO_SLAB       AFTER (PRIO_BUDDY)
-#define PRIO_CONSOLE    0xfffe
+#define PRIO_GLOBAL 100
+#define PRIO_BUDDY AFTER(PRIO_GLOBAL)
+#define PRIO_SLAB AFTER(PRIO_BUDDY)
+#define PRIO_CONSOLE 0xfffe

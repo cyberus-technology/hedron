@@ -21,7 +21,7 @@
 #include "ec.hpp"
 #include "svm.hpp"
 
-void Ec::svm_exception (mword reason)
+void Ec::svm_exception(mword reason)
 {
     if (current()->regs.vmcb->exitintinfo & 0x80000000) {
 
@@ -44,22 +44,22 @@ void Ec::handle_svm()
     mword reason = static_cast<mword>(current()->regs.vmcb->exitcode);
 
     switch (reason) {
-        case -1UL:              // Invalid state
-            reason = NUM_VMI - 3;
-            break;
-        case 0x400:             // NPT
-            reason = NUM_VMI - 4;
-            break;
+    case -1UL: // Invalid state
+        reason = NUM_VMI - 3;
+        break;
+    case 0x400: // NPT
+        reason = NUM_VMI - 4;
+        break;
     }
 
     switch (reason) {
 
-        case 0x40 ... 0x5f:     // Exception
-            svm_exception (reason);
+    case 0x40 ... 0x5f: // Exception
+        svm_exception(reason);
 
-        case 0x60:              // EXTINT
-            asm volatile ("sti; nop; cli" : : : "memory");
-            ret_user_vmrun();
+    case 0x60: // EXTINT
+        asm volatile("sti; nop; cli" : : : "memory");
+        ret_user_vmrun();
     }
 
     current()->regs.dst_portal = reason;

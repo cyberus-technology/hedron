@@ -27,70 +27,61 @@ class Slab;
 
 class Slab_cache
 {
-    private:
-        Spinlock    lock;
-        Slab *      curr;
-        Slab *      head;
+private:
+    Spinlock lock;
+    Slab* curr;
+    Slab* head;
 
-        /*
-         * Back end allocator
-         */
-        void grow();
+    /*
+     * Back end allocator
+     */
+    void grow();
 
-    public:
-        unsigned long size; // Size of an element
-        unsigned long buff; // Size of an element buffer (includes link field)
-        unsigned long elem; // Number of elements
+public:
+    unsigned long size; // Size of an element
+    unsigned long buff; // Size of an element buffer (includes link field)
+    unsigned long elem; // Number of elements
 
-        Slab_cache (unsigned long elem_size, unsigned elem_align);
+    Slab_cache(unsigned long elem_size, unsigned elem_align);
 
-        /*
-         * Front end allocator
-         */
-        void *alloc(Buddy::Fill fill_mem = Buddy::FILL_0);
+    /*
+     * Front end allocator
+     */
+    void* alloc(Buddy::Fill fill_mem = Buddy::FILL_0);
 
-        /*
-         * Front end deallocator
-         */
-        void free (void *ptr);
+    /*
+     * Front end deallocator
+     */
+    void free(void* ptr);
 };
 
 class Slab
 {
-    public:
-        unsigned long   avail;
-        Slab_cache *    cache;
-        Slab *          prev;                     // Prev slab in cache
-        Slab *          next;                     // Next slab in cache
-        char *          head;
+public:
+    unsigned long avail;
+    Slab_cache* cache;
+    Slab* prev; // Prev slab in cache
+    Slab* next; // Next slab in cache
+    char* head;
 
-        static inline void *operator new (size_t)
-        {
-            // The front-end allocator will initialize memory.
-            return Buddy::allocator.alloc (0, Buddy::NOFILL);
-        }
+    static inline void* operator new(size_t)
+    {
+        // The front-end allocator will initialize memory.
+        return Buddy::allocator.alloc(0, Buddy::NOFILL);
+    }
 
-        static inline void operator delete (void *ptr)
-        {
-            Buddy::allocator.free (reinterpret_cast<mword>(ptr));
-        }
+    static inline void operator delete(void* ptr) { Buddy::allocator.free(reinterpret_cast<mword>(ptr)); }
 
-        Slab (Slab_cache *slab_cache);
+    Slab(Slab_cache* slab_cache);
 
-        inline bool full() const
-        {
-            return !avail;
-        }
+    inline bool full() const { return !avail; }
 
-        inline bool empty() const
-        {
-            return avail == cache->elem;
-        }
+    inline bool empty() const { return avail == cache->elem; }
 
-        void enqueue();
-        void dequeue();
+    void enqueue();
+    void dequeue();
 
-        inline void *alloc();
+    inline void* alloc();
 
-        inline void free (void *ptr);
+    inline void free(void* ptr);
 };

@@ -22,33 +22,30 @@
 TEST_CASE("accumulate works")
 {
     std::vector<int> const empty;
-    std::vector<int> const example {1, 2, 3};
+    std::vector<int> const example{1, 2, 3};
 
-    CHECK(::accumulate (std::begin (empty), std::end (empty), 0) == 0);
-    CHECK(::accumulate (std::begin (empty), std::end (empty), 17) == 17);
+    CHECK(::accumulate(std::begin(empty), std::end(empty), 0) == 0);
+    CHECK(::accumulate(std::begin(empty), std::end(empty), 17) == 17);
 
-    CHECK(::accumulate (std::begin (example), std::end (example), 0) == 6);
-    CHECK(::accumulate (std::begin (example), std::end (example), 17) == 23);
+    CHECK(::accumulate(std::begin(example), std::end(example), 0) == 6);
+    CHECK(::accumulate(std::begin(example), std::end(example), 17) == 23);
 }
 
 TEST_CASE("find_if works")
 {
     std::vector<int> empty;
-    std::vector<int> example {1, 2, 3};
+    std::vector<int> example{1, 2, 3};
 
-    auto is_even {[] (int i) { return i % 2 == 0; }};
+    auto is_even{[](int i) { return i % 2 == 0; }};
 
-    CHECK(::find_if (std::begin (empty), std::end (empty), is_even) == std::end (empty));
-    CHECK(::find_if (std::begin (example), std::end (example), is_even) == ++std::begin (example));
+    CHECK(::find_if(std::begin(empty), std::end(empty), is_even) == std::end(empty));
+    CHECK(::find_if(std::begin(example), std::end(example), is_even) == ++std::begin(example));
 }
 
 TEST_CASE("for_each works")
 {
-    std::vector<int> const example {1, 2, 3};
-    size_t pos {0};
+    std::vector<int> const example{1, 2, 3};
+    size_t pos{0};
 
-    ::for_each(std::begin (example), std::end (example),
-               [&] (int v) {
-                   CHECK(example[pos++] == v);
-               });
+    ::for_each(std::begin(example), std::end(example), [&](int v) { CHECK(example[pos++] == v); });
 }

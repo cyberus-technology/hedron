@@ -27,30 +27,24 @@
  */
 class Acpi_table_rsdt : public Acpi_table
 {
-    private:
-        static struct table_map
-        {
-            uint32  const sig;
-            Paddr * const ptr;
-        } const map[];
+private:
+    static struct table_map {
+        uint32 const sig;
+        Paddr* const ptr;
+    } const map[];
 
-        unsigned long entries (size_t size) const
-        {
-            return (length - sizeof (Acpi_table)) / size;
-        }
+    unsigned long entries(size_t size) const { return (length - sizeof(Acpi_table)) / size; }
 
-        union
-        {
-            uint32 rsdt_;
-            uint64 xsdt_;
-        };
+    union {
+        uint32 rsdt_;
+        uint64 xsdt_;
+    };
 
-    public:
+public:
+    uint32 rsdt(unsigned i) const { return *(&rsdt_ + i); }
+    uint64 xsdt(unsigned i) const { return *(&xsdt_ + i); }
 
-        uint32 rsdt(unsigned i) const { return *(&rsdt_ + i); }
-        uint64 xsdt(unsigned i) const { return *(&xsdt_ + i); }
-
-        void parse (Paddr, size_t) const;
+    void parse(Paddr, size_t) const;
 };
 
 #pragma pack()

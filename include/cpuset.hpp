@@ -25,20 +25,20 @@
 
 class Cpuset
 {
-    private:
-        Bitmap<mword, NUM_CPU> bits {false};
+private:
+    Bitmap<mword, NUM_CPU> bits{false};
 
-    public:
-        bool chk (unsigned cpu) const { return bits.atomic_fetch(cpu); }
+public:
+    bool chk(unsigned cpu) const { return bits.atomic_fetch(cpu); }
 
-        bool set (unsigned cpu) { return bits[cpu].atomic_fetch_set(); }
+    bool set(unsigned cpu) { return bits[cpu].atomic_fetch_set(); }
 
-        void clr (unsigned cpu) { bits[cpu].atomic_clear(); }
+    void clr(unsigned cpu) { bits[cpu].atomic_clear(); }
 
-        /// Merge another Cpuset into this one. This effectively calculates the
-        /// union of both sets.
-        ///
-        /// See the note at Bitmap::atomic_union for the properties of this
-        /// function with respect to concurrency.
-        void merge (Cpuset const &s) { bits.atomic_union(s.bits); }
+    /// Merge another Cpuset into this one. This effectively calculates the
+    /// union of both sets.
+    ///
+    /// See the note at Bitmap::atomic_union for the properties of this
+    /// function with respect to concurrency.
+    void merge(Cpuset const& s) { bits.atomic_union(s.bits); }
 };

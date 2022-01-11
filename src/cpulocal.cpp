@@ -15,31 +15,31 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "cpulocal.hpp"
 #include "assert.hpp"
 #include "cpu.hpp"
-#include "cpulocal.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
 #include "tss.hpp"
 
 alignas(PAGE_SIZE) Per_cpu Cpulocal::cpu[NUM_CPU];
 
-Per_cpu &Cpulocal::get_remote(unsigned cpu_id)
+Per_cpu& Cpulocal::get_remote(unsigned cpu_id)
 {
-    assert (cpu_id < NUM_CPU);
+    assert(cpu_id < NUM_CPU);
     return Cpulocal::cpu[cpu_id];
 }
 
 mword Cpulocal::setup_cpulocal()
 {
-    unsigned cpu_id {Cpu::find_by_apic_id (Lapic::early_id())};
-    Per_cpu &local {cpu[cpu_id]};
+    unsigned cpu_id{Cpu::find_by_apic_id(Lapic::early_id())};
+    Per_cpu& local{cpu[cpu_id]};
 
     local.cpu_id = cpu_id;
 
-    mword gs_base {reinterpret_cast<mword>(&local.self)};
-    Msr::write (Msr::IA32_GS_BASE, gs_base);
-    Msr::write (Msr::IA32_KERNEL_GS_BASE, 0);
+    mword gs_base{reinterpret_cast<mword>(&local.self)};
+    Msr::write(Msr::IA32_GS_BASE, gs_base);
+    Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
 }

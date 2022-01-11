@@ -18,40 +18,40 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "cmdline.hpp"
 #include "console_vga.hpp"
+#include "cmdline.hpp"
 #include "pd.hpp"
 
-INIT_PRIORITY (PRIO_CONSOLE) Console_vga Console_vga::con;
+INIT_PRIORITY(PRIO_CONSOLE) Console_vga Console_vga::con;
 
-Console_vga::Console_vga() : num (25), row (0), col (0)
+Console_vga::Console_vga() : num(25), row(0), col(0)
 {
     if (Cmdline::novga)
         return;
 
     Pd::kern->claim_mmio_page(HV_GLOBAL_FBUF, 0xb9000, false);
 
-    set_page (1);
+    set_page(1);
 
     enable();
 }
 
-void Console_vga::putc (int c)
+void Console_vga::putc(int c)
 {
-    if (EXPECT_FALSE (c == '\f')) {
+    if (EXPECT_FALSE(c == '\f')) {
         clear_all();
         row = col = 0;
         return;
     }
 
-    if (EXPECT_TRUE (c != '\n')) {
-        put (row, col, COLOR_LIGHT_WHITE, c);
-        if (EXPECT_TRUE (++col < 80))
+    if (EXPECT_TRUE(c != '\n')) {
+        put(row, col, COLOR_LIGHT_WHITE, c);
+        if (EXPECT_TRUE(++col < 80))
             return;
     }
 
     col = 0;
 
-    if (EXPECT_TRUE (++row == num))
-        clear_row (--row);
+    if (EXPECT_TRUE(++row == num))
+        clear_row(--row);
 }

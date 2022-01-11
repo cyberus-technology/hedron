@@ -20,20 +20,20 @@
 
 #include "config.hpp"
 
-#define VEC_GSI         (NUM_EXC)
-#define VEC_LVT         (VEC_GSI + NUM_GSI)
-#define VEC_MSI         (VEC_LVT + NUM_LVT)
-#define VEC_IPI         (VEC_MSI + NUM_MSI)
-#define VEC_MAX         (VEC_IPI + NUM_IPI)
+#define VEC_GSI (NUM_EXC)
+#define VEC_LVT (VEC_GSI + NUM_GSI)
+#define VEC_MSI (VEC_LVT + NUM_LVT)
+#define VEC_IPI (VEC_MSI + NUM_MSI)
+#define VEC_MAX (VEC_IPI + NUM_IPI)
 
-#define VEC_LVT_TIMER   (VEC_LVT + 0)
-#define VEC_LVT_ERROR   (VEC_LVT + 3)
-#define VEC_LVT_PERFM   (VEC_LVT + 4)
-#define VEC_LVT_THERM   (VEC_LVT + 5)
+#define VEC_LVT_TIMER (VEC_LVT + 0)
+#define VEC_LVT_ERROR (VEC_LVT + 3)
+#define VEC_LVT_PERFM (VEC_LVT + 4)
+#define VEC_LVT_THERM (VEC_LVT + 5)
 
-#define VEC_MSI_DMAR    (VEC_MSI + 0)
+#define VEC_MSI_DMAR (VEC_MSI + 0)
 
-#define VEC_IPI_RRQ     (VEC_IPI + 0)
-#define VEC_IPI_RKE     (VEC_IPI + 1)
-#define VEC_IPI_IDL     (VEC_IPI + 2)
-#define VEC_IPI_PRK     (VEC_IPI + 3)
+#define VEC_IPI_RRQ (VEC_IPI + 0)
+#define VEC_IPI_RKE (VEC_IPI + 1)
+#define VEC_IPI_IDL (VEC_IPI + 2)
+#define VEC_IPI_PRK (VEC_IPI + 3)

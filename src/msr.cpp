@@ -17,38 +17,36 @@
 
 #include "msr.hpp"
 
-uint64 Msr::read (Register msr)
+uint64 Msr::read(Register msr)
 {
     uint32 h, l;
-    asm volatile ("rdmsr" : "=a" (l), "=d" (h) : "c" (msr));
+    asm volatile("rdmsr" : "=a"(l), "=d"(h) : "c"(msr));
     return (static_cast<uint64>(h) << 32) | l;
 }
 
-bool Msr::read_safe (Register msr, uint64 &val)
+bool Msr::read_safe(Register msr, uint64& val)
 {
-    uint32 h {0}, l {0};
+    uint32 h{0}, l{0};
     bool skipped;
 
-    asm volatile (FIXUP_CALL(rdmsr)
-                  : FIXUP_SKIPPED (skipped), "+a" (l), "+d" (h)
-                  : "c" (msr));
+    asm volatile(FIXUP_CALL(rdmsr) : FIXUP_SKIPPED(skipped), "+a"(l), "+d"(h) : "c"(msr));
 
     val = (static_cast<uint64>(h) << 32) | l;
     return not skipped;
 }
 
-void Msr::write (Register msr, uint64 val)
+void Msr::write(Register msr, uint64 val)
 {
-    asm volatile ("wrmsr" : : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
+    asm volatile("wrmsr" : : "a"(static_cast<mword>(val)), "d"(static_cast<mword>(val >> 32)), "c"(msr));
 }
 
-bool Msr::write_safe (Register msr, uint64 val)
+bool Msr::write_safe(Register msr, uint64 val)
 {
     bool skipped;
 
-    asm volatile (FIXUP_CALL(wrmsr)
-                  : FIXUP_SKIPPED (skipped)
-                  : "a" (static_cast<mword>(val)), "d" (static_cast<mword>(val >> 32)), "c" (msr));
+    asm volatile(FIXUP_CALL(wrmsr)
+                 : FIXUP_SKIPPED(skipped)
+                 : "a"(static_cast<mword>(val)), "d"(static_cast<mword>(val >> 32)), "c"(msr));
 
     return not skipped;
 }
@@ -76,7 +74,7 @@ bool Msr::write_safe (Register msr, uint64 val)
 // Most importantly this filtering is not a security boundary and no untrusted
 // component should have access to this API.
 
-static bool is_allowed_to_read (Msr::Register msr)
+static bool is_allowed_to_read(Msr::Register msr)
 {
     switch (msr) {
     case Msr::AMD_SVM_HSAVE_PA:
@@ -94,8 +92,8 @@ static bool is_allowed_to_read (Msr::Register msr)
     case Msr::IA32_TSC_AUX:
     case Msr::IA32_TSC_DEADLINE:
 
-    case Msr::IA32_EXT_XAPIC ... Msr::IA32_EXT_XAPIC_END:
-    case Msr::IA32_VMX_BASIC ... Msr::IA32_VMX_VMFUNC:
+    case Msr::IA32_EXT_XAPIC... Msr::IA32_EXT_XAPIC_END:
+    case Msr::IA32_VMX_BASIC... Msr::IA32_VMX_VMFUNC:
         return false;
 
     default:
@@ -103,10 +101,10 @@ static bool is_allowed_to_read (Msr::Register msr)
     };
 }
 
-static bool is_allowed_to_write (Msr::Register msr)
+static bool is_allowed_to_write(Msr::Register msr)
 {
     switch (msr) {
-    case Msr::IA32_MTRR_PHYS_BASE ... Msr::IA32_MTRR_FIX4K_F8000:
+    case Msr::IA32_MTRR_PHYS_BASE... Msr::IA32_MTRR_FIX4K_F8000:
     case Msr::IA32_CR_PAT:
     case Msr::IA32_MTRR_DEF_TYPE:
         // The MTRR MSRs are mostly in a convenient block in MSR space. We allow
@@ -117,25 +115,25 @@ static bool is_allowed_to_write (Msr::Register msr)
     default:
         // If we don't know anything better and we can't read a MSR, we
         // shouldn't be able to write it either.
-        return is_allowed_to_read (msr);
+        return is_allowed_to_read(msr);
     }
 }
 
-bool Msr::user_write (Register msr, uint64 val)
+bool Msr::user_write(Register msr, uint64 val)
 {
-    if (not is_allowed_to_write (msr)) {
+    if (not is_allowed_to_write(msr)) {
         return false;
     }
 
-    return write_safe (msr, val);
+    return write_safe(msr, val);
 }
 
-bool Msr::user_read (Register msr, uint64 &val)
+bool Msr::user_read(Register msr, uint64& val)
 {
-    if (not is_allowed_to_read (msr)) {
+    if (not is_allowed_to_read(msr)) {
         val = 0;
         return false;
     }
 
-    return read_safe (msr, val);
+    return read_safe(msr, val);
 }

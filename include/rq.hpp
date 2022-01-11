@@ -28,5 +28,5 @@ class Sc;
 
 struct Rq {
     Spinlock lock;
-    Sc *queue;
+    Sc* queue;
 };

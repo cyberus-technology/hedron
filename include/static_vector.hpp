@@ -22,58 +22,48 @@
 #include "util.hpp"
 
 // A vector with statically allocated backing store and a maximum size.
-template <typename T, size_t N>
-class Static_vector
+template <typename T, size_t N> class Static_vector
 {
-    private:
+private:
+    // The number of elements in the vector.
+    size_t size_{0};
 
-        // The number of elements in the vector.
-        size_t size_ {0};
+    // The actual backing storage for the vector elements.
+    alignas(T) char backing[sizeof(T) * N];
 
-        // The actual backing storage for the vector elements.
-        alignas(T) char backing[sizeof(T)*N];
+public:
+    T* data() { return reinterpret_cast<T*>(backing); }
+    T const* data() const { return reinterpret_cast<T*>(backing); }
 
-    public:
+    T& operator[](size_t i) { return data()[i]; }
+    T const& operator[](size_t i) const { return data()[i]; };
 
-        T       *data()       { return reinterpret_cast<T *>(backing); }
-        T const *data() const { return reinterpret_cast<T *>(backing); }
+    T* begin() { return &data()[0]; }
+    T const* begin() const { return &data()[0]; }
 
-        T       &operator[] (size_t i)       { return data()[i]; }
-        T const &operator[] (size_t i) const { return data()[i]; };
+    T* end() { return &data()[size()]; }
+    T const* end() const { return &data()[size()]; }
 
-        T       *begin()       { return &data()[0]; }
-        T const *begin() const { return &data()[0]; }
+    size_t size() const { return size_; };
+    constexpr size_t max_size() const { return N; }
 
-        T       *end()         { return &data()[size()]; }
-        T const *end()  const  { return &data()[size()]; }
+    template <typename... ARGS> void emplace_back(ARGS&&... args)
+    {
+        assert(size() < max_size());
 
-        size_t size() const { return size_; };
-        constexpr size_t max_size() const { return N; }
+        new (&data()[size_++]) T(forward<ARGS>(args)...);
+    }
 
-        template <typename... ARGS>
-        void emplace_back (ARGS&&... args)
-        {
-            assert (size() < max_size());
+    void push_back(T const& o) { emplace_back(o); }
 
-            new (&data()[size_++]) T (forward<ARGS>(args)...);
+    void reset()
+    {
+        for (T& elem : *this) {
+            elem.~T();
         }
 
-        void push_back (T const &o)
-        {
-            emplace_back (o);
-        }
+        size_ = 0;
+    }
 
-        void reset()
-        {
-            for (T &elem : *this) {
-                elem.~T();
-            }
-
-            size_ = 0;
-        }
-
-        ~Static_vector()
-        {
-            reset();
-        }
+    ~Static_vector() { reset(); }
 };

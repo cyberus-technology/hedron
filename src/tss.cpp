@@ -19,41 +19,38 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "cpulocal.hpp"
-#include "cpu.hpp"
-#include "hpt.hpp"
 #include "tss.hpp"
+#include "cpu.hpp"
+#include "cpulocal.hpp"
+#include "hpt.hpp"
 
-static_assert((TSS_AREA_E - TSS_AREA) / sizeof (Tss) >= NUM_CPU, "TSS area too small to fit TSSs for all CPUs");
+static_assert((TSS_AREA_E - TSS_AREA) / sizeof(Tss) >= NUM_CPU,
+              "TSS area too small to fit TSSs for all CPUs");
 static_assert(SPC_LOCAL_IOP >= TSS_AREA_E, "IO permission bitmap must lie behind TSS area");
-static_assert(SPC_LOCAL_IOP_E - TSS_AREA < (1 << 16), "TSS and IO permission bitmap must fit in a 64K segment");
+static_assert(SPC_LOCAL_IOP_E - TSS_AREA < (1 << 16),
+              "TSS and IO permission bitmap must fit in a 64K segment");
 
-Tss &Tss::remote (unsigned id)
+Tss& Tss::remote(unsigned id)
 {
-    assert (id < NUM_CPU);
-    return reinterpret_cast<Tss *>(TSS_AREA)[id];
+    assert(id < NUM_CPU);
+    return reinterpret_cast<Tss*>(TSS_AREA)[id];
 }
 
-Tss &Tss::local()
-{
-    return remote (Cpu::id());
-}
+Tss& Tss::local() { return remote(Cpu::id()); }
 
 void Tss::setup()
 {
     for (mword page = TSS_AREA; page < TSS_AREA_E; page += PAGE_SIZE) {
-        mword page_p {Buddy::ptr_to_phys (Buddy::allocator.alloc (0, Buddy::FILL_0))};
+        mword page_p{Buddy::ptr_to_phys(Buddy::allocator.alloc(0, Buddy::FILL_0))};
 
-        Hpt::boot_hpt().update({page, page_p,
-                                    Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_W | Hpt::PTE_P,
-                                    PAGE_BITS});
+        Hpt::boot_hpt().update({page, page_p, Hpt::PTE_NX | Hpt::PTE_G | Hpt::PTE_W | Hpt::PTE_P, PAGE_BITS});
     }
 }
 
 void Tss::build()
 {
-    auto &tss {local()};
+    auto& tss{local()};
 
-    tss.sp0  = reinterpret_cast<mword>(&Cpulocal::get().self);
+    tss.sp0 = reinterpret_cast<mword>(&Cpulocal::get().self);
     tss.iobm = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&tss));
 }

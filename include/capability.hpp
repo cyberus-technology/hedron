@@ -24,19 +24,19 @@
 
 class Capability
 {
-    private:
-        mword val;
+private:
+    mword val;
 
-        static mword const perm = 0x1f;
+    static mword const perm = 0x1f;
 
-    public:
-        Capability() : val (0) {}
+public:
+    Capability() : val(0) {}
 
-        Capability (Kobject *o, mword a) : val (a ? reinterpret_cast<mword>(o) | (a & perm) : 0) {}
+    Capability(Kobject* o, mword a) : val(a ? reinterpret_cast<mword>(o) | (a & perm) : 0) {}
 
-        inline Kobject *obj() const { return reinterpret_cast<Kobject *>(val & ~perm); }
+    inline Kobject* obj() const { return reinterpret_cast<Kobject*>(val & ~perm); }
 
-        inline unsigned prm() const { return val & perm; }
+    inline unsigned prm() const { return val & perm; }
 };
 
 // Cast a capability to a specific Kobject type with dynamic type checking.
@@ -44,13 +44,13 @@ class Capability
 // The cast can perform additional permission bit checking if
 // required_permissions is given. Returns nullptr in case the cast is invalid
 // (just like dynamic_cast).
-template <typename T>
-T *capability_cast(Capability const &cap, unsigned required_permissions = 0)
+template <typename T> T* capability_cast(Capability const& cap, unsigned required_permissions = 0)
 {
-    Kobject *obj {cap.obj()};
+    Kobject* obj{cap.obj()};
 
-    if (EXPECT_TRUE (obj and obj->type() == T::kobject_type and (cap.prm() & required_permissions) == required_permissions)) {
-        return static_cast<T *>(cap.obj());
+    if (EXPECT_TRUE(obj and obj->type() == T::kobject_type and
+                    (cap.prm() & required_permissions) == required_permissions)) {
+        return static_cast<T*>(cap.obj());
     } else {
         return nullptr;
     }

@@ -24,13 +24,13 @@
 
 class Acpi_table_hpet : public Acpi_table
 {
-    public:
-        uint32      cap;
-        Acpi_gas    hpet;
-        uint8       id;
-        uint16      tick;
+public:
+    uint32 cap;
+    Acpi_gas hpet;
+    uint8 id;
+    uint16 tick;
 
-        void parse() const;
+    void parse() const;
 };
 
 #pragma pack()

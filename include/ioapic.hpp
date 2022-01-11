@@ -22,135 +22,131 @@
 
 #pragma once
 
+#include "algorithm.hpp"
 #include "hip.hpp"
 #include "list.hpp"
 #include "lock_guard.hpp"
 #include "static_vector.hpp"
-#include "algorithm.hpp"
 
 class Ioapic : public Forward_list<Ioapic>
 {
-    private:
-        uint32   const      paddr;
-        mword    const      reg_base;
-        unsigned const      gsi_base;
-        unsigned const      id;
-        uint16              rid;
-        Spinlock            lock;
+private:
+    uint32 const paddr;
+    mword const reg_base;
+    unsigned const gsi_base;
+    unsigned const id;
+    uint16 rid;
+    Spinlock lock;
 
-        static Ioapic *     list;
+    static Ioapic* list;
 
-        enum
-        {
-            IOAPIC_IDX  = 0x0,
-            IOAPIC_WND  = 0x10,
-            IOAPIC_PAR  = 0x20,
-            IOAPIC_EOI  = 0x40,
+    enum
+    {
+        IOAPIC_IDX = 0x0,
+        IOAPIC_WND = 0x10,
+        IOAPIC_PAR = 0x20,
+        IOAPIC_EOI = 0x40,
 
-            // The maximum number of redirection table entries allowed by the
-            // specification.
-            IOAPIC_MAX_IRT = 0xf0,
-        };
+        // The maximum number of redirection table entries allowed by the
+        // specification.
+        IOAPIC_MAX_IRT = 0xf0,
+    };
 
-        enum Register
-        {
-            IOAPIC_ID   = 0x0,
-            IOAPIC_VER  = 0x1,
-            IOAPIC_ARB  = 0x2,
-            IOAPIC_BCFG = 0x3,
-            IOAPIC_IRT  = 0x10,
-        };
+    enum Register
+    {
+        IOAPIC_ID = 0x0,
+        IOAPIC_VER = 0x1,
+        IOAPIC_ARB = 0x2,
+        IOAPIC_BCFG = 0x3,
+        IOAPIC_IRT = 0x10,
+    };
 
-        // Stores redirection entries across suspend/resume.
-        Static_vector<uint64, IOAPIC_MAX_IRT> suspend_redir_table;
+    // Stores redirection entries across suspend/resume.
+    Static_vector<uint64, IOAPIC_MAX_IRT> suspend_redir_table;
 
-        inline void index (Register reg)
-        {
-            *reinterpret_cast<uint8 volatile *>(reg_base + IOAPIC_IDX) = reg;
+    inline void index(Register reg) { *reinterpret_cast<uint8 volatile*>(reg_base + IOAPIC_IDX) = reg; }
+
+    inline uint32 read(Register reg)
+    {
+        Lock_guard<Spinlock> guard(lock);
+        index(reg);
+        return *reinterpret_cast<uint32 volatile*>(reg_base + IOAPIC_WND);
+    }
+
+    inline void write(Register reg, uint32 val)
+    {
+        Lock_guard<Spinlock> guard(lock);
+        index(reg);
+        *reinterpret_cast<uint32 volatile*>(reg_base + IOAPIC_WND) = val;
+    }
+
+public:
+    Ioapic(Paddr, unsigned, unsigned);
+
+    static void* operator new(size_t);
+
+    static inline bool claim_dev(unsigned r, unsigned i)
+    {
+        auto range = Forward_list_range(list);
+        auto it = find_if(range, [i](auto const& ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
+
+        if (it != range.end()) {
+            it->rid = static_cast<uint16>(r);
+            return true;
+        } else {
+            return false;
         }
+    }
 
-        inline uint32 read (Register reg)
-        {
-            Lock_guard <Spinlock> guard (lock);
-            index (reg);
-            return *reinterpret_cast<uint32 volatile *>(reg_base + IOAPIC_WND);
+    static inline void add_to_hip(Hip_ioapic*& entry)
+    {
+        for (auto& ioapic : Forward_list_range(list)) {
+            entry->id = ioapic.read_id_reg();
+            entry->version = ioapic.read_version_reg();
+            entry->gsi_base = ioapic.get_gsi();
+            entry->base = ioapic.get_paddr();
+            entry++;
         }
+    }
 
-        inline void write (Register reg, uint32 val)
-        {
-            Lock_guard <Spinlock> guard (lock);
-            index (reg);
-            *reinterpret_cast<uint32 volatile *>(reg_base + IOAPIC_WND) = val;
-        }
+    inline uint32 read_id_reg() { return read(IOAPIC_ID); }
+    inline uint32 read_version_reg() { return read(IOAPIC_VER); }
+    inline uint32 get_paddr() { return paddr; }
 
-    public:
-        Ioapic (Paddr, unsigned, unsigned);
+    inline uint16 get_rid() const { return rid; }
 
-        static void *operator new (size_t);
+    inline unsigned get_gsi() const { return gsi_base; }
 
-        static inline bool claim_dev (unsigned r, unsigned i)
-        {
-            auto range = Forward_list_range (list);
-            auto it = find_if (range,
-                               [i] (auto const &ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
+    inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
 
-            if (it != range.end()) {
-                it->rid = static_cast<uint16> (r);
-                return true;
-            } else {
-                return false;
-            }
-        }
+    inline unsigned prq() { return read(IOAPIC_VER) >> 15 & 0x1; }
 
-        static inline void add_to_hip (Hip_ioapic *&entry)
-        {
-            for (auto &ioapic : Forward_list_range (list)) {
-                entry->id = ioapic.read_id_reg();
-                entry->version = ioapic.read_version_reg();
-                entry->gsi_base = ioapic.get_gsi();
-                entry->base = ioapic.get_paddr();
-                entry++;
-            }
-        }
+    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
 
-        inline uint32 read_id_reg()      { return read (IOAPIC_ID); }
-        inline uint32 read_version_reg() { return read (IOAPIC_VER); }
-        inline uint32 get_paddr()        { return paddr; }
+    inline void set_irt(unsigned gsi, unsigned val)
+    {
+        unsigned pin = gsi - gsi_base;
+        write(Register(IOAPIC_IRT + 2 * pin), val);
+    }
 
-        inline uint16 get_rid() const { return rid; }
+    inline void set_cpu(unsigned gsi, unsigned cpu, bool ire)
+    {
+        unsigned pin = gsi - gsi_base;
+        write(Register(IOAPIC_IRT + 2 * pin + 1), ire ? (gsi << 17 | 1ul << 16) : (cpu << 24));
+    }
 
-        inline unsigned get_gsi() const { return gsi_base; }
+    void set_irt_entry(size_t entry, uint64 val);
+    uint64 get_irt_entry(size_t entry);
 
-        inline unsigned version() { return read (IOAPIC_VER) & 0xff; }
+    // Prepare the IOAPIC for system suspend by saving its state to memory.
+    void save();
 
-        inline unsigned prq() { return read (IOAPIC_VER) >> 15 & 0x1; }
+    // Restore the state of the IOAPIC from memory after a system resume.
+    void restore();
 
-        inline unsigned irt_max() { return read (IOAPIC_VER) >> 16 & 0xff; }
+    // Call save on all IOAPICs.
+    static void save_all();
 
-        inline void set_irt (unsigned gsi, unsigned val)
-        {
-            unsigned pin = gsi - gsi_base;
-            write (Register (IOAPIC_IRT + 2 * pin), val);
-        }
-
-        inline void set_cpu (unsigned gsi, unsigned cpu, bool ire)
-        {
-            unsigned pin = gsi - gsi_base;
-            write (Register (IOAPIC_IRT + 2 * pin + 1), ire ? (gsi << 17 | 1ul << 16) : (cpu << 24));
-        }
-
-        void set_irt_entry (size_t entry, uint64 val);
-        uint64 get_irt_entry (size_t entry);
-
-        // Prepare the IOAPIC for system suspend by saving its state to memory.
-        void save();
-
-        // Restore the state of the IOAPIC from memory after a system resume.
-        void restore();
-
-        // Call save on all IOAPICs.
-        static void save_all();
-
-        // Call restore on all IOAPICs.
-        static void restore_all();
+    // Call restore on all IOAPICs.
+    static void restore_all();
 };

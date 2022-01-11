@@ -28,35 +28,35 @@ class Sm;
 
 class Gsi
 {
-    public:
-        Sm *            sm;
-        Ioapic *        ioapic;
-        union {
-            uint16      irt;
-            struct {
-                uint8   vec;
-                uint8   dlv:3, dst:1, sts:1, pol:1, irr:1, trg:1;
-            };
+public:
+    Sm* sm;
+    Ioapic* ioapic;
+    union {
+        uint16 irt;
+        struct {
+            uint8 vec;
+            uint8 dlv : 3, dst : 1, sts : 1, pol : 1, irr : 1, trg : 1;
         };
+    };
 
-        static Gsi      gsi_table[NUM_GSI];
-        static unsigned irq_table[NUM_IRQ];
+    static Gsi gsi_table[NUM_GSI];
+    static unsigned irq_table[NUM_IRQ];
 
-        static void setup();
+    static void setup();
 
-        static void set_polarity (unsigned gsi, bool level, bool active_low);
+    static void set_polarity(unsigned gsi, bool level, bool active_low);
 
-        static uint64 set (unsigned, unsigned = 0, unsigned = 0);
+    static uint64 set(unsigned, unsigned = 0, unsigned = 0);
 
-        static void mask (unsigned);
-        static void unmask (unsigned);
+    static void mask(unsigned);
+    static void unmask(unsigned);
 
-        static inline unsigned irq_to_gsi (unsigned irq)
-        {
-            assert (irq < NUM_IRQ);
-            return irq_table[irq];
-        }
+    static inline unsigned irq_to_gsi(unsigned irq)
+    {
+        assert(irq < NUM_IRQ);
+        return irq_table[irq];
+    }
 
-        REGPARM (1)
-        static void vector (unsigned) asm ("gsi_vector");
+    REGPARM(1)
+    static void vector(unsigned) asm("gsi_vector");
 };

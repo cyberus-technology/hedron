@@ -24,16 +24,16 @@ class Sm;
 
 class Timeout_hypercall final : public Timeout
 {
-    private:
-        Ec * const ec;
-        Sm *       sm { nullptr };
+private:
+    Ec* const ec;
+    Sm* sm{nullptr};
 
-        virtual void trigger() override;
+    virtual void trigger() override;
 
-    public:
-        inline Timeout_hypercall (Ec *e) : ec (e) {}
+public:
+    inline Timeout_hypercall(Ec* e) : ec(e) {}
 
-        ~Timeout_hypercall();
+    ~Timeout_hypercall();
 
-        void enqueue (uint64 t, Sm *s);
+    void enqueue(uint64 t, Sm* s);
 };

@@ -21,10 +21,11 @@
 #include "sm.hpp"
 #include "stdio.hpp"
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Sm::cache (sizeof (Sm), 32);
+INIT_PRIORITY(PRIO_SLAB)
+Slab_cache Sm::cache(sizeof(Sm), 32);
 
-Sm::Sm (Pd *own, mword sel, mword cnt, Sm * s, mword v) : Typed_kobject (static_cast<Space_obj *>(own), sel, Sm::PERM_ALL, free), Si (s, v), counter (cnt)
+Sm::Sm(Pd* own, mword sel, mword cnt, Sm* s, mword v)
+    : Typed_kobject(static_cast<Space_obj*>(own), sel, Sm::PERM_ALL, free), Si(s, v), counter(cnt)
 {
-    trace (TRACE_SYSCALL, "SM:%p created (CNT:%lu)", this, cnt);
+    trace(TRACE_SYSCALL, "SM:%p created (CNT:%lu)", this, cnt);
 }

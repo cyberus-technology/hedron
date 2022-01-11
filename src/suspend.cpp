@@ -15,6 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "suspend.hpp"
 #include "acpi.hpp"
 #include "acpi_facs.hpp"
 #include "atomic.hpp"
@@ -24,13 +25,12 @@
 #include "hpt.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
-#include "suspend.hpp"
 #include "vmx.hpp"
 #include "x86.hpp"
 
 void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
 {
-    if (not Acpi::valid_sleep_type (slp_typa, slp_typb)) {
+    if (not Acpi::valid_sleep_type(slp_typa, slp_typb)) {
         return;
     }
 
@@ -53,8 +53,7 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     Cpu::initial_tsc = rdtsc();
 
     // Prepare resume code. Need restore_low_memory later!
-    Acpi::set_waking_vector(Lapic::prepare_cpu_boot(Lapic::cpu_boot_type::BSP),
-                            Acpi::Wake_mode::REAL_MODE);
+    Acpi::set_waking_vector(Lapic::prepare_cpu_boot(Lapic::cpu_boot_type::BSP), Acpi::Wake_mode::REAL_MODE);
 
     // Flush the cache as mandated by the ACPI specification.
     wbinvd();
@@ -68,7 +67,7 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     // memory and can be more than 2G away. That would result in a truncated
     // relocation (failed link) in -mcmodel=kernel.
     static mword const ptr = reinterpret_cast<mword>(__resume_bsp);
-    asm volatile ("call *%0" :: "m" (ptr));
+    asm volatile("call *%0" ::"m"(ptr));
 
     // Not reached.
 }
@@ -96,11 +95,11 @@ void Suspend::resume_bsp()
     Lapic::restore_low_memory();
 
     Acpi::init();
-    Acpi::set_facs (saved_facs);
+    Acpi::set_facs(saved_facs);
 
     Ioapic::restore_all();
 
     Dmar::enable();
 
-    Atomic::store (Suspend::in_progress, false);
+    Atomic::store(Suspend::in_progress, false);
 }

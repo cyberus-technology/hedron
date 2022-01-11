@@ -30,24 +30,22 @@
  */
 class Acpi_inti
 {
-    public:
-        uint16  pol :  2,
-                trg :  2,
-                    : 12;
+public:
+    uint16 pol : 2, trg : 2, : 12;
 
-        enum Polarity
-        {
-            POL_CONFORMING  = 0,
-            POL_HIGH        = 1,
-            POL_LOW         = 3,
-        };
+    enum Polarity
+    {
+        POL_CONFORMING = 0,
+        POL_HIGH = 1,
+        POL_LOW = 3,
+    };
 
-        enum Trigger
-        {
-            TRG_CONFORMING  = 0,
-            TRG_EDGE        = 1,
-            TRG_LEVEL       = 3
-        };
+    enum Trigger
+    {
+        TRG_CONFORMING = 0,
+        TRG_EDGE = 1,
+        TRG_LEVEL = 3
+    };
 };
 
 /*
@@ -55,16 +53,16 @@ class Acpi_inti
  */
 class Acpi_apic
 {
-    public:
-        uint8   type;
-        uint8   length;
+public:
+    uint8 type;
+    uint8 length;
 
-        enum Type
-        {
-            LAPIC   = 0,
-            IOAPIC  = 1,
-            INTR    = 2,
-        };
+    enum Type
+    {
+        LAPIC = 0,
+        IOAPIC = 1,
+        INTR = 2,
+    };
 };
 
 /*
@@ -72,10 +70,10 @@ class Acpi_apic
  */
 class Acpi_lapic : public Acpi_apic
 {
-    public:
-        uint8   acpi_id;
-        uint8   apic_id;
-        uint32  flags;
+public:
+    uint8 acpi_id;
+    uint8 apic_id;
+    uint32 flags;
 };
 
 /*
@@ -83,11 +81,11 @@ class Acpi_lapic : public Acpi_apic
  */
 class Acpi_ioapic : public Acpi_apic
 {
-    public:
-        uint8   id;
-        uint8   zero;
-        uint32  phys;
-        uint32  gsi;
+public:
+    uint8 id;
+    uint8 zero;
+    uint32 phys;
+    uint32 gsi;
 };
 
 /*
@@ -95,11 +93,11 @@ class Acpi_ioapic : public Acpi_apic
  */
 class Acpi_intr : public Acpi_apic
 {
-    public:
-        uint8       bus;
-        uint8       irq;
-        uint32      gsi;
-        Acpi_inti   flags;
+public:
+    uint8 bus;
+    uint8 irq;
+    uint32 gsi;
+    Acpi_inti flags;
 };
 
 /*
@@ -107,24 +105,24 @@ class Acpi_intr : public Acpi_apic
  */
 class Acpi_table_madt : public Acpi_table
 {
-    private:
-        static void parse_lapic (Acpi_apic const *);
+private:
+    static void parse_lapic(Acpi_apic const*);
 
-        static void parse_ioapic (Acpi_apic const *);
+    static void parse_ioapic(Acpi_apic const*);
 
-        void parse_entry (Acpi_apic::Type, void (*)(Acpi_apic const *)) const;
+    void parse_entry(Acpi_apic::Type, void (*)(Acpi_apic const*)) const;
 
-    public:
-        uint32      apic_addr;
-        uint32      flags;
-        Acpi_apic   apic[];
+public:
+    uint32 apic_addr;
+    uint32 flags;
+    Acpi_apic apic[];
 
-        static inline bool sci_overridden = false;
-        static inline bool pic_present = false;
+    static inline bool sci_overridden = false;
+    static inline bool pic_present = false;
 
-        void parse() const;
+    void parse() const;
 
-        static void parse_intr (Acpi_apic const *);
+    static void parse_intr(Acpi_apic const*);
 };
 
 #pragma pack()

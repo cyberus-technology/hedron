@@ -24,36 +24,33 @@
 // Converts an ASCII ACPI table signature into its numeric representation.
 constexpr uint32 SIG(char const (&s)[5])
 {
-    return static_cast<uint32>(s[0]) + (static_cast<uint32>(s[1]) << 8)
-        + (static_cast<uint32>(s[2]) << 16) + (static_cast<uint32>(s[3]) << 24);
+    return static_cast<uint32>(s[0]) + (static_cast<uint32>(s[1]) << 8) + (static_cast<uint32>(s[2]) << 16) +
+           (static_cast<uint32>(s[3]) << 24);
 }
 
 class Acpi_header
 {
-    public:
-        uint32      signature;                      // 0
-        uint32      length;                         // 4
+public:
+    uint32 signature; // 0
+    uint32 length;    // 4
 };
 
 class Acpi_table : public Acpi_header
 {
-    public:
-        uint8       revision;                       // 8
-        uint8       checksum;                       // 9
-        char        oem_id[6];                      // 10
-        char        oem_table_id[8];                // 16
-        uint32      oem_revision;                   // 24
-        char        creator_id[4];                  // 28
-        uint32      creator_revision;               // 32
+public:
+    uint8 revision;          // 8
+    uint8 checksum;          // 9
+    char oem_id[6];          // 10
+    char oem_table_id[8];    // 16
+    uint32 oem_revision;     // 24
+    char creator_id[4];      // 28
+    uint32 creator_revision; // 32
 
-        // Compute the ACPI byte-by-byte checksum of an arbitrary piece of memory.
-        static uint8 do_checksum (const void *table, size_t len);
+    // Compute the ACPI byte-by-byte checksum of an arbitrary piece of memory.
+    static uint8 do_checksum(const void* table, size_t len);
 
-        // Compute the ACPI byte-by-byte checksum of this table.
-        uint8 do_checksum() const
-        {
-            return do_checksum (this, length);
-        }
+    // Compute the ACPI byte-by-byte checksum of this table.
+    uint8 do_checksum() const { return do_checksum(this, length); }
 
-        bool good_checksum (Paddr addr) const;
+    bool good_checksum(Paddr addr) const;
 };

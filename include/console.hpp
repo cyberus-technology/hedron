@@ -20,53 +20,52 @@
 
 #pragma once
 
-#include <stdarg.h>
 #include "compiler.hpp"
 #include "types.hpp"
+#include <stdarg.h>
 
 class Spinlock;
 
 class Console
 {
-    private:
-        enum
-        {
-            MODE_FLAGS      = 0,
-            MODE_WIDTH      = 1,
-            MODE_PRECS      = 2,
-            FLAG_SIGNED     = 1UL << 0,
-            FLAG_ALT_FORM   = 1UL << 1,
-            FLAG_ZERO_PAD   = 1UL << 2,
-        };
+private:
+    enum
+    {
+        MODE_FLAGS = 0,
+        MODE_WIDTH = 1,
+        MODE_PRECS = 2,
+        FLAG_SIGNED = 1UL << 0,
+        FLAG_ALT_FORM = 1UL << 1,
+        FLAG_ZERO_PAD = 1UL << 2,
+    };
 
-        Console *next;
+    Console* next;
 
-        static Console *list;
-        static Spinlock lock;
+    static Console* list;
+    static Spinlock lock;
 
-        virtual void putc (int) = 0;
-        void print_num (uint64, unsigned, unsigned, unsigned);
-        void print_str (char const *, unsigned, unsigned);
+    virtual void putc(int) = 0;
+    void print_num(uint64, unsigned, unsigned, unsigned);
+    void print_str(char const*, unsigned, unsigned);
 
-        FORMAT (2,0)
-        void vprintf (char const *, va_list);
+    FORMAT(2, 0)
+    void vprintf(char const*, va_list);
 
-    protected:
-        NOINLINE
-        void enable()
-        {
-            Console **ptr;
+protected:
+    NOINLINE
+    void enable()
+    {
+        Console** ptr;
 
-            for (ptr = &list; *ptr; ptr = &(*ptr)->next) {
-            }
-
-            *ptr = this;
+        for (ptr = &list; *ptr; ptr = &(*ptr)->next) {
         }
 
-    public:
-        FORMAT (1,2)
-        static void print (char const *, ...);
+        *ptr = this;
+    }
 
-        FORMAT (1,2) NORETURN
-        static void panic (char const *, ...);
+public:
+    FORMAT(1, 2)
+    static void print(char const*, ...);
+
+    FORMAT(1, 2) NORETURN static void panic(char const*, ...);
 };

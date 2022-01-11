@@ -19,15 +19,12 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "nodestruct.hpp"
+#include "mtrr.hpp"
 #include "memory.hpp"
 #include "msr.hpp"
-#include "mtrr.hpp"
+#include "nodestruct.hpp"
 #include "stdio.hpp"
 
 static No_destruct<Mtrr_state> global_mtrr_state;
 
-Mtrr_state &Mtrr_state::get()
-{
-    return *&global_mtrr_state;
-}
+Mtrr_state& Mtrr_state::get() { return *&global_mtrr_state; }

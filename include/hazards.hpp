@@ -18,10 +18,10 @@
 
 #pragma once
 
-#define HZD_SCHED       0x1
-#define HZD_DS_ES       0x2
-#define HZD_TR          0x4
-#define HZD_RCU         0x8
-#define HZD_TSC         0x20000000
-#define HZD_STEP        0x40000000
-#define HZD_RECALL      0x80000000
+#define HZD_SCHED 0x1
+#define HZD_DS_ES 0x2
+#define HZD_TR 0x4
+#define HZD_RCU 0x8
+#define HZD_TSC 0x20000000
+#define HZD_STEP 0x40000000
+#define HZD_RECALL 0x80000000

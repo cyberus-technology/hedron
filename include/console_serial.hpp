@@ -25,31 +25,31 @@
 
 class Console_serial : public Console
 {
-    private:
-        enum Register
-        {
-            THR = 0,                    // Transmit Holding Register
-            IER = 1,                    // Interrupt Enable Register
-            FCR = 2,                    // FIFO Control Register
-            LCR = 3,                    // Line Control Register
-            MCR = 4,                    // Modem Control Register
-            LSR = 5,                    // Line Status Register
-            DLL = 0,                    // Divisor Latch (LSB)
-            DLM = 1,                    // Divisor Latch (MSB)
-        };
+private:
+    enum Register
+    {
+        THR = 0, // Transmit Holding Register
+        IER = 1, // Interrupt Enable Register
+        FCR = 2, // FIFO Control Register
+        LCR = 3, // Line Control Register
+        MCR = 4, // Modem Control Register
+        LSR = 5, // Line Status Register
+        DLL = 0, // Divisor Latch (LSB)
+        DLM = 1, // Divisor Latch (MSB)
+    };
 
-        static unsigned const freq = 115200;
+    static unsigned const freq = 115200;
 
-        unsigned base;
+    unsigned base;
 
-        inline unsigned in (Register r) { return Io::in<uint8>(base + r); }
+    inline unsigned in(Register r) { return Io::in<uint8>(base + r); }
 
-        inline void out (Register r, unsigned v) { Io::out (base + r, static_cast<uint8>(v)); }
+    inline void out(Register r, unsigned v) { Io::out(base + r, static_cast<uint8>(v)); }
 
-        void putc (int c);
+    void putc(int c);
 
-    public:
-        Console_serial();
+public:
+    Console_serial();
 
-        static Console_serial con;
+    static Console_serial con;
 };

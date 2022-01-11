@@ -22,44 +22,40 @@
 #include "cmdline.hpp"
 #include "string.hpp"
 
-struct Cmdline::param_map const Cmdline::map[] =
-{
-    { "iommu",      &Cmdline::iommu     },
-    { "serial",     &Cmdline::serial    },
-    { "nodl",       &Cmdline::nodl      },
-    { "nopcid",     &Cmdline::nopcid    },
-    { "novga",      &Cmdline::novga     },
-    { "novpid",     &Cmdline::novpid    },
+struct Cmdline::param_map const Cmdline::map[] = {
+    {"iommu", &Cmdline::iommu},   {"serial", &Cmdline::serial}, {"nodl", &Cmdline::nodl},
+    {"nopcid", &Cmdline::nopcid}, {"novga", &Cmdline::novga},   {"novpid", &Cmdline::novpid},
 };
 
-char const *Cmdline::get_arg (char const **line, unsigned &len)
+char const* Cmdline::get_arg(char const** line, unsigned& len)
 {
     len = 0;
 
-    for (; **line == ' '; ++*line) ;
+    for (; **line == ' '; ++*line)
+        ;
 
     if (!**line)
         return nullptr;
 
-    char const *arg = *line;
+    char const* arg = *line;
 
     for (; **line != ' '; ++*line) {
         if (!**line)
             return arg;
-        len ++;
+        len++;
     }
 
     return arg;
 }
 
-void Cmdline::init (char const *line)
+void Cmdline::init(char const* line)
 {
-    char const *arg;
+    char const* arg;
     unsigned len;
 
-    while ((arg = get_arg (&line, len)))
+    while ((arg = get_arg(&line, len)))
         for (size_t i = 0; i < sizeof map / sizeof *map; i++) {
-            if (strnmatch (map[i].arg, arg, len))
+            if (strnmatch(map[i].arg, arg, len))
                 *map[i].ptr = true;
         }
 }

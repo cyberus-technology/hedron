@@ -23,23 +23,19 @@
 #include "compiler.hpp"
 #include "cpu.hpp"
 
-template <typename T>
-class Lock_guard
+template <typename T> class Lock_guard
 {
-    private:
-        T &_lock;
+private:
+    T& _lock;
 
-    public:
-        inline Lock_guard (T &l) : _lock (l)
-        {
-            // Attempting to grab a lock while preemptible. This is a bug.
-            assert (!Cpu::preemptible());
+public:
+    inline Lock_guard(T& l) : _lock(l)
+    {
+        // Attempting to grab a lock while preemptible. This is a bug.
+        assert(!Cpu::preemptible());
 
-            _lock.lock();
-        }
+        _lock.lock();
+    }
 
-        inline ~Lock_guard()
-        {
-            _lock.unlock();
-        }
+    inline ~Lock_guard() { _lock.unlock(); }
 };

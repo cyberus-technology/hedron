@@ -23,17 +23,11 @@
 #include "gdt.hpp"
 #include "mca.hpp"
 
-void Ec::load_fpu()
-{
-    fpu.load();
-}
+void Ec::load_fpu() { fpu.load(); }
 
-void Ec::save_fpu()
-{
-    fpu.save();
-}
+void Ec::save_fpu() { fpu.save(); }
 
-void Ec::transfer_fpu (Ec *from_ec)
+void Ec::transfer_fpu(Ec* from_ec)
 {
     if (from_ec == this)
         return;
@@ -47,9 +41,9 @@ void Ec::transfer_fpu (Ec *from_ec)
     }
 }
 
-bool Ec::handle_exc_gp (Exc_regs *r)
+bool Ec::handle_exc_gp(Exc_regs* r)
 {
-    if (fixup (r)) {
+    if (fixup(r)) {
         return true;
     }
 
@@ -66,7 +60,7 @@ bool Ec::handle_exc_gp (Exc_regs *r)
     return false;
 }
 
-bool Ec::handle_exc_pf (Exc_regs *r)
+bool Ec::handle_exc_pf(Exc_regs* r)
 {
     mword addr = r->cr2;
 
@@ -75,42 +69,42 @@ bool Ec::handle_exc_pf (Exc_regs *r)
 
     // Kernel fault in I/O space
     if (addr >= SPC_LOCAL_IOP && addr <= SPC_LOCAL_IOP_E) {
-        Space_pio::page_fault (addr, r->err);
+        Space_pio::page_fault(addr, r->err);
         return true;
     }
 
     // Kernel fault in OBJ space
     if (addr >= SPC_LOCAL_OBJ) {
-        Space_obj::page_fault (addr, r->err);
+        Space_obj::page_fault(addr, r->err);
         return true;
     }
 
-    die ("#PF (kernel)", r);
+    die("#PF (kernel)", r);
 }
 
-void Ec::handle_exc (Exc_regs *r)
+void Ec::handle_exc(Exc_regs* r)
 {
-    assert (r->vec == r->dst_portal);
+    assert(r->vec == r->dst_portal);
 
     switch (r->vec) {
 
-        case Cpu::EXC_GP:
-            if (handle_exc_gp (r))
-                return;
-            break;
+    case Cpu::EXC_GP:
+        if (handle_exc_gp(r))
+            return;
+        break;
 
-        case Cpu::EXC_PF:
-            if (handle_exc_pf (r))
-                return;
-            break;
+    case Cpu::EXC_PF:
+        if (handle_exc_pf(r))
+            return;
+        break;
 
-        case Cpu::EXC_MC:
-            Mca::vector();
-            break;
+    case Cpu::EXC_MC:
+        Mca::vector();
+        break;
     }
 
     if (r->user())
         send_msg<ret_user_iret>();
 
-    die ("EXC", r);
+    die("EXC", r);
 }

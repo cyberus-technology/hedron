@@ -18,28 +18,32 @@
 #pragma once
 
 #include "compiler.hpp"
-#include "types.hpp"
 #include "cpulocal.hpp"
+#include "types.hpp"
 
 class Timeout
 {
-    protected:
-        Timeout *prev, *next;
-        uint64 time;
+protected:
+    Timeout *prev, *next;
+    uint64 time;
 
-        virtual void trigger() = 0;
+    virtual void trigger() = 0;
 
-    public:
-        CPULOCAL_ACCESSOR(timeout, list);
+public:
+    CPULOCAL_ACCESSOR(timeout, list);
 
-        inline Timeout() : prev (nullptr), next (nullptr), time (0) {}
+    inline Timeout() : prev(nullptr), next(nullptr), time(0) {}
 
-        ~Timeout() { if (active()) dequeue(); }
+    ~Timeout()
+    {
+        if (active())
+            dequeue();
+    }
 
-        inline bool active() const { return prev || list() == this; }
+    inline bool active() const { return prev || list() == this; }
 
-        void enqueue (uint64);
-        uint64 dequeue();
+    void enqueue(uint64);
+    uint64 dequeue();
 
-        static void check();
+    static void check();
 };

@@ -26,7 +26,7 @@
 
 class Mtrr_state : public Generic_mtrr_state<Msr>
 {
-    public:
-        // Return a singleton instance.
-        static Mtrr_state &get();
+public:
+    // Return a singleton instance.
+    static Mtrr_state& get();
 };

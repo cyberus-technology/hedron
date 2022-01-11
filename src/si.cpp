@@ -16,20 +16,20 @@
  */
 
 #include "si.hpp"
-#include "sm.hpp"
 #include "assert.hpp"
+#include "sm.hpp"
 
 #include "stdio.hpp"
 
 static Spinlock lock;
 
-Si::Si (Sm * s, mword v) : sm(s), prev(nullptr), next(nullptr), value(v)
+Si::Si(Sm* s, mword v) : sm(s), prev(nullptr), next(nullptr), value(v)
 {
-    trace (TRACE_SYSCALL, "SI:%p created (SM:%p signal:%#lx)", this, s, v);
+    trace(TRACE_SYSCALL, "SI:%p created (SM:%p signal:%#lx)", this, s, v);
 
     if (sm) {
         bool ok = sm->add_ref();
-        assert (ok);
+        assert(ok);
         if (!ok)
             sm = nullptr;
     }
@@ -49,22 +49,22 @@ Si::~Si()
         delete sm;
 }
 
-void Si::chain(Sm *si)
+void Si::chain(Sm* si)
 {
-    Sm * kern_sm = static_cast<Sm *>(this);
-    assert (kern_sm);
-    assert (kern_sm->space == static_cast<Space_obj *>(&Pd::kern));
+    Sm* kern_sm = static_cast<Sm*>(this);
+    assert(kern_sm);
+    assert(kern_sm->space == static_cast<Space_obj*>(&Pd::kern));
 
-    Lock_guard <Spinlock> guard (lock);
+    Lock_guard<Spinlock> guard(lock);
 
     if (sm && sm->del_rcu())
-        Rcu::call (sm);
+        Rcu::call(sm);
 
     sm = si;
 
     if (sm) {
         bool ok = sm->add_ref();
-        assert (ok);
+        assert(ok);
         if (!ok)
             sm = nullptr;
     }
@@ -77,11 +77,11 @@ void Si::chain(Sm *si)
 
 void Si::submit()
 {
-    Sm * i = static_cast<Sm *>(this);
+    Sm* i = static_cast<Sm*>(this);
     assert(i);
 
-    if (i->space == static_cast<Space_obj *>(&Pd::kern)) {
-        Sm * si = Atomic::load (i->sm);
+    if (i->space == static_cast<Space_obj*>(&Pd::kern)) {
+        Sm* si = Atomic::load(i->sm);
         if (si) {
             si->submit();
             return;
@@ -90,9 +90,10 @@ void Si::submit()
 
     i->up();
 
-    Sm * sm_chained = Atomic::load (sm);
+    Sm* sm_chained = Atomic::load(sm);
     /* if !sm than it is just a semaphore */
-    if (!sm_chained) return;
+    if (!sm_chained)
+        return;
 
     /* signal mode - send up() to chained sm */
     sm_chained->up(nullptr, i);
