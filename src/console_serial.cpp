@@ -18,42 +18,42 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "cmdline.hpp"
 #include "console_serial.hpp"
+#include "cmdline.hpp"
 #include "hpt.hpp"
 #include "initprio.hpp"
 #include "x86.hpp"
 
-INIT_PRIORITY (PRIO_CONSOLE) Console_serial Console_serial::con;
+INIT_PRIORITY(PRIO_CONSOLE) Console_serial Console_serial::con;
 
 Console_serial::Console_serial()
 {
     if (!Cmdline::serial)
         return;
 
-    char *mem = static_cast<char *>(Hpt::remap (0));
-    if (!(base = *reinterpret_cast<uint16 *>(mem + 0x400)) &&
-        !(base = *reinterpret_cast<uint16 *>(mem + 0x402)))
+    char* mem = static_cast<char*>(Hpt::remap(0));
+    if (!(base = *reinterpret_cast<uint16*>(mem + 0x400)) &&
+        !(base = *reinterpret_cast<uint16*>(mem + 0x402)))
         base = 0x3f8;
 
-    out (LCR, 0x80);
-    out (DLL, (freq / 115200) & 0xff);
-    out (DLM, (freq / 115200) >> 8);
-    out (LCR, 3);
-    out (IER, 0);
-    out (FCR, 7);
-    out (MCR, 3);
+    out(LCR, 0x80);
+    out(DLL, (freq / 115200) & 0xff);
+    out(DLM, (freq / 115200) >> 8);
+    out(LCR, 3);
+    out(IER, 0);
+    out(FCR, 7);
+    out(MCR, 3);
 
     enable();
 }
 
-void Console_serial::putc (int c)
+void Console_serial::putc(int c)
 {
     if (c == '\n')
-        putc ('\r');
+        putc('\r');
 
-    while (EXPECT_FALSE (!(in (LSR) & 0x20)))
+    while (EXPECT_FALSE(!(in(LSR)&0x20)))
         pause();
 
-    out (THR, c);
+    out(THR, c);
 }

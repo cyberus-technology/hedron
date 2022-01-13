@@ -26,35 +26,31 @@
 /// See doc/implementation.md for a general overview of the boot flow.
 class Bootstrap
 {
-        /// A spinlock that serializes CPU initialization.
-        static inline mword boot_lock asm ("boot_lock");
+    /// A spinlock that serializes CPU initialization.
+    static inline mword boot_lock asm("boot_lock");
 
-        static void release_next_cpu()
-        {
-            Atomic::store (boot_lock, static_cast<mword>(1));
-        }
+    static void release_next_cpu() { Atomic::store(boot_lock, static_cast<mword>(1)); }
 
-        /// A counter to implement the CPU boot barrier.
-        static inline mword barrier;
+    /// A counter to implement the CPU boot barrier.
+    static inline mword barrier;
 
-        /// Spin until all processors have reached this code.
-        static void wait_for_all_cpus();
+    /// Spin until all processors have reached this code.
+    static void wait_for_all_cpus();
 
-        /// Reset the boot synchronization logic for another initialization
-        /// pass.
-        static void rearm()
-        {
-            barrier = 0;
-            boot_lock = 0;
-        }
+    /// Reset the boot synchronization logic for another initialization
+    /// pass.
+    static void rearm()
+    {
+        barrier = 0;
+        boot_lock = 0;
+    }
 
-        /// Create the idle EC.
-        static void create_idle_ec();
+    /// Create the idle EC.
+    static void create_idle_ec();
 
-        /// Create the initial PD and EC for the rootask.
-        static void create_roottask();
+    /// Create the initial PD and EC for the rootask.
+    static void create_roottask();
 
-    public:
-
-        static NORETURN void bootstrap() asm ("bootstrap");
+public:
+    static NORETURN void bootstrap() asm("bootstrap");
 };

@@ -15,13 +15,13 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "sm.hpp"
 #include "timeout_hypercall.hpp"
+#include "sm.hpp"
 
-void Timeout_hypercall::enqueue(uint64 t, Sm *s)
+void Timeout_hypercall::enqueue(uint64 t, Sm* s)
 {
     if (sm && sm->del_rcu())
-        Rcu::call (sm);
+        Rcu::call(sm);
 
     if (!s->add_ref()) {
         sm = nullptr;
@@ -29,16 +29,17 @@ void Timeout_hypercall::enqueue(uint64 t, Sm *s)
     }
 
     sm = s;
-    Timeout::enqueue (t);
+    Timeout::enqueue(t);
 }
 
 Timeout_hypercall::~Timeout_hypercall()
 {
     if (sm && sm->del_rcu())
-        Rcu::call (sm);
+        Rcu::call(sm);
 }
 
 void Timeout_hypercall::trigger()
 {
-    if (sm) sm->timeout (ec);
+    if (sm)
+        sm->timeout(ec);
 }

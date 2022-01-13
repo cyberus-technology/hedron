@@ -20,20 +20,20 @@
 
 class Avl
 {
-    protected:
-        Avl *lnk[2];
+protected:
+    Avl* lnk[2];
 
-        explicit Avl() : bal (2) { lnk[0] = lnk[1] = nullptr; }
+    explicit Avl() : bal(2) { lnk[0] = lnk[1] = nullptr; }
 
-    private:
-        unsigned bal;
+private:
+    unsigned bal;
 
-        bool balanced() const { return bal == 2; }
+    bool balanced() const { return bal == 2; }
 
-        static Avl *rotate (Avl *&, bool);
-        static Avl *rotate (Avl *&, bool, unsigned);
+    static Avl* rotate(Avl*&, bool);
+    static Avl* rotate(Avl*&, bool, unsigned);
 
-    public:
-        template <typename> static bool insert (Avl **, Avl *);
-        template <typename> static bool remove (Avl **, Avl *);
+public:
+    template <typename> static bool insert(Avl**, Avl*);
+    template <typename> static bool remove(Avl**, Avl*);
 };

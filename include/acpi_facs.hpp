@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "acpi_table.hpp"
 #include "acpi_gas.hpp"
+#include "acpi_table.hpp"
 
 #pragma pack(1)
 
@@ -27,27 +27,27 @@
  */
 class Acpi_table_facs : public Acpi_header
 {
-    public:
-        uint32 hardware_signature;       // 8
-        uint32 firmware_waking_vector;   // 12
-        uint32 global_lock;              // 16
-        uint32 flags;                    // 20
-        uint64 x_firmware_waking_vector; // 24
-        uint8  version;                  // 32
-        uint8  reserved[3];              // 33
-        uint32 ospm_flags;               // 36
-        uint8  reserved_2[24];           // 40
+public:
+    uint32 hardware_signature;       // 8
+    uint32 firmware_waking_vector;   // 12
+    uint32 global_lock;              // 16
+    uint32 flags;                    // 20
+    uint64 x_firmware_waking_vector; // 24
+    uint8 version;                   // 32
+    uint8 reserved[3];               // 33
+    uint32 ospm_flags;               // 36
+    uint8 reserved_2[24];            // 40
 
-        enum Flags
-        {
-            S4BIOS_F               = 1u << 0,
-            WAKE_64BIT_SUPPORTED_F = 1u << 1,
-        };
+    enum Flags
+    {
+        S4BIOS_F = 1u << 0,
+        WAKE_64BIT_SUPPORTED_F = 1u << 1,
+    };
 
-        enum Ospm_flags
-        {
-            WAKE_64BIT_F           = 1u << 0,
-        };
+    enum Ospm_flags
+    {
+        WAKE_64BIT_F = 1u << 0,
+    };
 };
 
 static_assert(sizeof(Acpi_table_facs) == 64);

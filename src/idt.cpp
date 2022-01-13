@@ -16,19 +16,19 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "extern.hpp"
 #include "idt.hpp"
+#include "extern.hpp"
 #include "selectors.hpp"
 
 ALIGNED(8) Idt Idt::idt[VEC_MAX];
 
 void Idt::build()
 {
-    mword *ptr = handlers;
+    mword* ptr = handlers;
 
     for (unsigned vector = 0; vector < VEC_MAX; vector++, ptr++)
         if (*ptr)
-            idt[vector].set (SYS_INTR_GATE, *ptr & 3, SEL_KERN_CODE, *ptr & ~3);
+            idt[vector].set(SYS_INTR_GATE, *ptr & 3, SEL_KERN_CODE, *ptr & ~3);
         else
-            idt[vector].set (SYS_TASK_GATE, 0, SEL_TSS_RUN, 0);
+            idt[vector].set(SYS_TASK_GATE, 0, SEL_TSS_RUN, 0);
 }

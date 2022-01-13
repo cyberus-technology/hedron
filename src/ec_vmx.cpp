@@ -28,30 +28,30 @@
 
 void Ec::vmx_exception()
 {
-    mword vect_info = Vmcs::read (Vmcs::IDT_VECT_INFO);
+    mword vect_info = Vmcs::read(Vmcs::IDT_VECT_INFO);
 
     if (vect_info & 0x80000000) {
 
-        Vmcs::write (Vmcs::ENT_INTR_INFO, vect_info & ~0x1000);
+        Vmcs::write(Vmcs::ENT_INTR_INFO, vect_info & ~0x1000);
 
         if (vect_info & 0x800)
-            Vmcs::write (Vmcs::ENT_INTR_ERROR, Vmcs::read (Vmcs::IDT_VECT_ERROR));
+            Vmcs::write(Vmcs::ENT_INTR_ERROR, Vmcs::read(Vmcs::IDT_VECT_ERROR));
 
         if ((vect_info >> 8 & 0x7) >= 4 && (vect_info >> 8 & 0x7) <= 6)
-            Vmcs::write (Vmcs::ENT_INST_LEN, Vmcs::read (Vmcs::EXI_INST_LEN));
+            Vmcs::write(Vmcs::ENT_INST_LEN, Vmcs::read(Vmcs::EXI_INST_LEN));
     };
 
-    mword intr_info = Vmcs::read (Vmcs::EXI_INTR_INFO);
+    mword intr_info = Vmcs::read(Vmcs::EXI_INTR_INFO);
 
     switch (intr_info & 0x7ff) {
 
-        default:
-            current()->regs.dst_portal = Vmcs::VMX_EXC_NMI;
-            break;
+    default:
+        current()->regs.dst_portal = Vmcs::VMX_EXC_NMI;
+        break;
 
-        case 0x202:         // NMI
-            asm volatile ("int $0x2" : : : "memory");
-            ret_user_vmresume();
+    case 0x202: // NMI
+        asm volatile("int $0x2" : : : "memory");
+        ret_user_vmresume();
     }
 
     send_msg<ret_user_vmresume>();
@@ -59,16 +59,16 @@ void Ec::vmx_exception()
 
 void Ec::vmx_extint()
 {
-    unsigned vector = Vmcs::read (Vmcs::EXI_INTR_INFO) & 0xff;
+    unsigned vector = Vmcs::read(Vmcs::EXI_INTR_INFO) & 0xff;
 
     if (vector >= VEC_IPI)
-        Lapic::ipi_vector (vector);
+        Lapic::ipi_vector(vector);
     else if (vector >= VEC_MSI)
-        Dmar::vector (vector);
+        Dmar::vector(vector);
     else if (vector >= VEC_LVT)
-        Lapic::lvt_vector (vector);
+        Lapic::lvt_vector(vector);
     else if (vector >= VEC_GSI)
-        Gsi::vector (vector);
+        Gsi::vector(vector);
 
     ret_user_vmresume();
     UNREACHED;
@@ -83,8 +83,8 @@ void Ec::handle_vmx()
 
     // See the corresponding check in ret_user_vmresume for the rationale of
     // manually context switching IA32_SPEC_CTRL.
-    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL))) {
-        mword const guest_spec_ctrl = Msr::read (Msr::IA32_SPEC_CTRL);
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL))) {
+        mword const guest_spec_ctrl = Msr::read(Msr::IA32_SPEC_CTRL);
 
         current()->regs.spec_ctrl = guest_spec_ctrl;
 
@@ -92,7 +92,7 @@ void Ec::handle_vmx()
         // all hardware-based mitigations.  We do this early to avoid
         // performance penalties due to enabled mitigation features.
         if (guest_spec_ctrl != 0) {
-            Msr::write (Msr::IA32_SPEC_CTRL, 0);
+            Msr::write(Msr::IA32_SPEC_CTRL, 0);
         }
     }
 
@@ -100,21 +100,23 @@ void Ec::handle_vmx()
     Cpu::setup_sysenter();
     Fpu::restore_xcr0();
 
-    mword reason = Vmcs::read (Vmcs::EXI_REASON) & 0xff;
+    mword reason = Vmcs::read(Vmcs::EXI_REASON) & 0xff;
 
     switch (reason) {
-        case Vmcs::VMX_EXC_NMI:     vmx_exception();
-        case Vmcs::VMX_EXTINT:      vmx_extint();
-        case Vmcs::VMX_PREEMPT:
-            // Whenever a preemption timer exit occurs we set the value to the
-            // maximum possible. This allows to always keep the preemption
-            // timer active while keeping spurious timer exits for the user to
-            // a minimum in case the user does not program the timer. Not
-            // re-setting the timer leads to continuous timeout exits because
-            // the timer value stays at 0. Keeping the timer active all the
-            // time has the advantage of minimizing high-latency VMCS updates.
-            vmx_timer::set (~0ull);
-            break;
+    case Vmcs::VMX_EXC_NMI:
+        vmx_exception();
+    case Vmcs::VMX_EXTINT:
+        vmx_extint();
+    case Vmcs::VMX_PREEMPT:
+        // Whenever a preemption timer exit occurs we set the value to the
+        // maximum possible. This allows to always keep the preemption
+        // timer active while keeping spurious timer exits for the user to
+        // a minimum in case the user does not program the timer. Not
+        // re-setting the timer leads to continuous timeout exits because
+        // the timer value stays at 0. Keeping the timer active all the
+        // time has the advantage of minimizing high-latency VMCS updates.
+        vmx_timer::set(~0ull);
+        break;
     }
 
     current()->regs.dst_portal = reason;

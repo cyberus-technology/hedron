@@ -26,84 +26,67 @@
 
 class Buddy
 {
-    private:
-        class Block
-        {
-            public:
-                Block *         prev;
-                Block *         next;
-                unsigned short  ord;
-                unsigned short  tag;
-
-                enum {
-                    Used  = 0,
-                    Free  = 1
-                };
-        };
-
-        Spinlock        lock;
-        signed long     max_idx;
-        signed long     min_idx;
-        mword           base;
-        mword           order;
-        Block *         index;
-        Block *         head;
-
-        inline signed long block_to_index (Block *b)
-        {
-            return b - index;
-        }
-
-        inline Block *index_to_block (signed long i)
-        {
-            return index + i;
-        }
-
-        inline signed long page_to_index (mword l_addr)
-        {
-            return l_addr / PAGE_SIZE - base / PAGE_SIZE;
-        }
-
-        inline mword index_to_page (signed long i)
-        {
-            return base + i * PAGE_SIZE;
-        }
-
-        inline mword virt_to_phys (mword virt)
-        {
-            return VIRT_TO_PHYS_NORELOC (virt) + PHYS_RELOCATION;
-        }
-
-        inline mword phys_to_virt (mword phys)
-        {
-            return PHYS_TO_VIRT_NORELOC (phys - PHYS_RELOCATION);
-        }
-
+private:
+    class Block
+    {
     public:
-        enum Fill
+        Block* prev;
+        Block* next;
+        unsigned short ord;
+        unsigned short tag;
+
+        enum
         {
-            NOFILL,
-            FILL_0,
-            FILL_1
+            Used = 0,
+            Free = 1
         };
+    };
 
-        static Buddy allocator;
+    Spinlock lock;
+    signed long max_idx;
+    signed long min_idx;
+    mword base;
+    mword order;
+    Block* index;
+    Block* head;
 
-        Buddy (mword virt, mword f_addr, size_t size);
+    inline signed long block_to_index(Block* b) { return b - index; }
 
-        static void fill(void *dst, Fill fill_mem, size_t size);
+    inline Block* index_to_block(signed long i) { return index + i; }
 
-        void *alloc (unsigned short ord, Fill fill_mem);
+    inline signed long page_to_index(mword l_addr) { return l_addr / PAGE_SIZE - base / PAGE_SIZE; }
 
-        void free (mword addr);
+    inline mword index_to_page(signed long i) { return base + i * PAGE_SIZE; }
 
-        static inline void *phys_to_ptr (Paddr phys)
-        {
-            return reinterpret_cast<void *>(allocator.phys_to_virt (static_cast<mword>(phys)));
-        }
+    inline mword virt_to_phys(mword virt) { return VIRT_TO_PHYS_NORELOC(virt) + PHYS_RELOCATION; }
 
-        static inline mword ptr_to_phys (void *virt)
-        {
-            return allocator.virt_to_phys (reinterpret_cast<mword>(virt));
-        }
+    inline mword phys_to_virt(mword phys) { return PHYS_TO_VIRT_NORELOC(phys - PHYS_RELOCATION); }
+
+public:
+    enum Fill
+    {
+        NOFILL,
+        FILL_0,
+        FILL_1
+    };
+
+    static Buddy allocator;
+
+    Buddy(mword virt, mword f_addr, size_t size);
+
+    static void fill(void* dst, Fill fill_mem, size_t size);
+
+    void* alloc(unsigned short ord, Fill fill_mem);
+
+    void free(mword addr);
+
+    static inline void* phys_to_ptr(Paddr phys)
+    {
+        return reinterpret_cast<void*>(allocator.phys_to_virt(static_cast<mword>(phys)));
+    }
+
+    static inline mword ptr_to_phys(void* virt)
+    {
+        return allocator.virt_to_phys(reinterpret_cast<mword>(virt));
+    }
 };

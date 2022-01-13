@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "types.hpp"
 #include "memory.hpp"
+#include "types.hpp"
 
 extern char GIT_VER;
 

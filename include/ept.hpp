@@ -28,78 +28,83 @@ using Ept_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_c
 
 class Ept : public Ept_page_table
 {
-    private:
+private:
+    // The number of leaf levels we support. This is adjusted by
+    // set_supported_leaf_levels.
+    static level_t supported_leaf_levels;
 
-        // The number of leaf levels we support. This is adjusted by
-        // set_supported_leaf_levels.
-        static level_t supported_leaf_levels;
+    // EPT invalidation types
+    enum : mword
+    {
+        INVEPT_SINGLE_CONTEXT = 1,
+    };
 
-        // EPT invalidation types
-        enum : mword {
-            INVEPT_SINGLE_CONTEXT = 1,
-        };
+    // EPTP constants
+    enum
+    {
+        EPTP_WB = 6,
+        EPTP_WALK_LENGTH_SHIFT = 3,
+    };
 
-        // EPTP constants
-        enum {
-            EPTP_WB = 6,
-            EPTP_WALK_LENGTH_SHIFT = 3,
-        };
+public:
+    enum : mword
+    {
+        // The bitmask covers legal memory type values as we get them from
+        // the MTRRs.
+        MT_MASK = 0b111UL,
+    };
 
-    public:
-        enum : mword {
-            // The bitmask covers legal memory type values as we get them from
-            // the MTRRs.
-            MT_MASK = 0b111UL,
-        };
+    enum : ord_t
+    {
+        PTE_MT_SHIFT = 3,
+    };
 
-        enum : ord_t {
-            PTE_MT_SHIFT = 3,
-        };
+    enum : pte_t
+    {
+        PTE_R = 1UL << 0,
+        PTE_W = 1UL << 1,
+        PTE_X = 1UL << 2,
 
-        enum : pte_t {
-            PTE_R = 1UL << 0,
-            PTE_W = 1UL << 1,
-            PTE_X = 1UL << 2,
+        PTE_P = PTE_R | PTE_W | PTE_X,
 
-            PTE_P = PTE_R | PTE_W | PTE_X,
+        PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
 
-            PTE_MT_MASK = MT_MASK << PTE_MT_SHIFT,
+        PTE_I = 1UL << 6,
+        PTE_S = 1UL << 7,
+    };
 
-            PTE_I = 1UL << 6,
-            PTE_S = 1UL << 7,
-        };
+    static constexpr pte_t mask{PTE_R | PTE_W | PTE_X | PTE_I | PTE_MT_MASK};
+    static constexpr pte_t all_rights{PTE_R | PTE_W | PTE_X};
 
-        static constexpr pte_t mask {PTE_R | PTE_W | PTE_X | PTE_I | PTE_MT_MASK};
-        static constexpr pte_t all_rights {PTE_R | PTE_W | PTE_X};
+    // Adjust the number of leaf levels to the given value.
+    static void set_supported_leaf_levels(level_t level);
 
-        // Adjust the number of leaf levels to the given value.
-        static void set_supported_leaf_levels(level_t level);
+    // Create a page table from scratch.
+    Ept() : Ept_page_table(4, supported_leaf_levels) {}
 
-        // Create a page table from scratch.
-        Ept() : Ept_page_table(4, supported_leaf_levels) {}
+    // Convert a HPT mapping into a mapping for the EPT.
+    static Mapping convert_mapping(Hpt::Mapping const& hpt_mapping);
 
-        // Convert a HPT mapping into a mapping for the EPT.
-        static Mapping convert_mapping(Hpt::Mapping const &hpt_mapping);
+    // Invalidate TLB entries derived from this EPT using invept.
+    //
+    // This function must be called when the EPT paging structures are
+    // changed. It does a single-context invalidation of guest-physical
+    // mappings for this EPT.
+    void invalidate()
+    {
+        struct {
+            uint64 eptp, rsvd;
+        } const desc{vmcs_eptp(), 0};
+        static_assert(sizeof(desc) == 16, "INVEPT descriptor layout is broken");
 
-        // Invalidate TLB entries derived from this EPT using invept.
-        //
-        // This function must be called when the EPT paging structures are
-        // changed. It does a single-context invalidation of guest-physical
-        // mappings for this EPT.
-        void invalidate()
-        {
-            struct { uint64 eptp, rsvd; } const desc { vmcs_eptp(), 0 };
-            static_assert(sizeof(desc) == 16, "INVEPT descriptor layout is broken");
+        bool ret;
+        asm volatile("invept %1, %2" : "=@cca"(ret) : "m"(desc), "r"(INVEPT_SINGLE_CONTEXT) : "cc", "memory");
+        assert(ret);
+    }
 
-            bool ret;
-            asm volatile ("invept %1, %2" : "=@cca" (ret) : "m" (desc), "r" (INVEPT_SINGLE_CONTEXT) : "cc", "memory");
-            assert (ret);
-        }
-
-        // Return a VMCS EPT pointer to this EPT.
-        uint64 vmcs_eptp() const
-        {
-            return static_cast<uint64>(root())
-                | (max_levels() - 1) << EPTP_WALK_LENGTH_SHIFT | EPTP_WB;
-        }
+    // Return a VMCS EPT pointer to this EPT.
+    uint64 vmcs_eptp() const
+    {
+        return static_cast<uint64>(root()) | (max_levels() - 1) << EPTP_WALK_LENGTH_SHIFT | EPTP_WB;
+    }
 };

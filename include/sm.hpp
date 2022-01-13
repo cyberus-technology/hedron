@@ -25,133 +25,145 @@
 #include "ec.hpp"
 #include "si.hpp"
 
-class Sm : public Typed_kobject<Kobject::Type::SM>, public Refcount, public Queue<Ec>, public Queue<Si>, public Si
+class Sm : public Typed_kobject<Kobject::Type::SM>,
+           public Refcount,
+           public Queue<Ec>,
+           public Queue<Si>,
+           public Si
 {
-    private:
-        mword counter;
+private:
+    mword counter;
 
-        static Slab_cache cache;
+    static Slab_cache cache;
 
-        static void free (Rcu_elem * a) {
-            Sm * sm = static_cast <Sm *>(a);
+    static void free(Rcu_elem* a)
+    {
+        Sm* sm = static_cast<Sm*>(a);
 
-            if (sm->del_ref())
-                delete sm;
-            else {
-                sm->up();
-            }
+        if (sm->del_ref())
+            delete sm;
+        else {
+            sm->up();
         }
+    }
 
-    public:
+public:
+    // Capability permission bitmask.
+    enum
+    {
+        PERM_UP = 1U << 0,
+        PERM_DOWN = 1U << 1,
 
-        // Capability permission bitmask.
-        enum {
-            PERM_UP = 1U << 0,
-            PERM_DOWN = 1U << 1,
+        PERM_ALL = PERM_UP | PERM_DOWN,
+    };
 
-            PERM_ALL = PERM_UP | PERM_DOWN,
-        };
+    mword reset(bool l = false)
+    {
+        if (l)
+            lock.lock();
+        mword c = counter;
+        counter = 0;
+        if (l)
+            lock.unlock();
+        return c;
+    }
 
-        mword reset(bool l = false) {
-            if (l) lock.lock();
-            mword c = counter;
-            counter = 0;
-            if (l) lock.unlock();
-            return c;
-        }
+    Sm(Pd*, mword, mword = 0, Sm* = nullptr, mword = 0);
+    ~Sm()
+    {
+        while (!counter)
+            up(Ec::sys_finish<Sys_regs::BAD_CAP, true>);
+    }
 
-        Sm (Pd *, mword, mword = 0, Sm * = nullptr, mword = 0);
-        ~Sm ()
+    inline void dn(bool zero, uint64 t, Ec* ec = Ec::current(), bool block = true)
+    {
         {
-            while (!counter)
-                up (Ec::sys_finish<Sys_regs::BAD_CAP, true>);
-        }
+            Lock_guard<Spinlock> guard(lock);
 
-        inline void dn (bool zero, uint64 t, Ec *ec = Ec::current(), bool block = true)
-        {
-            {   Lock_guard <Spinlock> guard (lock);
+            if (counter) {
+                counter = zero ? 0 : counter - 1;
 
-                if (counter) {
-                    counter = zero ? 0 : counter - 1;
+                Si* si;
+                if (Queue<Si>::dequeue(si = Queue<Si>::head()))
+                    ec->set_si_regs(si->value, static_cast<Sm*>(si)->reset());
 
-                    Si * si;
-                    if (Queue<Si>::dequeue(si = Queue<Si>::head()))
-                        ec->set_si_regs(si->value, static_cast <Sm *>(si)->reset());
-
-                    return;
-                }
-
-                if (!ec->add_ref()) {
-                    Sc::schedule (block);
-                    return;
-                }
-
-                Queue<Ec>::enqueue (ec);
+                return;
             }
 
-            if (!block)
-                Sc::schedule (false);
+            if (!ec->add_ref()) {
+                Sc::schedule(block);
+                return;
+            }
 
-            ec->set_timeout (t, this);
-
-            ec->block_sc();
-
-            ec->clr_timeout();
+            Queue<Ec>::enqueue(ec);
         }
 
-        inline void up (void (*c)() = nullptr, Sm * si = nullptr)
-        {
-            Ec *ec = nullptr;
+        if (!block)
+            Sc::schedule(false);
 
-            do {
-                if (ec)
-                    Rcu::call (ec);
+        ec->set_timeout(t, this);
 
-                {   Lock_guard <Spinlock> guard (lock);
+        ec->block_sc();
 
-                    if (!Queue<Ec>::dequeue (ec = Queue<Ec>::head())) {
+        ec->clr_timeout();
+    }
 
-                        if (si) {
-                           if (si->queued()) return;
-                           Queue<Si>::enqueue(si);
-                        }
+    inline void up(void (*c)() = nullptr, Sm* si = nullptr)
+    {
+        Ec* ec = nullptr;
 
-                        counter++;
-                        return;
+        do {
+            if (ec)
+                Rcu::call(ec);
+
+            {
+                Lock_guard<Spinlock> guard(lock);
+
+                if (!Queue<Ec>::dequeue(ec = Queue<Ec>::head())) {
+
+                    if (si) {
+                        if (si->queued())
+                            return;
+                        Queue<Si>::enqueue(si);
                     }
 
-                }
-
-                if (si) ec->set_si_regs(si->value, si->reset(true));
-
-                ec->release (c);
-
-            } while (EXPECT_FALSE(ec->del_rcu()));
-        }
-
-        inline void timeout (Ec *ec)
-        {
-            {   Lock_guard <Spinlock> guard (lock);
-
-                if (!Queue<Ec>::dequeue (ec))
+                    counter++;
                     return;
+                }
             }
 
-            ec->release (Ec::sys_finish<Sys_regs::COM_TIM>);
-        }
+            if (si)
+                ec->set_si_regs(si->value, si->reset(true));
 
-        inline void add_to_rcu()
+            ec->release(c);
+
+        } while (EXPECT_FALSE(ec->del_rcu()));
+    }
+
+    inline void timeout(Ec* ec)
+    {
         {
-            if (!add_ref())
-                return;
+            Lock_guard<Spinlock> guard(lock);
 
-            if (!Rcu::call (this))
-                /* enqueued ? - drop our ref and add to rcu if necessary */
-                if (del_rcu())
-                    Rcu::call (this);
+            if (!Queue<Ec>::dequeue(ec))
+                return;
         }
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
+        ec->release(Ec::sys_finish<Sys_regs::COM_TIM>);
+    }
 
-        static inline void operator delete (void *ptr) { cache.free (ptr); }
+    inline void add_to_rcu()
+    {
+        if (!add_ref())
+            return;
+
+        if (!Rcu::call(this))
+            /* enqueued ? - drop our ref and add to rcu if necessary */
+            if (del_rcu())
+                Rcu::call(this);
+    }
+
+    static inline void* operator new(size_t) { return cache.alloc(); }
+
+    static inline void operator delete(void* ptr) { cache.free(ptr); }
 };

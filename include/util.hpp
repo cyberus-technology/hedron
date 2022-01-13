@@ -21,36 +21,40 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
-template <typename T, T v>
-struct integral_constant
-{
-        using value_type = T;
+template <typename T, T v> struct integral_constant {
+    using value_type = T;
 
-        static constexpr value_type value = v;
-        constexpr operator value_type() const { return v; }
+    static constexpr value_type value = v;
+    constexpr operator value_type() const { return v; }
 };
 
-using true_type  = integral_constant<bool, true>;
+using true_type = integral_constant<bool, true>;
 using false_type = integral_constant<bool, false>;
 
-template <typename T> struct remove_reference       { using type = T; };
-template <typename T> struct remove_reference<T &>  { using type = T; };
-template <typename T> struct remove_reference<T &&> { using type = T; };
+template <typename T> struct remove_reference {
+    using type = T;
+};
+template <typename T> struct remove_reference<T&> {
+    using type = T;
+};
+template <typename T> struct remove_reference<T&&> {
+    using type = T;
+};
 
-template <typename T> struct is_lvalue_reference     : false_type {};
-template <typename T> struct is_lvalue_reference<T&> : true_type  {};
+template <typename T> struct is_lvalue_reference : false_type {
+};
+template <typename T> struct is_lvalue_reference<T&> : true_type {
+};
 
-template <typename T>
-constexpr T &&forward (typename remove_reference<T>::type &arg)
+template <typename T> constexpr T&& forward(typename remove_reference<T>::type& arg)
 {
-    return static_cast<T &&>(arg);
+    return static_cast<T&&>(arg);
 }
 
-template <typename T>
-constexpr T &&forward (typename remove_reference<T>::type &&arg)
+template <typename T> constexpr T&& forward(typename remove_reference<T>::type&& arg)
 {
     static_assert(not is_lvalue_reference<T>::value, "Invalid rvalue to lvalue conversion");
-    return static_cast<T &&>(arg);
+    return static_cast<T&&>(arg);
 }
 
 /// Wrap a member function together with its parameters into a callable.
@@ -58,18 +62,14 @@ constexpr T &&forward (typename remove_reference<T>::type &&arg)
 /// Example:
 ///
 /// std::for_each(begin, end, mem_fn_closure(&Foo:method)(param1, param2));
-template <typename T, typename RET>
-auto mem_fn_closure(RET T::*method) {
-    return [method](auto ... args){
-        return [method, args...](T& object) {
-            (object.*method)(args...);
-        };
-    };
+template <typename T, typename RET> auto mem_fn_closure(RET T::*method)
+{
+    return [method](auto... args) { return [method, args...](T& object) { (object.*method)(args...); }; };
 }
 
 #if !__STDC_HOSTED__
 
 // Placement new operator
-inline void *operator new (size_t, void *p) { return p; }
+inline void* operator new(size_t, void* p) { return p; }
 
 #endif

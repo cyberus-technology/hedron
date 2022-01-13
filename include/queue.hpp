@@ -23,45 +23,44 @@
 
 #include "compiler.hpp"
 
-template <typename T>
-class Queue
+template <typename T> class Queue
 {
-    private:
-        T *headptr;
+private:
+    T* headptr;
 
-    public:
-        inline Queue() : headptr (nullptr) {}
+public:
+    inline Queue() : headptr(nullptr) {}
 
-        inline T *head() const { return headptr; }
+    inline T* head() const { return headptr; }
 
-        inline void enqueue (T *t)
-        {
-            if (!headptr)
-                headptr = t->prev = t->next = t;
-            else {
-                t->next = headptr;
-                t->prev = headptr->prev;
-                t->next->prev = t->prev->next = t;
-            }
+    inline void enqueue(T* t)
+    {
+        if (!headptr)
+            headptr = t->prev = t->next = t;
+        else {
+            t->next = headptr;
+            t->prev = headptr->prev;
+            t->next->prev = t->prev->next = t;
+        }
+    }
+
+    inline bool dequeue(T* t)
+    {
+        if (!t || !t->next || !t->prev)
+            return false;
+
+        if (t == t->next)
+            headptr = nullptr;
+
+        else {
+            t->next->prev = t->prev;
+            t->prev->next = t->next;
+            if (t == headptr)
+                headptr = t->next;
         }
 
-        inline bool dequeue (T *t)
-        {
-            if (!t || !t->next || !t->prev)
-                return false;
+        t->next = t->prev = nullptr;
 
-            if (t == t->next)
-                headptr = nullptr;
-
-            else {
-                t->next->prev = t->prev;
-                t->prev->next = t->next;
-                if (t == headptr)
-                    headptr = t->next;
-            }
-
-            t->next = t->prev = nullptr;
-
-            return true;
-        }
+        return true;
+    }
 };

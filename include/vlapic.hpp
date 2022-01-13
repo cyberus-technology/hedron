@@ -17,16 +17,15 @@
 
 #pragma once
 
-#include "types.hpp"
 #include "memory.hpp"
+#include "types.hpp"
 
 class Vlapic
 {
-    private:
-        char opaque_data[PAGE_SIZE];
+private:
+    char opaque_data[PAGE_SIZE];
 
-    public:
-
-        static void *operator new (size_t size);
-        static void operator delete (void *ptr);
+public:
+    static void* operator new(size_t size);
+    static void operator delete(void* ptr);
 };

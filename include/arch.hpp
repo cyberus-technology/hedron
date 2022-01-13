@@ -19,61 +19,65 @@
 
 #pragma once
 
+// clang-format off
 #ifdef __ASSEMBLER__
 #define PREG(X)         %X
 #else
 #define PREG(X)         %%X
 #endif
+// clang-format on
 
-#define ARCH            "x86_64"
-#define WORD            .quad
-#define PTR_SIZE        8
-#define ELF_PHDR        Ph64
-#define ELF_CLASS       2
-#define ELF_MACHINE     62
-#define PTE_BPL         9
-#define PTE_LEV         4
-#define ARG_IP          rcx
-#define ARG_SP          r11
-#define ARG_1           rdi
-#define ARG_2           rsi
-#define ARG_3           rdx
-#define ARG_4           rax
-#define ARG_5           r8
-#define OFS_CR2         0x58
-#define OFS_VEC         0x88
-#define OFS_CS          0x98
+#define ARCH "x86_64"
+#define WORD .quad
+#define PTR_SIZE 8
+#define ELF_PHDR Ph64
+#define ELF_CLASS 2
+#define ELF_MACHINE 62
+#define PTE_BPL 9
+#define PTE_LEV 4
+#define ARG_IP rcx
+#define ARG_SP r11
+#define ARG_1 rdi
+#define ARG_2 rsi
+#define ARG_3 rdx
+#define ARG_4 rax
+#define ARG_5 r8
+#define OFS_CR2 0x58
+#define OFS_VEC 0x88
+#define OFS_CS 0x98
 
-#define SAVE_GPR        push    PREG(rax);               \
-                        push    PREG(rcx);               \
-                        push    PREG(rdx);               \
-                        push    PREG(rbx);               \
-                        push    PREG(rsp);               \
-                        push    PREG(rbp);               \
-                        push    PREG(rsi);               \
-                        push    PREG(rdi);               \
-                        push    PREG(r8);                \
-                        push    PREG(r9);                \
-                        push    PREG(r10);               \
-                        push    PREG(r11);               \
-                        push    PREG(r12);               \
-                        push    PREG(r13);               \
-                        push    PREG(r14);               \
-                        push    PREG(r15);
+#define SAVE_GPR                                                                                             \
+    push PREG(rax);                                                                                          \
+    push PREG(rcx);                                                                                          \
+    push PREG(rdx);                                                                                          \
+    push PREG(rbx);                                                                                          \
+    push PREG(rsp);                                                                                          \
+    push PREG(rbp);                                                                                          \
+    push PREG(rsi);                                                                                          \
+    push PREG(rdi);                                                                                          \
+    push PREG(r8);                                                                                           \
+    push PREG(r9);                                                                                           \
+    push PREG(r10);                                                                                          \
+    push PREG(r11);                                                                                          \
+    push PREG(r12);                                                                                          \
+    push PREG(r13);                                                                                          \
+    push PREG(r14);                                                                                          \
+    push PREG(r15);
 
-#define LOAD_GPR        pop     PREG(r15);                \
-                        pop     PREG(r14);                \
-                        pop     PREG(r13);                \
-                        pop     PREG(r12);                \
-                        pop     PREG(r11);                \
-                        pop     PREG(r10);                \
-                        pop     PREG(r9);                 \
-                        pop     PREG(r8);                 \
-                        pop     PREG(rdi);                \
-                        pop     PREG(rsi);                \
-                        pop     PREG(rbp);                \
-                        pop     PREG(rax); /* skip RSP */ \
-                        pop     PREG(rbx);                \
-                        pop     PREG(rdx);                \
-                        pop     PREG(rcx);                \
-                        pop     PREG(rax);
+#define LOAD_GPR                                                                                             \
+    pop PREG(r15);                                                                                           \
+    pop PREG(r14);                                                                                           \
+    pop PREG(r13);                                                                                           \
+    pop PREG(r12);                                                                                           \
+    pop PREG(r11);                                                                                           \
+    pop PREG(r10);                                                                                           \
+    pop PREG(r9);                                                                                            \
+    pop PREG(r8);                                                                                            \
+    pop PREG(rdi);                                                                                           \
+    pop PREG(rsi);                                                                                           \
+    pop PREG(rbp);                                                                                           \
+    pop PREG(rax); /* skip RSP */                                                                            \
+    pop PREG(rbx);                                                                                           \
+    pop PREG(rdx);                                                                                           \
+    pop PREG(rcx);                                                                                           \
+    pop PREG(rax);

@@ -28,31 +28,31 @@ class Space_mem;
 
 class Space_obj : public Space
 {
-    private:
-        static inline mword idx_to_virt (unsigned long idx)
-        {
-            return SPC_LOCAL_OBJ + (idx % caps) * sizeof (Capability);
-        }
+private:
+    static inline mword idx_to_virt(unsigned long idx)
+    {
+        return SPC_LOCAL_OBJ + (idx % caps) * sizeof(Capability);
+    }
 
-        inline Space_mem *space_mem();
+    inline Space_mem* space_mem();
 
-        Tlb_cleanup update (mword, Capability);
+    Tlb_cleanup update(mword, Capability);
 
-    public:
-        static unsigned const caps = (END_SPACE_LIM - SPC_LOCAL_OBJ) / sizeof (Capability);
+public:
+    static unsigned const caps = (END_SPACE_LIM - SPC_LOCAL_OBJ) / sizeof(Capability);
 
-        static inline Capability lookup (unsigned long idx)
-        {
-            return *reinterpret_cast<Capability *>(idx_to_virt (idx));
-        }
+    static inline Capability lookup(unsigned long idx)
+    {
+        return *reinterpret_cast<Capability*>(idx_to_virt(idx));
+    }
 
-        size_t lookup (mword, Capability &);
+    size_t lookup(mword, Capability&);
 
-        Paddr walk (mword, bool &);
+    Paddr walk(mword, bool&);
 
-        Tlb_cleanup update (Mdb *, mword = 0);
+    Tlb_cleanup update(Mdb*, mword = 0);
 
-        static void page_fault (mword, mword);
+    static void page_fault(mword, mword);
 
-        static bool insert_root (Kobject *);
+    static bool insert_root(Kobject*);
 };

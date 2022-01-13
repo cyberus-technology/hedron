@@ -21,10 +21,10 @@
 
 class Timeout_budget final : public Timeout
 {
-    private:
-        virtual void trigger() override;
+private:
+    virtual void trigger() override;
 
-    public:
-        CPULOCAL_CONST_ACCESSOR(timeout, budget);
-        static void init();
+public:
+    CPULOCAL_CONST_ACCESSOR(timeout, budget);
+    static void init();
 };

@@ -25,55 +25,45 @@
 #include "types.hpp"
 
 union vmx_basic {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32  revision;
-        uint32  size    : 13,
-                        :  3,
-                width   :  1,
-                dual    :  1,
-                type    :  4,
-                insouts :  1,
-                ctrl    :  1;
+        uint32 revision;
+        uint32 size : 13, : 3, width : 1, dual : 1, type : 4, insouts : 1, ctrl : 1;
     };
 };
 
 union vmx_ept_vpid {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32          : 16,
-                super   :  2,
-                        :  2,
-                invept  :  1,
-                        : 11;
-        uint32  invvpid :  1;
+        uint32 : 16, super : 2, : 2, invept : 1, : 11;
+        uint32 invvpid : 1;
     };
 };
 
 union vmx_ctrl_pin {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32  set, clr;
+        uint32 set, clr;
     };
 };
 
 union vmx_ctrl_cpu {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32  set, clr;
+        uint32 set, clr;
     };
 };
 
 union vmx_ctrl_exi {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32  set, clr;
+        uint32 set, clr;
     };
 };
 
 union vmx_ctrl_ent {
-    uint64      val;
+    uint64 val;
     struct {
-        uint32  set, clr;
+        uint32 set, clr;
     };
 };

@@ -17,7 +17,7 @@
 
 #include "hpet.hpp"
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Hpet::cache (sizeof (Hpet), 8);
+INIT_PRIORITY(PRIO_SLAB)
+Slab_cache Hpet::cache(sizeof(Hpet), 8);
 
-Hpet *Hpet::list;
+Hpet* Hpet::list;

@@ -19,8 +19,7 @@
 
 #include "util.hpp"
 
-template <typename IT, typename IT_END, typename T>
-T accumulate (IT begin, IT_END end, T init)
+template <typename IT, typename IT_END, typename T> T accumulate(IT begin, IT_END end, T init)
 {
     for (; begin != end; ++begin) {
         init += *begin;
@@ -29,37 +28,32 @@ T accumulate (IT begin, IT_END end, T init)
     return init;
 }
 
-template <typename T, typename VAL>
-VAL accumulate (T const &container, VAL &&init)
+template <typename T, typename VAL> VAL accumulate(T const& container, VAL&& init)
 {
-    return accumulate (container.begin(), container.end(), forward<VAL> (init));
+    return accumulate(container.begin(), container.end(), forward<VAL>(init));
 }
 
-template <typename IT, typename IT_END, typename PRED>
-IT find_if (IT begin, IT_END end, PRED predicate)
+template <typename IT, typename IT_END, typename PRED> IT find_if(IT begin, IT_END end, PRED predicate)
 {
-    for (; begin != end and not predicate (*begin); ++begin) {
+    for (; begin != end and not predicate(*begin); ++begin) {
     }
 
     return begin;
 }
 
-template <typename T, typename PRED>
-auto find_if (T const &container, PRED &&predicate)
+template <typename T, typename PRED> auto find_if(T const& container, PRED&& predicate)
 {
-    return find_if (container.begin(), container.end(), forward<PRED> (predicate));
+    return find_if(container.begin(), container.end(), forward<PRED>(predicate));
 }
 
-template <typename IT, typename IT_END, typename FN>
-void for_each (IT begin, IT_END end, FN &&fn)
+template <typename IT, typename IT_END, typename FN> void for_each(IT begin, IT_END end, FN&& fn)
 {
     for (; begin != end; ++begin) {
-        fn (*begin);
+        fn(*begin);
     }
 }
 
-template <typename T, typename FN>
-void for_each (T const &container, FN &&fn)
+template <typename T, typename FN> void for_each(T const& container, FN&& fn)
 {
-    for_each (container.begin(), container.end(), forward<FN> (fn));
+    for_each(container.begin(), container.end(), forward<FN>(fn));
 }

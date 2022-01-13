@@ -21,85 +21,84 @@
 #include <array>
 #include <catch2/catch.hpp>
 
-TEST_CASE ("memcpy works", "[string]")
+TEST_CASE("memcpy works", "[string]")
 {
-    std::array<char, 4>       dst_array = { 0, 0, 0, 0};
-    std::array<char, 4> const src_array = { 1, 1, 1, 1};
+    std::array<char, 4> dst_array = {0, 0, 0, 0};
+    std::array<char, 4> const src_array = {1, 1, 1, 1};
 
-    impl_memcpy (dst_array.data(), src_array.data(), dst_array.size());
+    impl_memcpy(dst_array.data(), src_array.data(), dst_array.size());
 
-    CHECK (dst_array == src_array);
+    CHECK(dst_array == src_array);
 }
 
-TEST_CASE ("memmove works", "[string]")
+TEST_CASE("memmove works", "[string]")
 {
-    std::array<char, 4> array = { 0, 1, 2, 0};
+    std::array<char, 4> array = {0, 1, 2, 0};
 
-    SECTION ("Forward copy") {
-        impl_memmove (array.data(), array.data() + 1, 2);
+    SECTION("Forward copy")
+    {
+        impl_memmove(array.data(), array.data() + 1, 2);
 
-        std::array<char, 4> const expected = { 1, 2, 2, 0};
-        CHECK (array == expected);
+        std::array<char, 4> const expected = {1, 2, 2, 0};
+        CHECK(array == expected);
     }
 
-    SECTION ("Backward copy") {
-        impl_memmove (array.data() + 2, array.data() + 1, 2);
+    SECTION("Backward copy")
+    {
+        impl_memmove(array.data() + 2, array.data() + 1, 2);
 
-        std::array<char, 4> const expected = { 0, 1, 1, 2};
-        CHECK (array == expected);
+        std::array<char, 4> const expected = {0, 1, 1, 2};
+        CHECK(array == expected);
     }
 }
 
-TEST_CASE ("memset works", "[string]")
+TEST_CASE("memset works", "[string]")
 {
-    std::array<char, 4> array = { 1, 2, 3, 4};
+    std::array<char, 4> array = {1, 2, 3, 4};
 
-    impl_memset (array.data() + 1, 9, 2);
+    impl_memset(array.data() + 1, 9, 2);
 
-    std::array<char, 4> const expected = { 1, 9, 9, 4};
-    CHECK (array == expected);
+    std::array<char, 4> const expected = {1, 9, 9, 4};
+    CHECK(array == expected);
 }
 
-TEST_CASE ("String prefix match", "[string]")
+TEST_CASE("String prefix match", "[string]")
 {
-    char const *string { "foo bar" };
-    char const *prefix { "foo xy" };
-    char const *empty { "" };
-    char const *empty2 { "" };
+    char const* string{"foo bar"};
+    char const* prefix{"foo xy"};
+    char const* empty{""};
+    char const* empty2{""};
 
-    SECTION ("prefix matches") {
-        CHECK (impl_strnmatch (prefix, string, 1));
-        CHECK (impl_strnmatch (prefix, string, 4));
+    SECTION("prefix matches")
+    {
+        CHECK(impl_strnmatch(prefix, string, 1));
+        CHECK(impl_strnmatch(prefix, string, 4));
     };
 
-    SECTION ("prefix does not match") {
-        CHECK (not impl_strnmatch (prefix, string, 5));
-        CHECK (not impl_strnmatch (empty, string, 1));
+    SECTION("prefix does not match")
+    {
+        CHECK(not impl_strnmatch(prefix, string, 5));
+        CHECK(not impl_strnmatch(empty, string, 1));
     };
 
-    SECTION ("string termination symbol is handled correctly") {
-        CHECK (impl_strnmatch (empty, empty2, 1));
-    };
+    SECTION("string termination symbol is handled correctly") { CHECK(impl_strnmatch(empty, empty2, 1)); };
 
-    SECTION ("zero length prefix match") {
-        CHECK (impl_strnmatch (prefix, string, 0));
-    };
+    SECTION("zero length prefix match") { CHECK(impl_strnmatch(prefix, string, 0)); };
 }
 
 // This test tests the FILENAME macro, which is backed-up
 // by the function "past_last_slash"
-TEST_CASE ("FILENAME macro works")
+TEST_CASE("FILENAME macro works")
 {
-    SECTION ("past_last_slash works") {
-        CHECK (past_last_slash("/a/b/c") == std::string("c"));
-        CHECK (past_last_slash("///") == std::string(""));
-        CHECK (past_last_slash("//") == std::string(""));
-        CHECK (past_last_slash("/") == std::string(""));
-        CHECK (past_last_slash("") == std::string(""));
-        CHECK (past_last_slash("///foo") == std::string("foo"));
+    SECTION("past_last_slash works")
+    {
+        CHECK(past_last_slash("/a/b/c") == std::string("c"));
+        CHECK(past_last_slash("///") == std::string(""));
+        CHECK(past_last_slash("//") == std::string(""));
+        CHECK(past_last_slash("/") == std::string(""));
+        CHECK(past_last_slash("") == std::string(""));
+        CHECK(past_last_slash("///foo") == std::string("foo"));
     }
 
-    SECTION ("macro matches") {
-        CHECK (std::string("string.cpp") == FILENAME);
-    };
+    SECTION("macro matches") { CHECK(std::string("string.cpp") == FILENAME); };
 }

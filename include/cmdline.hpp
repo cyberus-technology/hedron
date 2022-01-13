@@ -28,22 +28,21 @@
 
 class Cmdline
 {
-    private:
-        static struct param_map
-        {
-            char   const *arg;
-            bool * const  ptr;
-        } const map[];
+private:
+    static struct param_map {
+        char const* arg;
+        bool* const ptr;
+    } const map[];
 
-        static char const *get_arg (char const **, unsigned &);
+    static char const* get_arg(char const**, unsigned&);
 
-    public:
-        static inline bool iommu;
-        static inline bool serial;
-        static inline bool nodl;
-        static inline bool nopcid;
-        static inline bool novga;
-        static inline bool novpid;
+public:
+    static inline bool iommu;
+    static inline bool serial;
+    static inline bool nodl;
+    static inline bool nopcid;
+    static inline bool novga;
+    static inline bool novpid;
 
-        static void init (char const *);
+    static void init(char const*);
 };

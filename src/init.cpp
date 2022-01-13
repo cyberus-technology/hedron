@@ -35,54 +35,59 @@
 #include "suspend.hpp"
 #include "tss.hpp"
 
-static char const *get_boot_type (mword magic)
+static char const* get_boot_type(mword magic)
 {
     switch (magic) {
-        case Multiboot::MAGIC: return "MB1";
-        case Multiboot2::MAGIC: return "MB2";
-        default: return "UNKNOWN";
+    case Multiboot::MAGIC:
+        return "MB1";
+    case Multiboot2::MAGIC:
+        return "MB2";
+    default:
+        return "UNKNOWN";
     }
 }
 
-extern "C"
-void init (mword magic, mword mbi)
+extern "C" void init(mword magic, mword mbi)
 {
     // Setup 0-page and 1-page
-    memset (PAGE_0,  0,  PAGE_SIZE);
-    memset (PAGE_1, ~0u, PAGE_SIZE);
+    memset(PAGE_0, 0, PAGE_SIZE);
+    memset(PAGE_1, ~0u, PAGE_SIZE);
 
-    for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)()) ;
+    for (void (**func)() = &CTORS_G; func != &CTORS_E; (*func++)())
+        ;
 
     if (magic == Multiboot::MAGIC) {
-        Multiboot *mbi_ = static_cast<Multiboot *>(Hpt::remap (mbi));
+        Multiboot* mbi_ = static_cast<Multiboot*>(Hpt::remap(mbi));
         if (mbi_->flags & Multiboot::CMDLINE)
-            Cmdline::init (static_cast<char const *>(Hpt::remap (mbi_->cmdline)));
+            Cmdline::init(static_cast<char const*>(Hpt::remap(mbi_->cmdline)));
     }
 
     if (magic == Multiboot2::MAGIC) {
-        Multiboot2::Header const *mbi_ = static_cast<Multiboot2::Header const *>(Hpt::remap (mbi));
-        mbi_->for_each_tag ([&](Multiboot2::Tag const *tag) {
+        Multiboot2::Header const* mbi_ = static_cast<Multiboot2::Header const*>(Hpt::remap(mbi));
+        mbi_->for_each_tag([&](Multiboot2::Tag const* tag) {
             if (tag->type == Multiboot2::TAG_CMDLINE)
-                Cmdline::init (tag->cmdline());
+                Cmdline::init(tag->cmdline());
         });
     }
 
-    for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)()) ;
+    for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)())
+        ;
 
     // Now we're ready to talk to the world
-    Console::print ("\fHedron Microhypervisor (Cyberus-%07lx "
+    Console::print("\fHedron Microhypervisor (Cyberus-%07lx "
 #ifdef NDEBUG
-                     "RELEASE"
+                   "RELEASE"
 #else
-                     "DEBUG"
+                   "DEBUG"
 #endif
-                     " " ARCH "): " COMPILER_STRING " [%s] \n", reinterpret_cast<mword>(&GIT_VER), get_boot_type(magic));
+                   " " ARCH "): " COMPILER_STRING " [%s] \n",
+                   reinterpret_cast<mword>(&GIT_VER), get_boot_type(magic));
 
     if (magic == Multiboot2::MAGIC) {
-        Multiboot2::Header const *mbi_ = static_cast<Multiboot2::Header const *>(Hpt::remap (mbi));
-        mbi_->for_each_tag ([&](Multiboot2::Tag const *tag) {
+        Multiboot2::Header const* mbi_ = static_cast<Multiboot2::Header const*>(Hpt::remap(mbi));
+        mbi_->for_each_tag([&](Multiboot2::Tag const* tag) {
             if (tag->type == Multiboot2::TAG_ACPI_2) {
-                Acpi_rsdp::parse (tag->rsdp());
+                Acpi_rsdp::parse(tag->rsdp());
             }
         });
     }
@@ -92,5 +97,5 @@ void init (mword magic, mword mbi)
     Acpi::setup();
     Tss::setup();
     Lapic::setup();
-    Hip::build (magic, mbi);
+    Hip::build(magic, mbi);
 }

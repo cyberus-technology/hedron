@@ -27,21 +27,22 @@ class Mdb;
 
 class Space
 {
-    private:
-        Spinlock    lock;
-        Avl *       tree {nullptr};
+private:
+    Spinlock lock;
+    Avl* tree{nullptr};
 
-    public:
-        enum Subspace : mword {
-            SUBSPACE_HOST   = 1U << 0,
-            SUBSPACE_DEVICE = 1U << 1,
-            SUBSPACE_GUEST  = 1U << 2,
-        };
+public:
+    enum Subspace : mword
+    {
+        SUBSPACE_HOST = 1U << 0,
+        SUBSPACE_DEVICE = 1U << 1,
+        SUBSPACE_GUEST = 1U << 2,
+    };
 
-        Mdb *tree_lookup (mword idx, bool next = false);
+    Mdb* tree_lookup(mword idx, bool next = false);
 
-        static bool tree_insert (Mdb *node);
-        static bool tree_remove (Mdb *node);
+    static bool tree_insert(Mdb* node);
+    static bool tree_remove(Mdb* node);
 
-        void addreg (mword addr, size_t size, mword attr, mword type = 0);
+    void addreg(mword addr, size_t size, mword attr, mword type = 0);
 };

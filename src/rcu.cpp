@@ -18,19 +18,19 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "rcu.hpp"
 #include "atomic.hpp"
 #include "barrier.hpp"
 #include "cpu.hpp"
 #include "hazards.hpp"
-#include "initprio.hpp"
-#include "rcu.hpp"
-#include "stdio.hpp"
 #include "hip.hpp"
+#include "initprio.hpp"
 #include "lapic.hpp"
+#include "stdio.hpp"
 #include "vectors.hpp"
 
-mword   Rcu::state = RCU_CMP;
-mword   Rcu::count;
+mword Rcu::state = RCU_CMP;
+mword Rcu::count;
 
 void Rcu::invoke_batch()
 {
@@ -43,11 +43,14 @@ void Rcu::invoke_batch()
     done().clear();
 }
 
-void Rcu::start_batch (State s)
+void Rcu::start_batch(State s)
 {
     mword v, m = RCU_CMP | RCU_PND;
 
-    do if ((v = state) >> 2 != l_batch()) return; while (!(v & s) && !Atomic::cmp_swap (state, v, v | s));
+    do
+        if ((v = state) >> 2 != l_batch())
+            return;
+    while (!(v & s) && !Atomic::cmp_swap(state, v, v | s));
 
     if ((v ^ ~s) & m)
         return;
@@ -63,8 +66,8 @@ void Rcu::quiet()
 {
     Cpu::hazard() &= ~HZD_RCU;
 
-    if (Atomic::sub (count, 1UL) == 0)
-        start_batch (RCU_CMP);
+    if (Atomic::sub(count, 1UL) == 0)
+        start_batch(RCU_CMP);
 }
 
 void Rcu::update()
@@ -74,24 +77,24 @@ void Rcu::update()
         Cpu::hazard() |= HZD_RCU;
     }
 
-    if (!curr().empty() && complete (c_batch()))
-        done().append (&curr());
+    if (!curr().empty() && complete(c_batch()))
+        done().append(&curr());
 
     if (curr().empty() && !next().empty()) {
-        curr().append (&next());
+        curr().append(&next());
 
         c_batch() = l_batch() + 1;
 
-        start_batch (RCU_PND);
+        start_batch(RCU_PND);
     }
 
     if (!curr().empty() && !next().empty() && (next().count > 2000 || curr().count > 2000))
         for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
 
-            if (!Hip::cpu_online (cpu) || Cpu::id() == cpu)
+            if (!Hip::cpu_online(cpu) || Cpu::id() == cpu)
                 continue;
 
-            Lapic::send_ipi (cpu, VEC_IPI_IDL);
+            Lapic::send_ipi(cpu, VEC_IPI_IDL);
         }
 
     if (!done().empty())

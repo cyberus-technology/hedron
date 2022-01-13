@@ -19,25 +19,19 @@
 
 #include "util.hpp"
 
-template <typename T>
-class No_destruct
+template <typename T> class No_destruct
 {
-        alignas(T) char backing[sizeof(T)];
+    alignas(T) char backing[sizeof(T)];
 
-        // Prevent dynamic allocation
-        void *operator new (size_t) noexcept { __builtin_trap(); }
+    // Prevent dynamic allocation
+    void* operator new(size_t) noexcept { __builtin_trap(); }
 
-    public:
+public:
+    template <typename... ARGS> No_destruct(ARGS&&... args) { new (backing) T(forward<ARGS>(args)...); }
 
-        template <typename... ARGS>
-        No_destruct (ARGS &&... args)
-        {
-            new (backing) T (forward<ARGS>(args)...);
-        }
+    T* operator->() { return reinterpret_cast<T*>(backing); }
+    T* operator->() const { return reinterpret_cast<T const*>(backing); }
 
-        T *operator->()       { return reinterpret_cast<T       *>(backing); }
-        T *operator->() const { return reinterpret_cast<T const *>(backing); }
-
-        T *operator&()        { return reinterpret_cast<T       *>(backing); }
-        T *operator&()  const { return reinterpret_cast<T       *>(backing); }
+    T* operator&() { return reinterpret_cast<T*>(backing); }
+    T* operator&() const { return reinterpret_cast<T*>(backing); }
 };

@@ -15,21 +15,21 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "lapic.hpp"
 #include "timeout.hpp"
-#include "x86.hpp"
 #include "assert.hpp"
+#include "lapic.hpp"
+#include "x86.hpp"
 
-void Timeout::enqueue (uint64 t)
+void Timeout::enqueue(uint64 t)
 {
     assert(prev == nullptr);
     assert(next == nullptr);
 
     time = t;
 
-    Timeout *p = nullptr;
+    Timeout* p = nullptr;
 
-    for (Timeout *n = list(); n; p = n, n = n->next)
+    for (Timeout* n = list(); n; p = n, n = n->next)
         if (n->time >= time)
             break;
 
@@ -38,7 +38,7 @@ void Timeout::enqueue (uint64 t)
     if (!p) {
         next = list();
         list() = this;
-        Lapic::set_timer (time);
+        Lapic::set_timer(time);
     } else {
         next = p->next;
         p->next = this;
@@ -59,7 +59,7 @@ uint64 Timeout::dequeue()
             prev->next = next;
 
         else if ((list() = next))
-            Lapic::set_timer (list()->time);
+            Lapic::set_timer(list()->time);
     }
 
     prev = next = nullptr;
@@ -69,10 +69,10 @@ uint64 Timeout::dequeue()
 
 void Timeout::check()
 {
-    Timeout *prev_list = list();
+    Timeout* prev_list = list();
 
     while (list() && list()->time <= rdtsc()) {
-        Timeout *t = list();
+        Timeout* t = list();
         t->dequeue();
         t->trigger();
     }
@@ -83,6 +83,6 @@ void Timeout::check()
          * sleep states (non-invariant TSC). In that case, we program the
          * LAPIC again for the next timeout.
          */
-         Lapic::set_timer(list()->time);
+        Lapic::set_timer(list()->time);
     }
 }

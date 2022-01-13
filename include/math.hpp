@@ -24,70 +24,60 @@
 #include "memory.hpp"
 #include "types.hpp"
 
-template <typename T>
-constexpr T min (T v1, T v2)
-{
-    return v1 < v2 ? v1 : v2;
-}
+template <typename T> constexpr T min(T v1, T v2) { return v1 < v2 ? v1 : v2; }
 
-template <typename T>
-constexpr T max (T v1, T v2)
-{
-    return v1 > v2 ? v1 : v2;
-}
+template <typename T> constexpr T max(T v1, T v2) { return v1 > v2 ? v1 : v2; }
 
-constexpr inline long int bit_scan_reverse (mword val)
+constexpr inline long int bit_scan_reverse(mword val)
 {
-    if (EXPECT_FALSE (!val))
+    if (EXPECT_FALSE(!val))
         return -1;
 
     static_assert(sizeof(mword) == sizeof(long long), "builtin call has wrong size");
 #ifdef __clang__
-    return sizeof(long long)*8 - __builtin_clzll(val) - 1;
+    return sizeof(long long) * 8 - __builtin_clzll(val) - 1;
 #else
     return __builtin_ia32_bsrdi(val);
 #endif
 }
 
-constexpr inline long int bit_scan_forward (mword val)
+constexpr inline long int bit_scan_forward(mword val)
 {
-    if (EXPECT_FALSE (!val))
+    if (EXPECT_FALSE(!val))
         return -1;
 
     static_assert(sizeof(mword) == sizeof(long), "builtin call has wrong size");
     return __builtin_ctzl(val);
 }
 
-constexpr inline long int max_order (mword base, size_t size)
+constexpr inline long int max_order(mword base, size_t size)
 {
-    long int o = bit_scan_reverse (size);
+    long int o = bit_scan_reverse(size);
 
     if (base)
-        o = min (bit_scan_forward (base), o);
+        o = min(bit_scan_forward(base), o);
 
     return o;
 }
 
-constexpr inline mword align_dn (mword val, mword align)
+constexpr inline mword align_dn(mword val, mword align)
 {
-    val &= ~(align - 1);                // Expect power-of-2
+    val &= ~(align - 1); // Expect power-of-2
     return val;
 }
 
-constexpr inline mword align_up (mword val, mword align)
+constexpr inline mword align_up(mword val, mword align)
 {
-    val += (align - 1);                 // Expect power-of-2
-    return align_dn (val, align);
+    val += (align - 1); // Expect power-of-2
+    return align_dn(val, align);
 }
 
-template <typename T>
-constexpr inline bool is_aligned_by_order (T val, long int order)
+template <typename T> constexpr inline bool is_aligned_by_order(T val, long int order)
 {
     return (val & ((static_cast<T>(1) << order) - 1)) == 0;
 }
 
-template <typename T>
-constexpr inline bool is_page_aligned (T val)
+template <typename T> constexpr inline bool is_page_aligned(T val)
 {
-    return is_aligned_by_order<T> (val, PAGE_BITS);
+    return is_aligned_by_order<T>(val, PAGE_BITS);
 }

@@ -15,48 +15,52 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include <static_vector.hpp>
 #include "construct_counter.hpp"
+#include <static_vector.hpp>
 
 #include <catch2/catch.hpp>
 
-TEST_CASE ("Size functions work", "[static_vector]")
+TEST_CASE("Size functions work", "[static_vector]")
 {
     Static_vector<int, 10> v;
 
     CHECK(v.size() == 0);
     CHECK(v.max_size() == 10);
 
-    v.push_back (5);
+    v.push_back(5);
     CHECK(v.size() == 1);
 }
 
-TEST_CASE ("Array access works", "[static_vector]")
+TEST_CASE("Array access works", "[static_vector]")
 {
     Static_vector<int, 10> v;
 
-    v.push_back (1);
-    v.push_back (9);
+    v.push_back(1);
+    v.push_back(9);
 
     CHECK(v[0] == 1);
     CHECK(v[1] == 9);
 }
 
-TEST_CASE ("Construction and destruction works", "[static_vector]")
+TEST_CASE("Construction and destruction works", "[static_vector]")
 {
-    SECTION ("Emplace constructs once") {
-        struct local_tag {};
+    SECTION("Emplace constructs once")
+    {
+        struct local_tag {
+        };
         using test_counter = construct_counter<local_tag>;
 
         Static_vector<test_counter, 10> v;
 
         v.emplace_back();
         CHECK(test_counter::constructed == 1);
-        CHECK(test_counter::destructed  == 0);
+        CHECK(test_counter::destructed == 0);
     }
 
-    SECTION ("Reset destructs") {
-        struct local_tag {};
+    SECTION("Reset destructs")
+    {
+        struct local_tag {
+        };
         using test_counter = construct_counter<local_tag>;
 
         Static_vector<test_counter, 10> v;
@@ -68,8 +72,10 @@ TEST_CASE ("Construction and destruction works", "[static_vector]")
         CHECK(test_counter::destructed == 2);
     }
 
-    SECTION ("Destructor destructs") {
-        struct local_tag {};
+    SECTION("Destructor destructs")
+    {
+        struct local_tag {
+        };
         using test_counter = construct_counter<local_tag>;
 
         {

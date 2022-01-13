@@ -31,9 +31,9 @@ public:
     // the timer shift.
     static uint32 calc_timeout(uint64 tsc_ticks, uint8 shift)
     {
-        constexpr auto MAX_UINT32 {~static_cast<uint32>(0)};
+        constexpr auto MAX_UINT32{~static_cast<uint32>(0)};
 
-        uint64 precision_mask {(static_cast<uint64>(1) << shift) - 1};
+        uint64 precision_mask{(static_cast<uint64>(1) << shift) - 1};
 
         // If we overflow 64bits adding our precision_mask we need the
         // maximum possible timeout.
@@ -43,9 +43,9 @@ public:
 
         // Shift the given value to the right and rounding the
         // result up if any of the lower bits are set.
-        uint64 rel_timeout {(tsc_ticks + precision_mask) >> shift};
+        uint64 rel_timeout{(tsc_ticks + precision_mask) >> shift};
 
-        bool wrapped {rel_timeout != static_cast<uint32>(rel_timeout)};
+        bool wrapped{rel_timeout != static_cast<uint32>(rel_timeout)};
 
         // In case the shifted value still does not fit into 32bits we use the
         // maximum possible timeout.
@@ -56,12 +56,13 @@ public:
     {
         /**
          * Intel SDM Vol 3, 25.5.1. VMX-Preemption Timer
-         * The VMX-preemption timer counts down at rate proportional to that of the timestamp counter (TSC). Specifically,
-         * the timer counts down by 1 every time bit X in the TSC changes due to a TSC increment. The value of X is in the
-         * range 0–31 and can be determined by consulting the VMX capability MSR IA32_VMX_MISC (see Appendix A.6).
+         * The VMX-preemption timer counts down at rate proportional to that of the timestamp counter (TSC).
+         * Specifically, the timer counts down by 1 every time bit X in the TSC changes due to a TSC
+         * increment. The value of X is in the range 0–31 and can be determined by consulting the VMX
+         * capability MSR IA32_VMX_MISC (see Appendix A.6).
          */
-        auto ia32_vmx_misc {Msr::read (Msr::IA32_VMX_CTRL_MISC)};
-        auto timer_ratio   {ia32_vmx_misc & 0x1f};
+        auto ia32_vmx_misc{Msr::read(Msr::IA32_VMX_CTRL_MISC)};
+        auto timer_ratio{ia32_vmx_misc & 0x1f};
 
         timer_shift() = static_cast<uint8>(timer_ratio);
     }
@@ -77,13 +78,10 @@ public:
          * shifted by timer_shift. The shifted value is rounded up so the timer
          * does not fire too early due to the precision loss.
          */
-        auto max_timeout {calc_timeout (relative_timeout, timer_shift())};
+        auto max_timeout{calc_timeout(relative_timeout, timer_shift())};
 
-        Vmcs::write (Vmcs::VMX_PREEMPT_TIMER, max_timeout);
+        Vmcs::write(Vmcs::VMX_PREEMPT_TIMER, max_timeout);
     }
 
-    static uint64 get()
-    {
-        return Vmcs::read (Vmcs::VMX_PREEMPT_TIMER) << timer_shift();
-    }
+    static uint64 get() { return Vmcs::read(Vmcs::VMX_PREEMPT_TIMER) << timer_shift(); }
 };

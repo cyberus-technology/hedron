@@ -27,74 +27,73 @@
 
 class Console_vga : public Console
 {
-    private:
-        enum Register
-        {
-            START_ADDR_HI   = 0xc,
-            START_ADDR_LO   = 0xd
-        };
+private:
+    enum Register
+    {
+        START_ADDR_HI = 0xc,
+        START_ADDR_LO = 0xd
+    };
 
-        unsigned num, row, col;
+    unsigned num, row, col;
 
-        static inline unsigned read (Register reg)
-        {
-            Io::out<uint8>(0x3d4, reg);
-            return Io::in<uint8>(0x3d5);
-        }
+    static inline unsigned read(Register reg)
+    {
+        Io::out<uint8>(0x3d4, reg);
+        return Io::in<uint8>(0x3d5);
+    }
 
-        static inline void write (Register reg, uint8 val)
-        {
-            Io::out<uint8>(0x3d4, reg);
-            Io::out<uint8>(0x3d5, val);
-        }
+    static inline void write(Register reg, uint8 val)
+    {
+        Io::out<uint8>(0x3d4, reg);
+        Io::out<uint8>(0x3d5, val);
+    }
 
-        inline void clear_all()
-        {
-            memset (reinterpret_cast<void *>(HV_GLOBAL_FBUF), 0, 160 * num);
-        }
+    inline void clear_all() { memset(reinterpret_cast<void*>(HV_GLOBAL_FBUF), 0, 160 * num); }
 
-        inline void clear_row (unsigned r)
-        {
-            memcpy (reinterpret_cast<void *>(HV_GLOBAL_FBUF), reinterpret_cast<void *>(HV_GLOBAL_FBUF + 160), 160 * r);
-            memset (reinterpret_cast<void *>(HV_GLOBAL_FBUF + 160 * r), 0, 160);
-        }
+    inline void clear_row(unsigned r)
+    {
+        memcpy(reinterpret_cast<void*>(HV_GLOBAL_FBUF), reinterpret_cast<void*>(HV_GLOBAL_FBUF + 160),
+               160 * r);
+        memset(reinterpret_cast<void*>(HV_GLOBAL_FBUF + 160 * r), 0, 160);
+    }
 
-        void putc (int c) override;
+    void putc(int c) override;
 
-        static inline void set_page (unsigned page)
-        {
-            page <<= 11;    // due to odd/even addressing
-            write (START_ADDR_HI, static_cast<uint8>(page >> 8));
-            write (START_ADDR_LO, static_cast<uint8>(page));
-        }
+    static inline void set_page(unsigned page)
+    {
+        page <<= 11; // due to odd/even addressing
+        write(START_ADDR_HI, static_cast<uint8>(page >> 8));
+        write(START_ADDR_LO, static_cast<uint8>(page));
+    }
 
-        enum Color
-        {
-            COLOR_BLACK         = 0x0,
-            COLOR_BLUE          = 0x1,
-            COLOR_GREEN         = 0x2,
-            COLOR_CYAN          = 0x3,
-            COLOR_RED           = 0x4,
-            COLOR_MAGENTA       = 0x5,
-            COLOR_YELLOW        = 0x6,
-            COLOR_WHITE         = 0x7,
-            COLOR_LIGHT_BLACK   = 0x8,
-            COLOR_LIGHT_BLUE    = 0x9,
-            COLOR_LIGHT_GREEN   = 0xa,
-            COLOR_LIGHT_CYAN    = 0xb,
-            COLOR_LIGHT_RED     = 0xc,
-            COLOR_LIGHT_MAGENTA = 0xd,
-            COLOR_LIGHT_YELLOW  = 0xe,
-            COLOR_LIGHT_WHITE   = 0xf
-        };
+    enum Color
+    {
+        COLOR_BLACK = 0x0,
+        COLOR_BLUE = 0x1,
+        COLOR_GREEN = 0x2,
+        COLOR_CYAN = 0x3,
+        COLOR_RED = 0x4,
+        COLOR_MAGENTA = 0x5,
+        COLOR_YELLOW = 0x6,
+        COLOR_WHITE = 0x7,
+        COLOR_LIGHT_BLACK = 0x8,
+        COLOR_LIGHT_BLUE = 0x9,
+        COLOR_LIGHT_GREEN = 0xa,
+        COLOR_LIGHT_CYAN = 0xb,
+        COLOR_LIGHT_RED = 0xc,
+        COLOR_LIGHT_MAGENTA = 0xd,
+        COLOR_LIGHT_YELLOW = 0xe,
+        COLOR_LIGHT_WHITE = 0xf
+    };
 
-        inline void put (unsigned long r, unsigned long c, Color color, int x)
-        {
-            *reinterpret_cast<unsigned short volatile *>(HV_GLOBAL_FBUF + r * 160 + c * 2) = static_cast<unsigned short>(color << 8 | x);
-        }
+    inline void put(unsigned long r, unsigned long c, Color color, int x)
+    {
+        *reinterpret_cast<unsigned short volatile*>(HV_GLOBAL_FBUF + r * 160 + c * 2) =
+            static_cast<unsigned short>(color << 8 | x);
+    }
 
-    public:
-        Console_vga();
+public:
+    Console_vga();
 
-        static Console_vga con;
+    static Console_vga con;
 };

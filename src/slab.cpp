@@ -18,61 +18,51 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "slab.hpp"
 #include "assert.hpp"
 #include "lock_guard.hpp"
 #include "math.hpp"
-#include "slab.hpp"
 #include "stdio.hpp"
 
-Slab::Slab (Slab_cache *slab_cache)
-    : avail (slab_cache->elem),
-      cache (slab_cache),
-      prev  (nullptr),
-      next  (nullptr),
-      head  (nullptr)
+Slab::Slab(Slab_cache* slab_cache)
+    : avail(slab_cache->elem), cache(slab_cache), prev(nullptr), next(nullptr), head(nullptr)
 {
-    char *link = reinterpret_cast<char *>(this) + PAGE_SIZE - cache->buff + cache->size;
+    char* link = reinterpret_cast<char*>(this) + PAGE_SIZE - cache->buff + cache->size;
 
     for (unsigned long i = avail; i; i--, link -= cache->buff) {
-        *reinterpret_cast<char **>(link) = head;
+        *reinterpret_cast<char**>(link) = head;
         head = link;
     }
 }
 
-void *Slab::alloc()
+void* Slab::alloc()
 {
     avail--;
 
-    void *link = reinterpret_cast<void *>(head - cache->size);
-    head = *reinterpret_cast<char **>(head);
+    void* link = reinterpret_cast<void*>(head - cache->size);
+    head = *reinterpret_cast<char**>(head);
     return link;
 }
 
-void Slab::free (void *ptr)
+void Slab::free(void* ptr)
 {
     avail++;
 
-    char *link = reinterpret_cast<char *>(ptr) + cache->size;
-    *reinterpret_cast<char **>(link) = head;
+    char* link = reinterpret_cast<char*>(ptr) + cache->size;
+    *reinterpret_cast<char**>(link) = head;
     head = link;
 }
 
-Slab_cache::Slab_cache (unsigned long elem_size, unsigned elem_align)
-          : curr (nullptr),
-            head (nullptr),
-            size (align_up (elem_size, sizeof (mword))),
-            buff (align_up (size + sizeof (mword), elem_align)),
-            elem ((PAGE_SIZE - sizeof (Slab)) / buff)
+Slab_cache::Slab_cache(unsigned long elem_size, unsigned elem_align)
+    : curr(nullptr), head(nullptr), size(align_up(elem_size, sizeof(mword))),
+      buff(align_up(size + sizeof(mword), elem_align)), elem((PAGE_SIZE - sizeof(Slab)) / buff)
 {
-    trace (TRACE_MEMORY, "Slab Cache:%p (S:%lu A:%u)",
-           this,
-           elem_size,
-           elem_align);
+    trace(TRACE_MEMORY, "Slab Cache:%p (S:%lu A:%u)", this, elem_size, elem_align);
 }
 
 void Slab_cache::grow()
 {
-    Slab *slab = new Slab (this);
+    Slab* slab = new Slab(this);
 
     if (head)
         head->prev = slab;
@@ -81,24 +71,24 @@ void Slab_cache::grow()
     head = curr = slab;
 }
 
-void *Slab_cache::alloc(Buddy::Fill fill_mem)
+void* Slab_cache::alloc(Buddy::Fill fill_mem)
 {
-    void *ret;
+    void* ret;
 
     {
-        Lock_guard <Spinlock> guard (lock);
+        Lock_guard<Spinlock> guard(lock);
 
-        if (EXPECT_FALSE (!curr)) {
+        if (EXPECT_FALSE(!curr)) {
             grow();
         }
 
-        assert (!curr->full());
-        assert (!curr->next || curr->next->full());
+        assert(!curr->full());
+        assert(!curr->next || curr->next->full());
 
         // Allocate from slab
         ret = curr->alloc();
 
-        if (EXPECT_FALSE (curr->full())) {
+        if (EXPECT_FALSE(curr->full())) {
             curr = curr->prev;
         }
     }
@@ -108,17 +98,17 @@ void *Slab_cache::alloc(Buddy::Fill fill_mem)
     return ret;
 }
 
-void Slab_cache::free (void *ptr)
+void Slab_cache::free(void* ptr)
 {
-    Lock_guard <Spinlock> guard (lock);
+    Lock_guard<Spinlock> guard(lock);
 
-    Slab *slab = reinterpret_cast<Slab *>(reinterpret_cast<mword>(ptr) & ~PAGE_MASK);
+    Slab* slab = reinterpret_cast<Slab*>(reinterpret_cast<mword>(ptr) & ~PAGE_MASK);
 
     bool was_full = slab->full();
 
-    slab->free (ptr);       // Deallocate from slab
+    slab->free(ptr); // Deallocate from slab
 
-    if (EXPECT_FALSE (was_full)) {
+    if (EXPECT_FALSE(was_full)) {
 
         // There are full slabs in front of us and we're partial; requeue
         if (slab->prev && slab->prev->full()) {
@@ -145,7 +135,7 @@ void Slab_cache::free (void *ptr)
 
         curr = slab;
 
-    } else if (EXPECT_FALSE (slab->empty())) {
+    } else if (EXPECT_FALSE(slab->empty())) {
 
         // There are slabs in front of us and we're empty; requeue
         if (slab->prev) {

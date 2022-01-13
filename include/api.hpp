@@ -20,7 +20,8 @@
 /// Hypercalls IDs
 ///
 /// See chapter "Hypercall Numbers" in the Kernel Interface documentation.
-enum class hypercall_id {
+enum class hypercall_id
+{
     HC_CALL = 0,
     HC_REPLY = 1,
     HC_CREATE_PD = 2,

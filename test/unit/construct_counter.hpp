@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "types.hpp"
+
 // Count calls to the constructor and destructor of this class.
 //
 // This is a useful helper to test whether library code properly frees
@@ -24,18 +26,16 @@
 //
 // We use a tagged class to get distinct counters. To use this, create an empty
 // tag class in a local scope.
-template <typename TAG>
-class construct_counter {
-    public:
-        static size_t constructed;
-        static size_t destructed;
+template <typename TAG> class construct_counter
+{
+public:
+    static size_t constructed;
+    static size_t destructed;
 
-        construct_counter() { constructed++; }
-        ~construct_counter() { destructed++; }
+    construct_counter() { constructed++; }
+    ~construct_counter() { destructed++; }
 };
 
-template <typename TAG>
-size_t construct_counter<TAG>::constructed {0};
+template <typename TAG> size_t construct_counter<TAG>::constructed{0};
 
-template <typename TAG>
-size_t construct_counter<TAG>::destructed {0};
+template <typename TAG> size_t construct_counter<TAG>::destructed{0};

@@ -16,47 +16,47 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "acpi.hpp"
 #include "acpi_fadt.hpp"
+#include "acpi.hpp"
 #include "io.hpp"
 #include "x86.hpp"
 
 void Acpi_table_fadt::parse() const
 {
-    Acpi::irq     = sci_irq;
+    Acpi::irq = sci_irq;
     Acpi::feature = flags;
 
     // XXX: Use x_pm blocks if they exist
 
     if (pm1a_evt_blk) {
-        Acpi::pm1a_sts.init (Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk);
-        Acpi::pm1a_ena.init (Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk + (pm1_evt_len >> 1));
+        Acpi::pm1a_sts.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk);
+        Acpi::pm1a_ena.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk + (pm1_evt_len >> 1));
     }
     if (pm1b_evt_blk) {
-        Acpi::pm1b_sts.init (Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk);
-        Acpi::pm1b_ena.init (Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk + (pm1_evt_len >> 1));
+        Acpi::pm1b_sts.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk);
+        Acpi::pm1b_ena.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk + (pm1_evt_len >> 1));
     }
 
     if (pm1a_cnt_blk)
-        Acpi::pm1a_cnt.init (Acpi_gas::IO, pm1_cnt_len, pm1a_cnt_blk);
+        Acpi::pm1a_cnt.init(Acpi_gas::IO, pm1_cnt_len, pm1a_cnt_blk);
 
     if (pm1b_cnt_blk)
-        Acpi::pm1b_cnt.init (Acpi_gas::IO, pm1_cnt_len, pm1b_cnt_blk);
+        Acpi::pm1b_cnt.init(Acpi_gas::IO, pm1_cnt_len, pm1b_cnt_blk);
 
     if (pm2_cnt_blk)
-        Acpi::pm2_cnt.init (Acpi_gas::IO, pm2_cnt_len, pm2_cnt_blk);
+        Acpi::pm2_cnt.init(Acpi_gas::IO, pm2_cnt_len, pm2_cnt_blk);
 
     if (pm_tmr_blk)
-        Acpi::pm_tmr.init (Acpi_gas::IO, pm_tmr_len, pm_tmr_blk);
+        Acpi::pm_tmr.init(Acpi_gas::IO, pm_tmr_len, pm_tmr_blk);
 
     if (gpe0_blk) {
-        Acpi::gpe0_sts.init (Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk);
-        Acpi::gpe0_ena.init (Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk + (gpe0_blk_len >> 1));
+        Acpi::gpe0_sts.init(Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk);
+        Acpi::gpe0_ena.init(Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk + (gpe0_blk_len >> 1));
     }
 
     if (gpe1_blk) {
-        Acpi::gpe1_sts.init (Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk);
-        Acpi::gpe1_ena.init (Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk + (gpe1_blk_len >> 1));
+        Acpi::gpe1_sts.init(Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk);
+        Acpi::gpe1_ena.init(Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk + (gpe1_blk_len >> 1));
     }
 
     if (length >= 129) {
@@ -78,8 +78,8 @@ void Acpi_table_fadt::parse() const
 void Acpi_table_fadt::init() const
 {
     if (smi_cmd && acpi_enable) {
-        Io::out (smi_cmd, acpi_enable);
-        while (!(Acpi::read (Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
+        Io::out(smi_cmd, acpi_enable);
+        while (!(Acpi::read(Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
             pause();
     }
 }

@@ -19,22 +19,17 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "types.hpp"
 
 class Qpd
 {
-    private:
-        mword val;
+private:
+    mword val;
 
-    public:
-        inline explicit Qpd (mword v) : val (v) {}
+public:
+    inline explicit Qpd(mword v) : val(v) {}
 
-        inline unsigned quantum() const
-        {
-            return static_cast<unsigned>(val >> 12);
-        }
+    inline unsigned quantum() const { return static_cast<unsigned>(val >> 12); }
 
-        inline unsigned prio() const
-        {
-            return static_cast<unsigned>(val & 0xff);
-        }
+    inline unsigned prio() const { return static_cast<unsigned>(val & 0xff); }
 };

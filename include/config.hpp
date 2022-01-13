@@ -33,25 +33,25 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
-#define CFG_VER         4003
+#define CFG_VER 4003
 
-#define NUM_CPU         64
-#define NUM_IRQ         16
-#define NUM_EXC         32
-#define NUM_VMI         256
-#define NUM_GSI         192
-#define NUM_LVT         6
-#define NUM_MSI         1
-#define NUM_IPI         4
-#define NUM_PRIORITIES  128
+#define NUM_CPU 64
+#define NUM_IRQ 16
+#define NUM_EXC 32
+#define NUM_VMI 256
+#define NUM_GSI 192
+#define NUM_LVT 6
+#define NUM_MSI 1
+#define NUM_IPI 4
+#define NUM_PRIORITIES 128
 
-#define SPN_SCH         0
-#define SPN_HLP         1
-#define SPN_RCU         2
-#define SPN_VFI         4
-#define SPN_VFL         5
-#define SPN_LVT         7
-#define SPN_IPI         (SPN_LVT + NUM_LVT)
-#define SPN_GSI         (SPN_IPI + NUM_IPI + 1)
+#define SPN_SCH 0
+#define SPN_HLP 1
+#define SPN_RCU 2
+#define SPN_VFI 4
+#define SPN_VFL 5
+#define SPN_LVT 7
+#define SPN_IPI (SPN_LVT + NUM_LVT)
+#define SPN_GSI (SPN_IPI + NUM_IPI + 1)
 
-#define NUM_IOAPIC      9
+#define NUM_IOAPIC 9

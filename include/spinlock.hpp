@@ -23,29 +23,28 @@
 
 class Spinlock
 {
-    private:
-        uint16 val;
+private:
+    uint16 val;
 
-    public:
-        inline Spinlock() : val (0) {}
+public:
+    inline Spinlock() : val(0) {}
 
-        NOINLINE
-        void lock()
-        {
-            uint16 tmp = 0x100;
+    NOINLINE
+    void lock()
+    {
+        uint16 tmp = 0x100;
 
-            asm volatile ("     lock; xadd %0, %1;  "
-                          "1:   cmpb %h0, %b0;      "
-                          "     je 2f;              "
-                          "     pause;              "
-                          "     movb %1, %b0;       "
-                          "     jmp 1b;             "
-                          "2:                       "
-                          : "+Q" (tmp), "+m" (val) : : "memory");
-        }
+        asm volatile("     lock; xadd %0, %1;  "
+                     "1:   cmpb %h0, %b0;      "
+                     "     je 2f;              "
+                     "     pause;              "
+                     "     movb %1, %b0;       "
+                     "     jmp 1b;             "
+                     "2:                       "
+                     : "+Q"(tmp), "+m"(val)
+                     :
+                     : "memory");
+    }
 
-        inline void unlock()
-        {
-            asm volatile ("incb %0" : "=m" (val) : : "memory");
-        }
+    inline void unlock() { asm volatile("incb %0" : "=m"(val) : : "memory"); }
 };

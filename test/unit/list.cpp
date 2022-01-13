@@ -22,81 +22,79 @@
 #include <algorithm>
 #include <iostream>
 
-namespace {
+namespace
+{
 
 class Element : public Forward_list<Element>
 {
-    public:
-        int value;
+public:
+    int value;
 
-        Element (Element *&head, int value_)
-            : Forward_list<Element> {head}, value {value_}
-        {}
+    Element(Element*& head, int value_) : Forward_list<Element>{head}, value{value_} {}
 };
 
 class Test_list
 {
-        // A vector that keeps track of Elements in order to clean them up.
-        std::vector<std::unique_ptr<Element>> backing_store;
+    // A vector that keeps track of Elements in order to clean them up.
+    std::vector<std::unique_ptr<Element>> backing_store;
 
-    public:
-        Element *head = nullptr;
+public:
+    Element* head = nullptr;
 
-        Test_list (std::initializer_list<int> const &init)
-        {
-            for (int v : init) {
-                backing_store.emplace_back (std::make_unique<Element>(head, v));
-            }
+    Test_list(std::initializer_list<int> const& init)
+    {
+        for (int v : init) {
+            backing_store.emplace_back(std::make_unique<Element>(head, v));
         }
+    }
 };
 
 // This operator compares Elements to integers by their value.
-bool operator==(Forward_list_range<Element> const &range, std::vector<int> const &vector)
+bool operator==(Forward_list_range<Element> const& range, std::vector<int> const& vector)
 {
-    return std::equal (range.begin(), range.end(),
-                       vector.begin(), vector.end(),
-                       [] (Element const &el, int i) { return el.value == i; });
+    return std::equal(range.begin(), range.end(), vector.begin(), vector.end(),
+                      [](Element const& el, int i) { return el.value == i; });
 }
 
+} // namespace
+
+TEST_CASE("Forward_list iterators works", "[list]")
+{
+    Test_list test_list{1, 2, 3};
+    auto range{Forward_list_range(test_list.head)};
+
+    auto cur{std::begin(range)};
+
+    CHECK(cur->value == 1);
+    CHECK((++cur)->value == 2);
+    CHECK((++cur)->value == 3);
+
+    CHECK((++cur) == std::end(range));
 }
 
-TEST_CASE ("Forward_list iterators works", "[list]")
+TEST_CASE("Empty lists work", "[list]")
 {
-    Test_list test_list {1, 2, 3};
-    auto range {Forward_list_range (test_list.head)};
+    Element* el{nullptr};
+    auto range{Forward_list_range(el)};
 
-    auto cur {std::begin (range)};
-
-    CHECK (cur->value == 1);
-    CHECK ((++cur)->value == 2);
-    CHECK ((++cur)->value == 3);
-
-    CHECK ((++cur) == std::end (range));
+    CHECK(std::begin(range) == std::end(range));
 }
 
-TEST_CASE ("Empty lists work", "[list]")
+TEST_CASE("Algorithms work on lists", "[list]")
 {
-    Element *el {nullptr};
-    auto range {Forward_list_range (el)};
+    Test_list test_list{1, 2, 3};
 
-    CHECK (std::begin (range) == std::end (range));
-}
-
-TEST_CASE ("Algorithms work on lists", "[list]")
-{
-    Test_list test_list {1, 2, 3};
-
-    CHECK (Forward_list_range (test_list.head) == std::vector<int> {1, 2, 3});
+    CHECK(Forward_list_range(test_list.head) == std::vector<int>{1, 2, 3});
 }
 
 TEST_CASE("Range-based for works on lists", "[list]")
 {
-    Test_list test_list {1, 2, 3};
+    Test_list test_list{1, 2, 3};
     std::vector<int> result;
 
-    for (auto const &el : Forward_list_range (test_list.head)) {
+    for (auto const& el : Forward_list_range(test_list.head)) {
         result.push_back(el.value);
     }
 
-    CHECK (result == std::vector<int> {1, 2, 3});
+    CHECK(result == std::vector<int>{1, 2, 3});
 }

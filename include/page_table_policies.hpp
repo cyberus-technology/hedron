@@ -22,29 +22,30 @@
 #include "types.hpp"
 #include "x86.hpp"
 
-template <typename T = mword>
-class Atomic_access_policy
+template <typename T = mword> class Atomic_access_policy
 {
-    public:
-        using entry   = T;
-        using pointer = T *;
+public:
+    using entry = T;
+    using pointer = T*;
 
-        static entry read  (pointer ptr)          { return Atomic::load(*ptr); }
-        static void  write (pointer ptr, entry e) { Atomic::store(*ptr, e); }
+    static entry read(pointer ptr) { return Atomic::load(*ptr); }
+    static void write(pointer ptr, entry e) { Atomic::store(*ptr, e); }
 
-        static bool  cmp_swap (pointer ptr, entry old, entry desired) { return Atomic::cmp_swap(*ptr, old, desired); }
-        static entry exchange (pointer ptr, entry desired)            { return Atomic::exchange(*ptr, desired); }
+    static bool cmp_swap(pointer ptr, entry old, entry desired)
+    {
+        return Atomic::cmp_swap(*ptr, old, desired);
+    }
+    static entry exchange(pointer ptr, entry desired) { return Atomic::exchange(*ptr, desired); }
 };
 
 class No_clflush_policy
 {
-    public:
-        static void clflush ([[maybe_unused]] void *p, [[maybe_unused]] size_t n) {}
-
+public:
+    static void clflush([[maybe_unused]] void* p, [[maybe_unused]] size_t n) {}
 };
 
 class Clflush_policy
 {
-    public:
-        static void clflush (void *p, size_t n) { ::clflush(p, n); }
+public:
+    static void clflush(void* p, size_t n) { ::clflush(p, n); }
 };

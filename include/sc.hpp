@@ -30,71 +30,72 @@ class Sc : public Typed_kobject<Kobject::Type::SC>, public Refcount
 {
     friend class Queue<Sc>;
 
-    public:
-        Refptr<Ec> const ec;
-        unsigned const cpu;
-        unsigned const prio;
-        uint64 const budget;
-        uint64 time;
+public:
+    Refptr<Ec> const ec;
+    unsigned const cpu;
+    unsigned const prio;
+    uint64 const budget;
+    uint64 time;
 
-    private:
-        uint64 left;
-        Sc *prev, *next;
-        uint64 tsc;
+private:
+    uint64 left;
+    Sc *prev, *next;
+    uint64 tsc;
 
-        static Slab_cache cache;
+    static Slab_cache cache;
 
-        CPULOCAL_REMOTE_ACCESSOR(sc, rq);
-        CPULOCAL_ACCESSOR(sc, list);
-        CPULOCAL_ACCESSOR(sc, prio_top);
+    CPULOCAL_REMOTE_ACCESSOR(sc, rq);
+    CPULOCAL_ACCESSOR(sc, list);
+    CPULOCAL_ACCESSOR(sc, prio_top);
 
-        void ready_enqueue (uint64, bool);
+    void ready_enqueue(uint64, bool);
 
-        void ready_dequeue (uint64);
+    void ready_dequeue(uint64);
 
-        static void free (Rcu_elem * a) {
-            Sc * s = static_cast<Sc *>(a);
+    static void free(Rcu_elem* a)
+    {
+        Sc* s = static_cast<Sc*>(a);
 
-            if (s->del_ref()) {
-                assert(Sc::current() != s);
-                delete s;
-            }
+        if (s->del_ref()) {
+            assert(Sc::current() != s);
+            delete s;
         }
+    }
 
-    public:
+public:
+    // Capability permission bitmask.
+    enum
+    {
+        PERM_SC_CTRL = 1U << 0,
 
-        // Capability permission bitmask.
-        enum {
-            PERM_SC_CTRL = 1U << 0,
+        PERM_ALL = PERM_SC_CTRL,
+    };
 
-            PERM_ALL = PERM_SC_CTRL,
-        };
+    CPULOCAL_ACCESSOR(sc, current);
+    CPULOCAL_ACCESSOR(sc, ctr_link);
+    CPULOCAL_ACCESSOR(sc, ctr_loop);
 
-        CPULOCAL_ACCESSOR(sc, current);
-        CPULOCAL_ACCESSOR(sc, ctr_link);
-        CPULOCAL_ACCESSOR(sc, ctr_loop);
+    static unsigned const default_prio = 1;
+    static unsigned const default_quantum = 10000;
 
-        static unsigned const default_prio = 1;
-        static unsigned const default_quantum = 10000;
+    Sc(Pd*, mword, Ec*);
+    Sc(Pd*, mword, Ec*, unsigned, unsigned, unsigned);
 
-        Sc (Pd *, mword, Ec *);
-        Sc (Pd *, mword, Ec *, unsigned, unsigned, unsigned);
+    // Access the runqueue on a remote core.
+    //
+    // The returned pointer is valid forever as it points to statically
+    // allocated memory.
+    static Rq* remote(unsigned cpu) { return &remote_ref_rq(cpu); }
 
-        // Access the runqueue on a remote core.
-        //
-        // The returned pointer is valid forever as it points to statically
-        // allocated memory.
-        static Rq *remote (unsigned cpu) { return &remote_ref_rq (cpu); }
+    void remote_enqueue(bool = true);
 
-        void remote_enqueue(bool = true);
+    static void rrq_handler();
+    static void rke_handler();
 
-        static void rrq_handler();
-        static void rke_handler();
+    NORETURN
+    static void schedule(bool = false);
 
-        NORETURN
-        static void schedule (bool = false);
+    static inline void* operator new(size_t) { return cache.alloc(); }
 
-        static inline void *operator new (size_t) { return cache.alloc(); }
-
-        static inline void operator delete (void *ptr) { cache.free (ptr); }
+    static inline void operator delete(void* ptr) { cache.free(ptr); }
 };

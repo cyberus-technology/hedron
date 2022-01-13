@@ -19,9 +19,9 @@
 #include "avl.hpp"
 #include "mdb.hpp"
 
-Avl *Avl::rotate (Avl *&tree, bool d)
+Avl* Avl::rotate(Avl*& tree, bool d)
 {
-    Avl *node;
+    Avl* node;
 
     node = tree;
     tree = node->lnk[d];
@@ -33,9 +33,9 @@ Avl *Avl::rotate (Avl *&tree, bool d)
     return tree->lnk[d];
 }
 
-Avl *Avl::rotate (Avl *&tree, bool d, unsigned b)
+Avl* Avl::rotate(Avl*& tree, bool d, unsigned b)
 {
-    Avl *node[2];
+    Avl* node[2];
 
     node[0] = tree;
     node[1] = node[0]->lnk[d];
@@ -57,14 +57,13 @@ Avl *Avl::rotate (Avl *&tree, bool d, unsigned b)
     return node[b == d]->lnk[!b];
 }
 
-template <typename S>
-bool Avl::insert (Avl **tree, Avl *node)
+template <typename S> bool Avl::insert(Avl** tree, Avl* node)
 {
-    Avl **p = tree;
+    Avl** p = tree;
 
-    for (Avl *n; (n = *tree); tree = n->lnk + static_cast<S *>(node)->larger (static_cast<S *>(n))) {
+    for (Avl* n; (n = *tree); tree = n->lnk + static_cast<S*>(node)->larger(static_cast<S*>(n))) {
 
-        if (static_cast<S *>(node)->equal (static_cast<S *>(n)))
+        if (static_cast<S*>(node)->equal(static_cast<S*>(n)))
             return false;
 
         if (!n->balanced())
@@ -73,41 +72,43 @@ bool Avl::insert (Avl **tree, Avl *node)
 
     *tree = node;
 
-    Avl *n = *p;
+    Avl* n = *p;
 
     if (!n->balanced()) {
 
         bool d1, d2;
 
-        if (n->bal != (d1 = static_cast<S *>(node)->larger (static_cast<S *>(n)))) {
+        if (n->bal != (d1 = static_cast<S*>(node)->larger(static_cast<S*>(n)))) {
             n->bal = 2;
             n = n->lnk[d1];
-        } else if (d1 == (d2 = static_cast<S *>(node)->larger (static_cast<S *>(n->lnk[d1])))) {
-            n = rotate (*p, d1);
+        } else if (d1 == (d2 = static_cast<S*>(node)->larger(static_cast<S*>(n->lnk[d1])))) {
+            n = rotate(*p, d1);
         } else {
             n = n->lnk[d1]->lnk[d2];
-            n = rotate (*p, d1, static_cast<S *>(node)->equal (static_cast<S *>(n)) ? 2 : static_cast<S *>(node)->larger (static_cast<S *>(n)));
+            n = rotate(*p, d1,
+                       static_cast<S*>(node)->equal(static_cast<S*>(n))
+                           ? 2
+                           : static_cast<S*>(node)->larger(static_cast<S*>(n)));
         }
     }
 
-    for (bool d; n && !static_cast<S *>(node)->equal (static_cast<S *>(n)); n->bal = d, n = n->lnk[d])
-        d = static_cast<S *>(node)->larger (static_cast<S *>(n));
+    for (bool d; n && !static_cast<S*>(node)->equal(static_cast<S*>(n)); n->bal = d, n = n->lnk[d])
+        d = static_cast<S*>(node)->larger(static_cast<S*>(n));
 
     return true;
 }
 
-template <typename S>
-bool Avl::remove (Avl **tree, Avl *node)
+template <typename S> bool Avl::remove(Avl** tree, Avl* node)
 {
     Avl **p = tree, **item = nullptr;
     bool d = false;
 
-    for (Avl *n; (n = *tree); tree = n->lnk + d) {
+    for (Avl* n; (n = *tree); tree = n->lnk + d) {
 
-        if (static_cast<S *>(node)->equal (static_cast<S *>(n)))
+        if (static_cast<S*>(node)->equal(static_cast<S*>(n)))
             item = tree;
 
-        d = static_cast<S *>(node)->larger (static_cast<S *>(n));
+        d = static_cast<S*>(node)->larger(static_cast<S*>(n));
 
         if (!n->lnk[d])
             break;
@@ -119,9 +120,9 @@ bool Avl::remove (Avl **tree, Avl *node)
     if (!item)
         return false;
 
-    for (Avl *n; (n = *p); p = n->lnk + d) {
+    for (Avl* n; (n = *p); p = n->lnk + d) {
 
-        d = static_cast<S *>(node)->larger (static_cast <S *>(n));
+        d = static_cast<S*>(node)->larger(static_cast<S*>(n));
 
         if (!n->lnk[d])
             break;
@@ -136,13 +137,13 @@ bool Avl::remove (Avl **tree, Avl *node)
             unsigned b = n->lnk[!d]->bal;
 
             if (b == d)
-                rotate (*p, !d, n->lnk[!d]->lnk[d]->bal);
+                rotate(*p, !d, n->lnk[!d]->lnk[d]->bal);
             else {
-                rotate (*p, !d);
+                rotate(*p, !d);
 
                 if (b == 2) {
-                   n->bal = !d;
-                   (*p)->bal = d;
+                    n->bal = !d;
+                    (*p)->bal = d;
                 }
             }
 
@@ -151,13 +152,13 @@ bool Avl::remove (Avl **tree, Avl *node)
         }
     }
 
-    Avl *n = *tree;
+    Avl* n = *tree;
 
     *item = n;
     *tree = n->lnk[!d];
     n->lnk[0] = node->lnk[0];
     n->lnk[1] = node->lnk[1];
-    n->bal    = node->bal;
+    n->bal = node->bal;
 
     return true;
 }

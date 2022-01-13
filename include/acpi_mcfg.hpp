@@ -24,21 +24,21 @@
 
 class Acpi_mcfg
 {
-    public:
-        uint64      addr;
-        uint16      seg;
-        uint8       bus_s;
-        uint8       bus_e;
-        uint32      reserved;
+public:
+    uint64 addr;
+    uint16 seg;
+    uint8 bus_s;
+    uint8 bus_e;
+    uint32 reserved;
 };
 
 class Acpi_table_mcfg : public Acpi_table
 {
-    public:
-        uint64      reserved;
-        Acpi_mcfg   mcfg[];
+public:
+    uint64 reserved;
+    Acpi_mcfg mcfg[];
 
-        void parse() const;
+    void parse() const;
 };
 
 #pragma pack()

@@ -18,25 +18,21 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "acpi.hpp"
 #include "acpi_rsdt.hpp"
+#include "acpi.hpp"
 #include "hpt.hpp"
 
-struct Acpi_table_rsdt::table_map const Acpi_table_rsdt::map[] =
-{
-    { SIG ("APIC"), &Acpi::madt },
-    { SIG ("DMAR"), &Acpi::dmar },
-    { SIG ("FACP"), &Acpi::fadt },
-    { SIG ("HPET"), &Acpi::hpet },
-    { SIG ("MCFG"), &Acpi::mcfg },
+struct Acpi_table_rsdt::table_map const Acpi_table_rsdt::map[] = {
+    {SIG("APIC"), &Acpi::madt}, {SIG("DMAR"), &Acpi::dmar}, {SIG("FACP"), &Acpi::fadt},
+    {SIG("HPET"), &Acpi::hpet}, {SIG("MCFG"), &Acpi::mcfg},
 };
 
-void Acpi_table_rsdt::parse (Paddr addr, size_t size) const
+void Acpi_table_rsdt::parse(Paddr addr, size_t size) const
 {
-    if (!good_checksum (addr))
+    if (!good_checksum(addr))
         return;
 
-    unsigned long count = entries (size);
+    unsigned long count = entries(size);
 
     Paddr table[count];
     for (unsigned i = 0; i < count; i++)
@@ -44,9 +40,9 @@ void Acpi_table_rsdt::parse (Paddr addr, size_t size) const
 
     for (unsigned i = 0; i < count; i++) {
 
-        Acpi_table *acpi = static_cast<Acpi_table *>(Hpt::remap (table[i]));
+        Acpi_table* acpi = static_cast<Acpi_table*>(Hpt::remap(table[i]));
 
-        if (acpi->good_checksum (table[i]))
+        if (acpi->good_checksum(table[i]))
             for (unsigned j = 0; j < sizeof map / sizeof *map; j++)
                 if (acpi->signature == map[j].sig)
                     *map[j].ptr = table[i];

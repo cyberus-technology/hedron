@@ -15,30 +15,30 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "vectors.hpp"
 #include "io.hpp"
+#include "vectors.hpp"
 
 class Pic
 {
-    public:
-        static void init()
-        {
-            // Start initialization sequence.
-            Io::out<uint8>(0x20, 0x11);
+public:
+    static void init()
+    {
+        // Start initialization sequence.
+        Io::out<uint8>(0x20, 0x11);
 
-            // Program interrupt vector offset.
-            Io::out<uint8>(0x21, VEC_GSI);
+        // Program interrupt vector offset.
+        Io::out<uint8>(0x21, VEC_GSI);
 
-            // Slave PIC at IRQ2.
-            Io::out<uint8>(0x21, 0x4);
+        // Slave PIC at IRQ2.
+        Io::out<uint8>(0x21, 0x4);
 
-            // 8086 Mode.
-            Io::out<uint8>(0x21, 0x1);
+        // 8086 Mode.
+        Io::out<uint8>(0x21, 0x1);
 
-            // Mask all interrupts.
-            Io::out<uint8>(0x21, 0xff);
+        // Mask all interrupts.
+        Io::out<uint8>(0x21, 0xff);
 
-            // We don't need to touch the slave controller because its cascade
-            // IRQ is masked in the master PIC.
-        }
+        // We don't need to touch the slave controller because its cascade
+        // IRQ is masked in the master PIC.
+    }
 };

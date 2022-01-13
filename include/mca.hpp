@@ -23,10 +23,10 @@ struct Cpu_info;
 
 class Mca
 {
-    private:
-        CPULOCAL_CONST_ACCESSOR(mca, banks);
+private:
+    CPULOCAL_CONST_ACCESSOR(mca, banks);
 
-    public:
-        static void init (Cpu_info const &info);
-        static void vector();
+public:
+    static void init(Cpu_info const& info);
+    static void vector();
 };

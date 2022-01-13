@@ -25,58 +25,60 @@
 #include "elf.hpp"
 #include "hip.hpp"
 #include "rcu.hpp"
+#include "sm.hpp"
 #include "stdio.hpp"
 #include "svm.hpp"
 #include "vmx.hpp"
-#include "sm.hpp"
 
-INIT_PRIORITY (PRIO_SLAB)
-Slab_cache Ec::cache (sizeof (Ec), 32);
+INIT_PRIORITY(PRIO_SLAB)
+Slab_cache Ec::cache(sizeof(Ec), 32);
 
-Ec::Ec (Pd *own, unsigned c)
-    : Typed_kobject (static_cast<Space_obj *>(own)), cont (Ec::idle), pd (own), pd_user_page (own), cpu (static_cast<uint16>(c)), glb (true)
+Ec::Ec(Pd* own, unsigned c)
+    : Typed_kobject(static_cast<Space_obj*>(own)), cont(Ec::idle), pd(own), pd_user_page(own),
+      cpu(static_cast<uint16>(c)), glb(true)
 {
-    trace (TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
+    trace(TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 }
 
-Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
-    : Typed_kobject (static_cast<Space_obj *>(own), sel, Ec::PERM_ALL, free, pre_free), cont (f), pd (p),
-      pd_user_page ((creation_flags & MAP_USER_PAGE_IN_OWNER) ? own : p),
-      cpu (static_cast<uint16>(c)), glb (!!f), evt (e)
+Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
+    : Typed_kobject(static_cast<Space_obj*>(own), sel, Ec::PERM_ALL, free, pre_free), cont(f), pd(p),
+      pd_user_page((creation_flags & MAP_USER_PAGE_IN_OWNER) ? own : p), cpu(static_cast<uint16>(c)),
+      glb(!!f), evt(e)
 {
-    assert (u < USER_ADDR);
-    assert ((u & PAGE_MASK) == 0);
+    assert(u < USER_ADDR);
+    assert((u & PAGE_MASK) == 0);
 
     // Make sure we consider the right CPUs for TLB shootdown
-    pd->Space_mem::init (c);
+    pd->Space_mem::init(c);
 
     regs.vmcs = nullptr;
     regs.vmcb = nullptr;
 
-    if (not (creation_flags & CREATE_VCPU)) {
+    if (not(creation_flags & CREATE_VCPU)) {
         if (glb) {
-            regs.cs  = SEL_USER_CODE;
-            regs.ss  = SEL_USER_DATA;
+            regs.cs = SEL_USER_CODE;
+            regs.ss = SEL_USER_DATA;
             regs.rfl = Cpu::EFL_IF;
             regs.rsp = s;
         } else
-            regs.set_sp (s);
+            regs.set_sp(s);
 
         utcb = make_unique<Utcb>();
 
         user_utcb = u;
 
         if (user_utcb) {
-            pd_user_page->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                                             Buddy::ptr_to_phys (utcb.get()));
+            pd_user_page->Space_mem::insert(
+                u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                Buddy::ptr_to_phys(utcb.get()));
         }
 
         regs.dst_portal = NUM_EXC - 2;
 
-        trace (TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
+        trace(TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
     } else {
         regs.dst_portal = NUM_VMI - 2;
@@ -84,13 +86,10 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
         regs.spec_ctrl = 0;
 
         if (Hip::feature() & Hip::FEAT_VMX) {
-            mword host_cr3 = pd->hpt.root() | (Cpu::feature (Cpu::FEAT_PCID) ? pd->did : 0);
+            mword host_cr3 = pd->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? pd->did : 0);
 
-            regs.vmcs = new Vmcs (reinterpret_cast<mword>(sys_regs() + 1),
-                                  pd->Space_pio::walk(),
-                                  host_cr3,
-                                  pd->ept,
-                                  c);
+            regs.vmcs = new Vmcs(reinterpret_cast<mword>(sys_regs() + 1), pd->Space_pio::walk(), host_cr3,
+                                 pd->ept, c);
 
             regs.nst_ctrl<Vmcs>();
 
@@ -146,14 +145,15 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
 
             if (u) {
                 /* Allocate and register the virtual LAPIC page and map it into user space. */
-                user_vlapic    = u;
-                vlapic         = make_unique<Vlapic>();
+                user_vlapic = u;
+                vlapic = make_unique<Vlapic>();
 
                 mword vlapic_page_p = Buddy::ptr_to_phys(vlapic.get());
 
                 Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd_user_page->Space_mem::insert (u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                                                 vlapic_page_p);
+                pd_user_page->Space_mem::insert(
+                    u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                    vlapic_page_p);
 
                 if (creation_flags & USE_APIC_ACCESS_PAGE) {
                     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
@@ -163,21 +163,21 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
             regs.vmcs->clear();
             cont = send_msg<ret_user_vmresume>;
 
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
+            trace(TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
         } else if (Hip::feature() & Hip::FEAT_SVM) {
 
-            regs.rax = Buddy::ptr_to_phys (regs.vmcb = new Vmcb (pd->Space_pio::walk(), pd->npt.root()));
+            regs.rax = Buddy::ptr_to_phys(regs.vmcb = new Vmcb(pd->Space_pio::walk(), pd->npt.root()));
 
             regs.nst_ctrl<Vmcb>();
             cont = send_msg<ret_user_vmrun>;
-            trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
+            trace(TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
 
-    assert (is_vcpu() == !!(creation_flags & CREATE_VCPU));
+    assert(is_vcpu() == !!(creation_flags & CREATE_VCPU));
 }
 
-//De-constructor
+// De-constructor
 Ec::~Ec()
 {
     pre_free(this);
@@ -189,12 +189,11 @@ Ec::~Ec()
             delete regs.vmcb;
         }
     } else {
-        assert (not vlapic);
+        assert(not vlapic);
     }
-
 }
 
-void Ec::handle_hazard (mword hzd, void (*func)())
+void Ec::handle_hazard(mword hzd, void (*func)())
 {
     if (hzd & HZD_RCU)
         Rcu::quiet();
@@ -205,7 +204,7 @@ void Ec::handle_hazard (mword hzd, void (*func)())
     }
 
     if (hzd & HZD_RECALL) {
-        current()->regs.clr_hazard (HZD_RECALL);
+        current()->regs.clr_hazard(HZD_RECALL);
 
         if (func == ret_user_vmresume) {
             current()->regs.dst_portal = NUM_VMI - 1;
@@ -225,7 +224,7 @@ void Ec::handle_hazard (mword hzd, void (*func)())
     }
 
     if (hzd & HZD_STEP) {
-        current()->regs.clr_hazard (HZD_STEP);
+        current()->regs.clr_hazard(HZD_STEP);
 
         if (func == ret_user_sysexit)
             current()->redirect_to_iret();
@@ -236,16 +235,18 @@ void Ec::handle_hazard (mword hzd, void (*func)())
 
     if (hzd & HZD_DS_ES) {
         Cpu::hazard() &= ~HZD_DS_ES;
-        asm volatile ("mov %0, %%ds; mov %0, %%es" : : "r" (SEL_USER_DATA));
+        asm volatile("mov %0, %%ds; mov %0, %%es" : : "r"(SEL_USER_DATA));
     }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
-    if (EXPECT_FALSE (hzd))
-        handle_hazard (hzd, ret_user_sysexit);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) &
+                (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
+    if (EXPECT_FALSE(hzd))
+        handle_hazard(hzd, ret_user_sysexit);
 
+    // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
 
@@ -269,6 +270,7 @@ void Ec::ret_user_sysexit()
                   // the boundary and thus the RIP we return to cannot be
                   // uncanonical.
                   "sysretq;" : : [regs] "m" (current()->regs) : "memory");
+    // clang-format on
 
     UNREACHED;
 }
@@ -279,44 +281,48 @@ void Ec::return_to_user()
 
     // Set the stack behind the iret frame in Exc_regs for entry via
     // interrupts.
-    auto const kern_sp {reinterpret_cast<mword>(&exc_regs()->ss + 1)};
+    auto const kern_sp{reinterpret_cast<mword>(&exc_regs()->ss + 1)};
 
     // The Intel SDM Vol.3 chapter 6.14.2 describes that the Interrupt Stack
     // Frame must be 16 bytes aligned. Otherwise, the processor can arbitrarily
     // realign the RSP. Because our entry code depends on the RSP not being
     // realigned, we check for correct alignment here.
-    assert (is_aligned_by_order(kern_sp, 4));
+    assert(is_aligned_by_order(kern_sp, 4));
     Tss::local().sp0 = kern_sp;
 
     // This is where registers will be pushed in the system call entry path.
     // See entry_sysenter.
-    Cpulocal::set_sys_entry_stack (sys_regs() + 1);
+    Cpulocal::set_sys_entry_stack(sys_regs() + 1);
 
     // Reset the kernel stack and jump to the current continuation.
-    asm volatile ("mov %%gs:0, %%rsp; jmp *%[cont]" : : [cont] "q" (cont) : "memory"); UNREACHED;
+    asm volatile("mov %%gs:0, %%rsp; jmp *%[cont]" : : [cont] "q"(cont) : "memory");
+    UNREACHED;
 }
 
 void Ec::ret_user_iret()
 {
     // No need to check HZD_DS_ES because IRET will reload both anyway
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE (hzd))
-        handle_hazard (hzd, ret_user_iret);
+    if (EXPECT_FALSE(hzd))
+        handle_hazard(hzd, ret_user_iret);
 
-    asm volatile ("lea %[regs], %%rsp\n"
+    asm volatile("lea %[regs], %%rsp\n"
 
-                  // Load all general-purpose registers now that RSP points at
-                  // the beginning of an Exc_regs structure.
-                  EXPAND (LOAD_GPR)
+                 // Load all general-purpose registers now that RSP points at
+                 // the beginning of an Exc_regs structure.
+                 EXPAND(LOAD_GPR)
 
-                  // At this point, RSP points to `err` in Exc_regs. We need to
-                  // skip the unused vector and error code.
-                  "add %[vec_size], %%rsp\n"
+                 // At this point, RSP points to `err` in Exc_regs. We need to
+                 // skip the unused vector and error code.
+                 "add %[vec_size], %%rsp\n"
 
-                  // Now RSP points to RIP in Exc_regs. This is a normal IRET
-                  // frame.
-                  "swapgs\n"
-                  "iretq\n" : : [regs] "m" (current()->regs), [vec_size] "i" (2 * PTR_SIZE) : "memory");
+                 // Now RSP points to RIP in Exc_regs. This is a normal IRET
+                 // frame.
+                 "swapgs\n"
+                 "iretq\n"
+                 :
+                 : [regs] "m"(current()->regs), [vec_size] "i"(2 * PTR_SIZE)
+                 : "memory");
 
     UNREACHED;
 }
@@ -324,15 +330,15 @@ void Ec::ret_user_iret()
 void Ec::ret_user_vmresume()
 {
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE (hzd))
-        handle_hazard (hzd, ret_user_vmresume);
+    if (EXPECT_FALSE(hzd))
+        handle_hazard(hzd, ret_user_vmresume);
 
-    auto const &regs = current()->regs;
+    auto const& regs = current()->regs;
 
     regs.vmcs->make_current();
 
-    if (EXPECT_FALSE (Pd::current()->stale_guest_tlb.chk (Cpu::id()))) {
-        Pd::current()->stale_guest_tlb.clr (Cpu::id());
+    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
+        Pd::current()->stale_guest_tlb.clr(Cpu::id());
 
         // We have to use an INVEPT here as opposed to INVVPID, because the
         // paging structures might have changed and INVVPID does not flush
@@ -340,12 +346,12 @@ void Ec::ret_user_vmresume()
         Pd::current()->ept.invalidate();
     }
 
-    if (EXPECT_FALSE (get_cr2() != regs.cr2)) {
-        set_cr2 (regs.cr2);
+    if (EXPECT_FALSE(get_cr2() != regs.cr2)) {
+        set_cr2(regs.cr2);
     }
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (regs.xcr0))) {
-        die ("Invalid XCR0");
+    if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
+        die("Invalid XCR0");
     }
 
     // If we knew for sure that SPEC_CTRL is available, we could load it via the
@@ -356,10 +362,11 @@ void Ec::ret_user_vmresume()
     // Another complication is that userspace may set invalid bits and we don't
     // have the knowledge to sanitize the value. To avoid dying with a #GP in
     // the kernel, we just handle it and carry on.
-    if (EXPECT_TRUE (Cpu::feature (Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
-        Msr::write_safe (Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
+        Msr::write_safe(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
+    // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
                   "vmresume;"
@@ -379,6 +386,7 @@ void Ec::ret_user_vmresume()
                     [exi_reason] "i" (Vmcs::EXI_REASON),
                     [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
                   : "memory");
+    // clang-format on
 
     UNREACHED;
 }
@@ -386,18 +394,19 @@ void Ec::ret_user_vmresume()
 void Ec::ret_user_vmrun()
 {
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE (hzd))
-        handle_hazard (hzd, ret_user_vmrun);
+    if (EXPECT_FALSE(hzd))
+        handle_hazard(hzd, ret_user_vmrun);
 
-    if (EXPECT_FALSE (Pd::current()->stale_guest_tlb.chk (Cpu::id()))) {
-        Pd::current()->stale_guest_tlb.clr (Cpu::id());
+    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
+        Pd::current()->stale_guest_tlb.clr(Cpu::id());
         current()->regs.vmcb->tlb_control = 1;
     }
 
-    if (EXPECT_FALSE (not Fpu::load_xcr0 (current()->regs.xcr0))) {
-        die ("Invalid XCR0");
+    if (EXPECT_FALSE(not Fpu::load_xcr0(current()->regs.xcr0))) {
+        die("Invalid XCR0");
     }
 
+    // clang-format off
     asm volatile ("lea %0, %%rsp;"
                   EXPAND (LOAD_GPR)
                   "clgi;"
@@ -413,6 +422,7 @@ void Ec::ret_user_vmrun()
                   "stgi;"
                   "jmp svm_handler;"
                   : : "m" (current()->regs), "m" (Vmcb::root) : "memory");
+    // clang-format on
 
     UNREACHED;
 }
@@ -422,61 +432,65 @@ void Ec::idle()
     for (;;) {
 
         mword hzd = Cpu::hazard() & (HZD_RCU | HZD_SCHED);
-        if (EXPECT_FALSE (hzd))
-            handle_hazard (hzd, idle);
+        if (EXPECT_FALSE(hzd))
+            handle_hazard(hzd, idle);
 
-        asm volatile ("sti; hlt; cli" : : : "memory");
+        asm volatile("sti; hlt; cli" : : : "memory");
     }
 }
 
 void Ec::root_invoke()
 {
-    Eh *e = static_cast<Eh *>(Hpt::remap (Hip::root_addr, false));
-    if (!Hip::root_addr || e->ei_magic != 0x464c457f || e->ei_class != ELF_CLASS || e->ei_data != 1 || e->type != 2 || e->machine != ELF_MACHINE)
-        die ("No ELF");
+    Eh* e = static_cast<Eh*>(Hpt::remap(Hip::root_addr, false));
+    if (!Hip::root_addr || e->ei_magic != 0x464c457f || e->ei_class != ELF_CLASS || e->ei_data != 1 ||
+        e->type != 2 || e->machine != ELF_MACHINE)
+        die("No ELF");
 
     unsigned count = e->ph_count;
-    current()->regs.set_pt (Cpu::id());
-    current()->regs.set_ip (e->entry);
-    current()->regs.set_sp (USER_ADDR - PAGE_SIZE);
+    current()->regs.set_pt(Cpu::id());
+    current()->regs.set_ip(e->entry);
+    current()->regs.set_sp(USER_ADDR - PAGE_SIZE);
 
-    ELF_PHDR *p = static_cast<ELF_PHDR *>(Hpt::remap (Hip::root_addr + e->ph_offset, false));
+    ELF_PHDR* p = static_cast<ELF_PHDR*>(Hpt::remap(Hip::root_addr + e->ph_offset, false));
 
     for (unsigned i = 0; i < count; i++, p++) {
 
         if (p->type == 1) {
 
-            unsigned attr =
-                ((p->flags & 0x4) ? Mdb::MEM_R : 0) |
-                ((p->flags & 0x2) ? Mdb::MEM_W : 0) |
-                ((p->flags & 0x1) ? Mdb::MEM_X : 0);
+            unsigned attr = ((p->flags & 0x4) ? Mdb::MEM_R : 0) | ((p->flags & 0x2) ? Mdb::MEM_W : 0) |
+                            ((p->flags & 0x1) ? Mdb::MEM_X : 0);
 
             if (p->f_size != p->m_size || p->v_addr % PAGE_SIZE != p->f_offs % PAGE_SIZE)
-                die ("Bad ELF");
+                die("Bad ELF");
 
-            mword phys = align_dn (p->f_offs + Hip::root_addr, PAGE_SIZE);
-            mword virt = align_dn (p->v_addr, PAGE_SIZE);
-            mword size = align_up (p->f_size, PAGE_SIZE);
+            mword phys = align_dn(p->f_offs + Hip::root_addr, PAGE_SIZE);
+            mword virt = align_dn(p->v_addr, PAGE_SIZE);
+            mword size = align_up(p->f_size, PAGE_SIZE);
 
             for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o) {
-                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS, (o = min (max_order (phys, size), max_order (virt, size))) - PAGE_BITS, attr, Space::SUBSPACE_HOST);
+                Pd::current()->delegate<Space_mem>(&Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS,
+                                                   (o = min(max_order(phys, size), max_order(virt, size))) -
+                                                       PAGE_BITS,
+                                                   attr, Space::SUBSPACE_HOST);
             }
         }
     }
 
     // Map hypervisor information page
-    Pd::current()->delegate<Space_mem>(&Pd::kern, Buddy::ptr_to_phys (&PAGE_H) >> PAGE_BITS, (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R, Space::SUBSPACE_HOST);
+    Pd::current()->delegate<Space_mem>(&Pd::kern, Buddy::ptr_to_phys(&PAGE_H) >> PAGE_BITS,
+                                       (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R,
+                                       Space::SUBSPACE_HOST);
 
-    Space_obj::insert_root (Pd::current());
-    Space_obj::insert_root (Ec::current());
-    Space_obj::insert_root (Sc::current());
+    Space_obj::insert_root(Pd::current());
+    Space_obj::insert_root(Ec::current());
+    Space_obj::insert_root(Sc::current());
 
     ret_user_sysexit();
 }
 
-bool Ec::fixup (Exc_regs *regs)
+bool Ec::fixup(Exc_regs* regs)
 {
-    for (mword const *ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
+    for (mword const* ptr = &FIXUP_S; ptr < &FIXUP_E; ptr += 2) {
         if (regs->rip != ptr[0]) {
             continue;
         }
@@ -492,21 +506,22 @@ bool Ec::fixup (Exc_regs *regs)
     return false;
 }
 
-void Ec::die (char const *reason, Exc_regs *r)
+void Ec::die(char const* reason, Exc_regs* r)
 {
     if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
-        trace (0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)",
-               current(), Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
+        trace(0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)", current(),
+              Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
     } else
-        trace (0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)",
-               current(), Sc::current(), r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
+        trace(0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)", current(), Sc::current(),
+              r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
 
-    Ec *ec = current()->rcap;
+    Ec* ec = current()->rcap;
 
     if (ec)
-        ec->cont = ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
+        ec->cont =
+            ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
 
-    reply (dead);
+    reply(dead);
 }
 
 void Ec::idl_handler()

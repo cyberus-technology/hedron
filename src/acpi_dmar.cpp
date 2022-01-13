@@ -30,23 +30,25 @@
 
 void Acpi_dmar::parse() const
 {
-    Dmar *dmar = new Dmar (static_cast<Paddr>(phys));
+    Dmar* dmar = new Dmar(static_cast<Paddr>(phys));
 
     if (flags & 1)
-        Pci::claim_all (dmar);
+        Pci::claim_all(dmar);
 
-    for (Acpi_scope const *s = scope; s < reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(this) + length); s = reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(s) + s->length)) {
+    for (Acpi_scope const* s = scope;
+         s < reinterpret_cast<Acpi_scope*>(reinterpret_cast<mword>(this) + length);
+         s = reinterpret_cast<Acpi_scope*>(reinterpret_cast<mword>(s) + s->length)) {
 
         switch (s->type) {
-            case 1 ... 2:
-                Pci::claim_dev (dmar, s->rid());
-                break;
-            case 3:
-                Ioapic::claim_dev (s->rid(), s->id);
-                break;
-            case 4:
-                Hpet::claim_dev (s->rid(), s->id);
-                break;
+        case 1 ... 2:
+            Pci::claim_dev(dmar, s->rid());
+            break;
+        case 3:
+            Ioapic::claim_dev(s->rid(), s->id);
+            break;
+        case 4:
+            Hpet::claim_dev(s->rid(), s->id);
+            break;
         }
     }
 }
@@ -54,21 +56,23 @@ void Acpi_dmar::parse() const
 void Acpi_rmrr::parse() const
 {
     for (uint64 hpa = base & ~PAGE_MASK; hpa < limit; hpa += PAGE_SIZE) {
-        Pd::kern->dpt.update ({hpa, hpa, Dpt::PTE_R | Dpt::PTE_W, PAGE_BITS});
+        Pd::kern->dpt.update({hpa, hpa, Dpt::PTE_R | Dpt::PTE_W, PAGE_BITS});
     }
 
-    for (Acpi_scope const *s = scope; s < reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(this) + length); s = reinterpret_cast<Acpi_scope *>(reinterpret_cast<mword>(s) + s->length)) {
+    for (Acpi_scope const* s = scope;
+         s < reinterpret_cast<Acpi_scope*>(reinterpret_cast<mword>(this) + length);
+         s = reinterpret_cast<Acpi_scope*>(reinterpret_cast<mword>(s) + s->length)) {
 
-        Dmar *dmar = nullptr;
+        Dmar* dmar = nullptr;
 
         switch (s->type) {
-            case 1:
-                dmar = Pci::find_dmar (s->rid());
-                break;
+        case 1:
+            dmar = Pci::find_dmar(s->rid());
+            break;
         }
 
         if (dmar)
-            dmar->assign (s->rid(), &Pd::kern);
+            dmar->assign(s->rid(), &Pd::kern);
     }
 }
 
@@ -77,18 +81,20 @@ void Acpi_table_dmar::parse() const
     if (!Cmdline::iommu)
         return;
 
-    for (Acpi_remap const *r = remap; r < reinterpret_cast<Acpi_remap *>(reinterpret_cast<mword>(this) + length); r = reinterpret_cast<Acpi_remap *>(reinterpret_cast<mword>(r) + r->length)) {
+    for (Acpi_remap const* r = remap;
+         r < reinterpret_cast<Acpi_remap*>(reinterpret_cast<mword>(this) + length);
+         r = reinterpret_cast<Acpi_remap*>(reinterpret_cast<mword>(r) + r->length)) {
         switch (r->type) {
-            case Acpi_remap::DMAR:
-                static_cast<Acpi_dmar const *>(r)->parse();
-                break;
-            case Acpi_remap::RMRR:
-                static_cast<Acpi_rmrr const *>(r)->parse();
-                break;
+        case Acpi_remap::DMAR:
+            static_cast<Acpi_dmar const*>(r)->parse();
+            break;
+        case Acpi_remap::RMRR:
+            static_cast<Acpi_rmrr const*>(r)->parse();
+            break;
         }
     }
 
-    Dmar::enable (flags);
+    Dmar::enable(flags);
 
-    Hip::set_feature (Hip::FEAT_IOMMU);
+    Hip::set_feature(Hip::FEAT_IOMMU);
 }

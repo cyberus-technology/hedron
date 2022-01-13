@@ -24,28 +24,26 @@
 
 #include "compiler.hpp"
 #include "selectors.hpp"
+#include "types.hpp"
 
 class Tss
 {
-    public:
-        uint32  : 32;                   // 0x0
-        uint64  sp0     PACKED;         // 0x4
-        uint64  sp1     PACKED;         // 0xc
-        uint64  sp2     PACKED;         // 0x14
-        uint64  ist[8]  PACKED;         // 0x1c
-        uint64  : 64    PACKED;
+public:
+    uint32 : 32;          // 0x0
+    uint64 sp0 PACKED;    // 0x4
+    uint64 sp1 PACKED;    // 0xc
+    uint64 sp2 PACKED;    // 0x14
+    uint64 ist[8] PACKED; // 0x1c
+    uint64 : 64 PACKED;
 
-        uint16  trap;                   // 0x64
-        uint16  iobm;                   // 0x66
+    uint16 trap; // 0x64
+    uint16 iobm; // 0x66
 
-        static Tss &local();
-        static Tss &remote (unsigned id);
+    static Tss& local();
+    static Tss& remote(unsigned id);
 
-        static void setup();
-        static void build();
+    static void setup();
+    static void build();
 
-        static inline void load()
-        {
-            asm volatile ("ltr %w0" : : "rm" (SEL_TSS_RUN));
-        }
+    static inline void load() { asm volatile("ltr %w0" : : "rm"(SEL_TSS_RUN)); }
 };
