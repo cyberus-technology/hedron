@@ -1,4 +1,5 @@
 stages:
+  - style_check
   - build
   - integration_test
 
@@ -87,6 +88,15 @@ stages:
     - ./tools/gen_usb.sh grub_image.iso build/src/hypervisor.elf32 tools/grub.cfg.tmpl
     - ./test/integration/qemu-boot grub_image.iso --disk-image
     - ./test/integration/qemu-boot grub_image.iso --disk-image --uefi
+
+# Stylecheck Job description
+
+style_check:clang-format:
+  stage: style_check
+  tags:
+    - native-nix
+  script:
+    - nix-build nix/release.nix -A hedron.stylecheck
 
 # Build Job descriptions
 
