@@ -34,6 +34,13 @@ class Vmcs;
 
 class Sys_regs
 {
+protected:
+    static constexpr size_t ARG1_FLAGS_SHIFT{8};
+    static constexpr size_t ARG1_SEL_SHIFT{12};
+
+    static constexpr mword ARG1_ID_MASK{0xffu};
+    static constexpr mword ARG1_FLAGS_MASK{0xfu};
+
 public:
     static constexpr mword NUM_GPR = 16;
 
@@ -72,9 +79,9 @@ public:
         BAD_DEV,
     };
 
-    inline hypercall_id id() const { return static_cast<hypercall_id>(ARG_1 & 0xF); }
+    inline hypercall_id id() const { return static_cast<hypercall_id>(ARG_1 & ARG1_ID_MASK); }
 
-    inline unsigned flags() const { return ARG_1 >> 4 & 0xf; }
+    inline unsigned flags() const { return ARG_1 >> ARG1_FLAGS_SHIFT & ARG1_FLAGS_MASK; }
 
     inline uint8 status() { return ARG_1 & 0xffu; }
 
