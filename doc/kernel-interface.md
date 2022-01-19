@@ -303,9 +303,9 @@ to the caller until the callee replies.
 
 | *Register*  | *Content*             | *Description*                                   |
 |-------------|-----------------------|-------------------------------------------------|
-| ARG1[3:0]   | System Call Number    | Needs to be `HC_CALL`.                          |
-| ARG1[7:4]   | Flags                 | 0 for blocking, 1 for non-blocking              |
-| ARG1[63:8]  | Portal selector       | Capability selector of the destination portal   |
+| ARG1[7:0]   | System Call Number    | Needs to be `HC_CALL`.                          |
+| ARG1[11:8]  | Flags                 | 0 for blocking, 1 for non-blocking              |
+| ARG1[63:12] | Portal selector       | Capability selector of the destination portal   |
 
 ### Out
 
@@ -325,7 +325,7 @@ returns from its `call` system call instead.
 
 | *Register*  | *Content*             | *Description*                                   |
 |-------------|-----------------------|-------------------------------------------------|
-| ARG1[3:0]   | System Call Number    | Needs to be `HC_REPLY`.                         |
+| ARG1[7:0]   | System Call Number    | Needs to be `HC_REPLY`.                         |
 
 ## create_ec
 
@@ -358,12 +358,12 @@ exception numbers.
 
 | *Register*  | *Content*             | *Description*                                                                                               |
 |-------------|-----------------------|-------------------------------------------------------------------------------------------------------------|
-| ARG1[3:0]   | System Call Number    | Needs to be `HC_CREATE_EC`.                                                                                 |
-| ARG1[4]     | Global EC             | If set, create a global EC, otherwise a local EC.                                                           |
-| ARG1[5]     | vCPU                  | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
-| ARG1[6]     | Use APIC Access Page  | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
-| ARG1[7]     | User Page Destination | If 0, the UTCB / vLAPIC page will be mapped in the parent PD, otherwise it's mapped in the current PD.      |
-| ARG1[63:8]  | Destination Selector  | A capability selector in the current PD that will point to the newly created EC.                            |
+| ARG1[7:0]   | System Call Number    | Needs to be `HC_CREATE_EC`.                                                                                 |
+| ARG1[8]     | Global EC             | If set, create a global EC, otherwise a local EC.                                                           |
+| ARG1[9]     | vCPU                  | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
+| ARG1[10]    | Use APIC Access Page  | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
+| ARG1[11]    | User Page Destination | If 0, the UTCB / vLAPIC page will be mapped in the parent PD, otherwise it's mapped in the current PD.      |
+| ARG1[63:12] | Destination Selector  | A capability selector in the current PD that will point to the newly created EC.                            |
 | ARG2        | Parent PD             | A capability selector to a PD domain in which the new EC will execute in.                                   |
 | ARG3[11:0]  | CPU number            | Number between 0..MAX (depends on implementation, see `config.hpp`) *Note: ECs are CPU-local.*              |
 | ARG3[63:12] | UTCB / vLAPIC Page    | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
@@ -382,12 +382,12 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 
 ### In
 
-| *Register* | *Content*          | *Description*                                                                   |
-|------------|--------------------|---------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_EC_CTRL`.                                                       |
-| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_EC_CTRL_*` to select one of the `ec_ctrl_*` calls below. |
-| ARG1[63:8] | EC Selector        | A capability selector in the current PD that points to an EC.                   |
-| ...        | ...                |                                                                                 |
+| *Register*  | *Content*          | *Description*                                                                   |
+|-------------|--------------------|---------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                                       |
+| ARG1[9:8]   | Sub-operation      | Needs to be one of `HC_EC_CTRL_*` to select one of the `ec_ctrl_*` calls below. |
+| ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC.                   |
+| ...         | ...                |                                                                                 |
 
 ### Out
 
@@ -405,11 +405,11 @@ handler to be able to inject interrupts into a virtual machine.
 
 ### In
 
-| *Register* | *Content*          | *Description*                                                 |
-|------------|--------------------|---------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_EC_CTRL`.                                     |
-| ARG1[5:4]  | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
-| ARG1[63:8] | EC Selector        | A capability selector in the current PD that points to an EC. |
+| *Register*  | *Content*          | *Description*                                                 |
+|-------------|--------------------|---------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                     |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
+| ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC. |
 
 ### Out
 
@@ -443,14 +443,14 @@ untrusted userspace PDs.**
 
 ### In
 
-| *Register* | *Content*            | *Description*                                                                                                      |
-|------------|----------------------|--------------------------------------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number   | Needs to be `HC_CREATE_PD`.                                                                                        |
-| ARG1[4]    | Passthrough Access   | If set and calling PD has the same right, create a PD with special passthrough permissions. See above for details. |
-| ARG1[7:5]  | Ignored              | Should be set to zero.                                                                                             |
-| ARG1[63:8] | Destination Selector | A capability selector in the current PD that will point to the newly created PD.                                   |
-| ARG2       | Parent PD            | A capability selector to the parent PD.                                                                            |
-| ARG3       | CRD                  | A capability range descriptor. If this is not empty, the capabilities will be delegated from parent to new PD.     |
+| *Register*  | *Content*            | *Description*                                                                                                      |
+|-------------|----------------------|--------------------------------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number   | Needs to be `HC_CREATE_PD`.                                                                                        |
+| ARG1[8]     | Passthrough Access   | If set and calling PD has the same right, create a PD with special passthrough permissions. See above for details. |
+| ARG1[11:9]  | Ignored              | Should be set to zero.                                                                                             |
+| ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created PD.                                   |
+| ARG2        | Parent PD            | A capability selector to the parent PD.                                                                            |
+| ARG3        | CRD                  | A capability range descriptor. If this is not empty, the capabilities will be delegated from parent to new PD.     |
 
 ### Out
 
@@ -467,8 +467,8 @@ kernel objects and rights transfers.
 
 | *Register* | *Content*          | *Description*                                                                   |
 |------------|--------------------|---------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_PD_CTRL`.                                                       |
-| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_PD_CTRL_*` to select one of the `pd_ctrl_*` calls below. |
+| ARG1[7:0]  | System Call Number | Needs to be `HC_PD_CTRL`.                                                       |
+| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_PD_CTRL_*` to select one of the `pd_ctrl_*` calls below. |
 | ...        | ...                |                                                                                 |
 
 ### Out
@@ -487,15 +487,15 @@ page table.
 
 ### In
 
-| *Register* | *Content*          | *Description*                                                                                      |
-|------------|--------------------|----------------------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_PD_CTRL`.                                                                          |
-| ARG1[5:4]  | Sub-operation      | Needs to be `HC_PD_CTRL_DELEGATE`.                                                                 |
-| ARG1[63:8] | Source PD          | A capability selector for the source protection domain to copy access rights and capabilites from. |
-| ARG2       | Destination PD     | A capability selector for the destination protection domain that will receive these rights.        |
-| ARG3       | Source CRD         | A capability range descriptor describing the send window in the source PD.                         |
-| ARG4       | Delegate Flags     | See [Delegate Flags](#delegate-flags) section.                                                     |
-| ARG5       | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.                 |
+| *Register*  | *Content*          | *Description*                                                                                      |
+|-------------|--------------------|----------------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_PD_CTRL`.                                                                          |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_PD_CTRL_DELEGATE`.                                                                 |
+| ARG1[63:12] | Source PD          | A capability selector for the source protection domain to copy access rights and capabilites from. |
+| ARG2        | Destination PD     | A capability selector for the destination protection domain that will receive these rights.        |
+| ARG3        | Source CRD         | A capability range descriptor describing the send window in the source PD.                         |
+| ARG4        | Delegate Flags     | See [Delegate Flags](#delegate-flags) section.                                                     |
+| ARG5        | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.                 |
 
 ### Out
 
@@ -514,14 +514,14 @@ untrusted userspace PDs.**
 
 ### In
 
-| *Register* | *Content*          | *Description*                                                         |
-|------------|--------------------|-----------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_PD_CTRL`.                                             |
-| ARG1[5:4]  | Sub-operation      | Needs to be `HC_PD_CTRL_MSR_ACCESS`.                                  |
-| ARG1[6]    | Write              | If set, the access is a write to the MSR. Otherwise, the MSR is read. |
-| ARG1[7]    | Ignored            | Should be set to zero.                                                |
-| ARG1[63:8] | MSR Index          | The MSR to read or write.                                             |
-| ARG2       | MSR Value          | If the operation is a write, the value to write, otherwise ignored.   |
+| *Register*  | *Content*          | *Description*                                                         |
+|-------------|--------------------|-----------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_PD_CTRL`.                                             |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_PD_CTRL_MSR_ACCESS`.                                  |
+| ARG1[10]    | Write              | If set, the access is a write to the MSR. Otherwise, the MSR is read. |
+| ARG1[11]    | Ignored            | Should be set to zero.                                                |
+| ARG1[63:12] | MSR Index          | The MSR to read or write.                                             |
+| ARG2        | MSR Value          | If the operation is a write, the value to write, otherwise ignored.   |
 
 ### Out
 
@@ -543,14 +543,14 @@ revoking all rights at the same time. It will be removed, use
 
 ### In
 
-| *Register* | *Content*          | *Description*                                                                             |
-|------------|--------------------|-------------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_REVOKE`.                                                                  |
-| ARG1[4]    | Self               | If set, the capability is also revoked in the current PD. Ignored for memory revocations. |
-| ARG1[5]    | Remote             | If set, the given PD is used instead of the current one.                                  |
-| ARG1[63:8] | Semaphore Selector | **Deprecated**, specify as 0.                                                             |
-| ARG2       | CRD                | The capability range descriptor describing the region to be removed.                      |
-| ARG3       | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
+| *Register*  | *Content*          | *Description*                                                                             |
+|-------------|--------------------|-------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_REVOKE`.                                                                  |
+| ARG1[8]     | Self               | If set, the capability is also revoked in the current PD. Ignored for memory revocations. |
+| ARG1[9]     | Remote             | If set, the given PD is used instead of the current one.                                  |
+| ARG1[63:12] | Semaphore Selector | **Deprecated**, specify as 0.                                                             |
+| ARG2        | CRD                | The capability range descriptor describing the region to be removed.                      |
+| ARG3        | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
 
 ### Out
 
@@ -591,16 +591,16 @@ device and configure the IOMMU correctly, if enabled.
 
 ### In
 
-| *Register* | *Content*               | *Description*                                                                               |
-|------------|-------------------------|---------------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
-| ARG1[4]    | Override configuration  | Indicates that the trigger mode and polarity settings are valid (I/O APIC pins only).       |
-| ARG1[63:8] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
-| ARG2       | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
-| ARG3[31:0] | CPU number              | The CPU number this GSI should be routed to.                                                |
-| ARG3[32]   | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level=1/edge=0); only for I/O APIC pins).        |
-| ARG3[33]   | Interrupt Polarity      | The polarity setting of the interrupt (low=1/high=0; only for I/O APIC pins).               |
-| ARG4       | Signal Semaphore        | **Deprecated**, specify as ~0ull.                                                           |
+| *Register*  | *Content*               | *Description*                                                                               |
+|-------------|-------------------------|---------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
+| ARG1[8]     | Override configuration  | Indicates that the trigger mode and polarity settings are valid (I/O APIC pins only).       |
+| ARG1[63:12] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
+| ARG2        | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
+| ARG3[31:0]  | CPU number              | The CPU number this GSI should be routed to.                                                |
+| ARG3[32]    | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level=1/edge=0); only for I/O APIC pins).        |
+| ARG3[33]    | Interrupt Polarity      | The polarity setting of the interrupt (low=1/high=0; only for I/O APIC pins).               |
+| ARG4        | Signal Semaphore        | **Deprecated**, specify as ~0ull.                                                           |
 
 ### Out
 
@@ -626,8 +626,8 @@ granted to untrusted userspace PDs.**
 
 | *Register* | *Content*          | *Description*                                                                             |
 |------------|--------------------|-------------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number | Needs to be `HC_MACHINE_CTRL`.                                                            |
-| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_MACHINE_CTRL_*` to select one of the `machine_ctrl_*` calls below. |
+| ARG1[7:0]  | System Call Number | Needs to be `HC_MACHINE_CTRL`.                                                            |
+| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_MACHINE_CTRL_*` to select one of the `machine_ctrl_*` calls below. |
 | ...        | ...                |                                                                                           |
 
 ### Out
@@ -672,11 +672,11 @@ Hardware-reduced ACPI platforms are **not** supported.
 
 | *Register*  | *Content*          | *Description*                               |
 |-------------|--------------------|---------------------------------------------|
-| ARG1[3:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.              |
-| ARG1[5:4]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_SUSPEND`.      |
-| ARG1[7:6]   | Ignored            | Should be set to zero.                      |
-| ARG1[15:8]  | PM1a_CNT.SLP_TYP   | The value to write into `PM1a_CNT.SLP_TYP`. |
-| ARG1[23:16] | PM1b_CNT.SLP_TYP   | The value to write into `PM1b_CNT.SLP_TYP`. |
+| ARG1[7:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.              |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_SUSPEND`.      |
+| ARG1[11:10] | Ignored            | Should be set to zero.                      |
+| ARG1[19:12] | PM1a_CNT.SLP_TYP   | The value to write into `PM1a_CNT.SLP_TYP`. |
+| ARG1[27:20] | PM1b_CNT.SLP_TYP   | The value to write into `PM1b_CNT.SLP_TYP`. |
 
 ### Out
 
@@ -705,11 +705,11 @@ applied.**
 
 | *Register*  | *Content*          | *Description*                                   |
 |-------------|--------------------|-------------------------------------------------|
-| ARG1[3:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.                  |
-| ARG1[5:4]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_UPDATE_MICROCODE`. |
-| ARG1[7:6]   | Ignored            | Should be set to zero.                          |
-| ARG1[48:8]  | Update BLOB size   | Size of the complete update BLOB.               |
-| ARG1[63:6]  | Ignored            | Should be set to zero.                          |
+| ARG1[7:0]   | System Call Number | Needs to be `HC_MACHINE_CTRL`.                  |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_MACHINE_CTRL_UPDATE_MICROCODE`. |
+| ARG1[11:10] | Ignored            | Should be set to zero.                          |
+| ARG1[52:12] | Update BLOB size   | Size of the complete update BLOB.               |
+| ARG1[63:10] | Ignored            | Should be set to zero.                          |
 | ARG2        | Update address     | Physical address of the update BLOB.            |
 
 ### Out

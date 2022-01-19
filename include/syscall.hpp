@@ -39,13 +39,13 @@ public:
         DISABLE_REPLYCAP = 1ul << 2
     };
 
-    inline unsigned long pt() const { return ARG_1 >> 8; }
+    inline unsigned long pt() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 };
 
 class Sys_create_pd : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> 8; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -57,7 +57,7 @@ public:
 class Sys_create_ec : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> 8; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -79,7 +79,7 @@ public:
 class Sys_create_sc : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> 8; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -91,7 +91,7 @@ public:
 class Sys_create_pt : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> 8; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -105,7 +105,7 @@ public:
 class Sys_create_sm : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> 8; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -125,7 +125,7 @@ public:
 
     inline mword pd() const { return ARG_3; }
 
-    inline mword sm() const { return ARG_1 >> 8; }
+    inline mword sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 };
 
 class Sys_pd_ctrl : public Sys_regs
@@ -157,7 +157,7 @@ public:
 class Sys_pd_ctrl_delegate : public Sys_regs
 {
 public:
-    inline mword src_pd() const { return ARG_1 >> 8; }
+    inline mword src_pd() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline mword dst_pd() const { return ARG_2; }
 
@@ -175,7 +175,7 @@ public:
 class Sys_pd_ctrl_msr_access : public Sys_regs
 {
 public:
-    inline uint32 msr_index() const { return static_cast<uint32>(ARG_1 >> 8); }
+    inline uint32 msr_index() const { return static_cast<uint32>(ARG_1 >> ARG1_SEL_SHIFT); }
     inline uint64 msr_value() const { return ARG_2; }
     inline bool is_write() const { return flags() & 4; }
 
@@ -185,7 +185,7 @@ public:
 class Sys_reply : public Sys_regs
 {
 public:
-    inline unsigned long sm() const { return ARG_1 >> 8; }
+    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 };
 
 class Sys_ec_ctrl : public Sys_regs
@@ -196,7 +196,7 @@ public:
         RECALL,
     };
 
-    inline unsigned long ec() const { return ARG_1 >> 8; }
+    inline unsigned long ec() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned op() const { return flags() & 0x3; }
 };
@@ -204,7 +204,7 @@ public:
 class Sys_sc_ctrl : public Sys_regs
 {
 public:
-    inline unsigned long sc() const { return ARG_1 >> 8; }
+    inline unsigned long sc() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline void set_time(uint64 val)
     {
@@ -216,7 +216,7 @@ public:
 class Sys_pt_ctrl : public Sys_regs
 {
 public:
-    inline unsigned long pt() const { return ARG_1 >> 8; }
+    inline unsigned long pt() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline mword id() const { return ARG_2; }
 };
@@ -224,7 +224,7 @@ public:
 class Sys_sm_ctrl : public Sys_regs
 {
 public:
-    inline unsigned long sm() const { return ARG_1 >> 8; }
+    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned op() const { return flags() & 0x1; }
 
@@ -236,7 +236,7 @@ public:
 class Sys_assign_pci : public Sys_regs
 {
 public:
-    inline unsigned long pd() const { return ARG_1 >> 8; }
+    inline unsigned long pd() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline mword dev() const { return ARG_2; }
 
@@ -251,7 +251,7 @@ class Sys_assign_gsi : public Sys_regs
     static constexpr uint64 POLARITY_LOW{1ull << 33};
 
 public:
-    inline unsigned long sm() const { return ARG_1 >> 8; }
+    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline mword dev() const { return ARG_2; }
 
@@ -284,14 +284,18 @@ public:
 
 class Sys_machine_ctrl_suspend : public Sys_machine_ctrl
 {
+private:
+    static constexpr size_t SLP_TYPA_SHIFT{ARG1_SEL_SHIFT};
+    static constexpr size_t SLP_TYPB_SHIFT{SLP_TYPA_SHIFT + 8};
+
 public:
     enum class mode : mword
     {
         REAL_MODE = 0,
     };
 
-    inline uint8 slp_typa() const { return (ARG_1 >> 8) & 0xFF; }
-    inline uint8 slp_typb() const { return (ARG_1 >> 16) & 0xFF; }
+    inline uint8 slp_typa() const { return (ARG_1 >> SLP_TYPA_SHIFT) & 0xFF; }
+    inline uint8 slp_typb() const { return (ARG_1 >> SLP_TYPB_SHIFT) & 0xFF; }
 
     inline void set_waking_vector(mword waking_vector, mode waking_mode)
     {
@@ -302,6 +306,6 @@ public:
 class Sys_machine_ctrl_update_microcode : public Sys_machine_ctrl
 {
 public:
-    inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> 8; }
+    inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> ARG1_SEL_SHIFT; }
     inline mword update_address() const { return static_cast<mword>(ARG_2); }
 };

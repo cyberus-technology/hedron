@@ -33,7 +33,7 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
-#define CFG_VER 4003
+#define CFG_VER 5003
 
 #define NUM_CPU 64
 #define NUM_IRQ 16
