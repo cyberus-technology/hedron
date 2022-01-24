@@ -99,7 +99,7 @@ void Bootstrap::create_idle_ec()
 
 void Bootstrap::create_roottask()
 {
-    ALIGNED(32) static No_destruct<Pd> root(&root, NUM_EXC, 0x1f, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
+    ALIGNED(32) static No_destruct<Pd> root(&root, NUM_EXC, 0x1, Pd::IS_PRIVILEGED | Pd::IS_PASSTHROUGH);
 
     Ec* root_ec =
         new Ec(&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);

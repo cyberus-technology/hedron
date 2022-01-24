@@ -38,9 +38,6 @@
 #include "utcb.hpp"
 #include "vectors.hpp"
 
-// The permissions we need on a PD capability to create an object of a given type.
-static unsigned perm_for_obj_creation(Kobject::Type type) { return 1U << static_cast<int>(type); }
-
 template <Sys_regs::Status S, bool T> void Ec::sys_finish()
 {
     if (T)
@@ -242,7 +239,7 @@ void Ec::sys_create_pd()
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE PD:%#lx", current(), r->sel());
 
     Capability parent_pd_cap = Space_obj::lookup(r->pd());
-    Pd* parent_pd = capability_cast<Pd>(parent_pd_cap, perm_for_obj_creation(Type::PD));
+    Pd* parent_pd = capability_cast<Pd>(parent_pd_cap, Pd::PERM_OBJ_CREATION);
 
     if (EXPECT_FALSE(not parent_pd)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
@@ -280,7 +277,7 @@ void Ec::sys_create_ec()
         sys_finish<Sys_regs::BAD_FTR>();
     }
 
-    Pd* pd = capability_cast<Pd>(Space_obj::lookup(r->pd()), perm_for_obj_creation(Type::EC));
+    Pd* pd = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
 
     if (EXPECT_FALSE(not pd)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
@@ -314,7 +311,7 @@ void Ec::sys_create_sc()
 
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE SC:%#lx EC:%#lx P:%#x Q:%#x", current(), r->sel(), r->ec(),
           r->qpd().prio(), r->qpd().quantum());
-    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), perm_for_obj_creation(Type::SC));
+    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
         EXPECT_FALSE(not pd_parent)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
@@ -355,7 +352,7 @@ void Ec::sys_create_pt()
 
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE PT:%#lx EC:%#lx EIP:%#lx", current(), r->sel(), r->ec(), r->eip());
 
-    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), perm_for_obj_creation(Type::PT));
+    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
         EXPECT_FALSE(not pd_parent)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
@@ -389,7 +386,7 @@ void Ec::sys_create_sm()
 
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE SM:%#lx CNT:%lu", current(), r->sel(), r->cnt());
 
-    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), perm_for_obj_creation(Type::SM));
+    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
         EXPECT_FALSE(not pd_parent)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
         sys_finish<Sys_regs::BAD_CAP>();
