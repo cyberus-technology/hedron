@@ -76,12 +76,13 @@ bool Msr::write_safe(Register msr, uint64 val)
 
 static bool is_allowed_to_read(Msr::Register msr)
 {
+    // Allowing read access to an MSR might currently imply granting write
+    // access as well. Check is_allowed_to_write when modifying this list.
     switch (msr) {
     case Msr::AMD_SVM_HSAVE_PA:
     case Msr::IA32_APIC_BASE:
     case Msr::IA32_DS_AREA:
     case Msr::IA32_EFER:
-    case Msr::IA32_FEATURE_CONTROL:
     case Msr::IA32_GS_BASE:
     case Msr::IA32_KERNEL_GS_BASE:
     case Msr::IA32_SYSENTER_CS:
@@ -96,6 +97,9 @@ static bool is_allowed_to_read(Msr::Register msr)
     case Msr::IA32_VMX_BASIC... Msr::IA32_VMX_VMFUNC:
         return false;
 
+    // Userspace discovers whether SGX is available via the relevant
+    // feature bits in the IA32_FEATURE_CONTROL MSR.
+    case Msr::IA32_FEATURE_CONTROL:
     default:
         return true;
     };
@@ -104,6 +108,8 @@ static bool is_allowed_to_read(Msr::Register msr)
 static bool is_allowed_to_write(Msr::Register msr)
 {
     switch (msr) {
+    // Feature control is locked in try_enable_vmx, so writes are not permitted.
+    case Msr::IA32_FEATURE_CONTROL:
     case Msr::IA32_MTRR_PHYS_BASE... Msr::IA32_MTRR_FIX4K_F8000:
     case Msr::IA32_CR_PAT:
     case Msr::IA32_MTRR_DEF_TYPE:
