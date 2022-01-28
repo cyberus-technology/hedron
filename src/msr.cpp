@@ -100,6 +100,11 @@ static bool is_allowed_to_read(Msr::Register msr)
     // Userspace discovers whether SGX is available via the relevant
     // feature bits in the IA32_FEATURE_CONTROL MSR.
     case Msr::IA32_FEATURE_CONTROL:
+    // Allow runtime modification of SGX Launch Control.
+    case Msr::IA32_SGXLEPUBKEYHASH0:
+    case Msr::IA32_SGXLEPUBKEYHASH1:
+    case Msr::IA32_SGXLEPUBKEYHASH2:
+    case Msr::IA32_SGXLEPUBKEYHASH3:
     default:
         return true;
     };
@@ -117,6 +122,10 @@ static bool is_allowed_to_write(Msr::Register msr)
         // reading them to pass on the configuration to guests (if so desired),
         // but writing them would mess up our paging.
         return false;
+
+    // Allow runtime modification of SGX Launch Control.
+    case Msr::IA32_SGXLEPUBKEYHASH0... Msr::IA32_SGXLEPUBKEYHASH3:
+        return true;
 
     default:
         // If we don't know anything better and we can't read a MSR, we
