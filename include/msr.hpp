@@ -101,6 +101,11 @@ public:
         IA32_KERNEL_GS_BASE = 0xc0000102,
         IA32_TSC_AUX = 0xc0000103,
 
+        IA32_SGXLEPUBKEYHASH0 = 0x00000008c,
+        IA32_SGXLEPUBKEYHASH1 = 0x00000008d,
+        IA32_SGXLEPUBKEYHASH2 = 0x00000008e,
+        IA32_SGXLEPUBKEYHASH3 = 0x00000008f,
+
         // Non-architectural MSRs (Intel)
         MSR_PLATFORM_INFO = 0xce,
 
