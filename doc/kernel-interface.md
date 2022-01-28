@@ -65,13 +65,14 @@ reading and writing the I/O port.
 
 ### Protection Domain (PD) Object Capability
 
-| 4  | 3  | 2  | 1  | 0  |
-|----|----|----|----|----|
-| sm | pt | sc | ec | pd |
+| 4 | 3 | 2 | 1 | 0      |
+|---|---|---|---|--------|
+| 0 | 0 | 0 | 0 | create |
 
-A Protection Domain capability has a permission bit for each object
-capability. If the bit is set, only then can this PD be used to create
-the corresponding object capability type with a `create_*` system call.
+A Protection Domain capability has one permission bit that decides whether
+the PD capability can be used to create object capabilities. If the `create`
+bit is set, this PD capability can be used to create object capabilities with a
+`create_*` system call.
 
 ### Execution Context (EC) Object Capability
 

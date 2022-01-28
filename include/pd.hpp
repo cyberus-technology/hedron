@@ -83,6 +83,12 @@ public:
     Pd();
     ~Pd();
 
+    // Capability permission bitmask
+    enum
+    {
+        PERM_OBJ_CREATION = 1U << 0,
+    };
+
     enum pd_creation_flags
     {
         IS_PRIVILEGED = 1 << 0,
