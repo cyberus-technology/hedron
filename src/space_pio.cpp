@@ -18,11 +18,14 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "assert.hpp"
 #include "lock_guard.hpp"
 #include "pd.hpp"
 
 Space_pio::Space_pio(Space_mem* mem)
 {
+    assert(mem);
+
     hbmp = Buddy::ptr_to_phys(Buddy::allocator.alloc(1, Buddy::FILL_1));
     gbmp = Buddy::ptr_to_phys(Buddy::allocator.alloc(1, Buddy::FILL_1));
 
