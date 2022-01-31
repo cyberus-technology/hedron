@@ -37,16 +37,18 @@ private:
 
     static inline mword idx_to_mask(mword idx) { return 1UL << (idx % (8 * sizeof(mword))); }
 
-    inline Space_mem* space_mem();
-
     void update(bool, mword, mword);
 
 public:
-    Space_pio() : hbmp(0), gbmp(0) {}
+    /// Construct a new Port I/O space.
+    ///
+    /// During the construction, this function will modify the page table to setup the IO Permission
+    /// Bitmap. See `Tss::build`.
+    Space_pio(Space_mem* mem);
+
+    ~Space_pio();
 
     Paddr walk(bool = false, mword = 0);
 
     Tlb_cleanup update(Mdb*, mword = 0);
-
-    static void page_fault(mword, mword);
 };

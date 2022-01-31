@@ -18,24 +18,31 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "assert.hpp"
 #include "lock_guard.hpp"
 #include "pd.hpp"
 
-Space_mem* Space_pio::space_mem() { return static_cast<Pd*>(this); }
+Space_pio::Space_pio(Space_mem* mem)
+{
+    assert(mem);
+
+    hbmp = Buddy::ptr_to_phys(Buddy::allocator.alloc(1, Buddy::FILL_1));
+    gbmp = Buddy::ptr_to_phys(Buddy::allocator.alloc(1, Buddy::FILL_1));
+
+    // This mapping of the IO Permission Bitmap is only used by the CPU to do access control. Map it
+    // read-only.
+    mem->insert(SPC_LOCAL_IOP, 1, Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P, hbmp);
+}
+
+Space_pio::~Space_pio()
+{
+    Buddy::allocator.free(reinterpret_cast<mword>(Buddy::phys_to_ptr(gbmp)));
+    Buddy::allocator.free(reinterpret_cast<mword>(Buddy::phys_to_ptr(hbmp)));
+}
 
 Paddr Space_pio::walk(bool host, mword idx)
 {
-    Paddr& bmp = host ? hbmp : gbmp;
-
-    if (!bmp) {
-        bmp = Buddy::ptr_to_phys(Buddy::allocator.alloc(1, Buddy::FILL_1));
-
-        if (host)
-            space_mem()->insert(SPC_LOCAL_IOP, 1,
-                                Hpt::PTE_NX | Hpt::PTE_D | Hpt::PTE_A | Hpt::PTE_W | Hpt::PTE_P, bmp);
-    }
-
-    return bmp | (idx_to_virt(idx) & (2 * PAGE_SIZE - 1));
+    return (host ? hbmp : gbmp) | (idx_to_virt(idx) & (2 * PAGE_SIZE - 1));
 }
 
 void Space_pio::update(bool host, mword idx, mword attr)
@@ -65,11 +72,4 @@ Tlb_cleanup Space_pio::update(Mdb* mdb, mword r)
     }
 
     return {};
-}
-
-void Space_pio::page_fault(mword addr, mword error)
-{
-    assert(!(error & Hpt::ERR_W));
-    Pd::current()->Space_mem::replace(addr,
-                                      Buddy::ptr_to_phys(&PAGE_1) | Hpt::PTE_NX | Hpt::PTE_A | Hpt::PTE_P);
 }
