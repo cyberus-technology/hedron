@@ -42,6 +42,18 @@
 #include "vlapic.hpp"
 #include "vmx_msr_bitmap.hpp"
 
+// Startup exception index for global ECs. Global ECs (except roottask) receive this
+// exception the first time a scheduling context is bound to them.
+#define EXC_STARTUP (NUM_EXC - 2)
+// Recall exception index for global ECs.
+#define EXC_RECALL (NUM_EXC - 1)
+
+// Startup exception index for vCPUs. vCPUs receive this exception the first
+// time a scheduling context is bound to them.
+#define VMI_STARTUP (NUM_VMI - 2)
+// Recall exception index for vCPUs.
+#define VMI_RECALL (NUM_VMI - 1)
+
 class Utcb;
 
 class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queue<Sc>

@@ -79,6 +79,13 @@ public:
     static mword fix_cr4_clr() { return 0; }
     static mword fix_cr4_mon() { return 0; }
 
+    // "SVM Intercepts" in NOVA spec.
+    enum Reason
+    {
+        SVM_NPT_FAULT = NUM_VMI - 4,
+        SVM_INVALID_STATE = NUM_VMI - 3,
+    };
+
     enum Ctrl0
     {
         CPU_INTR = 1ul << 0,

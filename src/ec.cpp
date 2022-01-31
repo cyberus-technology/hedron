@@ -76,12 +76,12 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
                 Buddy::ptr_to_phys(utcb.get()));
         }
 
-        regs.dst_portal = NUM_EXC - 2;
+        regs.dst_portal = EXC_STARTUP;
 
         trace(TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 
     } else {
-        regs.dst_portal = NUM_VMI - 2;
+        regs.dst_portal = VMI_STARTUP;
         regs.xcr0 = Cpu::XCR0_X87;
         regs.spec_ctrl = 0;
 
@@ -207,19 +207,19 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         current()->regs.clr_hazard(HZD_RECALL);
 
         if (func == ret_user_vmresume) {
-            current()->regs.dst_portal = NUM_VMI - 1;
+            current()->regs.dst_portal = VMI_RECALL;
             send_msg<ret_user_vmresume>();
         }
 
         if (func == ret_user_vmrun) {
-            current()->regs.dst_portal = NUM_VMI - 1;
+            current()->regs.dst_portal = VMI_RECALL;
             send_msg<ret_user_vmrun>();
         }
 
         if (func == ret_user_sysexit)
             current()->redirect_to_iret();
 
-        current()->regs.dst_portal = NUM_EXC - 1;
+        current()->regs.dst_portal = EXC_RECALL;
         send_msg<ret_user_iret>();
     }
 
