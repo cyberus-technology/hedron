@@ -224,6 +224,13 @@ public:
 class Sys_sm_ctrl : public Sys_regs
 {
 public:
+    /// A "sm_ctrl" syscall is always one of these two sub operations.
+    enum Sm_operation
+    {
+        Up = 0,
+        Down = 1,
+    };
+
     inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 
     inline unsigned op() const { return flags() & 0x1; }

@@ -640,11 +640,11 @@ void Ec::sys_sm_ctrl()
 
     switch (r->op()) {
 
-    case 0:
+    case Sys_sm_ctrl::Sm_operation::Up:
         sm->submit();
         break;
 
-    case 1:
+    case Sys_sm_ctrl::Sm_operation::Down:
         if (sm->space == static_cast<Space_obj*>(&Pd::kern)) {
             Gsi::unmask(static_cast<unsigned>(sm->node_base - NUM_CPU));
             if (sm->is_signal())
