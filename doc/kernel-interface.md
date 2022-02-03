@@ -260,6 +260,7 @@ Hypercalls are identified by these values.
 | `HC_REPLY`                         | 1       |
 | `HC_CREATE_PD`                     | 2       |
 | `HC_CREATE_EC`                     | 3       |
+| `HC_CREATE_SM`                     | 6       |
 | `HC_REVOKE`                        | 7       |
 | `HC_PD_CTRL`                       | 8       |
 | `HC_EC_CTRL`                       | 9       |
@@ -530,6 +531,27 @@ untrusted userspace PDs.**
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 | OUT2       | MSR Value | MSR value when the operation is a read. |
+
+## create_sm
+
+`create_sm` creates an SM kernel object and a capability pointing to the newly created kernel object.
+
+
+### In
+
+| *Register*  | *Content*            | *Description*                                                                    |
+|-------------|----------------------|----------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number   | Needs to be `HC_CREATE_SM`.                                                      |
+| ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created SM. |
+| ARG2        | Owner PD             | A capability selector to a PD domain that owns the SM.                           |
+| ARG3        | Initial Count        | Initial integer value of the semaphore counter.                                  |
+| ARG4        | (Zero)               | Needs to be zero. Used by the signal mechanism that is about to be removed soon. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
 
 ## revoke
 
