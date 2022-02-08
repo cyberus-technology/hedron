@@ -260,9 +260,11 @@ Hypercalls are identified by these values.
 | `HC_REPLY`                         | 1       |
 | `HC_CREATE_PD`                     | 2       |
 | `HC_CREATE_EC`                     | 3       |
+| `HC_CREATE_SM`                     | 6       |
 | `HC_REVOKE`                        | 7       |
 | `HC_PD_CTRL`                       | 8       |
 | `HC_EC_CTRL`                       | 9       |
+| `HC_SM_CTRL`                       | 12      |
 | `HC_ASSIGN_GSI`                    | 14      |
 | `HC_MACHINE_CTRL`                  | 15      |
 |------------------------------------|---------|
@@ -273,6 +275,9 @@ Hypercalls are identified by these values.
 |------------------------------------|---------|
 | `HC_MACHINE_CTRL_SUSPEND`          | 0       |
 | `HC_MACHINE_CTRL_UPDATE_MICROCODE` | 1       |
+|------------------------------------|---------|
+| `SM_CTRL_UP`                       | 0       |
+| `SM_CTRL_DOWN`                     | 1       |
 
 ## Hypercall Status
 
@@ -531,6 +536,27 @@ untrusted userspace PDs.**
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 | OUT2       | MSR Value | MSR value when the operation is a read. |
 
+## create_sm
+
+`create_sm` creates an SM kernel object and a capability pointing to the newly created kernel object.
+
+
+### In
+
+| *Register*  | *Content*            | *Description*                                                                    |
+|-------------|----------------------|----------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number   | Needs to be `HC_CREATE_SM`.                                                      |
+| ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created SM. |
+| ARG2        | Owner PD             | A capability selector to a PD domain that owns the SM.                           |
+| ARG3        | Initial Count        | Initial integer value of the semaphore counter.                                  |
+| ARG4        | (Zero)               | Needs to be zero. Used by the signal mechanism that is about to be removed soon. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
 ## revoke
 
 The `revoke` system call is used to remove capabilities from a
@@ -712,6 +738,52 @@ applied.**
 | ARG1[52:12] | Update BLOB size   | Size of the complete update BLOB.               |
 | ARG1[63:10] | Ignored            | Should be set to zero.                          |
 | ARG2        | Update address     | Physical address of the update BLOB.            |
+
+### Out
+
+| *Register* | *Content* | *Description*                                |
+|------------|-----------|----------------------------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
+
+## sm_ctrl
+
+The `sm_ctrl`-syscall consists of the two sub calls `sm_ctrl_up` and `sm_ctrl_down`.
+
+## sm_ctrl_up
+Performs an "up" operation on the underlying semaphore.
+
+### In
+
+| *Register*  | *Content*                     | *Description*                         |
+|-------------|-------------------------------|---------------------------------------|
+| ARG1[7:0]   | System Call Number            | Needs to be `HC_SM_CTRL`.             |
+| ARG1[8:8]   | Sub-operation                 | Needs to be `SM_CTRL_UP`.             |
+| ARG1[11:9]  | Ignored                       | Should be set to zero.                |
+| ARG1[63:12] | SM selector                   | Capability selector of the semaphore. |
+
+### Out
+
+| *Register* | *Content* | *Description*                                |
+|------------|-----------|----------------------------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
+
+## sm_ctrl_down
+Performs a "down" operation on the underlying semaphore. The timeout parameter can be disabled
+by setting it to zero. Setting it to a value different from zero enables the usage of a semaphore
+as timer based on clock ticks.
+
+### In
+
+| *Register*  | *Content*                     | *Description*                         |
+|-------------|-------------------------------|---------------------------------------|
+| ARG1[7:0]   | System Call Number            | Needs to be `HC_SM_CTRL`.             |
+| ARG1[8:8]   | Sub-operation                 | Needs to be `SM_CTRL_DOWN`.           |
+| ARG1[11:9]  | Ignored                       | Should be set to zero.                |
+| ARG1[63:12] | SM selector                   | Capability selector of the semaphore. |
+| ARG2[31:0]  | TSC Deadline Timeout (Higher) | Higher 32-bits of the timeout.        |
+| ARG2[63:32] | Ignored                       | Should be set to zero.                |
+| ARG3[31:0]  | TSC Deadline Timeout (Lower)  | Lower 32-bits of the timeout.         |
+| ARG3[63:32] | Ignored                       | Should be set to zero.                |
 
 ### Out
 
