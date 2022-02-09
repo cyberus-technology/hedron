@@ -2,6 +2,7 @@ message(STATUS "Building tests: Check the README file for instructions on disabl
 find_package(Catch2 REQUIRED)
 
 add_executable(test_unit
+  acpi_fadt.cpp
   algorithm.cpp
   atomic.cpp
   bitmap.cpp
