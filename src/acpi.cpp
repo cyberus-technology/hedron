@@ -120,8 +120,9 @@ void Acpi::setup()
     else if (rsdt)
         static_cast<Acpi_table_rsdt*>(Hpt::remap(rsdt))->parse(rsdt, sizeof(uint32));
 
-    if (fadt)
-        static_cast<Acpi_table_fadt*>(Hpt::remap(fadt))->parse();
+    if (fadt) {
+        Acpi_table_fadt::init(static_cast<Acpi_table_fadt*>(Hpt::remap(fadt)));
+    }
     if (hpet)
         static_cast<Acpi_table_hpet*>(Hpt::remap(hpet))->parse();
     if (madt)
@@ -159,7 +160,7 @@ void Acpi::setup()
 void Acpi::init()
 {
     if (fadt) {
-        static_cast<Acpi_table_fadt*>(Hpt::remap(fadt))->init();
+        Acpi_table_fadt::init(static_cast<Acpi_table_fadt*>(Hpt::remap(fadt)));
     }
 
     if (Acpi_table_madt::pic_present) {

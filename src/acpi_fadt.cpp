@@ -21,64 +21,36 @@
 #include "io.hpp"
 #include "x86.hpp"
 
-void Acpi_table_fadt::parse() const
+void Acpi_table_fadt::init(const Acpi_table_fadt* fadt)
 {
-    Acpi::irq = sci_irq;
-    Acpi::feature = flags;
+    Acpi::irq = fadt->sci_irq;
+    Acpi::feature = fadt->flags;
 
-    // XXX: Use x_pm blocks if they exist
+    Acpi::pm1a_sts.init(fadt->pm1a_sts());
+    Acpi::pm1a_ena.init(fadt->pm1a_ena());
+    Acpi::pm1b_sts.init(fadt->pm1b_sts());
+    Acpi::pm1b_ena.init(fadt->pm1b_ena());
 
-    if (pm1a_evt_blk) {
-        Acpi::pm1a_sts.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk);
-        Acpi::pm1a_ena.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1a_evt_blk + (pm1_evt_len >> 1));
-    }
-    if (pm1b_evt_blk) {
-        Acpi::pm1b_sts.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk);
-        Acpi::pm1b_ena.init(Acpi_gas::IO, pm1_evt_len >> 1, pm1b_evt_blk + (pm1_evt_len >> 1));
-    }
+    Acpi::pm1a_cnt.init(fadt->pm1a_cnt());
+    Acpi::pm1b_cnt.init(fadt->pm1b_cnt());
+    Acpi::pm2_cnt.init(fadt->pm2_cnt());
 
-    if (pm1a_cnt_blk)
-        Acpi::pm1a_cnt.init(Acpi_gas::IO, pm1_cnt_len, pm1a_cnt_blk);
+    Acpi::pm_tmr.init(fadt->pm_tmr());
 
-    if (pm1b_cnt_blk)
-        Acpi::pm1b_cnt.init(Acpi_gas::IO, pm1_cnt_len, pm1b_cnt_blk);
+    Acpi::gpe0_sts.init(fadt->gpe0_sts());
+    Acpi::gpe0_ena.init(fadt->gpe0_ena());
+    Acpi::gpe1_sts.init(fadt->gpe1_sts());
+    Acpi::gpe1_ena.init(fadt->gpe1_ena());
 
-    if (pm2_cnt_blk)
-        Acpi::pm2_cnt.init(Acpi_gas::IO, pm2_cnt_len, pm2_cnt_blk);
-
-    if (pm_tmr_blk)
-        Acpi::pm_tmr.init(Acpi_gas::IO, pm_tmr_len, pm_tmr_blk);
-
-    if (gpe0_blk) {
-        Acpi::gpe0_sts.init(Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk);
-        Acpi::gpe0_ena.init(Acpi_gas::IO, gpe0_blk_len >> 1, gpe0_blk + (gpe0_blk_len >> 1));
+    if (fadt->length >= 129) {
+        Acpi::reset_reg = fadt->reset_reg;
+        Acpi::reset_val = fadt->reset_value;
     }
 
-    if (gpe1_blk) {
-        Acpi::gpe1_sts.init(Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk);
-        Acpi::gpe1_ena.init(Acpi_gas::IO, gpe1_blk_len >> 1, gpe1_blk + (gpe1_blk_len >> 1));
-    }
+    Acpi::facs = fadt->facs();
 
-    if (length >= 129) {
-        Acpi::reset_reg = reset_reg;
-        Acpi::reset_val = reset_value;
-    }
-
-    init();
-
-    if (length >= 140) {
-        Acpi::facs = x_firmware_ctrl;
-    }
-
-    if (not Acpi::facs) {
-        Acpi::facs = firmware_ctrl;
-    }
-}
-
-void Acpi_table_fadt::init() const
-{
-    if (smi_cmd && acpi_enable) {
-        Io::out(smi_cmd, acpi_enable);
+    if (fadt->smi_cmd && fadt->acpi_enable) {
+        Io::out(fadt->smi_cmd, fadt->acpi_enable);
         while (!(Acpi::read(Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
             pause();
     }
