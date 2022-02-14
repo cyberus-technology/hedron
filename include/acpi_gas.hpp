@@ -53,6 +53,8 @@ public:
         bits = static_cast<uint8>(reg_bytes * 8);
         addr = reg_addr;
     }
+
+    bool valid() const { return addr != 0; }
 };
 
 #pragma pack()
