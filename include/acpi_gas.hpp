@@ -53,6 +53,15 @@ public:
         bits = static_cast<uint8>(reg_bytes * 8);
         addr = reg_addr;
     }
+
+    void init(uint8 reg_asid, unsigned reg_bytes, uint64 reg_addr)
+    {
+        init(static_cast<Asid>(reg_asid), reg_bytes, reg_addr);
+    }
+
+    void init(const Acpi_gas& gas) { init(gas.asid, gas.bits / 8, gas.addr); }
+
+    bool valid() const { return addr != 0; }
 };
 
 #pragma pack()
