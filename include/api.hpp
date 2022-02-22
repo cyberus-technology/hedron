@@ -2,6 +2,7 @@
  * Hedron Public API
  *
  * Copyright (C) 2020 Julian Stecklina, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -38,4 +39,6 @@ enum class hypercall_id
     HC_ASSIGN_PCI = 13,
     HC_ASSIGN_GSI = 14,
     HC_MACHINE_CTRL = 15,
+    HC_CREATE_KP = 16,
+    HC_KP_CTRL = 17,
 };
