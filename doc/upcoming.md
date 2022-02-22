@@ -127,12 +127,13 @@ _once_. Afterwards, mapping attempts will fail.
 
 ### In
 
-| *Register*   | *Content*          | *Description*                                                                           |
-|--------------|--------------------|-----------------------------------------------------------------------------------------|
-| ARG1[x:0]    | System Call Number | Needs to be `HC_KP_CTRL`.                                                               |
-| ARG1[x+1:x]  | Sub-operation      | Needs to be `HC_KP_CTRL_MAP`.                                                           |
-| ARG1[63:x+4] | Destination PD     | A capability selector for the destination PD that will receive the kernel page mapping. |
-| ARG2         | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.      |
+| *Register*   | *Content*           | *Description*                                                                           |
+|--------------|---------------------|-----------------------------------------------------------------------------------------|
+| ARG1[x:0]    | System Call Number  | Needs to be `HC_KP_CTRL`.                                                               |
+| ARG1[x+1:x]  | Sub-operation       | Needs to be `HC_KP_CTRL_MAP`.                                                           |
+| ARG1[63:x+4] | KP Selector         | A capability selector in the current PD that points to a KP.                            |
+| ARG2         | Destination PD      | A capability selector for the destination PD that will receive the kernel page mapping. |
+| ARG3         | Destination Address | The page aligned virtual address in user space where the kernel page should be mapped.  |
 
 ### Out
 
