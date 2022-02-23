@@ -687,6 +687,66 @@ void Ec::sys_sm_ctrl()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_kp_ctrl_map()
+{
+    Sys_kp_ctrl_map* r = static_cast<Sys_kp_ctrl_map*>(current()->sys_regs());
+
+    trace(TRACE_SYSCALL, "EC:%p SYS_KP_CTRL_MAP KP:%#lx DST-PD:%#lx DST-ADDR:%#lx", current, r->kp(),
+          r->dst_pd(), r->dst_addr());
+
+    Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()), Kp::PERM_KP_CTRL);
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Pd* user_pd = capability_cast<Pd>(Space_obj::lookup(r->dst_pd()));
+    if (EXPECT_FALSE(not user_pd)) {
+        trace(TRACE_ERROR, "%s: Bad PD CAP: %#lx", __func__, r->dst_pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_TRUE(kp->add_user_mapping(user_pd, r->dst_addr()))) {
+        sys_finish<Sys_regs::SUCCESS>();
+    }
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
+void Ec::sys_kp_ctrl_unmap()
+{
+    Sys_kp_ctrl_unmap* r = static_cast<Sys_kp_ctrl_unmap*>(current()->sys_regs());
+    trace(TRACE_SYSCALL, "EC:%p SYS_KP_CTRL_MAP KP:%#lx", current, r->kp());
+
+    Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()), Kp::PERM_KP_CTRL);
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_TRUE(kp->remove_user_mapping())) {
+        sys_finish<Sys_regs::SUCCESS>();
+    }
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
+void Ec::sys_kp_ctrl()
+{
+    Sys_kp_ctrl* r = static_cast<Sys_kp_ctrl*>(current()->sys_regs());
+
+    switch (r->op()) {
+    case Sys_kp_ctrl::MAP: {
+        sys_kp_ctrl_map();
+    }
+    case Sys_kp_ctrl::UNMAP: {
+        sys_kp_ctrl_unmap();
+    }
+    };
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
 void Ec::sys_assign_pci()
 {
     Sys_assign_pci* r = static_cast<Sys_assign_pci*>(current()->sys_regs());
@@ -875,6 +935,8 @@ void Ec::syscall_handler()
         sys_pt_ctrl();
     case hypercall_id::HC_SM_CTRL:
         sys_sm_ctrl();
+    case hypercall_id::HC_KP_CTRL:
+        sys_kp_ctrl();
 
     case hypercall_id::HC_MACHINE_CTRL:
         sys_machine_ctrl();

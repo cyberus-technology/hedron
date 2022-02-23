@@ -250,6 +250,36 @@ public:
     inline uint64 time() const { return static_cast<uint64>(ARG_2) << 32 | ARG_3; }
 };
 
+class Sys_kp_ctrl : public Sys_regs
+{
+public:
+    enum ctrl_op
+    {
+        MAP,
+        UNMAP,
+    };
+
+    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+
+    inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};
+
+class Sys_kp_ctrl_map : public Sys_regs
+{
+public:
+    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+
+    inline mword dst_pd() const { return ARG_2; }
+
+    inline mword dst_addr() const { return ARG_3; }
+};
+
+class Sys_kp_ctrl_unmap : public Sys_regs
+{
+public:
+    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+};
+
 class Sys_assign_pci : public Sys_regs
 {
 public:

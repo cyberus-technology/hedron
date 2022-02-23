@@ -448,6 +448,15 @@ public:
     static void sys_sm_ctrl();
 
     NORETURN
+    static void sys_kp_ctrl();
+
+    NORETURN
+    static void sys_kp_ctrl_map();
+
+    NORETURN
+    static void sys_kp_ctrl_unmap();
+
+    NORETURN
     static void sys_assign_pci();
 
     NORETURN
