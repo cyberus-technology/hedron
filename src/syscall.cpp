@@ -9,6 +9,7 @@
  * Copyright (C) 2013-2015 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -28,6 +29,7 @@
 #include "gsi.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
+#include "kp.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
 #include "pci.hpp"
@@ -415,6 +417,29 @@ void Ec::sys_create_sm()
     if (!Space_obj::insert_root(sm)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete sm;
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    sys_finish<Sys_regs::SUCCESS>();
+}
+
+void Ec::sys_create_kp()
+{
+    Sys_create_kp* r = static_cast<Sys_create_kp*>(current()->sys_regs());
+
+    trace(TRACE_SYSCALL, "EC:%p SYS_CREATE KP:%#lx", current(), r->sel());
+
+    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
+        EXPECT_FALSE(not pd_parent)) {
+        trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Kp* kp{new Kp(Pd::current(), r->sel())};
+
+    if (!Space_obj::insert_root(kp)) {
+        trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
+        delete kp;
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
@@ -837,6 +862,8 @@ void Ec::syscall_handler()
         sys_create_pt();
     case hypercall_id::HC_CREATE_SM:
         sys_create_sm();
+    case hypercall_id::HC_CREATE_KP:
+        sys_create_kp();
 
     case hypercall_id::HC_PD_CTRL:
         sys_pd_ctrl();

@@ -10,6 +10,7 @@
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
  * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -412,6 +413,9 @@ public:
 
     NORETURN
     static void sys_create_sm();
+
+    NORETURN
+    static void sys_create_kp();
 
     NORETURN
     static void sys_revoke();

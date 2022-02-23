@@ -8,6 +8,8 @@
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  * Copyright (C) 2014-2015 Alexander Boettcher, Genode Labs GmbH.
  *
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
+ *
  * This file is part of the NOVA microhypervisor.
  *
  * NOVA is free software: you can redistribute it and/or modify it
@@ -112,6 +114,14 @@ public:
     inline mword cnt() const { return ARG_3; }
 
     inline unsigned long sm() const { return ARG_4; }
+};
+
+class Sys_create_kp : public Sys_regs
+{
+public:
+    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+
+    inline unsigned long pd() const { return ARG_2; }
 };
 
 class Sys_revoke : public Sys_regs
