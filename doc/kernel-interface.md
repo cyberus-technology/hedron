@@ -114,6 +114,14 @@ If `up` is set, the `sm_ctrl` system call is permitted to do an "up" operation.
 
 If `down` is set, the `sm_ctrl` system call is permitted to do a "down" operation.
 
+### Kernel Page (KP) Object Capability
+
+| 4 | 3 | 2 | 1 | 0  |
+|---|---|---|---|----|
+| 0 | 0 | 0 | 0 | ct |
+
+If `ct` is set, the `kp_ctrl` system call is permitted.
+
 ## Capability Range Descriptor (CRD)
 
 A CRD is a 64-bit value that describes a range of capabilities of a
@@ -267,6 +275,8 @@ Hypercalls are identified by these values.
 | `HC_SM_CTRL`                       | 12      |
 | `HC_ASSIGN_GSI`                    | 14      |
 | `HC_MACHINE_CTRL`                  | 15      |
+| `HC_CREATE_KP`                     | 16      |
+| `HC_KP_CTRL`                       | 17      |
 |------------------------------------|---------|
 | `HC_PD_CTRL_DELEGATE`              | 2       |
 | `HC_PD_CTRL_MSR_ACCESS`            | 3       |
@@ -278,6 +288,9 @@ Hypercalls are identified by these values.
 |------------------------------------|---------|
 | `SM_CTRL_UP`                       | 0       |
 | `SM_CTRL_DOWN`                     | 1       |
+|------------------------------------|---------|
+| `KP_CTRL_MAP`                      | 0       |
+| `KP_CTRL_UNMAP`                    | 1       |
 
 ## Hypercall Status
 
@@ -547,7 +560,7 @@ untrusted userspace PDs.**
 |-------------|----------------------|----------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number   | Needs to be `HC_CREATE_SM`.                                                      |
 | ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created SM. |
-| ARG2        | Owner PD             | A capability selector to a PD domain that owns the SM.                           |
+| ARG2        | Owner PD             | A capability selector to a PD that owns the SM.                                  |
 | ARG3        | Initial Count        | Initial integer value of the semaphore counter.                                  |
 | ARG4        | (Zero)               | Needs to be zero. Used by the signal mechanism that is about to be removed soon. |
 
@@ -790,3 +803,84 @@ as timer based on clock ticks.
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
+
+## create_kp
+
+Create a new kernel page object. This object is used for shared memory
+between kernel and user space. Kernel pages can be mapped to user space
+using `kp_ctrl`.
+
+### In
+
+| *Register*  | *Content*            | *Description*                                                                    |
+|-------------|----------------------|----------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number   | Needs to be `HC_CREATE_KP`.                                                      |
+| ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created KP. |
+| ARG2        | Owner PD             | A capability selector to a PD that owns the KP.                                  |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## kp_ctrl
+
+The `kp_ctrl` system calls allow modification of kernel page kernel objects.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                                   |
+|------------|--------------------|---------------------------------------------------------------------------------|
+| ARG1[7:0]  | System Call Number | Needs to be `HC_KP_CTRL`.                                                       |
+| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_KP_CTRL_*` to select one of the `kp_ctrl_*` calls below. |
+| ...        | ...                |                                                                                 |
+
+### Out
+
+See the specific `kp_ctrl` sub-operation.
+
+## kp_ctrl_map
+
+This system call allows mapping a kernel page into the host address space.
+Kernel pages can only be mapped _once_. Afterwards, mapping attempts will fail.
+
+### In
+
+| *Register*  | *Content*           | *Description*                                                                           |
+|-------------|---------------------|-----------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number  | Needs to be `HC_KP_CTRL`.                                                               |
+| ARG1[9:8]   | Sub-operation       | Needs to be `HC_KP_CTRL_MAP`.                                                           |
+| ARG1[63:12] | KP Selector         | A capability selector in the current PD that points to a KP.                            |
+| ARG2        | Destination PD      | A capability selector for the destination PD that will receive the kernel page mapping. |
+| ARG3        | Destination Address | The page aligned virtual address in user space where the kernel page will be mapped.    |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## `kp_ctrl_unmap`
+
+Unmap kernel pages from user space. A kernel page can only be mapped in a single
+location. Calling `kp_ctrl_unmap` to unmap a kernel page is a necessary prerequisite
+to mapping the kernel page again using `kp_ctrl_map`.
+
+Although this system call returns a `BAD_PAR` status when called with a kernel page
+that is not mapped, it **cannot detect** whether an existing mapping has been
+unmapped/overmapped using `pd_ctrl_delegate`.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                |
+|-------------|--------------------|--------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_KP_CTRL`.                                    |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_KP_CTRL_UNMAP`.                              |
+| ARG1[63:12] | KP Selector        | A capability selector in the current PD that points to a KP. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
