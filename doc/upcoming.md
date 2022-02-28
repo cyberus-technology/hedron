@@ -120,6 +120,22 @@ using `kp_ctrl`.
 
 ## New System Call: `kp_ctrl`
 
+The `kp_ctrl` system call allows modification of kernel page kernel objects.
+
+### In
+
+| *Register*   | *Content*          | *Description*                                                                           |
+|--------------|--------------------|-----------------------------------------------------------------------------------------|
+| ARG1[x:0]    | System Call Number | Needs to be `HC_KP_CTRL`.                                                               |
+| ARG1[x+1:x]  | Sub-operation      | Needs to be one of `HC_KP_CTRL_` to select one of the `pd_ctrl_* calls below.           |
+| ...          | ...                |                                                                                         |
+
+### Out
+
+See the specific `kp_ctrl` sub-operation.
+
+## `kp_ctrl_map`
+
 Map kernel pages into userspace. This system call allows mapping a
 kernel page into the host address space. Mappings into a device or
 guest page table will fail. KPages can only be mapped
@@ -127,12 +143,36 @@ _once_. Afterwards, mapping attempts will fail.
 
 ### In
 
+| *Register*   | *Content*           | *Description*                                                                           |
+|--------------|---------------------|-----------------------------------------------------------------------------------------|
+| ARG1[x:0]    | System Call Number  | Needs to be `HC_KP_CTRL`.                                                               |
+| ARG1[x+1:x]  | Sub-operation       | Needs to be `HC_KP_CTRL_MAP`.                                                           |
+| ARG1[63:x+4] | KP Selector         | A capability selector in the current PD that points to a KP.                            |
+| ARG2         | Destination PD      | A capability selector for the destination PD that will receive the kernel page mapping. |
+| ARG3         | Destination Address | The page aligned virtual address in user space where the kernel page should be mapped.  |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## `kp_ctrl_unmap`
+
+Unmap kernel pages from userspace. Calling this system call allows to map the
+kernel page somewhere else afterwards using `kp_ctrl_map`.
+
+Although this system call returns a `BAD_CAP` status when called with a kernel page
+that is not mapped, it **cannot detect** whether an existing mapping has been
+unmapped/overmapped using `pd_ctrl_delegate`.
+
+### In
+
 | *Register*   | *Content*          | *Description*                                                                           |
 |--------------|--------------------|-----------------------------------------------------------------------------------------|
 | ARG1[x:0]    | System Call Number | Needs to be `HC_KP_CTRL`.                                                               |
-| ARG1[x+1:x]  | Sub-operation      | Needs to be `HC_KP_CTRL_MAP`.                                                           |
-| ARG1[63:x+4] | Destination PD     | A capability selector for the destination PD that will receive the kernel page mapping. |
-| ARG2         | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.      |
+| ARG1[x+1:x]  | Sub-operation      | Needs to be `HC_KP_CTRL_UNMAP`.                                                         |
+| ARG1[63:x+4] | KP Selector        | A capability selector in the current PD that points to a KP.                            |
 
 ### Out
 
