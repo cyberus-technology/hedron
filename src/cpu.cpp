@@ -176,8 +176,10 @@ void Cpu::update_features()
 
 void Cpu::setup_thermal() { Msr::write(Msr::IA32_THERM_INTERRUPT, 0x10); }
 
-void Cpu::setup_sysenter()
+void Cpu::setup_msrs()
 {
+    Msr::write(Msr::IA32_TSC_AUX, Cpu::id());
+
     Msr::write(Msr::IA32_STAR, static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE)
                                                                              << 32);
     Msr::write(Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
@@ -218,8 +220,7 @@ Cpu_info Cpu::init()
     if (EXPECT_TRUE(feature(FEAT_ACPI)))
         setup_thermal();
 
-    if (EXPECT_TRUE(feature(FEAT_SEP)))
-        setup_sysenter();
+    setup_msrs();
 
     uint64 cr4{get_cr4()};
 

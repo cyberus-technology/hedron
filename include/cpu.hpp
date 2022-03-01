@@ -213,5 +213,5 @@ public:
         return ~0U;
     }
 
-    static void setup_sysenter();
+    static void setup_msrs();
 };
