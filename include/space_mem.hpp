@@ -64,9 +64,9 @@ public:
 
     NONNULL inline bool lookup(mword virt, Paddr* phys) { return hpt.lookup_phys(virt, phys); }
 
-    inline void insert(mword virt, unsigned o, mword attr, Paddr phys)
+    inline Tlb_cleanup insert(mword virt, unsigned o, mword attr, Paddr phys)
     {
-        hpt.update({virt, phys, attr, static_cast<Hpt::ord_t>(o + PAGE_BITS)});
+        return hpt.update({virt, phys, attr, static_cast<Hpt::ord_t>(o + PAGE_BITS)});
     }
 
     inline Paddr replace(mword v, Paddr p) { return hpt.replace(v, p); }
