@@ -239,7 +239,10 @@ bool Utcb::load_vmx(Cpu_regs* regs)
     if (m & Mtd::TSC) {
         tsc_val = rdtsc();
         tsc_off = Vmcs::read(Vmcs::TSC_OFFSET);
-        tsc_aux = static_cast<uint32>(Msr::read(Msr::IA32_TSC_AUX));
+
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area* guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        tsc_aux = static_cast<uint32>(guest_msr_area->ia32_tsc_aux.msr_data);
     }
 
     if (mtd & Mtd::TSC_TIMEOUT) {
@@ -440,7 +443,10 @@ bool Utcb::save_vmx(Cpu_regs* regs)
 
     if (mtd & Mtd::TSC) {
         Vmcs::write(Vmcs::TSC_OFFSET, tsc_off);
-        Msr::write(Msr::IA32_TSC_AUX, tsc_aux);
+
+        mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
+        Msr_area* guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+        guest_msr_area->ia32_tsc_aux.msr_data = tsc_aux;
     }
 
     if (mtd & Mtd::TSC_TIMEOUT) {

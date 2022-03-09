@@ -442,13 +442,14 @@ static_assert(sizeof(Msr_entry) == 16, "MSR area entry does not conform to speci
 struct Msr_area {
     enum
     {
-        MSR_COUNT = 4
+        MSR_COUNT = 5
     };
 
     Msr_entry ia32_star{Msr::IA32_STAR};
     Msr_entry ia32_lstar{Msr::IA32_LSTAR};
     Msr_entry ia32_fmask{Msr::IA32_FMASK};
     Msr_entry ia32_kernel_gs_base{Msr::IA32_KERNEL_GS_BASE};
+    Msr_entry ia32_tsc_aux{Msr::IA32_TSC_AUX};
 
     static inline void* operator new(size_t)
     {

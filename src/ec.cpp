@@ -111,6 +111,7 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
                 Msr::Register::IA32_FS_BASE,
                 Msr::Register::IA32_GS_BASE,
                 Msr::Register::IA32_KERNEL_GS_BASE,
+                Msr::Register::IA32_TSC_AUX,
 
                 // This is a read-only MSR that indicates which CPU
                 // vulnerability mitigations are not required.
