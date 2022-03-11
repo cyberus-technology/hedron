@@ -108,7 +108,7 @@ endif()
 
 # Preprocess and use the custom linker script
 set(HYPERVISOR-LINKER-SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/hypervisor.ld)
-set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.ld)
+set(HYPERVISOR-LINKER-SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/hypervisor-processed.ld)
 
 # The way DEPFILE paths are used has changed in CMake 3.20. Avoid the
 # warning.
