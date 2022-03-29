@@ -26,6 +26,10 @@
 # To check if any files need reformatting, run:
 #
 #     nix-build nix/release.nix -A hedron.stylecheck
+#
+# To lint the code-base using clang-tidy, run:
+#
+#     nix-build nix/release.nix -A hedron.clang-tidy
 { sources ? import ./sources.nix
 , pkgs ? import sources.nixpkgs {}
 }:
@@ -90,6 +94,9 @@ in
 
     inherit default-release;
     stylecheck = pkgs.callPackage ./stylecheck.nix {};
+    clang-tidy = pkgs.callPackage ./clang-tidy.nix {
+      hedron = hedronBuildSet.clang_13-debug;
+    };
 
     integration-test = pkgs.recurseIntoAttrs testBuilds;
 
