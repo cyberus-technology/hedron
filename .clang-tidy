@@ -1,6 +1,11 @@
 ---
-WarningsAsErrors: ''
-HeaderFilterRegex: ''
-FormatStyle: none
-Checks: bugprone-assert-side-effect,
-        readability-misleading-indentation
+Checks: -*,
+        clang-analyzer-core.uninitialized,
+        cppcoreguidelines-pro-type-cstyle-cast,
+        google-global-names-in-headers,
+        misc-unused-alias-decls,
+        misc-unused-parameters,
+        misc-unused-using-decls,
+        modernize-use-nullptr
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
