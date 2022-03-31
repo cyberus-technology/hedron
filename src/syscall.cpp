@@ -9,6 +9,7 @@
  * Copyright (C) 2013-2015 Alexander Boettcher, Genode Labs GmbH
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -28,6 +29,7 @@
 #include "gsi.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
+#include "kp.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
 #include "pci.hpp"
@@ -421,6 +423,29 @@ void Ec::sys_create_sm()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_create_kp()
+{
+    Sys_create_kp* r = static_cast<Sys_create_kp*>(current()->sys_regs());
+
+    trace(TRACE_SYSCALL, "EC:%p SYS_CREATE KP:%#lx", current(), r->sel());
+
+    if (Pd* pd_parent = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
+        EXPECT_FALSE(not pd_parent)) {
+        trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Kp* kp{new Kp(Pd::current(), r->sel())};
+
+    if (!Space_obj::insert_root(kp)) {
+        trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
+        delete kp;
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    sys_finish<Sys_regs::SUCCESS>();
+}
+
 void Ec::sys_revoke()
 {
     Sys_revoke* r = static_cast<Sys_revoke*>(current()->sys_regs());
@@ -662,6 +687,66 @@ void Ec::sys_sm_ctrl()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_kp_ctrl_map()
+{
+    Sys_kp_ctrl_map* r = static_cast<Sys_kp_ctrl_map*>(current()->sys_regs());
+
+    trace(TRACE_SYSCALL, "EC:%p SYS_KP_CTRL_MAP KP:%#lx DST-PD:%#lx DST-ADDR:%#lx", current, r->kp(),
+          r->dst_pd(), r->dst_addr());
+
+    Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()), Kp::PERM_KP_CTRL);
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Pd* user_pd = capability_cast<Pd>(Space_obj::lookup(r->dst_pd()));
+    if (EXPECT_FALSE(not user_pd)) {
+        trace(TRACE_ERROR, "%s: Bad PD CAP: %#lx", __func__, r->dst_pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_TRUE(kp->add_user_mapping(user_pd, r->dst_addr()))) {
+        sys_finish<Sys_regs::SUCCESS>();
+    }
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
+void Ec::sys_kp_ctrl_unmap()
+{
+    Sys_kp_ctrl_unmap* r = static_cast<Sys_kp_ctrl_unmap*>(current()->sys_regs());
+    trace(TRACE_SYSCALL, "EC:%p SYS_KP_CTRL_MAP KP:%#lx", current, r->kp());
+
+    Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()), Kp::PERM_KP_CTRL);
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_TRUE(kp->remove_user_mapping())) {
+        sys_finish<Sys_regs::SUCCESS>();
+    }
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
+void Ec::sys_kp_ctrl()
+{
+    Sys_kp_ctrl* r = static_cast<Sys_kp_ctrl*>(current()->sys_regs());
+
+    switch (r->op()) {
+    case Sys_kp_ctrl::MAP: {
+        sys_kp_ctrl_map();
+    }
+    case Sys_kp_ctrl::UNMAP: {
+        sys_kp_ctrl_unmap();
+    }
+    };
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
 void Ec::sys_assign_pci()
 {
     Sys_assign_pci* r = static_cast<Sys_assign_pci*>(current()->sys_regs());
@@ -837,6 +922,8 @@ void Ec::syscall_handler()
         sys_create_pt();
     case hypercall_id::HC_CREATE_SM:
         sys_create_sm();
+    case hypercall_id::HC_CREATE_KP:
+        sys_create_kp();
 
     case hypercall_id::HC_PD_CTRL:
         sys_pd_ctrl();
@@ -848,6 +935,8 @@ void Ec::syscall_handler()
         sys_pt_ctrl();
     case hypercall_id::HC_SM_CTRL:
         sys_sm_ctrl();
+    case hypercall_id::HC_KP_CTRL:
+        sys_kp_ctrl();
 
     case hypercall_id::HC_MACHINE_CTRL:
         sys_machine_ctrl();

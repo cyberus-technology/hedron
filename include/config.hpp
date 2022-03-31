@@ -8,6 +8,7 @@
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -33,7 +34,7 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
-#define CFG_VER 5004
+#define CFG_VER 5005
 
 #define NUM_CPU 64
 #define NUM_IRQ 16

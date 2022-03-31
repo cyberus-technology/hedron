@@ -7,6 +7,7 @@
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
  * Copyright (C) 2018 Stefan Hertrampf, Cyberus Technology GmbH.
+ * Copyright (C) 2022 Sebastian Eydam, Cyberus Technology GmbH.
  *
  * This file is part of the NOVA microhypervisor.
  *
@@ -35,6 +36,7 @@ public:
         SC,
         PT,
         SM,
+        KP,
     };
 
     inline Type type() const { return objtype; }
