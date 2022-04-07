@@ -1,6 +1,7 @@
 stages:
   - style_check
   - build
+  - lint
   - integration_test
 
 # Job description helpers
@@ -140,6 +141,15 @@ build:ubuntu-make:
     - .with_ubuntu_builddeps
     - .build_variant_with_make
     - .except_for_releases
+
+# Lint Job Description
+
+lint:clang-tidy:
+  stage: lint
+  tags:
+    - native-nix
+  script:
+    - nix-build nix/release.nix -A hedron.clang-tidy
 
 # Integration Test Decriptions
 
