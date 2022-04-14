@@ -74,7 +74,7 @@ extern "C" void init(mword magic, mword mbi)
         ;
 
     // Now we're ready to talk to the world
-    Console::print("\fHedron Microhypervisor (Cyberus-%07lx "
+    Console::print("\fHedron Hypervisor (Cyberus-%07lx "
 #ifdef NDEBUG
                    "RELEASE"
 #else

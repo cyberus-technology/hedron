@@ -1,4 +1,4 @@
-# Hedron Microhypervisor
+# Hedron Hypervisor
 
 The Hedron hypervisor combines microkernel and hypervisor functionality
 and provides an extremely small trusted computing base for user applications
