@@ -48,7 +48,7 @@ stdenv.mkDerivation {
   '';
 
   meta = {
-    description = "Hedron microhypervisor by Cyberus Technology";
+    description = "Hedron hypervisor by Cyberus Technology";
     homepage = "https://github.com/cyberus-technology/hedron";
     license = lib.licenses.gpl2;
   };

@@ -8,7 +8,7 @@
  * Copyright (C) 2014 Udo Steinberg, FireEye, Inc.
  * Copyright (C) 2015 Alexander Boettcher, Genode Labs GmbH
  *
- * This file is part of the Hedron microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
  * Copyright (C) 2017-2019 Markus Partheymüller, Cyberus Technology GmbH.
  * Copyright (C) 2018 Thomas Prescher, Cyberus Technology GmbH.

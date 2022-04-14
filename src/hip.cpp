@@ -10,7 +10,7 @@
  * Copyright (C) 2017-2018 Florian Pester, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  *
- * This file is part of the Hedron microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
  * Hedron is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
@@ -157,7 +157,7 @@ template <typename T> void Hip::add_mem(Hip_mem*& mem, T const* map)
 
 void Hip::add_mhv(Hip_mem*& mem)
 {
-    // We describe memory that is used by the microhypervisor. These memory
+    // We describe memory that is used by the hypervisor. These memory
     // descriptors need to match Pd::Pd (the constructor of the hypervisor PD)
     // and our linker script.
 

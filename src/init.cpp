@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
- * This file is part of the Hedron microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  *

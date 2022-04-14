@@ -3,13 +3,13 @@
 **This document is currently work-in-progress. Information in this
 document should be correct, but the document itself is incomplete.**
 
-This document describes the system call interface for the Hedron microhypervisor.
+This document describes the system call interface for the Hedron hypervisor.
 
 # Data Structures
 
 ## Hypervisor Information Page (HIP)
 
-The HIP is a region of memory exported by the microhypervisor to the
+The HIP is a region of memory exported by the hypervisor to the
 roottask. It contains system information that the roottask can
 otherwise not obtain.
 
@@ -33,7 +33,7 @@ respective capability _space_ for this kind. Which kind of
 capabilities a selector refers to depends on context.
 
 Memory and port I/O capabilities are created by the
-microhypervisor. Object capabilities can be created using `create_*`
+hypervisor. Object capabilities can be created using `create_*`
 system calls, see below. When capabilities are created they hold all
 permissions. When capabilities are delegated their permissions can be
 downgraded, but never upgraded.
@@ -449,7 +449,7 @@ capability space.
 PDs are roughly analogous to processes.
 
 There are two special kinds of PDs. The PD (roottask) initially
-created by the microhypervisor is privileged in that it directly
+created by the hypervisor is privileged in that it directly
 delegates arbitrary physical memory, I/O ports, and interrupts. This
 property cannot be passed on.
 
@@ -526,7 +526,7 @@ page table.
 
 `pd_ctrl_msr_access` allows access to MSRs from passthrough PDs (see
 `create_pd`). Several MSRs that are critical to the operation of the
-microhypervisor are not accessible.
+hypervisor are not accessible.
 
 **MSR access is inherently insecure and should not be granted to
 untrusted userspace PDs.**
@@ -653,7 +653,7 @@ device and configure the IOMMU correctly, if enabled.
 ## machine_ctrl
 
 The `machine_ctrl` system call is used to perform global operations on
-the machine the microhypervisor is running on. Individual operations
+the machine the hypervisor is running on. Individual operations
 are sub-operations of this system call.
 
 Each PD with passthrough permissions (see `create_pd`) can invoke this

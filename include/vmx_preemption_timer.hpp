@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2021 Thomas Prescher, Cyberus Technology GmbH.
  *
- * This file is part of the Hedron microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
  * Hedron is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as

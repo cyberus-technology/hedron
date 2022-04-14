@@ -1,8 +1,8 @@
 # Hedron Microhypervisor
 
-The Hedron microhypervisor combines microkernel and hypervisor functionality
+The Hedron hypervisor combines microkernel and hypervisor functionality
 and provides an extremely small trusted computing base for user applications
-and virtual machines running on top of it. The microhypervisor implements a
+and virtual machines running on top of it. The hypervisor implements a
 capability-based authorization model and provides basic mechanisms for
 virtualization, spatial and temporal separation, scheduling, communication,
 and management of platform resources.
@@ -11,7 +11,7 @@ Hedron has to be used with a multi-server environment that implements
 operating-system services in user mode, such as device drivers,
 protocol stacks, and policies. On machines with hardware
 virtualization features, multiple unmodified guest operating systems
-can run concurrently on top of the microhypervisor facilitated by a
+can run concurrently on top of the hypervisor facilitated by a
 virtual machine monitor running in user space.
 
 Hedron is currently used as the core of the [Secure Virtual
@@ -55,7 +55,7 @@ To build and run the unit tests (optional), you need:
 - pkg-config,
 - Catch2.
 
-You can build a microhypervisor binary as follows:
+You can build a hypervisor binary as follows:
 
 ```sh
 # Only needs to be done once
@@ -79,7 +79,7 @@ build % ccmake .
 
 ### Supported platforms
 
-The Hedron microhypervisor runs on single- and multi-processor x86
+The Hedron hypervisor runs on single- and multi-processor x86
 machines that support ACPI, XSAVE and FSGSBASE.
 
 Recommended Intel CPUs are Intel Core processors starting with the Ivy
@@ -96,7 +96,7 @@ on AMD systems unless you are a developer and expect to fix things.
 
 ### Boot
 
-The Hedron microhypervisor can be started from a multiboot-compliant
+The Hedron hypervisor can be started from a multiboot-compliant
 bootloader, such as GRUB or iPXE. Hedron supports Multiboot 1 and 2
 (for UEFI). Here are some examples that assume a Hedron-compatible
 `roottask` binary.
@@ -121,7 +121,7 @@ Hedron supports the following command-line parameters. They must be
 separated by spaces.
 
 - *iommu*	- Enables DMA and interrupt remapping.
-- *serial*	- Enables the microhypervisor to drive the serial console.
+- *serial*	- Enables the hypervisor to drive the serial console.
 - *nopcid*	- Disables TLB tags for address spaces.
 - *novga*  	- Disables VGA console.
 - *novpid* 	- Disables TLB tags for virtual machines.
@@ -148,7 +148,7 @@ unfortunately not complete yet.
 
 ## Credits
 
-Hedron is derived from the NOVA microhypervisor developed by Udo
+Hedron is derived from the NOVA hypervisor developed by Udo
 Steinberg. While NOVA and Hedron are still close in spirit, the last
 common commit dates from 2015. Since then Hedron has been steadily
 modernized with a focus on simplicity, testability, and support for
