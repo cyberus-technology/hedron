@@ -59,6 +59,12 @@ private:
     // Checks if a valid user mapping for this kernel page exists.
     bool has_user_mapping() const;
 
+    // The kernel virtual address of the page represented by this object.
+    mword kernel_address() const { return reinterpret_cast<mword>(data); }
+
+    // The user virtual address of the page represented by this object.
+    mword user_address() const { return addr_in_user_space; }
+
 public:
     // Capability permission bitmask.
     enum
@@ -70,9 +76,6 @@ public:
 
     Kp(Pd* own, mword sel);
     ~Kp();
-
-    mword kernel_mem() const { return reinterpret_cast<mword>(data); }
-    mword user_mem() const { return addr_in_user_space; }
 
     // Adds a user space mapping for this kernel page. This includes adding a
     // RCU reference to the destination PD and mapping the memory at the given

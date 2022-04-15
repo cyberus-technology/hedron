@@ -69,7 +69,7 @@ bool Kp::add_user_mapping(Pd* pd, mword addr)
         addr_in_user_space = addr;
 
         cleanup = pd_user_page->Space_mem::insert(
-            user_mem(), 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+            user_address(), 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
             Buddy::ptr_to_phys(data));
     }
 
@@ -104,9 +104,9 @@ bool Kp::remove_user_mapping()
         // Check if the physical addresses of the kernel virtual address and the user virtual address are not
         // the same. If this is the case, the mapping of this kernel page has been overwritten using
         // Pd::delegate. In this case we only output a warning message.
-        if (Paddr kernel_paddr, user_paddr; pd_user_page->Space_mem::lookup(kernel_mem(), &kernel_paddr) and
-                                            pd_user_page->Space_mem::lookup(user_mem(), &user_paddr) and
-                                            kernel_paddr != user_paddr) {
+        if (Paddr kernel_paddr, user_paddr;
+            pd_user_page->Space_mem::lookup(kernel_address(), &kernel_paddr) and
+            pd_user_page->Space_mem::lookup(user_address(), &user_paddr) and kernel_paddr != user_paddr) {
             trace(TRACE_ERROR,
                   "%s: User space mapping of KP has been overwritten prior to removing the mapping (CAP: %p)",
                   __func__, this);
@@ -114,7 +114,7 @@ bool Kp::remove_user_mapping()
 
         // We remove the user space mapping unconditionally to avoid race conditions. Specifically, user space
         // can overmap the kpage mapping between the check above and a conditional `insert`.
-        cleanup = pd_user_page->Space_mem::insert(user_mem(), 0, 0, 0);
+        cleanup = pd_user_page->Space_mem::insert(user_address(), 0, 0, 0);
 
         pd = pd_user_page;
         pd_user_page = nullptr;
