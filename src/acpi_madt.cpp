@@ -79,8 +79,6 @@ void Acpi_table_madt::parse_intr(Acpi_apic const* ptr)
     if (EXPECT_FALSE(gsi >= NUM_GSI || irq >= NUM_IRQ || p->bus))
         return;
 
-    Gsi::irq_table[irq] = gsi;
-
     Gsi::gsi_table[gsi].pol =
         p->flags.pol == Acpi_inti::POL_LOW || (p->flags.pol == Acpi_inti::POL_CONFORMING && irq == Acpi::irq);
     Gsi::gsi_table[gsi].trg = p->flags.trg == Acpi_inti::TRG_LEVEL ||

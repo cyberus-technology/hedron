@@ -28,7 +28,6 @@
 #include "vectors.hpp"
 
 Gsi Gsi::gsi_table[NUM_GSI];
-unsigned Gsi::irq_table[NUM_IRQ];
 
 void Gsi::setup()
 {
@@ -39,7 +38,6 @@ void Gsi::setup()
         gsi_table[gsi].vec = static_cast<uint8>(VEC_GSI + gsi);
 
         if (gsi < NUM_IRQ) {
-            irq_table[gsi] = gsi;
             gsi_table[gsi].trg = 0;
             gsi_table[gsi].pol = 0;
         } else {
