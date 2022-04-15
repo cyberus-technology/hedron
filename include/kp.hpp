@@ -77,6 +77,12 @@ public:
     Kp(Pd* own, mword sel);
     ~Kp();
 
+    // The data page that is shared with userspace.
+    //
+    // Code using the returned pointer must take care to co-exist with userspace reading and writing to the
+    // same memory concurrently.
+    void* data_page() const { return data; }
+
     // Adds a user space mapping for this kernel page. This includes adding a
     // RCU reference to the destination PD and mapping the memory at the given
     // address.
