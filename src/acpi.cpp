@@ -27,7 +27,6 @@
 #include "acpi_mcfg.hpp"
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
-#include "gsi.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
 #include "pic.hpp"
@@ -40,7 +39,7 @@ Acpi_gas Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::p
 Acpi_gas Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32 Acpi::feature;
 uint8 Acpi::reset_val;
-unsigned Acpi::irq, Acpi::gsi;
+unsigned Acpi::irq;
 
 void Acpi::delay(unsigned ms)
 {
@@ -150,11 +149,9 @@ void Acpi::setup()
         Acpi_table_madt::parse_intr(&sci_override);
     }
 
-    Gsi::set(gsi = Gsi::irq_to_gsi(irq));
-
     Acpi::init();
 
-    trace(TRACE_ACPI, "ACPI: GSI:%#x TMR:%lu", gsi, tmr_msb() + 1);
+    trace(TRACE_ACPI, "ACPI: TMR:%lu", tmr_msb() + 1);
 }
 
 void Acpi::init()

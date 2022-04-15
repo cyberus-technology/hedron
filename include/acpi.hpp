@@ -115,7 +115,6 @@ private:
 
 public:
     static unsigned irq;
-    static unsigned gsi;
 
     static void delay(unsigned);
     static void reset();
