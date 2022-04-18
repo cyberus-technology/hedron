@@ -46,5 +46,5 @@ public:
                      : "memory");
     }
 
-    inline void unlock() { asm volatile("incb %0" : "=m"(val) : : "memory"); }
+    inline void unlock() { asm volatile("incb %0" : "+m"(val) : : "memory"); }
 };
