@@ -117,12 +117,9 @@ public:
     uint32 flags;
     Acpi_apic apic[];
 
-    static inline bool sci_overridden = false;
     static inline bool pic_present = false;
 
     void parse() const;
-
-    static void parse_intr(Acpi_apic const*);
 };
 
 #pragma pack()

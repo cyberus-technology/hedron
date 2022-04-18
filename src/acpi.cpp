@@ -39,7 +39,6 @@ Acpi_gas Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::p
 Acpi_gas Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32 Acpi::feature;
 uint8 Acpi::reset_val;
-unsigned Acpi::irq;
 
 void Acpi::delay(unsigned ms)
 {
@@ -137,16 +136,6 @@ void Acpi::setup()
         trace(TRACE_ACPI, "%.4s:%#010lx VER:%2d FLAGS:%#x HW:%#010x LEN:%5u",
               reinterpret_cast<char const*>(&facsp->signature), facs, facsp->version, facsp->flags,
               facsp->hardware_signature, facsp->length);
-    }
-
-    if (!Acpi_table_madt::sci_overridden) {
-        Acpi_intr sci_override;
-        sci_override.bus = 0;
-        sci_override.irq = static_cast<uint8>(irq);
-        sci_override.gsi = irq;
-        sci_override.flags.pol = Acpi_inti::POL_CONFORMING;
-        sci_override.flags.trg = Acpi_inti::TRG_CONFORMING;
-        Acpi_table_madt::parse_intr(&sci_override);
     }
 
     Acpi::init();
