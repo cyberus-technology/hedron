@@ -143,7 +143,7 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     child.delayafterterminate = 1
 
     child.expect(
-        r"Hedron Microhypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
+        r"Hedron Hypervisor.*\[MB{}\]".format(str(expect_multiboot_version)),
         # This can be extremely slow on a busy host.
         timeout=120,
     )

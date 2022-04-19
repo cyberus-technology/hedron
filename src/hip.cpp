@@ -10,13 +10,13 @@
  * Copyright (C) 2017-2018 Florian Pester, Cyberus Technology GmbH.
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  *
- * This file is part of the NOVA microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
- * NOVA is free software: you can redistribute it and/or modify it
+ * Hedron is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * NOVA is distributed in the hope that it will be useful,
+ * Hedron is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License version 2 for more details.
@@ -157,7 +157,7 @@ template <typename T> void Hip::add_mem(Hip_mem*& mem, T const* map)
 
 void Hip::add_mhv(Hip_mem*& mem)
 {
-    // We describe memory that is used by the microhypervisor. These memory
+    // We describe memory that is used by the hypervisor. These memory
     // descriptors need to match Pd::Pd (the constructor of the hypervisor PD)
     // and our linker script.
 

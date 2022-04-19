@@ -6,15 +6,15 @@
  *
  * Copyright (C) 2012 Udo Steinberg, Intel Corporation.
  *
- * This file is part of the NOVA microhypervisor.
+ * This file is part of the Hedron hypervisor.
  *
  * Copyright (C) 2017-2018 Markus Partheymüller, Cyberus Technology GmbH.
  *
- * NOVA is free software: you can redistribute it and/or modify it
+ * Hedron is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * NOVA is distributed in the hope that it will be useful,
+ * Hedron is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License version 2 for more details.
@@ -74,7 +74,7 @@ extern "C" void init(mword magic, mword mbi)
         ;
 
     // Now we're ready to talk to the world
-    Console::print("\fHedron Microhypervisor (Cyberus-%07lx "
+    Console::print("\fHedron Hypervisor (Cyberus-%07lx "
 #ifdef NDEBUG
                    "RELEASE"
 #else

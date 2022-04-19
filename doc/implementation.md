@@ -1,7 +1,7 @@
 # Hedron: Implementation Details
 
 The purpose of this document is to describe the implementation of the
-Hedron microhypervisor. This document is meant for the person hacking on
+Hedron hypervisor. This document is meant for the person hacking on
 Hedron source code. It's not meant as user documentation.
 
 ## Initialization Flow
@@ -10,7 +10,7 @@ Hedron shares much of its initialization flow between initial boot-up
 and resume (as in ACPI sleep states).
 
 All entry points are located in `src/start.S`. `__start_bsp` is the
-initial entry point of the whole microhypervisor. `__resume_bsp` is
+initial entry point of the whole hypervisor. `__resume_bsp` is
 called on a resume from ACPI sleep states. They start the boostrap
 processor (BSP). `__start_cpu` is the 16-bit entry point to bootstrap
 CPUs. It is called during initial boot to bring up additional
