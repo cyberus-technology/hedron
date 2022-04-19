@@ -35,15 +35,8 @@ void Gsi::setup()
 
         Space_obj::insert_root(Gsi::gsi_table[gsi].sm = new Sm(&Pd::kern, NUM_CPU + gsi));
 
+        gsi_table[gsi].irt = 0;
         gsi_table[gsi].vec = static_cast<uint8>(VEC_GSI + gsi);
-
-        if (gsi < NUM_IRQ) {
-            gsi_table[gsi].trg = 0;
-            gsi_table[gsi].pol = 0;
-        } else {
-            gsi_table[gsi].trg = 1;
-            gsi_table[gsi].pol = 1;
-        }
     }
 }
 

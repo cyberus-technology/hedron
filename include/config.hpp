@@ -37,7 +37,6 @@
 #define CFG_VER 5006
 
 #define NUM_CPU 64
-#define NUM_IRQ 16
 #define NUM_EXC 32
 #define NUM_VMI 256
 #define NUM_GSI 192
