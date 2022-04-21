@@ -925,19 +925,27 @@ void Ec::sys_irq_ctrl()
     }
 }
 
+// Perform input validation on CPU and vector numbers.
+//
+// Directly returns to userspace with the appropriate error if the validation fails.
+static void sys_irq_ctrl_check_vector_cpu(const char* func, uint16 cpu, uint8 vector)
+{
+    if (EXPECT_FALSE(vector >= NUM_USER_VECTORS)) {
+        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", func, vector);
+        Ec::sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (EXPECT_FALSE(!Hip::cpu_online(cpu))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", func, cpu);
+        Ec::sys_finish<Sys_regs::BAD_CPU>();
+    }
+}
+
 void Ec::sys_irq_ctrl_configure_vector()
 {
     Sys_irq_ctrl_configure_vector* r = static_cast<Sys_irq_ctrl_configure_vector*>(current()->sys_regs());
 
-    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
-        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
-        sys_finish<Sys_regs::BAD_PAR>();
-    }
-
-    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
-        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
     Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
     Sm* kp = capability_cast<Sm>(Space_obj::lookup(r->kp()));
@@ -965,15 +973,7 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 {
     Sys_irq_ctrl_assign_ioapic_pin* r = static_cast<Sys_irq_ctrl_assign_ioapic_pin*>(current()->sys_regs());
 
-    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
-        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
-        sys_finish<Sys_regs::BAD_PAR>();
-    }
-
-    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
-        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
     // Not implemented yet.
     sys_finish<Sys_regs::BAD_HYP>();
@@ -992,15 +992,7 @@ void Ec::sys_irq_ctrl_assign_msi()
 {
     Sys_irq_ctrl_assign_msi* r = static_cast<Sys_irq_ctrl_assign_msi*>(current()->sys_regs());
 
-    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
-        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
-        sys_finish<Sys_regs::BAD_PAR>();
-    }
-
-    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
-        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
     Paddr phys;
     unsigned rid = 0;
