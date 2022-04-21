@@ -35,10 +35,9 @@
 
 Paddr Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt,
-    Acpi::pm2_cnt, Acpi::pm_tmr, Acpi::reset_reg;
+    Acpi::pm2_cnt, Acpi::pm_tmr;
 Acpi_gas Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
 uint32 Acpi::feature;
-uint8 Acpi::reset_val;
 
 void Acpi::delay(unsigned ms)
 {
@@ -48,8 +47,6 @@ void Acpi::delay(unsigned ms)
     while ((read(PM_TMR) - val) % (1UL << 24) < cnt)
         pause();
 }
-
-void Acpi::reset() { write(RESET, reset_val); }
 
 Acpi_table_facs Acpi::get_facs() { return *static_cast<Acpi_table_facs*>(Hpt::remap(facs)); }
 
@@ -172,8 +169,6 @@ unsigned Acpi::read(Register reg)
         return hw_read(&pm2_cnt);
     case PM_TMR:
         return hw_read(&pm_tmr);
-    case RESET:
-        break;
     default:
         Console::panic("Unimplemented register Acpi::read");
         break;
@@ -218,9 +213,6 @@ void Acpi::write(Register reg, unsigned val)
         hw_write(&pm2_cnt, val);
         break;
     case PM_TMR: // read-only
-        break;
-    case RESET:
-        hw_write(&reset_reg, val);
         break;
     default:
         Console::panic("Unimplemented register Acpi::write");

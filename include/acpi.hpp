@@ -47,7 +47,6 @@ private:
         GPE1_STS,
         GPE1_ENA,
         PM_TMR,
-        RESET
     };
 
     enum PM1_Status
@@ -99,10 +98,8 @@ private:
     static Acpi_gas gpe1_sts;
     static Acpi_gas gpe0_ena;
     static Acpi_gas gpe1_ena;
-    static Acpi_gas reset_reg;
 
     static uint32 feature;
-    static uint8 reset_val;
 
     static unsigned hw_read(Acpi_gas*);
     static unsigned read(Register);
@@ -115,7 +112,6 @@ private:
 
 public:
     static void delay(unsigned);
-    static void reset();
 
     static Acpi_table_facs get_facs();
     static void set_facs(Acpi_table_facs const& saved_facs);
