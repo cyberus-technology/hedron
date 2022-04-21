@@ -381,3 +381,16 @@ public:
     inline mword kp() const { return static_cast<mword>(ARG_3); }
     inline unsigned kp_bit() const { return static_cast<unsigned>(ARG_4 & 0x7FFF); }
 };
+
+class Sys_irq_ctrl_assign_ioapic_pin : public Sys_irq_ctrl
+{
+public:
+    inline bool level() const { return flags() & 0x4; }
+    inline bool active_low() const { return flags() & 0x8; }
+
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
+    inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
+};

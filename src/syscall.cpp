@@ -963,6 +963,18 @@ void Ec::sys_irq_ctrl_configure_vector()
 
 void Ec::sys_irq_ctrl_assign_ioapic_pin()
 {
+    Sys_irq_ctrl_assign_ioapic_pin* r = static_cast<Sys_irq_ctrl_assign_ioapic_pin*>(current()->sys_regs());
+
+    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
+        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
+        sys_finish<Sys_regs::BAD_CPU>();
+    }
+
     // Not implemented yet.
     sys_finish<Sys_regs::BAD_HYP>();
 }
