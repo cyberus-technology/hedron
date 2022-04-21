@@ -927,6 +927,36 @@ void Ec::sys_irq_ctrl()
 
 void Ec::sys_irq_ctrl_configure_vector()
 {
+    Sys_irq_ctrl_configure_vector* r = static_cast<Sys_irq_ctrl_configure_vector*>(current()->sys_regs());
+
+    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
+        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
+        sys_finish<Sys_regs::BAD_CPU>();
+    }
+
+    Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
+    Sm* kp = capability_cast<Sm>(Space_obj::lookup(r->kp()));
+
+    if (not sm and not kp) {
+        // Unassign: not implemented yet.
+        sys_finish<Sys_regs::BAD_HYP>();
+    }
+
+    if (EXPECT_FALSE(not sm)) {
+        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
     // Not implemented yet.
     sys_finish<Sys_regs::BAD_HYP>();
 }

@@ -370,3 +370,14 @@ public:
 
     inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
 };
+
+class Sys_irq_ctrl_configure_vector : public Sys_irq_ctrl
+{
+public:
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline mword sm() const { return static_cast<mword>(ARG_2); }
+    inline mword kp() const { return static_cast<mword>(ARG_3); }
+    inline unsigned kp_bit() const { return static_cast<unsigned>(ARG_4 & 0x7FFF); }
+};
