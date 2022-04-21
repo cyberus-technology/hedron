@@ -990,6 +990,26 @@ void Ec::sys_irq_ctrl_mask_ioapic_pin()
 
 void Ec::sys_irq_ctrl_assign_msi()
 {
+    Sys_irq_ctrl_assign_msi* r = static_cast<Sys_irq_ctrl_assign_msi*>(current()->sys_regs());
+
+    if (EXPECT_FALSE(r->vector() >= NUM_USER_VECTORS)) {
+        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", __func__, r->vector());
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
+        sys_finish<Sys_regs::BAD_CPU>();
+    }
+
+    Paddr phys;
+    unsigned rid = 0;
+    if (EXPECT_FALSE((!Pd::current()->Space_mem::lookup(r->dev(), &phys) ||
+                      ((rid = Pci::phys_to_rid(phys)) == ~0U && (rid = Hpet::phys_to_rid(phys)) == ~0U)))) {
+        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
+        sys_finish<Sys_regs::BAD_DEV>();
+    }
+
     // Not implemented yet.
     sys_finish<Sys_regs::BAD_HYP>();
 }

@@ -403,3 +403,18 @@ public:
     inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
     inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
 };
+
+class Sys_irq_ctrl_assign_msi : public Sys_irq_ctrl
+{
+public:
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline mword dev() const { return ARG_2 & ~0xfff; }
+
+    inline void set_msi(uint64 val)
+    {
+        ARG_2 = static_cast<mword>(val >> 32);
+        ARG_3 = static_cast<mword>(val);
+    }
+};
