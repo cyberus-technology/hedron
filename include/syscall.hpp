@@ -394,3 +394,12 @@ public:
     inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
     inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
 };
+
+class Sys_irq_ctrl_mask_ioapic_pin : public Sys_irq_ctrl
+{
+public:
+    inline bool mask() const { return flags() & 0x4; }
+
+    inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
+    inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
+};

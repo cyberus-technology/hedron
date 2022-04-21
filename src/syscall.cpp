@@ -981,6 +981,9 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
 void Ec::sys_irq_ctrl_mask_ioapic_pin()
 {
+    [[maybe_unused]] Sys_irq_ctrl_mask_ioapic_pin* r =
+        static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+
     // Not implemented yet.
     sys_finish<Sys_regs::BAD_HYP>();
 }
