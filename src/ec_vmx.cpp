@@ -67,7 +67,7 @@ void Ec::vmx_extint()
         Dmar::vector(vector);
     else if (vector >= VEC_LVT)
         Lapic::lvt_vector(vector);
-    else if (vector >= VEC_GSI)
+    else if (vector >= VEC_USER)
         // This will be implemented in subsequent commits.
         Console::panic("Unimplemented user interrupt handling");
 

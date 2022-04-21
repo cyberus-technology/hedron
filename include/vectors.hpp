@@ -20,8 +20,10 @@
 
 #include "config.hpp"
 
-#define VEC_GSI (NUM_EXC)
-#define VEC_LVT (VEC_GSI + NUM_GSI)
+// The vector number where user-controlled interrupt vectors start. There are NUM_USER_VECTORS in total.
+#define VEC_USER (NUM_EXC)
+
+#define VEC_LVT (VEC_USER + NUM_USER_VECTORS)
 #define VEC_MSI (VEC_LVT + NUM_LVT)
 #define VEC_IPI (VEC_MSI + NUM_MSI)
 #define VEC_MAX (VEC_IPI + NUM_IPI)
