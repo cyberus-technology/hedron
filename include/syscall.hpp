@@ -356,3 +356,17 @@ public:
     inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> ARG1_SEL_SHIFT; }
     inline mword update_address() const { return static_cast<mword>(ARG_2); }
 };
+
+class Sys_irq_ctrl : public Sys_regs
+{
+public:
+    enum ctrl_op
+    {
+        CONFIGURE_VECTOR = 0,
+        ASSIGN_IOAPIC_PIN = 1,
+        MASK_IOAPIC_PIN = 2,
+        ASSIGN_MSI = 3,
+    };
+
+    inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};

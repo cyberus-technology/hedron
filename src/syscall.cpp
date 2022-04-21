@@ -899,6 +899,56 @@ void Ec::sys_machine_ctrl_update_microcode()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_irq_ctrl()
+{
+    Sys_irq_ctrl* r = static_cast<Sys_irq_ctrl*>(current()->sys_regs());
+
+    if (EXPECT_FALSE(not Pd::current()->is_passthrough)) {
+        trace(TRACE_ERROR, "%s: PD without passthrough permission called irq_ctrl", __func__);
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    switch (r->op()) {
+    case Sys_irq_ctrl::CONFIGURE_VECTOR:
+        sys_irq_ctrl_configure_vector();
+    case Sys_irq_ctrl::ASSIGN_IOAPIC_PIN:
+        sys_irq_ctrl_assign_ioapic_pin();
+    case Sys_irq_ctrl::MASK_IOAPIC_PIN:
+        sys_irq_ctrl_mask_ioapic_pin();
+    case Sys_irq_ctrl::ASSIGN_MSI:
+        sys_irq_ctrl_assign_msi();
+
+    default:
+        // This is currently not reachable, because the above cases are exhaustive, but this can change when
+        // we remove cases or the op() parameter gets more bits.
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
+void Ec::sys_irq_ctrl_configure_vector()
+{
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_assign_ioapic_pin()
+{
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_mask_ioapic_pin()
+{
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_assign_msi()
+{
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
 void Ec::syscall_handler()
 {
     // System call handler functions are all marked noreturn.
@@ -943,6 +993,8 @@ void Ec::syscall_handler()
         sys_kp_ctrl();
 
     case hypercall_id::HC_MACHINE_CTRL:
+        sys_machine_ctrl();
+    case hypercall_id::HC_IRQ_CTRL:
         sys_machine_ctrl();
 
     default:
