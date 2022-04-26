@@ -6,21 +6,21 @@ The host interrupt subsystem of Hedron has not been changed within the last deca
 While it has been proven to be stable and reliable, we have reached its design limits
 in many areas. This becomes more and more of an issue for SVP-WS and Particle.
 
-The goal if this document is to propose an alternative mechanism for host-interrupts
-which improves interrupt handling in our hedron-userland and, as such, in our products.
+The goal of this document is to propose an alternative mechanism for host interrupts
+that improves interrupt handling in Hedron userspace and, as such, in our products.
 
 # Status Quo
 
-## Host Interrupt Representation for User Space
+## Host Interrupt Representation for Userspace
 
 Interrupts in Hedron are mapped to semaphore kernel objects which can be delegated to
-user space via the Roottask. There always is a 1:1 relationship between an interrupt and
+userspace via the Roottask. There always is a 1:1 relationship between an interrupt and
 a semaphore object, i.e. a specific semaphore can represent exactly one interrupt
 at a given time.
 
-A user space thread can wait for an interrupt by blocking on the corresponding semaphore
+A userspace thread can wait for an interrupt by blocking on the corresponding semaphore
 object. When the associated interrupt arrives, Hedron will signal the semaphore object
-effectively unblocking the waiting thread. No other information is transferred to user space,
+effectively unblocking the waiting thread. No other information is transferred to userspace,
 thus, userspace must know which interrupt is assigned to which semaphore.
 
 ## PIN-based Interrupts
@@ -84,13 +84,13 @@ The current workflow is as follows:
 - Delegate a interrupt semaphore from the kernel PD into a user PD (only roottask can do this)
 - If the interrupt is connected to the IO-APIC, the correct semaphore must be delegated as they
   are configured during boot by the hypervisor (discoverable via HIP)
-- Call `asign_gsi` with the semaphore to correctly configure the IOMMU
+- Call `assign_gsi` with the semaphore to correctly configure the IOMMU
 - Use a thread per interrupt semaphore to detect interrupt arrival in userspace
 
 
 ## Issues with the Current Mechanism
 
-- Limited to 256 interrupts for user space (actually 192)
+- Limited to 256 interrupts for userspace (actually 192)
 - rigid configuration for IO-APIC interrupts
 - one thread per interrupt semaphore -> lots of resources required
 - irq migration requires thread migration (or having NUM\_CPU * NUM\_IRQ threads)
@@ -121,7 +121,7 @@ for multiple interrupts.
 
 Of course, this means that userspace must have a way to figure out
 which interrupt signaled the semaphore. This is why each semaphore object that represents
-and interrupt has an associated KPage holding a bitmap of 192 bits. Whenever an interrupt
+an interrupt has an associated KPage holding a bitmap of 192 bits. Whenever an interrupt
 triggers, the hypervisor will set a specific bit in this bitmap before signaling the
 associated semaphore. The bit which is set can be configured from userspace.
 
@@ -135,7 +135,7 @@ but can be done with very little effort.
 Once we have a complete hedron implementation and adopted the userland as stated above, we can
 redesign the GSI subsystem to benefit from the new mechanism.
 
-## Host Interrupt Representation for User Space
+## Host Interrupt Representation for Userspace
 
 - Each interrupt is represented by a (semaphore, vector, kpage) triplet
 - When the semaphore is signaled, userspace can check the associated KPage
@@ -155,27 +155,27 @@ The new workflow will be as follows:
 
 ## Solving the existing issues
 
-### Issue 1: Limited to 256 interrupts for user space (actually 192)
+### Issue 1: Limited to 256 interrupts for userspace (actually 192)
 
 Instead of maintaining a global IDT in the kernel, the new mechanism allows an implementation where we
-can use per-core IDTs. In theory, this would allow use to use 256 interrupt vectors per code.
-Since we still need a few interrupt vectors for the kernel, the number of vectors user space can
+can use per-core IDTs. In theory, this would allow use to use 256 interrupt vectors per core.
+Because we still need a few interrupt vectors for the kernel, the number of vectors userspace can
 use per-core is currently limited to 192. This number is subject for discussion as we chose it arbitrary.
 
 ### Issue 2: rigid configuration for IO-APIC interrupts
 
 With the current mechanism, the kernel reserves an interrupt semaphore per IO-APIC pin, even when no device is
 connected to said pin. On systems with lots of IO-APICs (e.g. the SR630) and systems that come with
-a modern IO-APIC with 120 PINs, this severely limits the number of MSIs user space can use because only
+a modern IO-APIC with 120 PINs, this severely limits the number of MSIs userspace can use because only
 192 interrupt semaphore objects exist system-wide.
 
-Using the new mechanism, user space can freely chose which IO-APIC PINs should be enabled and which shouldn't,
+Using the new mechanism, userspace can freely chose which IO-APIC PINs should be enabled and which shouldn't,
 leaving more room for MSIs.
 
 ### Issue 3: one thread per interrupt semaphore -> lots of resources required
 
 Using the current mechanism, the kernel reserves a fixed number of interrupt semaphore objects where each semaphore
-represents exactly one interrupt. Since there is no way for user space to block on multiple semaphores at the
+represents exactly one interrupt. Since there is no way for userspace to block on multiple semaphores at the
 same time, the only possible implementation is to use one thread per interrupt.
 
 With the new mechanism, multiple interrupts can use the same KPage/semaphore pair. Thus, an implementation
