@@ -32,7 +32,6 @@ void Acpi_table_madt::parse() const
 {
     parse_entry(Acpi_apic::LAPIC, &parse_lapic);
     parse_entry(Acpi_apic::IOAPIC, &parse_ioapic);
-    parse_entry(Acpi_apic::INTR, &parse_intr);
 
     pic_present = !!(flags & 1);
 }
@@ -67,25 +66,4 @@ void Acpi_table_madt::parse_ioapic(Acpi_apic const* ptr)
 
     for (unsigned short i = 0; i <= max && gsi < NUM_GSI; i++, gsi++)
         Gsi::gsi_table[gsi].ioapic = ioapic;
-}
-
-void Acpi_table_madt::parse_intr(Acpi_apic const* ptr)
-{
-    Acpi_intr const* p = static_cast<Acpi_intr const*>(ptr);
-
-    unsigned irq = p->irq;
-    unsigned gsi = p->gsi;
-
-    if (EXPECT_FALSE(gsi >= NUM_GSI || irq >= NUM_IRQ || p->bus))
-        return;
-
-    Gsi::irq_table[irq] = gsi;
-
-    Gsi::gsi_table[gsi].pol =
-        p->flags.pol == Acpi_inti::POL_LOW || (p->flags.pol == Acpi_inti::POL_CONFORMING && irq == Acpi::irq);
-    Gsi::gsi_table[gsi].trg = p->flags.trg == Acpi_inti::TRG_LEVEL ||
-                              (p->flags.trg == Acpi_inti::TRG_CONFORMING && irq == Acpi::irq);
-
-    if (irq == Acpi::irq)
-        sci_overridden = true;
 }

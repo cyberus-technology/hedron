@@ -40,7 +40,6 @@ public:
     };
 
     static Gsi gsi_table[NUM_GSI];
-    static unsigned irq_table[NUM_IRQ];
 
     static void setup();
 
@@ -50,12 +49,6 @@ public:
 
     static void mask(unsigned);
     static void unmask(unsigned);
-
-    static inline unsigned irq_to_gsi(unsigned irq)
-    {
-        assert(irq < NUM_IRQ);
-        return irq_table[irq];
-    }
 
     REGPARM(1)
     static void vector(unsigned) asm("gsi_vector");

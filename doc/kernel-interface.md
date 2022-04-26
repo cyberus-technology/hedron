@@ -634,7 +634,7 @@ device and configure the IOMMU correctly, if enabled.
 | *Register*  | *Content*               | *Description*                                                                               |
 |-------------|-------------------------|---------------------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
-| ARG1[8]     | Override configuration  | Indicates that the trigger mode and polarity settings are valid (I/O APIC pins only).       |
+| ARG1[8]     | Must be 1               | This bit must be set for backward compatibility.                                            |
 | ARG1[63:12] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
 | ARG2        | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
 | ARG3[31:0]  | CPU number              | The CPU number this GSI should be routed to.                                                |

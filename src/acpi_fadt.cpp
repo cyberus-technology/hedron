@@ -23,7 +23,6 @@
 
 void Acpi_table_fadt::init(const Acpi_table_fadt* fadt)
 {
-    Acpi::irq = fadt->sci_irq;
     Acpi::feature = fadt->flags;
 
     Acpi::pm1a_sts.init(fadt->pm1a_sts());

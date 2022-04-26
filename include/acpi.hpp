@@ -114,9 +114,6 @@ private:
     static inline mword tmr_msb() { return feature & 0x100 ? 31 : 23; }
 
 public:
-    static unsigned irq;
-    static unsigned gsi;
-
     static void delay(unsigned);
     static void reset();
 
