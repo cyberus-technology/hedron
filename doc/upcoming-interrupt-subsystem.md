@@ -223,9 +223,10 @@ posted-interrupt descriptor.
 Lowest priority delivery mode is an interrupt delivery mode where a set of CPUs can be specified as interrupt
 destination but only the cpu with the lowest processor priority will receive it.
 
-This mode cannot be used by user space because user space cannot control the actual vector that is programmed
-into the hardware. Thus, the receiving processor which is the one with the lowest priority with regards to the
-host might not be the one with the lowest priority for the guest (because the guest uses a virtualized LAPIC).
+This mode cannot be used by userspace, because the receiving processor
+which is the one with the lowest priority with regards to the host
+might not be the one with the lowest priority for the guest (because
+the guest uses a virtualized LAPIC).
 
 Thus, lowest priority delivery mode for physical devices will not be supported by the hypervisor interrupt interface.
 
