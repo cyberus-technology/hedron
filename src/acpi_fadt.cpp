@@ -41,11 +41,6 @@ void Acpi_table_fadt::init(const Acpi_table_fadt* fadt)
     Acpi::gpe1_sts.init(fadt->gpe1_sts());
     Acpi::gpe1_ena.init(fadt->gpe1_ena());
 
-    if (fadt->length >= 129) {
-        Acpi::reset_reg = fadt->reset_reg;
-        Acpi::reset_val = fadt->reset_value;
-    }
-
     Acpi::facs = fadt->facs();
 
     if (fadt->smi_cmd && fadt->acpi_enable) {
