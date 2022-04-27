@@ -25,9 +25,12 @@
 #include "algorithm.hpp"
 #include "hip.hpp"
 #include "list.hpp"
-#include "lock_guard.hpp"
 #include "static_vector.hpp"
 
+// A single IOAPIC
+//
+// All public functions of this class are safe to be called without synchronization, unless stated otherwise
+// in its documentation.
 class Ioapic : public Forward_list<Ioapic>
 {
 private:
@@ -61,24 +64,76 @@ private:
         IOAPIC_IRT = 0x10,
     };
 
-    // Stores redirection entries across suspend/resume.
-    Static_vector<uint64, IOAPIC_MAX_IRT> suspend_redir_table;
+    enum Irt_entry : uint64
+    {
+        // Constants for remappable (IOMMU) IRT entries.
+        IRT_REMAPPABLE_HANDLE_16_SHIFT = 11,
+        IRT_REMAPPABLE_HANDLE_0_15_SHIFT = 49,
+        IRT_FORMAT_REMAPPABLE = 1UL << 48,
+
+        // Constants for legacy (non-IOMMU) IRT entries.
+        IRT_DESTINATION_SHIFT = 56,
+
+        IRT_MASKED = 1UL << 16,
+        IRT_TRIGGER_MODE_LEVEL = 1UL << 15,
+        IRT_POLARITY_ACTIVE_LOW = 1UL << 13,
+    };
+
+    // A shadow copy of the IRT.
+    //
+    // Each write to the IRT must also be performed here. This saves us from expensive reads of the IRT when
+    // we want to mask an IRT entry.
+    //
+    // One bit that is not correctly shadowed is the 'Remote IRR' bit. We never set it ourselves, so we will
+    // always overwrite it with zero. This should be harmless.
+    Static_vector<uint64, IOAPIC_MAX_IRT> shadow_redir_table;
 
     inline void index(Register reg) { *reinterpret_cast<uint8 volatile*>(reg_base + IOAPIC_IDX) = reg; }
 
     inline uint32 read(Register reg)
     {
-        Lock_guard<Spinlock> guard(lock);
         index(reg);
         return *reinterpret_cast<uint32 volatile*>(reg_base + IOAPIC_WND);
     }
 
     inline void write(Register reg, uint32 val)
     {
-        Lock_guard<Spinlock> guard(lock);
         index(reg);
         *reinterpret_cast<uint32 volatile*>(reg_base + IOAPIC_WND) = val;
     }
+
+    inline uint32 read_id_reg() { return read(IOAPIC_ID); }
+    inline uint32 read_version_reg() { return read(IOAPIC_VER); }
+    inline uint32 get_paddr() { return paddr; }
+
+    inline unsigned get_gsi() const { return gsi_base; }
+
+    inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
+
+    inline unsigned prq() { return read(IOAPIC_VER) >> 15 & 0x1; }
+
+    // Write an IRT entry to the IOAPIC without caching it.
+    //
+    // This has to be used with caution, because we rely on shadow_redir_table to reflect the actual state of
+    // the IRT.
+    void set_irt_entry_uncached(size_t entry, uint64 val);
+
+    // A special case of set_irt_entry_uncached that only sets the low 32-bit of the IRT entry.
+    //
+    // This uses 2 instead of 4 MMIO operations and should be significantly faster. This is useful, because
+    // the low 32-bit contain the frequently toggled mask bit.
+    void set_irt_entry_uncached_low(size_t entry, uint32 val);
+
+    // Write an IRT entry and update the write-through cache.
+    //
+    // This function may not re-write the full IRT entry, if the written value is not changed.
+    void set_irt_entry(size_t entry, uint64 val);
+
+    // Read an IRT entry from the write-through cache.
+    uint64 get_irt_entry(size_t entry) const;
+
+    // Restore the IOAPIC state from shadow_redir_table.
+    void restore();
 
 public:
     Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
@@ -109,44 +164,41 @@ public:
         }
     }
 
-    inline uint32 read_id_reg() { return read(IOAPIC_ID); }
-    inline uint32 read_version_reg() { return read(IOAPIC_VER); }
-    inline uint32 get_paddr() { return paddr; }
+    // Return the highest entry index (pin number).
+    //
+    // The returned value is one less then the count of pins.
+    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
 
     inline uint16 get_rid() const { return rid; }
 
-    inline unsigned get_gsi() const { return gsi_base; }
+    // Configure an IRT entry (IOMMU disabled).
+    //
+    // The IRT entry will be unmasked after this call.
+    //
+    // For context, see Section 5.1.2.1 "Interrupts in Compatibility Format" in the the VT-d specification.
+    //
+    // This will only configure a working interrupt, if the IOMMU is not configured for Interrupt
+    // Remapping. Use set_irt_entry_remappable instead, when Interupt Remapping is enabled.
+    void set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
+                                     bool active_low);
 
-    inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
+    // Configure an IRT entry (IOMMU enabled).
+    //
+    // The IRT entry will be unmasked after this call.
+    //
+    // For context, see Section 5.1.2.2 "Interrupts in Remappable Format" in the the VT-d specification.
+    void set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
+                                  bool active_low);
 
-    inline unsigned prq() { return read(IOAPIC_VER) >> 15 & 0x1; }
+    // Mask an IRT entry, if it was configured as a level-triggered interrupt.
+    void mask_if_level(unsigned gsi);
 
-    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
+    // Unmask an IRT entry, if it was configured as a level-triggered interrupt.
+    void unmask_if_level(unsigned gsi);
 
-    inline void set_irt(unsigned gsi, unsigned val)
-    {
-        unsigned pin = gsi - gsi_base;
-        write(Register(IOAPIC_IRT + 2 * pin), val);
-    }
-
-    inline void set_cpu(unsigned gsi, unsigned cpu, bool ire)
-    {
-        unsigned pin = gsi - gsi_base;
-        write(Register(IOAPIC_IRT + 2 * pin + 1), ire ? (gsi << 17 | 1ul << 16) : (cpu << 24));
-    }
-
-    void set_irt_entry(size_t entry, uint64 val);
-    uint64 get_irt_entry(size_t entry);
-
-    // Prepare the IOAPIC for system suspend by saving its state to memory.
-    void save();
-
-    // Restore the state of the IOAPIC from memory after a system resume.
-    void restore();
-
-    // Call save on all IOAPICs.
+    // Prepare all IOAPICs in the system for system suspend by saving their state to memory.
     static void save_all();
 
-    // Call restore on all IOAPICs.
+    // Restore the state of all IOAPICs from memory after a system resume.
     static void restore_all();
 };

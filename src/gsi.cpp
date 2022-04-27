@@ -34,9 +34,6 @@ void Gsi::setup()
     for (unsigned gsi = 0; gsi < NUM_GSI; gsi++) {
 
         Space_obj::insert_root(Gsi::gsi_table[gsi].sm = new Sm(&Pd::kern, NUM_CPU + gsi));
-
-        gsi_table[gsi].irt = 0;
-        gsi_table[gsi].vec = static_cast<uint8>(VEC_GSI + gsi);
     }
 }
 
@@ -47,13 +44,13 @@ void Gsi::configure_ioapic_irt(unsigned gsi, unsigned cpu, bool level, bool acti
 
     assert(ioapic);
 
-    gsi_table[gsi].trg = level;
-    gsi_table[gsi].pol = active_low;
+    if (Dmar::ire()) {
+        ioapic->set_irt_entry_remappable(gsi, gsi, VEC_GSI + gsi, level, active_low);
+    } else {
+        ioapic->set_irt_entry_compatibility(gsi, aid, VEC_GSI + gsi, level, active_low);
+    }
 
-    ioapic->set_cpu(gsi, aid, Dmar::ire());
-    ioapic->set_irt(gsi, gsi_table[gsi].irt);
-
-    Dmar::set_irt(gsi, ioapic->get_rid(), aid, VEC_GSI + gsi, gsi_table[gsi].trg);
+    Dmar::set_irt(gsi, ioapic->get_rid(), aid, VEC_GSI + gsi, level);
 }
 
 uint64 Gsi::configure_msi(unsigned gsi, unsigned cpu, unsigned rid)
@@ -62,35 +59,30 @@ uint64 Gsi::configure_msi(unsigned gsi, unsigned cpu, unsigned rid)
 
     uint32 aid = Cpu::apic_id[cpu];
     uint32 msi_addr = 0xfee00000 | (Dmar::ire() ? 3U << 3 : aid << 12);
-    uint32 msi_data = Dmar::ire() ? gsi : gsi_table[gsi].vec;
+    uint32 msi_data = Dmar::ire() ? gsi : (VEC_GSI + gsi);
 
-    Dmar::set_irt(gsi, rid, aid, VEC_GSI + gsi, gsi_table[gsi].trg);
+    Dmar::set_irt(gsi, rid, aid, VEC_GSI + gsi, false /* edge */);
 
     return static_cast<uint64>(msi_addr) << 32 | msi_data;
-}
-
-void Gsi::mask(unsigned gsi)
-{
-    Ioapic* ioapic = gsi_table[gsi].ioapic;
-
-    if (ioapic)
-        ioapic->set_irt(gsi, 1U << 16 | gsi_table[gsi].irt);
 }
 
 void Gsi::unmask(unsigned gsi)
 {
     Ioapic* ioapic = gsi_table[gsi].ioapic;
 
+    // We only actively mask level-triggered interrupts (see vector below).
     if (ioapic)
-        ioapic->set_irt(gsi, 0U << 16 | gsi_table[gsi].irt);
+        ioapic->unmask_if_level(gsi);
 }
 
 void Gsi::vector(unsigned vector)
 {
     unsigned gsi = vector - VEC_GSI;
 
-    if (gsi_table[gsi].trg) {
-        mask(gsi);
+    // Level-triggered interrupts would fire immediately again after we signal EOI to the Local APIC. To avoid
+    // this, mask them at the IOAPIC.
+    if (gsi_table[gsi].ioapic) {
+        gsi_table[gsi].ioapic->mask_if_level(gsi);
     }
 
     Lapic::eoi();
