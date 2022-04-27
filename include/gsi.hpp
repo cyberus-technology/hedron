@@ -43,9 +43,8 @@ public:
 
     static void setup();
 
-    static void set_polarity(unsigned gsi, bool level, bool active_low);
-
-    static uint64 set(unsigned, unsigned = 0, unsigned = 0);
+    static void configure_ioapic_irt(unsigned gsi, unsigned cpu, bool level, bool active_low);
+    static uint64 configure_msi(unsigned gsi, unsigned cpu, unsigned rid);
 
     static void mask(unsigned);
     static void unmask(unsigned);

@@ -40,26 +40,29 @@ void Gsi::setup()
     }
 }
 
-void Gsi::set_polarity(unsigned gsi, bool level, bool active_low)
+void Gsi::configure_ioapic_irt(unsigned gsi, unsigned cpu, bool level, bool active_low)
 {
+    Ioapic* ioapic = gsi_table[gsi].ioapic;
+    uint32 aid = Cpu::apic_id[cpu];
+
+    assert(ioapic);
+
     gsi_table[gsi].trg = level;
     gsi_table[gsi].pol = active_low;
+
+    ioapic->set_cpu(gsi, aid, Dmar::ire());
+    ioapic->set_irt(gsi, gsi_table[gsi].irt);
+
+    Dmar::set_irt(gsi, ioapic->get_rid(), aid, VEC_GSI + gsi, gsi_table[gsi].trg);
 }
 
-uint64 Gsi::set(unsigned gsi, unsigned cpu, unsigned rid)
+uint64 Gsi::configure_msi(unsigned gsi, unsigned cpu, unsigned rid)
 {
-    uint32 msi_addr = 0, msi_data = 0, aid = Cpu::apic_id[cpu];
+    assert(!gsi_table[gsi].ioapic);
 
-    Ioapic* ioapic = gsi_table[gsi].ioapic;
-
-    if (ioapic) {
-        ioapic->set_cpu(gsi, aid, Dmar::ire());
-        ioapic->set_irt(gsi, gsi_table[gsi].irt);
-        rid = ioapic->get_rid();
-    } else {
-        msi_addr = 0xfee00000 | (Dmar::ire() ? 3U << 3 : aid << 12);
-        msi_data = Dmar::ire() ? gsi : gsi_table[gsi].vec;
-    }
+    uint32 aid = Cpu::apic_id[cpu];
+    uint32 msi_addr = 0xfee00000 | (Dmar::ire() ? 3U << 3 : aid << 12);
+    uint32 msi_data = Dmar::ire() ? gsi : gsi_table[gsi].vec;
 
     Dmar::set_irt(gsi, rid, aid, VEC_GSI + gsi, gsi_table[gsi].trg);
 
