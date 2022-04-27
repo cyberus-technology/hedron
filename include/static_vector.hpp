@@ -33,7 +33,7 @@ private:
 
 public:
     T* data() { return reinterpret_cast<T*>(backing); }
-    T const* data() const { return reinterpret_cast<T*>(backing); }
+    T const* data() const { return reinterpret_cast<T const*>(backing); }
 
     T& operator[](size_t i) { return data()[i]; }
     T const& operator[](size_t i) const { return data()[i]; };
@@ -58,11 +58,29 @@ public:
 
     void reset()
     {
+        // We cannot call resize(0) here, because resize only works for types that are default constructible.
         for (T& elem : *this) {
             elem.~T();
         }
 
         size_ = 0;
+    }
+
+    void resize(size_t new_size, T const& new_value = {})
+    {
+        assert(new_size <= max_size());
+
+        // Shrink the container to the given size.
+        while (new_size < size()) {
+            data()[--size_].~T();
+        }
+
+        // Grow the container to the given size with the given value.
+        while (new_size > size()) {
+            push_back(new_value);
+        }
+
+        assert(new_size == size());
     }
 
     ~Static_vector() { reset(); }
