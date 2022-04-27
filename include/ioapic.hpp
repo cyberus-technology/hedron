@@ -81,7 +81,7 @@ private:
     }
 
 public:
-    Ioapic(Paddr, unsigned, unsigned);
+    Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
 
     static void* operator new(size_t);
 

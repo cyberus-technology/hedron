@@ -35,13 +35,13 @@ void* Ioapic::operator new(size_t size)
     return Buddy::allocator.alloc(0, Buddy::NOFILL);
 }
 
-Ioapic::Ioapic(Paddr p, unsigned i, unsigned g)
-    : Forward_list<Ioapic>(list), paddr(uint32(p)), reg_base((hwdev_addr -= PAGE_SIZE) | (p & PAGE_MASK)),
-      gsi_base(g), id(i), rid(0)
+Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
+    : Forward_list<Ioapic>(list), paddr(uint32(paddr_)),
+      reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_), id(id_), rid(0)
 {
-    Pd::kern->claim_mmio_page(reg_base, p & ~PAGE_MASK);
+    Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
 
-    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x IRT:%#x PRQ:%u GSI:%u", p, i, version(), irt_max(), prq(),
+    trace(TRACE_APIC, "APIC:%#x ID:%#x VER:%#x IRT:%#x PRQ:%u GSI:%u", paddr, id, version(), irt_max(), prq(),
           gsi_base);
 
     // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
