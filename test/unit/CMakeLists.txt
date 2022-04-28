@@ -10,6 +10,7 @@ add_executable(test_unit
   main.cpp
   math.cpp
   mtrr.cpp
+  optional.cpp
   page_table.cpp
   static_vector.cpp
   string.cpp
