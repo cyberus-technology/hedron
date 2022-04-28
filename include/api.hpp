@@ -41,4 +41,5 @@ enum class hypercall_id
     HC_MACHINE_CTRL = 15,
     HC_CREATE_KP = 16,
     HC_KP_CTRL = 17,
+    HC_IRQ_CTRL = 18,
 };

@@ -472,6 +472,21 @@ public:
     static void sys_machine_ctrl_update_microcode();
 
     NORETURN
+    static void sys_irq_ctrl();
+
+    NORETURN
+    static void sys_irq_ctrl_configure_vector();
+
+    NORETURN
+    static void sys_irq_ctrl_assign_ioapic_pin();
+
+    NORETURN
+    static void sys_irq_ctrl_mask_ioapic_pin();
+
+    NORETURN
+    static void sys_irq_ctrl_assign_msi();
+
+    NORETURN
     static void root_invoke();
 
     template <bool> static void delegate();

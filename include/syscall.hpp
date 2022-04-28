@@ -356,3 +356,65 @@ public:
     inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> ARG1_SEL_SHIFT; }
     inline mword update_address() const { return static_cast<mword>(ARG_2); }
 };
+
+class Sys_irq_ctrl : public Sys_regs
+{
+public:
+    enum ctrl_op
+    {
+        CONFIGURE_VECTOR = 0,
+        ASSIGN_IOAPIC_PIN = 1,
+        MASK_IOAPIC_PIN = 2,
+        ASSIGN_MSI = 3,
+    };
+
+    inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+};
+
+class Sys_irq_ctrl_configure_vector : public Sys_irq_ctrl
+{
+public:
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline mword sm() const { return static_cast<mword>(ARG_2); }
+    inline mword kp() const { return static_cast<mword>(ARG_3); }
+    inline unsigned kp_bit() const { return static_cast<unsigned>(ARG_4 & 0x7FFF); }
+};
+
+class Sys_irq_ctrl_assign_ioapic_pin : public Sys_irq_ctrl
+{
+public:
+    inline bool level() const { return flags() & 0x4; }
+    inline bool active_low() const { return flags() & 0x8; }
+
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
+    inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
+};
+
+class Sys_irq_ctrl_mask_ioapic_pin : public Sys_irq_ctrl
+{
+public:
+    inline bool mask() const { return flags() & 0x4; }
+
+    inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
+    inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
+};
+
+class Sys_irq_ctrl_assign_msi : public Sys_irq_ctrl
+{
+public:
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+
+    inline mword dev() const { return ARG_2 & ~0xfff; }
+
+    inline void set_msi(uint64 val)
+    {
+        ARG_2 = static_cast<mword>(val >> 32);
+        ARG_3 = static_cast<mword>(val);
+    }
+};

@@ -899,6 +899,113 @@ void Ec::sys_machine_ctrl_update_microcode()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_irq_ctrl()
+{
+    Sys_irq_ctrl* r = static_cast<Sys_irq_ctrl*>(current()->sys_regs());
+
+    if (EXPECT_FALSE(not Pd::current()->is_passthrough)) {
+        trace(TRACE_ERROR, "%s: PD without passthrough permission called irq_ctrl", __func__);
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    switch (r->op()) {
+    case Sys_irq_ctrl::CONFIGURE_VECTOR:
+        sys_irq_ctrl_configure_vector();
+    case Sys_irq_ctrl::ASSIGN_IOAPIC_PIN:
+        sys_irq_ctrl_assign_ioapic_pin();
+    case Sys_irq_ctrl::MASK_IOAPIC_PIN:
+        sys_irq_ctrl_mask_ioapic_pin();
+    case Sys_irq_ctrl::ASSIGN_MSI:
+        sys_irq_ctrl_assign_msi();
+
+    default:
+        // This is currently not reachable, because the above cases are exhaustive, but this can change when
+        // we remove cases or the op() parameter gets more bits.
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
+// Perform input validation on CPU and vector numbers.
+//
+// Directly returns to userspace with the appropriate error if the validation fails.
+static void sys_irq_ctrl_check_vector_cpu(const char* func, uint16 cpu, uint8 vector)
+{
+    if (EXPECT_FALSE(vector >= NUM_USER_VECTORS)) {
+        trace(TRACE_ERROR, "%s: Invalid interrupt vector (%u)", func, vector);
+        Ec::sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (EXPECT_FALSE(!Hip::cpu_online(cpu))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", func, cpu);
+        Ec::sys_finish<Sys_regs::BAD_CPU>();
+    }
+}
+
+void Ec::sys_irq_ctrl_configure_vector()
+{
+    Sys_irq_ctrl_configure_vector* r = static_cast<Sys_irq_ctrl_configure_vector*>(current()->sys_regs());
+
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
+
+    Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
+    Sm* kp = capability_cast<Sm>(Space_obj::lookup(r->kp()));
+
+    if (not sm and not kp) {
+        // Unassign: not implemented yet.
+        sys_finish<Sys_regs::BAD_HYP>();
+    }
+
+    if (EXPECT_FALSE(not sm)) {
+        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    if (EXPECT_FALSE(not kp)) {
+        trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_assign_ioapic_pin()
+{
+    Sys_irq_ctrl_assign_ioapic_pin* r = static_cast<Sys_irq_ctrl_assign_ioapic_pin*>(current()->sys_regs());
+
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
+
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_mask_ioapic_pin()
+{
+    [[maybe_unused]] Sys_irq_ctrl_mask_ioapic_pin* r =
+        static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_assign_msi()
+{
+    Sys_irq_ctrl_assign_msi* r = static_cast<Sys_irq_ctrl_assign_msi*>(current()->sys_regs());
+
+    sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
+
+    Paddr phys;
+    unsigned rid = 0;
+    if (EXPECT_FALSE((!Pd::current()->Space_mem::lookup(r->dev(), &phys) ||
+                      ((rid = Pci::phys_to_rid(phys)) == ~0U && (rid = Hpet::phys_to_rid(phys)) == ~0U)))) {
+        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
+        sys_finish<Sys_regs::BAD_DEV>();
+    }
+
+    // Not implemented yet.
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
 void Ec::syscall_handler()
 {
     // System call handler functions are all marked noreturn.
@@ -943,6 +1050,8 @@ void Ec::syscall_handler()
         sys_kp_ctrl();
 
     case hypercall_id::HC_MACHINE_CTRL:
+        sys_machine_ctrl();
+    case hypercall_id::HC_IRQ_CTRL:
         sys_machine_ctrl();
 
     default:

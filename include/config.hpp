@@ -40,6 +40,12 @@
 #define NUM_EXC 32
 #define NUM_VMI 256
 #define NUM_GSI 192
+
+// The number of interrupt vectors that are programmable by userspace.
+//
+// This is currently the same set of vectors as NUM_GSI until #196 is implemented.
+#define NUM_USER_VECTORS NUM_GSI
+
 #define NUM_LVT 6
 #define NUM_MSI 1
 #define NUM_IPI 4
