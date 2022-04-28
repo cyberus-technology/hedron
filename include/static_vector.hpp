@@ -1,5 +1,5 @@
 /*
- * Generic page table modification
+ * A vector with statically-allocated backing store
  *
  * Copyright (C) 2019 Julian Stecklina, Cyberus Technology GmbH.
  *
