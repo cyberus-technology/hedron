@@ -33,5 +33,7 @@ public:
     inline static size_t destructed;
 
     construct_counter() { constructed++; }
+    construct_counter(construct_counter const& /* rhs */) : construct_counter() {}
+
     ~construct_counter() { destructed++; }
 };
