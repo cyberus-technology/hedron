@@ -110,8 +110,6 @@ private:
 
     inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
 
-    inline unsigned prq() { return read(IOAPIC_VER) >> 15 & 0x1; }
-
     // Write an IRT entry to the IOAPIC without caching it.
     //
     // This has to be used with caution, because we rely on shadow_redir_table to reflect the actual state of

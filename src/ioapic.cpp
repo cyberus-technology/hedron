@@ -43,8 +43,7 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
 {
     Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
 
-    trace(TRACE_APIC, "APIC:%#x ID:%#x VER:%#x IRT:%#x PRQ:%u GSI:%u", paddr, id, version(), irt_max(), prq(),
-          gsi_base);
+    trace(TRACE_APIC, "APIC:%#x ID:%#x VER:%#x IRT:%#x GSI:%u", paddr, id, version(), irt_max(), gsi_base);
 
     // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
     // set to EXTINT and left unmasked. To avoid random interrupts from being
