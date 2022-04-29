@@ -29,13 +29,11 @@
 template <typename TAG> class construct_counter
 {
 public:
-    static size_t constructed;
-    static size_t destructed;
+    inline static size_t constructed;
+    inline static size_t destructed;
 
     construct_counter() { constructed++; }
+    construct_counter(construct_counter const& /* rhs */) : construct_counter() {}
+
     ~construct_counter() { destructed++; }
 };
-
-template <typename TAG> size_t construct_counter<TAG>::constructed{0};
-
-template <typename TAG> size_t construct_counter<TAG>::destructed{0};
