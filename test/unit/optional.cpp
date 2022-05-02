@@ -65,6 +65,15 @@ TEST_CASE("Assignment with another optional works", "[optional]")
     CHECK(*v == 7);
 }
 
+TEST_CASE("Optional::value_or works", "[optional]")
+{
+    Optional<int> no_value;
+    Optional<int> with_value{7};
+
+    CHECK(no_value.value_or(10) == 10);
+    CHECK(with_value.value_or(10) == 7);
+}
+
 TEST_CASE("Optional construction and destruction works", "[optional]")
 {
     SECTION("Default constructor does not construct or destruct")

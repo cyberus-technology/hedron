@@ -56,17 +56,30 @@ public:
 
     ~Optional() { destroy_value(); }
 
-    T& operator*()
+    T& value()
     {
         assert(has_value());
         return *data();
     }
 
-    T const& operator*() const
+    T const& value() const
     {
         assert(has_value());
         return *data();
     }
+
+    template <typename U> T value_or(U&& other) const
+    {
+        if (has_value()) {
+            return value();
+        } else {
+            return other;
+        }
+    }
+
+    T& operator*() { return value(); }
+
+    T const& operator*() const { return value(); }
 
     T* operator->()
     {
