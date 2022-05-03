@@ -18,6 +18,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "util.hpp"
 
 // A wrapper for optionally contained values.
 //
