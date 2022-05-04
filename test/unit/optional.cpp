@@ -74,6 +74,18 @@ TEST_CASE("Optional::value_or works", "[optional]")
     CHECK(with_value.value_or(10) == 7);
 }
 
+TEST_CASE("Optional comparisons work", "[optional]")
+{
+    Optional<int> const no_value{};
+    Optional<int> const value{1};
+    Optional<int> const other_value{7};
+
+    CHECK(no_value == no_value);
+    CHECK(no_value != value);
+    CHECK(value == value);
+    CHECK(value != other_value);
+}
+
 TEST_CASE("Optional construction and destruction works", "[optional]")
 {
     SECTION("Default constructor does not construct or destruct")
