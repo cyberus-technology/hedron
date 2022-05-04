@@ -935,9 +935,10 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
     }
 
     uint32 const aid{Cpu::apic_id[r->cpu()]};
-    uint16 const irt_index{static_cast<uint16>(r->cpu() * NUM_CPU + r->vector())};
 
     if (Dmar::ire()) {
+        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
+
         Dmar::set_irt(irt_index, opt_ioapic->get_rid(), aid, VEC_USER + r->vector(), r->level());
         opt_ioapic->set_irt_entry_remappable(r->ioapic_pin(), irt_index, VEC_USER + r->vector(), r->level(),
                                              r->active_low());
@@ -951,11 +952,18 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
 void Ec::sys_irq_ctrl_mask_ioapic_pin()
 {
-    [[maybe_unused]] Sys_irq_ctrl_mask_ioapic_pin* r =
-        static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+    Sys_irq_ctrl_mask_ioapic_pin* r = static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+    auto& opt_ioapic{Ioapic::by_id(r->ioapic_id())};
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    if (not opt_ioapic.has_value() or r->ioapic_pin() >= opt_ioapic->pin_count()) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    // The user can unmask pins that have not been previously configured. This is benign, because in this
+    // case the IOAPIC RTEs are invalid and no interrupt will arive. Also when the IOMMU is enabled, there
+    // will not be an IOMMU RTE for the given pin.
+    opt_ioapic->set_mask(r->ioapic_pin(), r->mask());
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_irq_ctrl_assign_msi()
