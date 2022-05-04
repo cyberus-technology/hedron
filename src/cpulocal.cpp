@@ -18,6 +18,7 @@
 #include "cpulocal.hpp"
 #include "assert.hpp"
 #include "cpu.hpp"
+#include "hpt.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
 #include "tss.hpp"
@@ -36,6 +37,10 @@ mword Cpulocal::setup_cpulocal()
     Per_cpu& local{cpu[cpu_id]};
 
     local.cpu_id = cpu_id;
+
+    // Establish stack guard page by unmapping the last (lowest) page of the stack.
+    static_assert(STACK_SIZE > PAGE_SIZE, "Stack is too small to place a stack guard");
+    Hpt::unmap_kernel_page(local.stack);
 
     mword gs_base{reinterpret_cast<mword>(&local.self)};
     Msr::write(Msr::IA32_GS_BASE, gs_base);
