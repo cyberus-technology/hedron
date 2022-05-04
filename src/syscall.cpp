@@ -25,9 +25,11 @@
 
 #include "syscall.hpp"
 #include "acpi.hpp"
+#include "cpu.hpp"
 #include "dmar.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
+#include "ioapic.hpp"
 #include "kp.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
@@ -919,8 +921,32 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
     sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    auto& opt_ioapic{Ioapic::by_id(r->ioapic_id())};
+
+    if (not opt_ioapic.has_value() or r->ioapic_pin() >= opt_ioapic->pin_count()) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (r->level()) {
+        Locked_vector_info::per_vector_info[r->cpu()][r->vector()]->set_level_triggered_ioapic_source(
+            {r->ioapic_id(), r->ioapic_pin()});
+    } else {
+        Locked_vector_info::per_vector_info[r->cpu()][r->vector()]->clear_level_triggered_ioapic_source();
+    }
+
+    uint32 const aid{Cpu::apic_id[r->cpu()]};
+    uint16 const irt_index{static_cast<uint16>(r->cpu() * NUM_CPU + r->vector())};
+
+    if (Dmar::ire()) {
+        Dmar::set_irt(irt_index, opt_ioapic->get_rid(), aid, VEC_USER + r->vector(), r->level());
+        opt_ioapic->set_irt_entry_remappable(r->ioapic_pin(), irt_index, VEC_USER + r->vector(), r->level(),
+                                             r->active_low());
+    } else {
+        opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
+                                                r->active_low());
+    }
+
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_irq_ctrl_mask_ioapic_pin()
