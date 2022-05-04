@@ -146,6 +146,13 @@ void Ioapic::restore()
     }
 }
 
+void Ioapic::set_mask(uint8 ioapic_pin, bool masked)
+{
+    Lock_guard<Spinlock> guard(lock);
+    set_irt_entry(ioapic_pin,
+                  (get_irt_entry(ioapic_pin) & ~IRT_MASKED) | (masked ? static_cast<uint64>(IRT_MASKED) : 0));
+}
+
 void Ioapic::save_all()
 {
     // Nothing to be done. shadow_redir_table is a write-through cache of the IOAPIC state and has everything

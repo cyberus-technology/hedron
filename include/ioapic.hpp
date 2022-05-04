@@ -203,6 +203,9 @@ public:
     void set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
                                   bool active_low);
 
+    // Mask or unmask a specific IOAPIC pin on one specific IOAPIC.
+    void set_mask(uint8 ioapic_pin, bool masked);
+
     // Prepare all IOAPICs in the system for system suspend by saving their state to memory.
     static void save_all();
 
