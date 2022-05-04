@@ -31,7 +31,7 @@ public:
     uint16 reserved;
     uint8 id, b, d, f;
 
-    inline unsigned rid() const { return b << 8 | d << 3 | f; }
+    inline uint16 rid() const { return static_cast<uint16>(b << 8 | d << 3 | f); }
 };
 
 /*
