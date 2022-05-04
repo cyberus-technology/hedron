@@ -192,7 +192,7 @@ public:
     //
     // This will only configure a working interrupt, if the IOMMU is not configured for Interrupt
     // Remapping. Use set_irt_entry_remappable instead, when Interupt Remapping is enabled.
-    void set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
+    void set_irt_entry_compatibility(uint8 ioapic_pin, unsigned apic_id, unsigned vector, bool level,
                                      bool active_low);
 
     // Configure an IRT entry (IOMMU enabled).
@@ -200,7 +200,7 @@ public:
     // The IRT entry will be unmasked after this call.
     //
     // For context, see Section 5.1.2.2 "Interrupts in Remappable Format" in the the VT-d specification.
-    void set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
+    void set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
                                   bool active_low);
 
     // Prepare all IOAPICs in the system for system suspend by saving their state to memory.

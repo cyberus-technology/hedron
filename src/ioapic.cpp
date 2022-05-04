@@ -86,11 +86,10 @@ uint64 Ioapic::get_irt_entry(size_t entry) const
     return shadow_redir_table[entry];
 }
 
-void Ioapic::set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
+void Ioapic::set_irt_entry_compatibility(uint8 ioapic_pin, unsigned apic_id, unsigned vector, bool level,
                                          bool active_low)
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
+    assert(ioapic_pin < pin_count());
     assert(vector >= 0x10 and vector <= 0xFE);
     assert(not Dmar::ire());
 
@@ -105,16 +104,15 @@ void Ioapic::set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigne
     }
 
     Lock_guard<Spinlock> guard(lock);
-    set_irt_entry(pin, irt_entry);
+    set_irt_entry(ioapic_pin, irt_entry);
 }
 
-void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
+void Ioapic::set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
                                       bool active_low)
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-    assert(iommu_irt_index <= 0xffff);
     assert(Dmar::ire());
+    assert(ioapic_pin < pin_count());
+    assert(vector >= 0x10 and vector <= 0xFE);
 
     // See Section 5.1.5.1 I/OxAPIC Programming in the Intel VT-d specification for information about how to
     // program the IOAPIC IRTs.
@@ -136,7 +134,7 @@ void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, un
     }
 
     Lock_guard<Spinlock> guard(lock);
-    set_irt_entry(pin, irt_entry);
+    set_irt_entry(ioapic_pin, irt_entry);
 }
 
 void Ioapic::restore()
