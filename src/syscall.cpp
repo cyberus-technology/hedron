@@ -26,7 +26,6 @@
 #include "syscall.hpp"
 #include "acpi.hpp"
 #include "dmar.hpp"
-#include "gsi.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
 #include "kp.hpp"
@@ -670,12 +669,6 @@ void Ec::sys_sm_ctrl()
         break;
 
     case Sys_sm_ctrl::Sm_operation::Down:
-        if (sm->space == static_cast<Space_obj*>(&Pd::kern)) {
-            Gsi::unmask(static_cast<unsigned>(sm->node_base - NUM_CPU));
-            if (sm->is_signal())
-                break;
-        }
-
         if (sm->is_signal())
             sys_finish<Sys_regs::BAD_CAP>();
 
@@ -771,74 +764,6 @@ void Ec::sys_assign_pci()
     }
 
     dmar->assign(rid, pd);
-
-    sys_finish<Sys_regs::SUCCESS>();
-}
-
-void Ec::sys_assign_gsi()
-{
-    Sys_assign_gsi* r = static_cast<Sys_assign_gsi*>(current()->sys_regs());
-
-    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
-        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
-
-    Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
-
-    if (EXPECT_FALSE(not sm)) {
-        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    if (EXPECT_FALSE(sm->space != static_cast<Space_obj*>(&Pd::kern))) {
-        trace(TRACE_ERROR, "%s: Non-GSI SM (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    if (r->si() != ~0UL) {
-        Sm* si = capability_cast<Sm>(Space_obj::lookup(r->si()));
-
-        if (EXPECT_FALSE(not si)) {
-            trace(TRACE_ERROR, "%s: Non-SI CAP (%#lx)", __func__, r->si());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        if (si == sm) {
-            sm->chain(nullptr);
-            sys_finish<Sys_regs::SUCCESS>();
-        }
-
-        if (EXPECT_FALSE(si->space == static_cast<Space_obj*>(&Pd::kern))) {
-            trace(TRACE_ERROR, "%s: Invalid-SM CAP (%#lx)", __func__, r->si());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        sm->chain(si);
-    }
-
-    Paddr phys;
-    unsigned rid = 0, gsi = static_cast<unsigned>(sm->node_base - NUM_CPU);
-    if (EXPECT_FALSE(!Gsi::gsi_table[gsi].ioapic &&
-                     (!Pd::current()->Space_mem::lookup(r->dev(), &phys) ||
-                      ((rid = Pci::phys_to_rid(phys)) == ~0U && (rid = Hpet::phys_to_rid(phys)) == ~0U)))) {
-        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    uint64 msi_data{0};
-
-    if (Gsi::gsi_table[gsi].ioapic) {
-        if (!r->has_configuration_override()) {
-            sys_finish<Sys_regs::BAD_PAR>();
-        }
-
-        Gsi::configure_ioapic_irt(gsi, r->cpu(), r->level(), r->active_low());
-    } else {
-        msi_data = Gsi::configure_msi(gsi, r->cpu(), rid);
-    }
-
-    r->set_msi(msi_data);
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -1024,8 +949,6 @@ void Ec::syscall_handler()
 
     case hypercall_id::HC_ASSIGN_PCI:
         sys_assign_pci();
-    case hypercall_id::HC_ASSIGN_GSI:
-        sys_assign_gsi();
 
     case hypercall_id::HC_CREATE_PD:
         sys_create_pd();

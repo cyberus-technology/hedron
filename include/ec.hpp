@@ -460,9 +460,6 @@ public:
     static void sys_assign_pci();
 
     NORETURN
-    static void sys_assign_gsi();
-
-    NORETURN
     static void sys_machine_ctrl();
 
     NORETURN

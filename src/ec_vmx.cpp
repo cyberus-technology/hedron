@@ -18,9 +18,9 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "console.hpp"
 #include "dmar.hpp"
 #include "ec.hpp"
-#include "gsi.hpp"
 #include "lapic.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
@@ -68,7 +68,8 @@ void Ec::vmx_extint()
     else if (vector >= VEC_LVT)
         Lapic::lvt_vector(vector);
     else if (vector >= VEC_GSI)
-        Gsi::vector(vector);
+        // This will be implemented in subsequent commits.
+        Console::panic("Unimplemented user interrupt handling");
 
     ret_user_vmresume();
     UNREACHED;

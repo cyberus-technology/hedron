@@ -126,7 +126,8 @@ INTRGATE                0
 entry_gsi:              push    $0
                         SAVE_STATE
                         mov     OFS_VEC (%rbx), %ARG_1
-                        call    gsi_vector
+                        // This will be implemented in subsequent commits.
+                        ud2a
                         jmp     ret_from_interrupt
 
 /*

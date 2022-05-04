@@ -37,7 +37,6 @@ enum class hypercall_id
     HC_PT_CTRL = 11,
     HC_SM_CTRL = 12,
     HC_ASSIGN_PCI = 13,
-    HC_ASSIGN_GSI = 14,
     HC_MACHINE_CTRL = 15,
     HC_CREATE_KP = 16,
     HC_KP_CTRL = 17,

@@ -23,7 +23,6 @@
 #include "acpi.hpp"
 #include "config.hpp"
 #include "cpu.hpp"
-#include "gsi.hpp"
 #include "io.hpp"
 #include "ioapic.hpp"
 #include "vectors.hpp"
@@ -60,10 +59,4 @@ void Acpi_table_madt::parse_ioapic(Acpi_apic const* ptr)
     Acpi_ioapic const* p = static_cast<Acpi_ioapic const*>(ptr);
 
     Ioapic* ioapic = new Ioapic(p->phys, p->id, p->gsi);
-
-    unsigned gsi = p->gsi;
-    unsigned max = ioapic->irt_max();
-
-    for (unsigned short i = 0; i <= max && gsi < NUM_GSI; i++, gsi++)
-        Gsi::gsi_table[gsi].ioapic = ioapic;
 }
