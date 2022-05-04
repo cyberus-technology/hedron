@@ -75,7 +75,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     -Wlogical-op
     -Wstrict-null-sentinel
     # Some functions (e.g. Acpi_table_fadt::init) create big stack-frames when
-    # built without optimizations (e.g. during debug-builds) 
+    # built without optimizations (e.g. during debug-builds)
     -Wframe-larger-than=400
     # We need offsetof to work for static assertions of Exc_regs layout.
     -Wno-invalid-offsetof
