@@ -58,5 +58,5 @@ void Acpi_table_madt::parse_ioapic(Acpi_apic const* ptr)
 {
     Acpi_ioapic const* p = static_cast<Acpi_ioapic const*>(ptr);
 
-    Ioapic* ioapic = new Ioapic(p->phys, p->id, p->gsi);
+    Ioapic::by_id(p->id) = Ioapic(p->phys, p->id, p->gsi);
 }

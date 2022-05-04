@@ -27,19 +27,11 @@
 #include "pd.hpp"
 #include "stdio.hpp"
 
-Ioapic* Ioapic::list;
-
-void* Ioapic::operator new(size_t size)
-{
-    assert(size == sizeof(Ioapic));
-    static_assert(sizeof(Ioapic) <= PAGE_SIZE);
-
-    return Buddy::allocator.alloc(0, Buddy::NOFILL);
-}
+No_destruct<Optional<Ioapic>> Ioapic::ioapics_by_id[NUM_IOAPIC];
 
 Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
-    : Forward_list<Ioapic>(list), paddr(uint32(paddr_)),
-      reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_), id(id_), rid(0)
+    : paddr(uint32(paddr_)), reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_),
+      id(id_), rid(0)
 {
     Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
 
@@ -162,4 +154,11 @@ void Ioapic::save_all()
     // we need.
 }
 
-void Ioapic::restore_all() { for_each(Forward_list_range{list}, mem_fn_closure(&Ioapic::restore)()); }
+void Ioapic::restore_all()
+{
+    for (auto& opt_ioapic : ioapics_by_id) {
+        if (opt_ioapic->has_value()) {
+            (*opt_ioapic)->restore();
+        }
+    }
+}

@@ -24,14 +24,15 @@
 
 #include "algorithm.hpp"
 #include "hip.hpp"
-#include "list.hpp"
+#include "nodestruct.hpp"
+#include "optional.hpp"
 #include "static_vector.hpp"
 
 // A single IOAPIC
 //
 // All public functions of this class are safe to be called without synchronization, unless stated otherwise
 // in its documentation.
-class Ioapic : public Forward_list<Ioapic>
+class Ioapic
 {
 private:
     uint32 const paddr;
@@ -41,7 +42,8 @@ private:
     uint16 rid;
     Spinlock lock;
 
-    static Ioapic* list;
+    // An array of all IOAPICs in the system indexed by their ID.
+    static No_destruct<Optional<Ioapic>> ioapics_by_id[NUM_IOAPIC];
 
     enum
     {
@@ -110,6 +112,11 @@ private:
 
     inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
 
+    // Return the highest entry index (pin number).
+    //
+    // The returned value is one less then the count of pins.
+    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
+
     // Write an IRT entry to the IOAPIC without caching it.
     //
     // This has to be used with caution, because we rely on shadow_redir_table to reflect the actual state of
@@ -135,25 +142,35 @@ private:
 
 public:
     Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
+    Ioapic(Ioapic const&) = default;
+    Ioapic(Ioapic&&) = default;
 
-    static void* operator new(size_t);
-
-    static inline bool claim_dev(unsigned r, unsigned i)
+    static Optional<Ioapic>& by_id(uint8 ioapic_id)
     {
-        auto range = Forward_list_range(list);
-        auto it = find_if(range, [i](auto const& ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
+        assert(ioapic_id < NUM_IOAPIC);
+        return *ioapics_by_id[ioapic_id];
+    }
 
-        if (it != range.end()) {
-            it->rid = static_cast<uint16>(r);
-            return true;
-        } else {
+    static bool claim_dev(uint16 rid, uint8 ioapic_id)
+    {
+        if (not(ioapic_id < NUM_IOAPIC and ioapics_by_id[ioapic_id]->has_value()) or
+            (*ioapics_by_id[ioapic_id])->rid != 0) {
             return false;
         }
+
+        (*ioapics_by_id[ioapic_id])->rid = rid;
+        return true;
     }
 
     static inline void add_to_hip(Hip_ioapic*& entry)
     {
-        for (auto& ioapic : Forward_list_range(list)) {
+        for (auto& opt_ioapic : ioapics_by_id) {
+            if (not opt_ioapic->has_value()) {
+                continue;
+            }
+
+            Ioapic& ioapic{opt_ioapic->value()};
+
             entry->id = ioapic.read_id_reg();
             entry->version = ioapic.read_version_reg();
             entry->gsi_base = ioapic.get_gsi();
@@ -162,12 +179,10 @@ public:
         }
     }
 
-    // Return the highest entry index (pin number).
-    //
-    // The returned value is one less then the count of pins.
-    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
+    // Returns the number of usable pins on this IOAPIC.
+    uint8 pin_count() const { return static_cast<uint8>(shadow_redir_table.size()); }
 
-    inline uint16 get_rid() const { return rid; }
+    uint16 get_rid() const { return rid; }
 
     // Configure an IRT entry (IOMMU disabled).
     //
