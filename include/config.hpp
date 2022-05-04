@@ -61,3 +61,6 @@
 #define SPN_GSI (SPN_IPI + NUM_IPI + 1)
 
 #define NUM_IOAPIC 9
+
+// We have one stack per CPU. Each stack will have this size.
+#define STACK_SIZE 0x3000
