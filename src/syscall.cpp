@@ -1056,7 +1056,7 @@ void Ec::syscall_handler()
     case hypercall_id::HC_MACHINE_CTRL:
         sys_machine_ctrl();
     case hypercall_id::HC_IRQ_CTRL:
-        sys_machine_ctrl();
+        sys_irq_ctrl();
 
     default:
         Ec::sys_finish<Sys_regs::BAD_HYP>();
