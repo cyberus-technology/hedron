@@ -980,8 +980,25 @@ void Ec::sys_irq_ctrl_assign_msi()
         sys_finish<Sys_regs::BAD_DEV>();
     }
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    uint32 const aid{Cpu::apic_id[r->cpu()]};
+
+    uint32 msi_addr;
+    uint32 msi_data;
+
+    if (Dmar::ire()) {
+        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
+
+        msi_addr = 0xfee00000 | (1U << 4) | ((0x7fff & irt_index) << 5) | ((irt_index >> 15) << 2);
+        msi_data = 0;
+
+        Dmar::set_irt(irt_index, rid, aid, VEC_USER + r->vector(), false /* edge */);
+    } else {
+        msi_addr = 0xfee00000 | (aid << 12);
+        msi_data = VEC_USER + r->vector();
+    }
+
+    r->set_msi(msi_addr, msi_data);
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::syscall_handler()

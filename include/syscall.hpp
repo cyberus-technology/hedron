@@ -385,9 +385,9 @@ public:
 
     inline mword dev() const { return ARG_2 & ~0xfff; }
 
-    inline void set_msi(uint64 val)
+    inline void set_msi(uint32 msi_addr, uint32 msi_data)
     {
-        ARG_2 = static_cast<mword>(val >> 32);
-        ARG_3 = static_cast<mword>(val);
+        ARG_2 = msi_addr;
+        ARG_3 = msi_data;
     }
 };
