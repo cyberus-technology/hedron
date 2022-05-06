@@ -60,17 +60,23 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
 
 void Ioapic::set_irt_entry_uncached(size_t entry, uint64 val)
 {
+    assert_slow(lock.is_locked());
+
     write(Register(IOAPIC_IRT + 2 * entry + 1), static_cast<uint32>(val >> 32));
     write(Register(IOAPIC_IRT + 2 * entry), static_cast<uint32>(val));
 }
 
 void Ioapic::set_irt_entry_uncached_low(size_t entry, uint32 val)
 {
+    assert_slow(lock.is_locked());
+
     write(Register(IOAPIC_IRT + 2 * entry), val);
 }
 
 void Ioapic::set_irt_entry(size_t entry, uint64 val)
 {
+    assert_slow(lock.is_locked());
+
     if (shadow_redir_table[entry] >> 32 == val >> 32) {
         // Top 32-bit have not changed. This is expected to happen when we toggle the mask bit.
         set_irt_entry_uncached_low(entry, static_cast<uint32>(val));
@@ -81,7 +87,12 @@ void Ioapic::set_irt_entry(size_t entry, uint64 val)
     shadow_redir_table[entry] = val;
 }
 
-uint64 Ioapic::get_irt_entry(size_t entry) const { return shadow_redir_table[entry]; }
+uint64 Ioapic::get_irt_entry(size_t entry) const
+{
+    assert_slow(lock.is_locked());
+
+    return shadow_redir_table[entry];
+}
 
 void Ioapic::set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
                                          bool active_low)
