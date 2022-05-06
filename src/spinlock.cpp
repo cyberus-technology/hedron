@@ -50,3 +50,12 @@ void Spinlock::unlock()
     // memory clobber does just fine.
     asm volatile("incb %0" : "+m"(val) : : "memory");
 }
+
+// Check whether the lock is currently locked.
+//
+// This method is _only_ useful for assertions.
+bool Spinlock::is_locked() const
+{
+    uint16 const v{Atomic::load(val)};
+    return (v >> 8) != (v & 0xff);
+}

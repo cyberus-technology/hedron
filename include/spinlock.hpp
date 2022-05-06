@@ -34,4 +34,8 @@ public:
     void lock();
     void unlock();
 
+    // Check whether the lock is currently locked.
+    //
+    // This method is _only_ useful for assertions.
+    bool is_locked() const;
 };
