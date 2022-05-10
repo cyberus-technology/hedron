@@ -206,6 +206,17 @@ void Cpu::setup_msrs()
     Msr::write(Msr::IA32_FMASK, ~static_cast<mword>(0));
 }
 
+Optional<unsigned> Cpu::find_by_apic_id(unsigned id)
+{
+    for (unsigned i = 0; i < NUM_CPU; i++) {
+        if (apic_id[i] == id) {
+            return i;
+        }
+    }
+
+    return {};
+}
+
 Cpu_info Cpu::init()
 {
     // We go through this function on resume as well. We could skip over certain

@@ -30,6 +30,7 @@
 #include "config.hpp"
 #include "cpuinfo.hpp"
 #include "cpulocal.hpp"
+#include "optional.hpp"
 #include "types.hpp"
 
 class Cpu
@@ -204,14 +205,10 @@ public:
         return flags & 0x200;
     }
 
-    static unsigned find_by_apic_id(unsigned x)
-    {
-        for (unsigned i = 0; i < NUM_CPU; i++)
-            if (apic_id[i] == x)
-                return i;
-
-        return ~0U;
-    }
+    // Return the CPU number from a Local APIC ID, if we have one.
+    //
+    // This function can fail, if there are more CPUs in the system than Hedron was compiled for (NUM_CPU).
+    static Optional<unsigned> find_by_apic_id(unsigned apic_id);
 
     static void setup_msrs();
 };
