@@ -67,8 +67,8 @@ private:
     enum Irt_entry : uint64
     {
         // Constants for remappable (IOMMU) IRT entries.
-        IRT_REMAPPABLE_HANDLE_16_SHIFT = 11,
-        IRT_REMAPPABLE_HANDLE_0_15_SHIFT = 49,
+        IRT_REMAPPABLE_HANDLE_15_SHIFT = 11,
+        IRT_REMAPPABLE_HANDLE_0_14_SHIFT = 49,
         IRT_FORMAT_REMAPPABLE = 1UL << 48,
 
         // Constants for legacy (non-IOMMU) IRT entries.
