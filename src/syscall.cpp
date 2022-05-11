@@ -826,15 +826,19 @@ void Ec::sys_assign_gsi()
         sys_finish<Sys_regs::BAD_DEV>();
     }
 
+    uint64 msi_data{0};
+
     if (Gsi::gsi_table[gsi].ioapic) {
         if (!r->has_configuration_override()) {
             sys_finish<Sys_regs::BAD_PAR>();
         }
 
-        Gsi::set_polarity(gsi, r->level(), r->active_low());
+        Gsi::configure_ioapic_irt(gsi, r->cpu(), r->level(), r->active_low());
+    } else {
+        msi_data = Gsi::configure_msi(gsi, r->cpu(), rid);
     }
 
-    r->set_msi(Gsi::set(gsi, r->cpu(), rid));
+    r->set_msi(msi_data);
 
     sys_finish<Sys_regs::SUCCESS>();
 }

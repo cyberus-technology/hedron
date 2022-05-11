@@ -18,45 +18,24 @@
 
 #pragma once
 
-#include "compiler.hpp"
 #include "types.hpp"
 
 // A spinlock implementation based on a ticket lock.
+//
+// The spinlock is best used via the Lock_guard class to avoid mismatched lock/unlock calls.
 class Spinlock
 {
 private:
     // The upper byte of this value is the next ticket that will be given out. The lower byte is the ticket
     // being currently served.
-    uint16 val;
+    uint16 val{0};
 
 public:
-    inline Spinlock() : val(0) {}
+    void lock();
+    void unlock();
 
-    NOINLINE
-    void lock()
-    {
-        uint16 tmp = 0x100;
-
-        // Enqueue ourselves into the ticket lock and wait until our ticket is served.
-        asm volatile("     lock; xadd %0, %1;  "
-                     "1:   cmpb %h0, %b0;      "
-                     "     je 2f;              "
-                     "     pause;              "
-                     "     movb %1, %b0;       "
-                     "     jmp 1b;             "
-                     "2:                       "
-                     : "+Q"(tmp), "+m"(val)
-                     :
-                     : "memory");
-    }
-
-    inline void unlock()
-    {
-        // Update the "now-serving" part of the ticket lock. Only the lock holder modifies this value, so no
-        // atomic operation is required.
-        //
-        // For non-x86 architectures, we would need a `release` fence. But for x86 this is a no-op and the
-        // memory clobber does just fine.
-        asm volatile("incb %0" : "+m"(val) : : "memory");
-    }
+    // Check whether the lock is currently locked.
+    //
+    // This method is _only_ useful for assertions.
+    bool is_locked() const;
 };
