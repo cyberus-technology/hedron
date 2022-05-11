@@ -87,6 +87,8 @@ void* Hpt::remap(Paddr phys, bool use_boot_hpt)
 
 void Hpt::unmap_kernel_page(void* kernel_page)
 {
+    // See the function description in the header for an explanation why we only allow this operation on the
+    // boot_hpt.
     Hpt& hpt{boot_hpt()};
     assert_slow(hpt.is_active());
 

@@ -149,7 +149,14 @@ public:
 
     /// Unmap a page from the kernel address space.
     ///
-    /// This function assumes that we run on the boot_hpt when it is called.
+    /// This function only allows to modify boot_hpt to keep the kernel address space identical everywhere.
+    /// The kernel portion of the address space is replicated from the boot_hpt into all other host page
+    /// tables. If we allow modifying other page tables beyond boot_hpt, we risk a non-uniform kernel address
+    /// space.
+    ///
+    /// This function also demands that boot_hpt is currently active. Because the boot_hpt is copied into
+    /// newly created address spaces, we have to make sure to only call it before new address spaces are
+    /// created. This time frame largely coincides with the time the boot_hpt is active.
     static void unmap_kernel_page(void* kernel_page);
 
     // Atomically change a 4K page mapping to point to a new frame. Return
