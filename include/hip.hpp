@@ -29,6 +29,7 @@
 #include "config.hpp"
 #include "cpu.hpp"
 #include "extern.hpp"
+#include "util.hpp"
 
 struct Cpu_info;
 
@@ -169,6 +170,23 @@ public:
     static void build_mbi1(Hip_mem*&, mword);
 
     static void build_mbi2(Hip_mem*&, mword);
+
+    // Call the given function on a cpu descriptor.
+    //
+    // The cpu_id parameter is the cpu number for which the sibling cores needs to be found
+    // and the function should be applied to.
+    template <typename FN> static void for_each_sibling(unsigned long cpu_id, FN func)
+    {
+        if (cpu_id < array_size(hip()->cpu_desc)) {
+            for (size_t i{0u}; i < array_size(hip()->cpu_desc); ++i) {
+                if (cpu_online(i) and hip()->cpu_desc[cpu_id].package == hip()->cpu_desc[i].package and
+                    hip()->cpu_desc[cpu_id].core == hip()->cpu_desc[i].core and
+                    hip()->cpu_desc[cpu_id].thread != hip()->cpu_desc[i].thread) {
+                    func(i, hip()->cpu_desc[i]);
+                }
+            }
+        }
+    }
 
     // Add a memory region description to the HIP.
     //
