@@ -109,8 +109,8 @@ private:
     uint32 sel_exc; // 0x20
     uint32 sel_vmi; // 0x24
 
-    uint32 sel_gsi;  // 0x28
-    uint32 cfg_page; // 0x2c
+    uint32 num_user_vectors; // 0x28
+    uint32 cfg_page;         // 0x2c
 
     uint32 cfg_utcb; // 0x30
     uint32 freq_tsc; // 0x34

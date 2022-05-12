@@ -56,7 +56,7 @@ void Hip::build(mword magic, mword addr)
     h->api_flg |= FEAT_VMX | FEAT_SVM;
     h->api_ver = CFG_VER;
     h->sel_num = Space_obj::caps;
-    h->sel_gsi = NUM_GSI;
+    h->num_user_vectors = NUM_USER_VECTORS;
     h->sel_exc = NUM_EXC;
     h->sel_vmi = NUM_VMI;
     h->cfg_page = PAGE_SIZE;
