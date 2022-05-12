@@ -24,6 +24,26 @@ TEST_CASE("Atomic read-modify-write operations return new value")
     const int old_value{128};
     int value_to_modify{old_value};
 
-    SECTION("add") { CHECK(Atomic::add(value_to_modify, 1) == old_value + 1); };
-    SECTION("sub") { CHECK(Atomic::sub(value_to_modify, 1) == old_value - 1); };
+    SECTION("add")
+    {
+        CHECK(Atomic::add(value_to_modify, 1) == old_value + 1);
+        CHECK(value_to_modify == old_value + 1);
+    };
+    SECTION("sub")
+    {
+        CHECK(Atomic::sub(value_to_modify, 1) == old_value - 1);
+        CHECK(value_to_modify == old_value - 1);
+    };
+}
+
+TEST_CASE("Atomic fetch read-modify-write operations return old value")
+{
+    const int old_value{128};
+    int value_to_modify{old_value};
+
+    SECTION("fetch-add")
+    {
+        CHECK(Atomic::fetch_add(value_to_modify, 1) == old_value);
+        CHECK(value_to_modify == old_value + 1);
+    };
 }

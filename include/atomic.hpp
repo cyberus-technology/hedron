@@ -45,6 +45,11 @@ public:
         return __atomic_add_fetch(&ptr, v, __ATOMIC_SEQ_CST);
     }
 
+    template <typename T> static inline T fetch_add(T& ptr, T v)
+    {
+        return __atomic_fetch_add(&ptr, v, __ATOMIC_SEQ_CST);
+    }
+
     template <typename T> static inline T sub(T& ptr, T v)
     {
         return __atomic_sub_fetch(&ptr, v, __ATOMIC_SEQ_CST);
