@@ -18,10 +18,10 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "console.hpp"
 #include "dmar.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
+#include "vector_info.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
 #include "vmx_preemption_timer.hpp"
@@ -68,8 +68,7 @@ void Ec::vmx_extint()
     else if (vector >= VEC_LVT)
         Lapic::lvt_vector(vector);
     else if (vector >= VEC_USER)
-        // This will be implemented in subsequent commits.
-        Console::panic("Unimplemented user interrupt handling");
+        Locked_vector_info::handle_user_interrupt(vector);
 
     ret_user_vmresume();
     UNREACHED;

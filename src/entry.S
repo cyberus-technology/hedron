@@ -116,18 +116,17 @@ TASKGATE
  * GSI Entries
  */
 .set                    VEC, NUM_EXC
-.rept                   NUM_GSI
+.rept                   NUM_USER_VECTORS
 INTRGATE                0
                         push    $VEC
-                        jmp     entry_gsi
+                        jmp     entry_user_vector
 .set                    VEC, VEC + 1
 .endr
 
-entry_gsi:              push    $0
+entry_user_vector:      push    $0
                         SAVE_STATE
                         mov     OFS_VEC (%rbx), %ARG_1
-                        // This will be implemented in subsequent commits.
-                        ud2a
+                        call    handle_user_interrupt
                         jmp     ret_from_interrupt
 
 /*

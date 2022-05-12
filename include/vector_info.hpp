@@ -82,4 +82,16 @@ public:
 
     // Mark the vector as receiving level-triggered interrupts from the IOAPIC.
     void set_level_triggered_ioapic_source(Ioapic_source source);
+
+    void clear_level_triggered_ioapic_source();
+
+    // Handle an interrupt.
+    //
+    // Returns true, if the interrupt was delivered to userspace.
+    bool handle_user_interrupt();
+
+    // Called by entry.S or VMX code with the raw host interrupt vector number.
+    //
+    // This is _not_ the index into per_vector_info.
+    static void handle_user_interrupt(unsigned host_vector) asm("handle_user_interrupt");
 };
