@@ -51,7 +51,7 @@ class Vmcs;
 //     %gs:-0x1000 +---------------------+
 
 struct alignas(PAGE_SIZE) Per_cpu {
-    char stack[PAGE_SIZE];
+    char stack[STACK_SIZE];
 
     // This member is pointed to by %gs:0 and points to itself, i.e. the stack
     // pointer value for an empty stack.
@@ -139,9 +139,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     alignas(8) Gdt::Gdt_array gdt;
 };
 
-static_assert(OFFSETOF(Per_cpu, self) == PAGE_SIZE,
+static_assert(OFFSETOF(Per_cpu, self) == STACK_SIZE,
               "This offset is used in assembly, grep Per_cpu::self to find them");
-static_assert(OFFSETOF(Per_cpu, sys_entry_stack) == PAGE_SIZE + 8,
+static_assert(OFFSETOF(Per_cpu, sys_entry_stack) == STACK_SIZE + 8,
               "This offset is used in assembly, grep Per_cpu::sys_entry_stack to find them");
 
 class Cpulocal

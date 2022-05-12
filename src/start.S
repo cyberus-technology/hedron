@@ -23,6 +23,7 @@
  */
 
 #include "arch.hpp"
+#include "config.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
 
@@ -34,7 +35,7 @@
  */
 .bss
 .align PAGE_SIZE
-.zero PAGE_SIZE
+.zero STACK_SIZE
 BOOT_STACK:
 
 /*

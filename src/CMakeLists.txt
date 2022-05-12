@@ -74,9 +74,11 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     $<$<CONFIG:Debug>:-Werror>
     -Wlogical-op
     -Wstrict-null-sentinel
-    # Some functions (e.g. Acpi_table_fadt::init) create big stack-frames when
-    # built without optimizations (e.g. during debug-builds) 
-    -Wframe-larger-than=400
+    # Some functions (e.g. Acpi_table_fadt::init) create big
+    # stack-frames when built without optimizations (e.g. during
+    # debug-builds). We do have a stack guard page, but when frames
+    # grow beyond one page, the stack guard may not be effective.
+    -Wframe-larger-than=4096
     # We need offsetof to work for static assertions of Exc_regs layout.
     -Wno-invalid-offsetof
     $<$<BOOL:${ENABLE_RETPOLINE}>:-mindirect-branch=thunk>

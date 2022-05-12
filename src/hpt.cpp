@@ -85,6 +85,17 @@ void* Hpt::remap(Paddr phys, bool use_boot_hpt)
     return reinterpret_cast<void*>(SPC_LOCAL_REMAP + offset);
 }
 
+void Hpt::unmap_kernel_page(void* kernel_page)
+{
+    // See the function description in the header for an explanation why we only allow this operation on the
+    // boot_hpt.
+    Hpt& hpt{boot_hpt()};
+    assert_slow(hpt.is_active());
+
+    hpt.update({reinterpret_cast<mword>(kernel_page), Buddy::ptr_to_phys(kernel_page), 0, PAGE_BITS});
+    Hpt::flush_one_page(kernel_page);
+}
+
 Paddr Hpt::replace(mword vaddr, mword paddr)
 {
     Tlb_cleanup cleanup;
