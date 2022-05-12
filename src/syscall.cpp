@@ -37,6 +37,7 @@
 #include "stdio.hpp"
 #include "suspend.hpp"
 #include "utcb.hpp"
+#include "vector_info.hpp"
 #include "vectors.hpp"
 
 template <Sys_regs::Status S, bool T> void Ec::sys_finish()
@@ -879,23 +880,37 @@ void Ec::sys_irq_ctrl_configure_vector()
     Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
     Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()));
 
+    Vector_info new_vector_info;
+
     if (not sm and not kp) {
-        // Unassign: not implemented yet.
-        sys_finish<Sys_regs::BAD_HYP>();
+        new_vector_info = Vector_info::disabled();
+
+        if (Dmar::ire()) {
+            Dmar::clear_irt(Dmar::irt_index(r->cpu(), r->vector()));
+        }
+    } else {
+        if (EXPECT_FALSE(not sm)) {
+            trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        if (EXPECT_FALSE(not kp)) {
+            trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        new_vector_info = Vector_info{kp, r->kp_bit(), sm};
     }
 
-    if (EXPECT_FALSE(not sm)) {
-        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
+    auto& vector_info{Locked_vector_info::per_vector_info[r->cpu()][r->vector()]};
 
-    if (EXPECT_FALSE(not kp)) {
-        trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
-        sys_finish<Sys_regs::BAD_CAP>();
+    if (vector_info->set(new_vector_info)) {
+        sys_finish<Sys_regs::SUCCESS>();
+    } else {
+        // This error code is appropriate, because we can only end up here if the capability reference from
+        // the capability space went away after we checked it above.
+        Ec::sys_finish<Sys_regs::BAD_CAP>();
     }
-
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
 }
 
 void Ec::sys_irq_ctrl_assign_ioapic_pin()
