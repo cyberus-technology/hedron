@@ -26,9 +26,11 @@
 class Spinlock
 {
 private:
-    // The upper byte of this value is the next ticket that will be given out. The lower byte is the ticket
-    // being currently served.
-    uint16 val{0};
+    // The next ticket that we will give out.
+    uint8 next_ticket{0};
+
+    // The ticket that may enter the critical section.
+    uint8 served_ticket{0};
 
 public:
     void lock();
@@ -36,6 +38,7 @@ public:
 
     // Check whether the lock is currently locked.
     //
-    // This method is _only_ useful for assertions.
+    // This method is _only_ useful for positive assertions, i.e. to check whether a spinlock is currently
+    // held.
     bool is_locked() const;
 };
