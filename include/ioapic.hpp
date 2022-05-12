@@ -137,8 +137,14 @@ private:
     // Read an IRT entry from the write-through cache.
     uint64 get_irt_entry(size_t entry) const;
 
-    // Restore the IOAPIC state from shadow_redir_table.
-    void restore();
+    // Set all IOAPIC pins to be masked.
+    void initialize_as_masked();
+
+    // Unconditionally write back the shadow copy of IRT entries to the IOAPIC.
+    //
+    // This is useful, when we are not sure what the IOAPIC state in the hardware is or we know there is a
+    // mismatch between our shadow copy and the hardware.
+    void sync_from_shadow();
 
 public:
     Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);

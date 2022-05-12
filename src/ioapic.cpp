@@ -41,13 +41,9 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
     // set to EXTINT and left unmasked. To avoid random interrupts from being
     // delivered (e.g., when userland enables interrupts through the PIC), we
     // mask all entries and only unmask them when they are properly configured
-    // by the GSI subsystem.
+    // by the interrupt subsystem.
 
-    shadow_redir_table.resize(irt_max() + 1, IRT_MASKED);
-
-    // At this point, we are not sure what the actual values in the IRT are. So we ignore the cache for the
-    // inital write.
-    restore();
+    initialize_as_masked();
 }
 
 void Ioapic::set_irt_entry_uncached(size_t entry, uint64 val)
@@ -137,9 +133,18 @@ void Ioapic::set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, 
     set_irt_entry(ioapic_pin, irt_entry);
 }
 
-void Ioapic::restore()
+void Ioapic::initialize_as_masked()
 {
     Lock_guard<Spinlock> guard(lock);
+
+    shadow_redir_table.resize(0);
+    shadow_redir_table.resize(irt_max() + 1, IRT_MASKED);
+    sync_from_shadow();
+}
+
+void Ioapic::sync_from_shadow()
+{
+    assert_slow(lock.is_locked());
 
     for (size_t i = 0; i < shadow_redir_table.size(); i++) {
         set_irt_entry_uncached(i, shadow_redir_table[i]);
@@ -155,15 +160,15 @@ void Ioapic::set_mask(uint8 ioapic_pin, bool masked)
 
 void Ioapic::save_all()
 {
-    // Nothing to be done. shadow_redir_table is a write-through cache of the IOAPIC state and has everything
-    // we need.
+    // Nothing to be done. We will not restore the old content of the IOAPIC after resume. All devices will
+    // lose their state and we expect userspace to reprogram all interrupts.
 }
 
 void Ioapic::restore_all()
 {
     for (auto& opt_ioapic : ioapics_by_id) {
         if (opt_ioapic->has_value()) {
-            (*opt_ioapic)->restore();
+            (*opt_ioapic)->initialize_as_masked();
         }
     }
 }
