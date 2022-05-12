@@ -15,6 +15,45 @@ otherwise not obtain.
 
 Check `include/hip.hpp` for its layout.
 
+| *Field Name*       | *Description*                                                                      |
+|--------------------|------------------------------------------------------------------------------------|
+| `signature`        | Magic value to recognize the HIP: 'HDRN' in little-endian (`0x4e524448`)           |
+| `checksum`         | The HIP is valid if 16bit-wise addition of the HIP contents produces a value of 0. |
+| `length`           | Length of the HIP in bytes. This includes all CPU and memory descriptors.          |
+| `cpu_offset`       | Offset of the first CPU descriptor in bytes, relative to the HIP base.             |
+| `cpu_size`         | Size of a CPU descriptor in bytes.                                                 |
+| `ioapic_offset`    | Offset of the first IOAPIC descriptor in bytes, relative to the HIP base.          |
+| `ioapic_size`      | Size of an IOAPIC descriptor in bytes.                                             |
+| `mem_offset`       | Offset of the first memory descriptor in bytes, relative to the HIP base.          |
+| `mem_size`         | Size of a memory descriptor in bytes.                                              |
+| `api_flg`          | A bitmask of feature flags. See Features section below.                            |
+| `api_ver`          | The API version. See API Version section below.                                    |
+| `sel_num`          | Number of available capability selectors in each object space.                     |
+| `sel_exc`          | Number of selectors used for exception handling.                                   |
+| `sel_vmi`          | Number of selectors for VM exit handling.                                          |
+| `num_user_vectors` | The number of interrupt vectors usable in `irq_ctrl` system calls.                 |
+
+Additional fields are not yet documented. Please consider documenting
+them.
+
+### API Version
+
+The Hedron API uses semantic versioning. The low 12 bits of the
+`api_ver` field is the minor version. Increases of the minor version
+happen for backward compatible changes. The upper bits are the major
+version. It is increased for backward incompatible changes.
+
+### Features
+
+This section describes the features of the `api_flg` field in the HIP.
+
+| *Name* | *Bit* | *Description*                                                                               |
+|--------|-------|---------------------------------------------------------------------------------------------|
+| IOMMU  | 0     | The platform provides an IOMMU, and the feature has been activated.                         |
+| VMX    | 1     | The platform supports Intel Virtual Machine Extensions, and the feature has been activated. |
+| SVM    | 2     | The platform supports AMD Secure Virtual Machine, and the feature has been activated.       |
+| UEFI   | 3     | Hedron was booted via UEFI.                                                                 |
+
 ## Capabilities
 
 A capability is a reference to a kernel object plus associated access
@@ -273,10 +312,10 @@ Hypercalls are identified by these values.
 | `HC_PD_CTRL`                       | 8       |
 | `HC_EC_CTRL`                       | 9       |
 | `HC_SM_CTRL`                       | 12      |
-| `HC_ASSIGN_GSI`                    | 14      |
 | `HC_MACHINE_CTRL`                  | 15      |
 | `HC_CREATE_KP`                     | 16      |
 | `HC_KP_CTRL`                       | 17      |
+| `HC_IRQ_CTRL`                      | 18      |
 |------------------------------------|---------|
 | `HC_PD_CTRL_DELEGATE`              | 2       |
 | `HC_PD_CTRL_MSR_ACCESS`            | 3       |
@@ -291,6 +330,11 @@ Hypercalls are identified by these values.
 |------------------------------------|---------|
 | `KP_CTRL_MAP`                      | 0       |
 | `KP_CTRL_UNMAP`                    | 1       |
+|------------------------------------|---------|
+| `IRQ_CTRL_CONFIGURE_VECTOR`        | 0       |
+| `IRQ_CTRL_ASSIGN_IOAPIC_PIN`       | 1       |
+| `IRQ_CTRL_MASK_IOAPIC_PIN`         | 2       |
+| `IRQ_CTRL_ASSIGN_MSI`              | 3       |
 
 ## Hypercall Status
 
@@ -598,66 +642,14 @@ revoking all rights at the same time. It will be removed, use
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## assign_gsi
-
-The `assign_gsi` system call is used to route global system interrupts to the
-specified CPU. The behavior is specific to the type of interrupt as described in
-the individual subsections below.
-
-### I/O APIC Interrupt Pins
-
-GSIs referencing I/O APIC pins can be routed directly to the specified CPU and
-interfaced with using the specified interrupt semaphore. In addition to the CPU,
-the trigger mode and polarity settings can be configured according to the
-corresponding bits in the parameter, if the "override configuration" flag is
-set. This is required because the default settings derived from the
-specification and the ACPI MADT table might be overridden by other sources
-(e.g., ACPI device descriptions) unknown to the hypervisor. The driver of the
-device connected to the interrupt is expected to know and communicate the
-correct settings when assigning the GSI.
-
-### Message Signaled Interrupts (MSIs)
-
-MSIs work slightly differently in that they need to be configured in the
-respective devices. This happens in the PCI configuration space (or the MSI-X
-BAR) or the MMIO space in case of the HPET. In order for the driver of the
-device to know what values to program, the hypervisor will return the resulting
-MSI address/data combination to the caller. Programming these values into the
-device will ensure that interrupts triggered by these settings end up in the
-specified interrupt semaphore. The driver validates the ownership to the
-hypervisor by specifying the mapping to the configuration space or MMIO region
-belonging to the device. This is also used to derive the requestor ID of the
-device and configure the IOMMU correctly, if enabled.
-
-### In
-
-| *Register*  | *Content*               | *Description*                                                                               |
-|-------------|-------------------------|---------------------------------------------------------------------------------------------|
-| ARG1[7:0]   | System Call Number      | Needs to be `HC_ASSIGN_GSI`.                                                                |
-| ARG1[8]     | Must be 1               | This bit must be set for backward compatibility.                                            |
-| ARG1[63:12] | Semaphore Selector      | The selector referencing the interrupt semaphore associated with the GSI.                   |
-| ARG2        | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region (only for MSIs). |
-| ARG3[31:0]  | CPU number              | The CPU number this GSI should be routed to.                                                |
-| ARG3[32]    | Interrupt Trigger Mode  | The trigger mode setting of the interrupt (level=1/edge=0); only for I/O APIC pins).        |
-| ARG3[33]    | Interrupt Polarity      | The polarity setting of the interrupt (low=1/high=0; only for I/O APIC pins).               |
-| ARG4        | Signal Semaphore        | **Deprecated**, specify as ~0ull.                                                           |
-
-### Out
-
-| *Register* | *Content*          | *Description*                                               |
-|------------|--------------------|-------------------------------------------------------------|
-| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
-| OUT2       | MSI address        | The MSI address to program into the device (PCI/HPET only). |
-| OUT3       | MSI data           | The MSI data to program into the device (PCI/HPET only).    |
-
 ## machine_ctrl
 
 The `machine_ctrl` system call is used to perform global operations on
 the machine the hypervisor is running on. Individual operations
 are sub-operations of this system call.
 
-Each PD with passthrough permissions (see `create_pd`) can invoke this
-system call.
+Only PDs with passthrough permissions (see `create_pd`) can invoke
+this system call.
 
 **Access to `machine_ctrl` is inherently insecure and should not be
 granted to untrusted userspace PDs.**
@@ -884,3 +876,192 @@ unmapped/overmapped using `pd_ctrl_delegate`.
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## irq_ctrl
+
+The `irq_ctrl` system call is used to perform operations on the
+interrupt configuration. Individual operations on interrupts are
+sub-operations of this system call.
+
+Logically, the `irq_ctrl` suboperations can be used to do the
+following things:
+
+- They can connect a MSI or pin-based (IOAPIC) interrupt to an
+  interrupt vector on a specific CPU (the `irq_ctrl_assign`
+  suboperations).
+- They can connect a vector on a specific CPU to a semaphore/kpage
+  pair (`irq_ctrl_configure_vector`).
+
+To handle level triggered interrupts, the kernel also exposes IOAPIC
+pin masking via `irq_ctrl_mask_ioapic_pin`.
+
+The kernel reserves a range of interrupt vectors for userspace
+use. These are `0` to `user_irq_num - 1` (inclusive). Userspace can
+freely reprogram these vectors using the suboperations below.
+
+Only PDs with passthrough permissions (see `create_pd`) can invoke
+this system call.
+
+**Access to `irq_ctrl` is inherently insecure and should not be
+granted to untrusted userspace PDs.**
+
+### In
+
+| *Register* | *Content*          | *Description*                                                                     |
+|------------|--------------------|-----------------------------------------------------------------------------------|
+| ARG1[7:0]  | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                        |
+| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_IRQ_CTRL_*` to select one of the `irq_ctrl_*` calls below. |
+| ...        | ...                |                                                                                   |
+
+### Out
+
+See the specific `irq_ctrl` sub-operation.
+
+## `irq_ctrl_configure_vector`
+
+This system call connects an interrupt vector on a CPU to a
+semaphore/kpage pair. In essence, this configures how userspace will
+be informed when the kernel receives an interrupt that it doesn't
+handle itself.
+
+The kernel ignores interrupts that arrive on vectors that are not
+configured using this system call.
+
+When the configured interrupt arrives, the kernel will atomically set
+the specified bit in the kpage. If this bit was not set before, the
+semaphore will be up'ed by the kernel. That means that the semaphore
+will at least receive one `up` event per 0 -> 1 transition of the
+specified kpage bit.
+
+If userspace uses the same kpage for multiple interrupts, the
+suggested usage is to use a `down_zero` operation on the sempahore and
+atomically clear any 1 bits before blocking on the semaphore again.
+
+Calling this system call with a null capability for both semaphore and
+kpage will unassign this interrupt. After this, userspace will not be
+informed about interrupts via the previously configured semaphore and
+kpage. The IOMMU Interrupt Remapping Table Entry for this interrupt
+will be cleared. In case of a pin-based (IOAPIC) interrupt the
+interrupt will be masked at the IOAPIC.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                                             |
+|-------------|--------------------|-------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                                |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_IRQ_CTRL_VECTOR`.                                                         |
+| ARG1[11:10] | Ignored            | Should be set to zero.                                                                    |
+| ARG1[19:12] | Vector             | The host vector that is configured.                                                       |
+| ARG1[35:20] | CPU number         | The CPU number on which the vector is configured.                                         |
+| ARG2        | Semaphore Selector | The selector referencing a semaphore the hypervisor will associate with the vector.       |
+| ARG3        | KPage Selector     | A object capability referencing a KPage.                                                  |
+| ARG4[14:0]  | Bit inside KPage   | The index of the bit that will be set in the kpage when the associated interrupt arrives. |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+
+## `irq_ctrl_assign_ioapic_pin`
+
+This system call configures an IOAPIC pin to deliver interrupts to the
+given CPU and vector. If Hedron was booted with IOMMU support, the
+interrupt will be whitelisted in the IOMMU Interrupt Remapping Table.
+
+Only a single interrupt can be assigned to a single CPU and vector
+pair.  If another IOAPIC pin was previously configured as
+level-triggered and assigned to the given CPU and vector pair, it
+**must** be masked via `irq_ctrl_mask_ioapic_pin` to avoid interrupt
+storms.
+
+If Hedron was booted with IOMMU support and another IOAPIC pin or MSI
+was previously assigned to the given CPU and vector pair, its IOMMU
+Interrupt Remapping Table entry will be removed.
+
+When a level triggered interrupt arrives, the corresponding IOAPIC pin
+will be masked. To unmask this particular interrupt again, the pin
+must be unmasked using `irq_ctrl_mask_ioapic_pin`.
+
+When this function returns, the respective IOAPIC pin is initially
+unmasked.
+
+### In
+
+| *Register*  | *Content*              | *Description*                                                                            |
+|-------------|------------------------|------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number     | Needs to be `HC_IRQ_CTRL`.                                                               |
+| ARG1[9:8]   | Sub-operation          | Needs to be `HC_IRQ_CTRL_ASSIGN_IOAPIC_PIN`.                                             |
+| ARG1[10]    | Interrupt Trigger Mode | The trigger mode setting of the interrupt (level=1/edge=0);                              |
+| ARG1[11]    | Interrupt Polarity     | The polarity setting of the interrupt (low=1/high=0).                                    |
+| ARG1[19:12] | Vector                 | The host vector this interrupt should be directed to.                                    |
+| ARG1[35:20] | CPU number             | The CPU number this GSI should be routed to.                                             |
+| ARG2[3:0]   | IOAPIC ID              | The ID of the associated IOAPIC device.                                                  |
+| ARG2[11:4]  | IOAPIC PIN             | The PIN index of the interrupt line on the selected IOAPIC device.                       |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+
+## `irq_ctrl_mask_ioapic_pin`
+
+Mask or unmask a specific interrupt pin of an IOAPIC.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                                                      |
+|-------------|--------------------|----------------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                                         |
+| ARG1[9:8]   | Sub-operation      | Needs to be `HC_IRQ_CTRL_MASK_IOAPIC_PIN`.                                                         |
+| ARG1[10]    | Mask/Unmask        | The setting of the mask bit (masked=1/unmasked=0)                                                  |
+| ARG1[63:11] | Ignored            | Should be set to zero.                                                                             |
+| ARG2[3:0]   | IOAPIC ID          | The ID of the associated IOAPIC device.                                                            |
+| ARG2[11:4]  | IOAPIC PIN         | The PIN index of the interrupt line on the selected IOAPIC device that will be masked or unmasked. |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+
+## `irq_ctrl_assign_msi`
+
+Configures an MSI to arrive at the given CPU and vector. This system
+call returns the MSI address/data pair that userspace must program
+into the corresponding device.
+
+If Hedron was booted with IOMMU support and another IOAPIC pin or MSI
+was previously assigned to the given CPU and vector pair, its IOMMU
+Interrupt Remapping Table entry will be removed.
+
+If a IOAPIC pin was previously configured as level-triggered and
+assigned to the given CPU and vector pair, it **must** be masked via
+`irq_ctrl_mask_ioapic_pin` to avoid interrupt storms.
+
+Hedron can not automatically clean up IOMMU Interrupt Remapping Table
+Entries for MSIs that are not used anymore. It is up to userspace to
+remove entries in the IOMMU using `irq_ctrl_configure_vector`. Failing
+to remove entries can result in PCI devices being able to trigger
+interrupts that they should not be able to.
+
+### In
+
+| *Register*  | *Content*               | *Description*                                                                              |
+|-------------|-------------------------|--------------------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number      | Needs to be `HC_ASSIGN_MSI`.                                                               |
+| ARG1[9:8]   | Sub-operation           | Needs to be `HC_IRQ_CTRL_ASSIGN_MSI`.                                                      |
+| ARG1[11:10] | Ignored                 | Should be set to zero.                                                                     |
+| ARG1[19:12] | Vector                  | The host vector this interrupt should be directed to.                                      |
+| ARG1[35:20] | CPU number              | The CPU number this MSI should be routed to.                                               |
+| ARG2[11:0]  | Ignored                 | Should be set to zero.                                                                     |
+| ARG2[63:12] | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region as page number. |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+| OUT2       | MSI address        | The MSI address to program into the device.                 |
+| OUT3       | MSI data           | The MSI data to program into the device                     |
