@@ -188,12 +188,6 @@ public:
     void set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
                                   bool active_low);
 
-    // Mask an IRT entry, if it was configured as a level-triggered interrupt.
-    void mask_if_level(unsigned gsi);
-
-    // Unmask an IRT entry, if it was configured as a level-triggered interrupt.
-    void unmask_if_level(unsigned gsi);
-
     // Prepare all IOAPICs in the system for system suspend by saving their state to memory.
     static void save_all();
 

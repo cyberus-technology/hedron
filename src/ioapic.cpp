@@ -147,40 +147,6 @@ void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, un
     set_irt_entry(pin, irt_entry);
 }
 
-void Ioapic::mask_if_level(unsigned gsi)
-{
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-
-    Lock_guard<Spinlock> guard(lock);
-
-    uint64 const old_entry{shadow_redir_table[pin]};
-
-    if ((old_entry & (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) != IRT_TRIGGER_MODE_LEVEL) {
-        // Not level or already masked.
-        return;
-    }
-
-    set_irt_entry(pin, old_entry | IRT_MASKED);
-}
-
-void Ioapic::unmask_if_level(unsigned gsi)
-{
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-
-    Lock_guard<Spinlock> guard(lock);
-
-    uint64 const old_entry{shadow_redir_table[pin]};
-
-    if ((old_entry & (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) != (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) {
-        // Not level or not masked.
-        return;
-    }
-
-    set_irt_entry(pin, old_entry & ~IRT_MASKED);
-}
-
 void Ioapic::restore()
 {
     Lock_guard<Spinlock> guard(lock);
