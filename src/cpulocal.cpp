@@ -33,7 +33,14 @@ Per_cpu& Cpulocal::get_remote(unsigned cpu_id)
 
 mword Cpulocal::setup_cpulocal()
 {
-    unsigned cpu_id{Cpu::find_by_apic_id(Lapic::early_id())};
+    auto const opt_cpu_id{Cpu::find_by_apic_id(Lapic::early_id())};
+
+    if (not opt_cpu_id.has_value()) {
+        // Abort CPU bootstrap.
+        return 0;
+    }
+
+    unsigned const cpu_id{*opt_cpu_id};
     Per_cpu& local{cpu[cpu_id]};
 
     local.cpu_id = cpu_id;
@@ -42,7 +49,7 @@ mword Cpulocal::setup_cpulocal()
     static_assert(STACK_SIZE > PAGE_SIZE, "Stack is too small to place a stack guard");
     Hpt::unmap_kernel_page(local.stack);
 
-    mword gs_base{reinterpret_cast<mword>(&local.self)};
+    mword const gs_base{reinterpret_cast<mword>(&local.self)};
     Msr::write(Msr::IA32_GS_BASE, gs_base);
     Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 

@@ -200,10 +200,24 @@ if __name__ == "__main__":
         help="The amount of memory in MiB to give to the VM.",
     )
 
+    parser.add_argument(
+        "--cpus",
+        type=int,
+        default=DEFAULT_CPUS,
+        help="The number of virtual CPUs of the VM.",
+    )
+
+    parser.add_argument(
+        "--expected-cpus",
+        type=int,
+        default=DEFAULT_CPUS,
+        help="The number of virtual CPUs that Hedron brings up.",
+    )
+
     args = parser.parse_args()
 
     qemu_args = QEMU_DEFAULT_ARGS
-    qemu_args += ["-smp", str(DEFAULT_CPUS), "-m", str(args.memory)]
+    qemu_args += ["-smp", str(args.cpus), "-m", str(args.memory)]
 
     if args.disk_image:
         qemu_args += [
@@ -238,7 +252,7 @@ if __name__ == "__main__":
             QEMU,
             qemu_args,
             expect_multiboot_version=2 if args.disk_image else 1,
-            expect_cpus=DEFAULT_CPUS,
+            expect_cpus=args.expected_cpus,
         )
         print("\nTest completed successfully.")
         sys.exit(0)

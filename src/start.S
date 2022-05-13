@@ -407,6 +407,23 @@ __start_all_hi:
 
 3:
                         call    setup_cpulocal
+                        test    %rax, %rax
+                        jnz     5f
+
+                        /*
+                         * We failed to initialize the current CPU. We need to release the
+                         * next CPU and put this one to sleep without touching the stack,
+                         * because we re-use it for every CPU.
+                         */
+                        movq    $1, boot_lock
+                        cli
+4:                      hlt
+                        jmp 4b
+
+5:
+                        /*
+                         * CPU initialization was successful. Switch to the CPU-local stack.
+                         */
                         mov     %rax, %rsp
 
                         call    bootstrap

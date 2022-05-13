@@ -93,7 +93,7 @@ void Lapic::init()
 
     Msr::write(Msr::IA32_APIC_BASE, apic_base | 0x800);
 
-    assert(Cpu::id() == Cpu::find_by_apic_id(id()));
+    assert_slow(Cpu::find_by_apic_id(id()) == Optional{Cpu::id()});
 
     Cpu::lapic_info[Cpu::id()].id = read(LAPIC_IDR);
     Cpu::lapic_info[Cpu::id()].version = read(LAPIC_LVR);

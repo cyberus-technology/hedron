@@ -13,11 +13,15 @@ stdenv.mkDerivation {
   '';
 
   buildPhase = ''
-    # This takes a while for unknown reasons, so let's do this only once.
+    # This takes a while on old Qemus, because of very inefficient Multiboot loading. Should be fixed in Qemu  So let's do this only once.
     echo "# Testing legacy direct kernel boot."
     qemu-boot ${hedron}/share/hedron/hypervisor.elf32 | tee output.log
 
     tools/gen_usb.sh ${grub_image} ${hedron}/share/hedron/hypervisor.elf32 tools/grub.cfg.tmpl
+
+    # Test whether Hedron deals with many CPUs. The goal is not to crash. The number of CPUs that we expect to see here should be
+    # equal to NUM_CPU.
+    qemu-boot ${grub_image} --cpus 255 --expected-cpus 64 --disk-image | tee -a output.log
 
     # We boot our disk images with different amounts of RAM to exercise relocation.
     # If this fails, check whether the hypervisor heap actually fits.
