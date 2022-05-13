@@ -683,6 +683,10 @@ For userspace the suspend/resume cycle will happen during the
 execution of the system call and execution resumes as normal when the
 system call returns.
 
+Hedron will not restore the IOAPIC configuration. After resume, all
+IOAPIC RTEs will be masked and need to be re-programmed using
+`irq_ctrl_assign_ioapic_pin`.
+
 Userspace **must not** attempt to put the system into sleep states S1 to
 S3 without using this system call, because it will put the system in
 an undefined state.
