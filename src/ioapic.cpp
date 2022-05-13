@@ -132,8 +132,8 @@ void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, un
     // the IOAPIC IRT. Programming these are necessary to make EOI broadcasts from the LAPIC work.
 
     uint64 irt_entry{IRT_FORMAT_REMAPPABLE | vector |
-                     (static_cast<uint64>(iommu_irt_index & 0x7fff) << IRT_REMAPPABLE_HANDLE_0_15_SHIFT) |
-                     (static_cast<uint64>(iommu_irt_index >> 16) << IRT_REMAPPABLE_HANDLE_16_SHIFT)};
+                     (static_cast<uint64>(iommu_irt_index & 0x7fff) << IRT_REMAPPABLE_HANDLE_0_14_SHIFT) |
+                     (static_cast<uint64>(iommu_irt_index >> 15) << IRT_REMAPPABLE_HANDLE_15_SHIFT)};
 
     if (active_low) {
         irt_entry |= IRT_POLARITY_ACTIVE_LOW;

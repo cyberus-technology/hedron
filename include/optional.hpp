@@ -18,6 +18,7 @@
 #pragma once
 
 #include "assert.hpp"
+#include "util.hpp"
 
 // A wrapper for optionally contained values.
 //
@@ -115,3 +116,23 @@ public:
         return *this;
     }
 };
+
+template <typename T> inline bool operator==(Optional<T> const& lhs, Optional<T> const& rhs)
+{
+    // The optionals can't be equal if one has a value and the other does not.
+    if (lhs.has_value() != rhs.has_value()) {
+        return false;
+    }
+
+    if (!lhs.has_value()) {
+        // Both optionals have no value.
+        return true;
+    }
+
+    return *lhs == *rhs;
+}
+
+template <typename T> inline bool operator!=(Optional<T> const& lhs, Optional<T> const& rhs)
+{
+    return not(lhs == rhs);
+}

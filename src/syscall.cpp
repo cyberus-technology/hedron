@@ -952,7 +952,7 @@ void Ec::sys_irq_ctrl_configure_vector()
     sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
     Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
-    Sm* kp = capability_cast<Sm>(Space_obj::lookup(r->kp()));
+    Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()));
 
     if (not sm and not kp) {
         // Unassign: not implemented yet.
@@ -1056,7 +1056,7 @@ void Ec::syscall_handler()
     case hypercall_id::HC_MACHINE_CTRL:
         sys_machine_ctrl();
     case hypercall_id::HC_IRQ_CTRL:
-        sys_machine_ctrl();
+        sys_irq_ctrl();
 
     default:
         Ec::sys_finish<Sys_regs::BAD_HYP>();

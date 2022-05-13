@@ -75,6 +75,7 @@ void* Hpt::remap(Paddr phys, bool use_boot_hpt)
     // This manual distinction is unfortunate, but when creating the roottask
     // the current PD is not the boot page table anymore.
     Hpt& hpt{use_boot_hpt ? boot_hpt() : Pd::current()->hpt};
+    assert_slow(hpt.is_active());
 
     hpt.update(cleanup, {SPC_LOCAL_REMAP, phys, attr, order});
     hpt.update(cleanup, {SPC_LOCAL_REMAP + size, phys + size, attr, order});

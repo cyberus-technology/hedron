@@ -20,7 +20,7 @@ stages:
     - apt-get update && apt-get -y install build-essential qemu-system-x86 grub2-common grub-pc-bin grub-efi-amd64-bin mtools ovmf xorriso python3 python3-pexpect netcat
 
 .in_latest_fedora:
-  image: fedora:latest
+  image: fedora:35
 
 .with_fedora_builddeps:
   before_script:

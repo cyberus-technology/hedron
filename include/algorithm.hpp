@@ -19,6 +19,11 @@
 
 #include "util.hpp"
 
+template <typename T, size_t N> size_t array_size(T (&)[N]) { return N; };
+
+template <typename T, size_t SIZE> T* array_begin(T (&array)[SIZE]) { return &array[0]; }
+template <typename T, size_t SIZE> T* array_end(T (&array)[SIZE]) { return &array[SIZE]; }
+
 template <typename IT, typename IT_END, typename T> T accumulate(IT begin, IT_END end, T init)
 {
     for (; begin != end; ++begin) {

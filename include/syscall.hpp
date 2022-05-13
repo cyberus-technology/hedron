@@ -379,7 +379,7 @@ public:
 
     inline mword sm() const { return static_cast<mword>(ARG_2); }
     inline mword kp() const { return static_cast<mword>(ARG_3); }
-    inline unsigned kp_bit() const { return static_cast<unsigned>(ARG_4 & 0x7FFF); }
+    inline uint16 kp_bit() const { return static_cast<uint16>(ARG_4 & 0x7FFF); }
 };
 
 class Sys_irq_ctrl_assign_ioapic_pin : public Sys_irq_ctrl
