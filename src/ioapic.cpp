@@ -35,7 +35,15 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
 {
     Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
 
-    trace(TRACE_APIC, "APIC:%#x ID:%#x VER:%#x IRT:%#x GSI:%u", paddr, id, version(), irt_max(), gsi_base);
+    uint32 const id_reg{read_id_reg()};
+
+    trace(TRACE_APIC, "IOAPIC:%#x ID:%#x VER:%#x IRT:%#x GSI:%u", paddr, id_reg, version(), irt_max(),
+          gsi_base);
+
+    uint32 const hw_id{(id_reg >> ID_SHIFT) & ID_MASK};
+    if (hw_id != id) {
+        trace(TRACE_ERROR, "BIOS bug? Got ID %#x from MADT, but %#x from IOAPIC!", id, hw_id);
+    }
 
     // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
     // set to EXTINT and left unmasked. To avoid random interrupts from being

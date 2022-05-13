@@ -25,6 +25,7 @@
 #include "cpu.hpp"
 #include "io.hpp"
 #include "ioapic.hpp"
+#include "stdio.hpp"
 #include "vectors.hpp"
 
 void Acpi_table_madt::parse() const
@@ -57,6 +58,13 @@ void Acpi_table_madt::parse_lapic(Acpi_apic const* ptr)
 void Acpi_table_madt::parse_ioapic(Acpi_apic const* ptr)
 {
     Acpi_ioapic const* p = static_cast<Acpi_ioapic const*>(ptr);
+    auto const id{static_cast<uint8>(p->id & Ioapic::ID_MASK)};
 
-    Ioapic::by_id(p->id) = Ioapic(p->phys, p->id, p->gsi);
+    // At least, the Lenovo SR630 BIOS gives invalid IOAPIC IDs in the MADT. As long as the low 4-bits of the
+    // IDs still end up being unique, everything should still work.
+    if (id != p->id) {
+        trace(TRACE_ERROR, "ACPI MADT contains impossible IOAPIC ID %#x, using %#x instead", p->id, id);
+    }
+
+    Ioapic::by_id(id) = Ioapic(p->phys, id, p->gsi);
 }

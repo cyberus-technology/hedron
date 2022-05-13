@@ -66,6 +66,11 @@ private:
         IOAPIC_IRT = 0x10,
     };
 
+    enum Id_reg
+    {
+        ID_SHIFT = 24,
+    };
+
     enum Irt_entry : uint64
     {
         // Constants for remappable (IOMMU) IRT entries.
@@ -147,6 +152,11 @@ private:
     void sync_from_shadow();
 
 public:
+    enum
+    {
+        ID_MASK = 0xf,
+    };
+
     Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
     Ioapic(Ioapic const&) = default;
     Ioapic(Ioapic&&) = default;

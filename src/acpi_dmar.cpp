@@ -44,7 +44,9 @@ void Acpi_dmar::parse() const
             Pci::claim_dev(dmar, s->rid());
             break;
         case 3:
-            Ioapic::claim_dev(s->rid(), s->id);
+            // See Acpi_table_madt::parse_ioapic. On systems with broken IOAPIC IDs in the MADT, we see them
+            // in the DMAR table as well.
+            Ioapic::claim_dev(s->rid(), s->id & Ioapic::ID_MASK);
             break;
         case 4:
             Hpet::claim_dev(s->rid(), s->id);
