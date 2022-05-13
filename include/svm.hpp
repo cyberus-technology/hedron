@@ -26,6 +26,12 @@
 class Vmcb
 {
 public:
+    // SVM support is currently in poor shape and disabled by default. If you want to experiment with it, you
+    // can disable this.
+    //
+    // If you want to find places to fix, grep for this variable in the code.
+    static constexpr bool DISABLE_BROKEN{true};
+
     union {
         char pad[1024];
         struct {

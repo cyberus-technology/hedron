@@ -407,6 +407,20 @@ void Ec::ret_user_vmrun()
         die("Invalid XCR0");
     }
 
+    // *** The SVM vCPU entry code is currently broken and needs repair. ***
+    //
+    // There are multiple issue with the code below:
+    //
+    // - LOAD_GPR loads RAX, but RAX needs to point to the VMCB.
+    // - GS is destroyed by VMRUN, so we cannot use it to restore the stack.
+    // - The Vmcb::root() memory reference generates a indirect memory operand via a general-purpose register,
+    //   but all of them are clobbered by VMRUN.
+    //
+    // All of these issues have been caused by refactoring and not being able to test SVM. So we keep it
+    // disabled for now until we have working tests on actual hardware.
+    if (Vmcb::DISABLE_BROKEN)
+        Console::panic("SVM vCPU entry is broken");
+
     // clang-format off
     asm volatile ("lea %0, %%rsp;"
                   EXPAND (LOAD_GPR)
@@ -422,7 +436,7 @@ void Ec::ret_user_vmrun()
                   "cli;"
                   "stgi;"
                   "jmp svm_handler;"
-                  : : "m" (current()->regs), "m" (Vmcb::root) : "memory");
+                  : : "m" (current()->regs), "m" (Vmcb::root()) : "memory");
     // clang-format on
 
     UNREACHED;
