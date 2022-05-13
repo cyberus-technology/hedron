@@ -35,6 +35,7 @@ TEST_CASE("array_begin/array_end work with algorithms")
 {
     const int example[]{1, 2, 3};
 
+    CHECK(array_size(example) == array_end(example) - array_begin(example));
     CHECK(::accumulate(array_begin(example), array_end(example), 0) == 6);
 }
 

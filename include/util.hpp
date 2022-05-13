@@ -41,8 +41,6 @@ template <typename T> struct remove_reference<T&&> {
     using type = T;
 };
 
-template <typename T, size_t N> size_t array_size(T (&)[N]) { return N; };
-
 template <typename T> struct is_lvalue_reference : false_type {
 };
 template <typename T> struct is_lvalue_reference<T&> : true_type {

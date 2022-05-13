@@ -25,11 +25,11 @@
 #pragma once
 
 #include "acpi_gas.hpp"
+#include "algorithm.hpp"
 #include "atomic.hpp"
 #include "config.hpp"
 #include "cpu.hpp"
 #include "extern.hpp"
-#include "util.hpp"
 
 struct Cpu_info;
 
