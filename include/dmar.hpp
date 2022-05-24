@@ -84,6 +84,15 @@ private:
     uint64 lo, hi;
 
 public:
+    enum
+    {
+        // The size of an IRT entry as a power of two.
+        ENTRY_SIZE_ORDER = 4,
+
+        // The IRT has 2^ENTRIES_ORDER entries.
+        NUM_ENTRIES_ORDER = 8,
+    };
+
     inline void set(uint64 h, uint64 l)
     {
         hi = h;
@@ -93,9 +102,15 @@ public:
 
     static inline void* operator new(size_t)
     {
-        return clflush(Buddy::allocator.alloc(0, Buddy::FILL_0), PAGE_SIZE);
+        constexpr unsigned IRT_SIZE_ORDER{NUM_ENTRIES_ORDER + ENTRY_SIZE_ORDER};
+        static_assert(IRT_SIZE_ORDER >= PAGE_BITS);
+
+        return clflush(
+            // The allocator takes the allocation size as order of pages.
+            Buddy::allocator.alloc(IRT_SIZE_ORDER - PAGE_BITS, Buddy::FILL_0), 1 << IRT_SIZE_ORDER);
     }
 };
+static_assert(sizeof(Dmar_irt) == 1 << Dmar_irt::ENTRY_SIZE_ORDER);
 
 class Dmar : public Forward_list<Dmar>
 {
