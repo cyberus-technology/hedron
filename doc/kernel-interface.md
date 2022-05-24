@@ -312,6 +312,7 @@ Hypercalls are identified by these values.
 | `HC_PD_CTRL`                       | 8       |
 | `HC_EC_CTRL`                       | 9       |
 | `HC_SM_CTRL`                       | 12      |
+| `HC_ASSIGN_PCI`                    | 13      |
 | `HC_MACHINE_CTRL`                  | 15      |
 | `HC_CREATE_KP`                     | 16      |
 | `HC_KP_CTRL`                       | 17      |
