@@ -267,10 +267,15 @@ public:
 
     static inline void set_irt(uint16 i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
     {
+        assert(i < (1 << Dmar_irt::NUM_ENTRIES_ORDER));
         irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
     }
 
-    static inline void clear_irt(uint16 i) { irt[i].set(0, 0); }
+    static inline void clear_irt(uint16 i)
+    {
+        assert(i < (1 << Dmar_irt::NUM_ENTRIES_ORDER));
+        irt[i].set(0, 0);
+    }
 
     /// Returns the IRT index to use for the given vector and CPU.
     static inline uint16 irt_index(uint16 cpu, uint8 vector)
