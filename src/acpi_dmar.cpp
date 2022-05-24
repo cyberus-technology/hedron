@@ -27,6 +27,7 @@
 #include "ioapic.hpp"
 #include "pci.hpp"
 #include "pd.hpp"
+#include "stdio.hpp"
 
 void Acpi_dmar::parse() const
 {
@@ -41,15 +42,21 @@ void Acpi_dmar::parse() const
 
         switch (s->type) {
         case 1 ... 2:
-            Pci::claim_dev(dmar, s->rid());
+            if (not Pci::claim_dev(dmar, s->rid())) {
+                trace(TRACE_ERROR, "Failed to claim PCI device %#x", s->rid());
+            }
             break;
         case 3:
             // See Acpi_table_madt::parse_ioapic. On systems with broken IOAPIC IDs in the MADT, we see them
             // in the DMAR table as well.
-            Ioapic::claim_dev(s->rid(), s->id & Ioapic::ID_MASK);
+            if (not Ioapic::claim_dev(s->rid(), s->id & Ioapic::ID_MASK)) {
+                trace(TRACE_ERROR, "Failed to claim IOAPIC %#x with RID %#x", s->id, s->rid());
+            }
             break;
         case 4:
-            Hpet::claim_dev(s->rid(), s->id);
+            if (not Hpet::claim_dev(s->rid(), s->id)) {
+                trace(TRACE_ERROR, "Failed to claim HPET %#x with RID %#x", s->id, s->rid());
+            }
             break;
         }
     }
