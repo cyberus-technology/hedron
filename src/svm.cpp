@@ -41,7 +41,7 @@ Vmcb::~Vmcb()
 
 void Vmcb::init()
 {
-    if (not Cpu::feature(Cpu::FEAT_SVM) or not has_npt()) {
+    if (DISABLE_BROKEN or (not Cpu::feature(Cpu::FEAT_SVM) or not has_npt())) {
         Hip::clr_feature(Hip::FEAT_SVM);
         return;
     }
