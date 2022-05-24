@@ -21,6 +21,7 @@
 #pragma once
 
 #include "algorithm.hpp"
+#include "config.hpp"
 #include "list.hpp"
 #include "slab.hpp"
 #include "util.hpp"
@@ -90,7 +91,7 @@ public:
         ENTRY_SIZE_ORDER = 4,
 
         // The IRT has 2^ENTRIES_ORDER entries.
-        NUM_ENTRIES_ORDER = 8,
+        NUM_ENTRIES_ORDER = 14,
     };
 
     inline void set(uint64 h, uint64 l)
@@ -111,6 +112,8 @@ public:
     }
 };
 static_assert(sizeof(Dmar_irt) == 1 << Dmar_irt::ENTRY_SIZE_ORDER);
+static_assert(1 << Dmar_irt::NUM_ENTRIES_ORDER >= NUM_USER_VECTORS * NUM_CPU,
+              "IRT too small for number of CPUs");
 
 class Dmar : public Forward_list<Dmar>
 {
