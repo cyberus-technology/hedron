@@ -21,6 +21,7 @@
 #pragma once
 
 #include "algorithm.hpp"
+#include "assert.hpp"
 #include "config.hpp"
 #include "list.hpp"
 #include "slab.hpp"
@@ -264,9 +265,20 @@ public:
         for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::command)(gcmd));
     }
 
-    static inline void set_irt(unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
+    static inline void set_irt(uint16 i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
     {
         irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
+    }
+
+    static inline void clear_irt(uint16 i) { irt[i].set(0, 0); }
+
+    /// Returns the IRT index to use for the given vector and CPU.
+    static inline uint16 irt_index(uint16 cpu, uint8 vector)
+    {
+        static_assert(NUM_CPU * NUM_USER_VECTORS < 1 << 16);
+        assert(cpu < NUM_CPU and vector < NUM_USER_VECTORS);
+
+        return static_cast<uint16>(vector * NUM_CPU + cpu);
     }
 
     static bool ire() { return gcmd & GCMD_IRE; }
