@@ -65,16 +65,6 @@ bool Locked_vector_info::set(Vector_info const& new_vector_info)
 
         old_vector_info = vector_info;
         vector_info = new_vector_info;
-
-        // There might have been a level triggered interrupt routed to this CPU/vector pair before. If so, we
-        // need to shut it up to avoid an interrupt storm.
-        //
-        // We do this with the spinlock held to make it easier to reason about what happens in case of
-        // concurrent calls to set().
-        auto const& old_src{old_vector_info.level_triggered_source};
-        if (old_src.has_value() and old_src != new_vector_info.level_triggered_source) {
-            Ioapic::by_id(old_src->ioapic_id)->set_mask(old_src->ioapic_pin, true);
-        }
     }
 
     if (old_vector_info.kp and old_vector_info.kp->del_ref()) {
