@@ -91,7 +91,7 @@ public:
         // The size of an IRT entry as a power of two.
         ENTRY_SIZE_ORDER = 4,
 
-        // The IRT has 2^ENTRIES_ORDER entries.
+        // The IRT has 2^NUM_ENTRIES_ORDER entries.
         NUM_ENTRIES_ORDER = 14,
     };
 
@@ -113,8 +113,6 @@ public:
     }
 };
 static_assert(sizeof(Dmar_irt) == 1 << Dmar_irt::ENTRY_SIZE_ORDER);
-static_assert(1 << Dmar_irt::NUM_ENTRIES_ORDER >= NUM_USER_VECTORS * NUM_CPU,
-              "IRT too small for number of CPUs");
 
 class Dmar : public Forward_list<Dmar>
 {
@@ -280,7 +278,10 @@ public:
     /// Returns the IRT index to use for the given vector and CPU.
     static inline uint16 irt_index(uint16 cpu, uint8 vector)
     {
-        static_assert(NUM_CPU * NUM_USER_VECTORS < 1 << 16);
+        static_assert(1 << Dmar_irt::NUM_ENTRIES_ORDER >= NUM_USER_VECTORS * NUM_CPU,
+                      "IRT too small for number of CPUs");
+        static_assert(Dmar_irt::NUM_ENTRIES_ORDER <= 16, "Index type to small for IRT size");
+
         assert(cpu < NUM_CPU and vector < NUM_USER_VECTORS);
 
         return static_cast<uint16>(vector * NUM_CPU + cpu);
