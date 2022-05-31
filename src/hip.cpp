@@ -35,9 +35,19 @@
 #include "multiboot2.hpp"
 #include "pci.hpp"
 #include "space_obj.hpp"
+#include "stdio.hpp"
 
 mword Hip::root_addr;
 mword Hip::root_size;
+
+template <typename T> static void assert_in_hip(T const* ptr)
+{
+    void const* ptr_start{ptr};
+    void const* ptr_end{reinterpret_cast<char const*>(ptr) + sizeof(T)};
+
+    assert(ptr_start >= PAGE_H);
+    assert(ptr_end <= &PAGE_H[PAGE_SIZE]);
+}
 
 void Hip::build(mword magic, mword addr)
 {
@@ -134,6 +144,8 @@ void Hip::build_mbi2(Hip_mem*& mem, mword addr)
 
 template <typename T> void Hip::add_mod(Hip_mem*& mem, T const* mod, uint32 aux)
 {
+    assert_in_hip(mem);
+
     if (!root_addr) {
         root_addr = mod->s_addr;
         root_size = mod->e_addr - mod->s_addr;
@@ -148,6 +160,8 @@ template <typename T> void Hip::add_mod(Hip_mem*& mem, T const* mod, uint32 aux)
 
 template <typename T> void Hip::add_mem(Hip_mem*& mem, T const* map)
 {
+    assert_in_hip(mem);
+
     mem->addr = map->addr;
     mem->size = map->len;
     mem->type = map->type;
@@ -157,6 +171,8 @@ template <typename T> void Hip::add_mem(Hip_mem*& mem, T const* map)
 
 void Hip::add_mhv(Hip_mem*& mem)
 {
+    assert_in_hip(mem);
+
     // We describe memory that is used by the hypervisor. These memory
     // descriptors need to match Pd::Pd (the constructor of the hypervisor PD)
     // and our linker script.

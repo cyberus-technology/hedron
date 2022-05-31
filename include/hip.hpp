@@ -214,3 +214,4 @@ public:
     // modifications to the HIP are not possible after finalizing it.
     static void finalize();
 };
+static_assert(sizeof(Hip) <= PAGE_SIZE, "HIP cannot be larger than one page");
