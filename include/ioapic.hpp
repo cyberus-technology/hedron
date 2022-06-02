@@ -24,14 +24,15 @@
 
 #include "algorithm.hpp"
 #include "hip.hpp"
-#include "list.hpp"
+#include "nodestruct.hpp"
+#include "optional.hpp"
 #include "static_vector.hpp"
 
 // A single IOAPIC
 //
 // All public functions of this class are safe to be called without synchronization, unless stated otherwise
 // in its documentation.
-class Ioapic : public Forward_list<Ioapic>
+class Ioapic
 {
 private:
     uint32 const paddr;
@@ -41,7 +42,8 @@ private:
     uint16 rid;
     Spinlock lock;
 
-    static Ioapic* list;
+    // An array of all IOAPICs in the system indexed by their ID.
+    static No_destruct<Optional<Ioapic>> ioapics_by_id[NUM_IOAPIC];
 
     enum
     {
@@ -62,6 +64,11 @@ private:
         IOAPIC_ARB = 0x2,
         IOAPIC_BCFG = 0x3,
         IOAPIC_IRT = 0x10,
+    };
+
+    enum Id_reg
+    {
+        ID_SHIFT = 24,
     };
 
     enum Irt_entry : uint64
@@ -110,6 +117,11 @@ private:
 
     inline unsigned version() { return read(IOAPIC_VER) & 0xff; }
 
+    // Return the highest entry index (pin number).
+    //
+    // The returned value is one less then the count of pins.
+    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
+
     // Write an IRT entry to the IOAPIC without caching it.
     //
     // This has to be used with caution, because we rely on shadow_redir_table to reflect the actual state of
@@ -130,30 +142,51 @@ private:
     // Read an IRT entry from the write-through cache.
     uint64 get_irt_entry(size_t entry) const;
 
-    // Restore the IOAPIC state from shadow_redir_table.
-    void restore();
+    // Set all IOAPIC pins to be masked.
+    void initialize_as_masked();
+
+    // Unconditionally write back the shadow copy of IRT entries to the IOAPIC.
+    //
+    // This is useful, when we are not sure what the IOAPIC state in the hardware is or we know there is a
+    // mismatch between our shadow copy and the hardware.
+    void sync_from_shadow();
 
 public:
-    Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
-
-    static void* operator new(size_t);
-
-    static inline bool claim_dev(unsigned r, unsigned i)
+    enum
     {
-        auto range = Forward_list_range(list);
-        auto it = find_if(range, [i](auto const& ioapic) { return ioapic.rid == 0 and ioapic.id == i; });
+        ID_MASK = 0xf,
+    };
 
-        if (it != range.end()) {
-            it->rid = static_cast<uint16>(r);
-            return true;
-        } else {
+    Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_);
+    Ioapic(Ioapic const&) = default;
+    Ioapic(Ioapic&&) = default;
+
+    static Optional<Ioapic>& by_id(uint8 ioapic_id)
+    {
+        assert(ioapic_id < NUM_IOAPIC);
+        return *ioapics_by_id[ioapic_id];
+    }
+
+    static bool claim_dev(uint16 rid, uint8 ioapic_id)
+    {
+        if (not(ioapic_id < NUM_IOAPIC and ioapics_by_id[ioapic_id]->has_value()) or
+            (*ioapics_by_id[ioapic_id])->rid != 0) {
             return false;
         }
+
+        (*ioapics_by_id[ioapic_id])->rid = rid;
+        return true;
     }
 
     static inline void add_to_hip(Hip_ioapic*& entry)
     {
-        for (auto& ioapic : Forward_list_range(list)) {
+        for (auto& opt_ioapic : ioapics_by_id) {
+            if (not opt_ioapic->has_value()) {
+                continue;
+            }
+
+            Ioapic& ioapic{opt_ioapic->value()};
+
             entry->id = ioapic.read_id_reg();
             entry->version = ioapic.read_version_reg();
             entry->gsi_base = ioapic.get_gsi();
@@ -162,12 +195,10 @@ public:
         }
     }
 
-    // Return the highest entry index (pin number).
-    //
-    // The returned value is one less then the count of pins.
-    inline unsigned irt_max() { return read(IOAPIC_VER) >> 16 & 0xff; }
+    // Returns the number of usable pins on this IOAPIC.
+    uint8 pin_count() const { return static_cast<uint8>(shadow_redir_table.size()); }
 
-    inline uint16 get_rid() const { return rid; }
+    uint16 get_rid() const { return rid; }
 
     // Configure an IRT entry (IOMMU disabled).
     //
@@ -177,7 +208,7 @@ public:
     //
     // This will only configure a working interrupt, if the IOMMU is not configured for Interrupt
     // Remapping. Use set_irt_entry_remappable instead, when Interupt Remapping is enabled.
-    void set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
+    void set_irt_entry_compatibility(uint8 ioapic_pin, unsigned apic_id, unsigned vector, bool level,
                                      bool active_low);
 
     // Configure an IRT entry (IOMMU enabled).
@@ -185,14 +216,11 @@ public:
     // The IRT entry will be unmasked after this call.
     //
     // For context, see Section 5.1.2.2 "Interrupts in Remappable Format" in the the VT-d specification.
-    void set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
+    void set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
                                   bool active_low);
 
-    // Mask an IRT entry, if it was configured as a level-triggered interrupt.
-    void mask_if_level(unsigned gsi);
-
-    // Unmask an IRT entry, if it was configured as a level-triggered interrupt.
-    void unmask_if_level(unsigned gsi);
+    // Mask or unmask a specific IOAPIC pin on one specific IOAPIC.
+    void set_mask(uint8 ioapic_pin, bool masked);
 
     // Prepare all IOAPICs in the system for system suspend by saving their state to memory.
     static void save_all();

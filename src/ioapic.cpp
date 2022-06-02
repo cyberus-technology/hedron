@@ -27,35 +27,31 @@
 #include "pd.hpp"
 #include "stdio.hpp"
 
-Ioapic* Ioapic::list;
-
-void* Ioapic::operator new(size_t size)
-{
-    assert(size == sizeof(Ioapic));
-    static_assert(sizeof(Ioapic) <= PAGE_SIZE);
-
-    return Buddy::allocator.alloc(0, Buddy::NOFILL);
-}
+No_destruct<Optional<Ioapic>> Ioapic::ioapics_by_id[NUM_IOAPIC];
 
 Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
-    : Forward_list<Ioapic>(list), paddr(uint32(paddr_)),
-      reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_), id(id_), rid(0)
+    : paddr(uint32(paddr_)), reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_),
+      id(id_), rid(0)
 {
     Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
 
-    trace(TRACE_APIC, "APIC:%#x ID:%#x VER:%#x IRT:%#x GSI:%u", paddr, id, version(), irt_max(), gsi_base);
+    uint32 const id_reg{read_id_reg()};
+
+    trace(TRACE_APIC, "IOAPIC:%#x ID:%#x VER:%#x IRT:%#x GSI:%u", paddr, id_reg, version(), irt_max(),
+          gsi_base);
+
+    uint32 const hw_id{(id_reg >> ID_SHIFT) & ID_MASK};
+    if (hw_id != id) {
+        trace(TRACE_ERROR, "BIOS bug? Got ID %#x from MADT, but %#x from IOAPIC!", id, hw_id);
+    }
 
     // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
     // set to EXTINT and left unmasked. To avoid random interrupts from being
     // delivered (e.g., when userland enables interrupts through the PIC), we
     // mask all entries and only unmask them when they are properly configured
-    // by the GSI subsystem.
+    // by the interrupt subsystem.
 
-    shadow_redir_table.resize(irt_max() + 1, IRT_MASKED);
-
-    // At this point, we are not sure what the actual values in the IRT are. So we ignore the cache for the
-    // inital write.
-    restore();
+    initialize_as_masked();
 }
 
 void Ioapic::set_irt_entry_uncached(size_t entry, uint64 val)
@@ -94,11 +90,10 @@ uint64 Ioapic::get_irt_entry(size_t entry) const
     return shadow_redir_table[entry];
 }
 
-void Ioapic::set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigned vector, bool level,
+void Ioapic::set_irt_entry_compatibility(uint8 ioapic_pin, unsigned apic_id, unsigned vector, bool level,
                                          bool active_low)
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
+    assert(ioapic_pin < pin_count());
     assert(vector >= 0x10 and vector <= 0xFE);
     assert(not Dmar::ire());
 
@@ -113,16 +108,15 @@ void Ioapic::set_irt_entry_compatibility(unsigned gsi, unsigned apic_id, unsigne
     }
 
     Lock_guard<Spinlock> guard(lock);
-    set_irt_entry(pin, irt_entry);
+    set_irt_entry(ioapic_pin, irt_entry);
 }
 
-void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, unsigned vector, bool level,
+void Ioapic::set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
                                       bool active_low)
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-    assert(iommu_irt_index <= 0xffff);
     assert(Dmar::ire());
+    assert(ioapic_pin < pin_count());
+    assert(vector >= 0x10 and vector <= 0xFE);
 
     // See Section 5.1.5.1 I/OxAPIC Programming in the Intel VT-d specification for information about how to
     // program the IOAPIC IRTs.
@@ -144,56 +138,45 @@ void Ioapic::set_irt_entry_remappable(unsigned gsi, unsigned iommu_irt_index, un
     }
 
     Lock_guard<Spinlock> guard(lock);
-    set_irt_entry(pin, irt_entry);
+    set_irt_entry(ioapic_pin, irt_entry);
 }
 
-void Ioapic::mask_if_level(unsigned gsi)
+void Ioapic::initialize_as_masked()
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-
     Lock_guard<Spinlock> guard(lock);
 
-    uint64 const old_entry{shadow_redir_table[pin]};
-
-    if ((old_entry & (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) != IRT_TRIGGER_MODE_LEVEL) {
-        // Not level or already masked.
-        return;
-    }
-
-    set_irt_entry(pin, old_entry | IRT_MASKED);
+    shadow_redir_table.resize(0);
+    shadow_redir_table.resize(irt_max() + 1, IRT_MASKED);
+    sync_from_shadow();
 }
 
-void Ioapic::unmask_if_level(unsigned gsi)
+void Ioapic::sync_from_shadow()
 {
-    unsigned const pin{gsi - gsi_base};
-    assert_slow(pin <= irt_max());
-
-    Lock_guard<Spinlock> guard(lock);
-
-    uint64 const old_entry{shadow_redir_table[pin]};
-
-    if ((old_entry & (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) != (IRT_TRIGGER_MODE_LEVEL | IRT_MASKED)) {
-        // Not level or not masked.
-        return;
-    }
-
-    set_irt_entry(pin, old_entry & ~IRT_MASKED);
-}
-
-void Ioapic::restore()
-{
-    Lock_guard<Spinlock> guard(lock);
+    assert_slow(lock.is_locked());
 
     for (size_t i = 0; i < shadow_redir_table.size(); i++) {
         set_irt_entry_uncached(i, shadow_redir_table[i]);
     }
 }
 
-void Ioapic::save_all()
+void Ioapic::set_mask(uint8 ioapic_pin, bool masked)
 {
-    // Nothing to be done. shadow_redir_table is a write-through cache of the IOAPIC state and has everything
-    // we need.
+    Lock_guard<Spinlock> guard(lock);
+    set_irt_entry(ioapic_pin,
+                  (get_irt_entry(ioapic_pin) & ~IRT_MASKED) | (masked ? static_cast<uint64>(IRT_MASKED) : 0));
 }
 
-void Ioapic::restore_all() { for_each(Forward_list_range{list}, mem_fn_closure(&Ioapic::restore)()); }
+void Ioapic::save_all()
+{
+    // Nothing to be done. We will not restore the old content of the IOAPIC after resume. All devices will
+    // lose their state and we expect userspace to reprogram all interrupts.
+}
+
+void Ioapic::restore_all()
+{
+    for (auto& opt_ioapic : ioapics_by_id) {
+        if (opt_ioapic->has_value()) {
+            (*opt_ioapic)->initialize_as_masked();
+        }
+    }
+}

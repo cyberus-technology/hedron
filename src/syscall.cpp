@@ -25,10 +25,11 @@
 
 #include "syscall.hpp"
 #include "acpi.hpp"
+#include "cpu.hpp"
 #include "dmar.hpp"
-#include "gsi.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
+#include "ioapic.hpp"
 #include "kp.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
@@ -38,6 +39,7 @@
 #include "stdio.hpp"
 #include "suspend.hpp"
 #include "utcb.hpp"
+#include "vector_info.hpp"
 #include "vectors.hpp"
 
 template <Sys_regs::Status S, bool T> void Ec::sys_finish()
@@ -670,12 +672,6 @@ void Ec::sys_sm_ctrl()
         break;
 
     case Sys_sm_ctrl::Sm_operation::Down:
-        if (sm->space == static_cast<Space_obj*>(&Pd::kern)) {
-            Gsi::unmask(static_cast<unsigned>(sm->node_base - NUM_CPU));
-            if (sm->is_signal())
-                break;
-        }
-
         if (sm->is_signal())
             sys_finish<Sys_regs::BAD_CAP>();
 
@@ -771,74 +767,6 @@ void Ec::sys_assign_pci()
     }
 
     dmar->assign(rid, pd);
-
-    sys_finish<Sys_regs::SUCCESS>();
-}
-
-void Ec::sys_assign_gsi()
-{
-    Sys_assign_gsi* r = static_cast<Sys_assign_gsi*>(current()->sys_regs());
-
-    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
-        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
-        sys_finish<Sys_regs::BAD_CPU>();
-    }
-
-    Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
-
-    if (EXPECT_FALSE(not sm)) {
-        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    if (EXPECT_FALSE(sm->space != static_cast<Space_obj*>(&Pd::kern))) {
-        trace(TRACE_ERROR, "%s: Non-GSI SM (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    if (r->si() != ~0UL) {
-        Sm* si = capability_cast<Sm>(Space_obj::lookup(r->si()));
-
-        if (EXPECT_FALSE(not si)) {
-            trace(TRACE_ERROR, "%s: Non-SI CAP (%#lx)", __func__, r->si());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        if (si == sm) {
-            sm->chain(nullptr);
-            sys_finish<Sys_regs::SUCCESS>();
-        }
-
-        if (EXPECT_FALSE(si->space == static_cast<Space_obj*>(&Pd::kern))) {
-            trace(TRACE_ERROR, "%s: Invalid-SM CAP (%#lx)", __func__, r->si());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        sm->chain(si);
-    }
-
-    Paddr phys;
-    unsigned rid = 0, gsi = static_cast<unsigned>(sm->node_base - NUM_CPU);
-    if (EXPECT_FALSE(!Gsi::gsi_table[gsi].ioapic &&
-                     (!Pd::current()->Space_mem::lookup(r->dev(), &phys) ||
-                      ((rid = Pci::phys_to_rid(phys)) == ~0U && (rid = Hpet::phys_to_rid(phys)) == ~0U)))) {
-        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    uint64 msi_data{0};
-
-    if (Gsi::gsi_table[gsi].ioapic) {
-        if (!r->has_configuration_override()) {
-            sys_finish<Sys_regs::BAD_PAR>();
-        }
-
-        Gsi::configure_ioapic_irt(gsi, r->cpu(), r->level(), r->active_low());
-    } else {
-        msi_data = Gsi::configure_msi(gsi, r->cpu(), rid);
-    }
-
-    r->set_msi(msi_data);
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -954,23 +882,37 @@ void Ec::sys_irq_ctrl_configure_vector()
     Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()));
     Kp* kp = capability_cast<Kp>(Space_obj::lookup(r->kp()));
 
+    Vector_info new_vector_info;
+
     if (not sm and not kp) {
-        // Unassign: not implemented yet.
-        sys_finish<Sys_regs::BAD_HYP>();
+        new_vector_info = Vector_info::disabled();
+
+        if (Dmar::ire()) {
+            Dmar::clear_irt(Dmar::irt_index(r->cpu(), r->vector()));
+        }
+    } else {
+        if (EXPECT_FALSE(not sm)) {
+            trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        if (EXPECT_FALSE(not kp)) {
+            trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
+            sys_finish<Sys_regs::BAD_CAP>();
+        }
+
+        new_vector_info = Vector_info{kp, r->kp_bit(), sm};
     }
 
-    if (EXPECT_FALSE(not sm)) {
-        trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
+    auto& vector_info{Locked_vector_info::per_vector_info[r->cpu()][r->vector()]};
 
-    if (EXPECT_FALSE(not kp)) {
-        trace(TRACE_ERROR, "%s: Non-KP CAP (%#lx)", __func__, r->kp());
-        sys_finish<Sys_regs::BAD_CAP>();
+    if (vector_info->set(new_vector_info)) {
+        sys_finish<Sys_regs::SUCCESS>();
+    } else {
+        // This error code is appropriate, because we can only end up here if the capability reference from
+        // the capability space went away after we checked it above.
+        Ec::sys_finish<Sys_regs::BAD_CAP>();
     }
-
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
 }
 
 void Ec::sys_irq_ctrl_assign_ioapic_pin()
@@ -979,17 +921,49 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
     sys_irq_ctrl_check_vector_cpu(__func__, r->cpu(), r->vector());
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    auto& opt_ioapic{Ioapic::by_id(r->ioapic_id())};
+
+    if (not opt_ioapic.has_value() or r->ioapic_pin() >= opt_ioapic->pin_count()) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    if (r->level()) {
+        Locked_vector_info::per_vector_info[r->cpu()][r->vector()]->set_level_triggered_ioapic_source(
+            {r->ioapic_id(), r->ioapic_pin()});
+    } else {
+        Locked_vector_info::per_vector_info[r->cpu()][r->vector()]->clear_level_triggered_ioapic_source();
+    }
+
+    uint32 const aid{Cpu::apic_id[r->cpu()]};
+
+    if (Dmar::ire()) {
+        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
+
+        Dmar::set_irt(irt_index, opt_ioapic->get_rid(), aid, VEC_USER + r->vector(), r->level());
+        opt_ioapic->set_irt_entry_remappable(r->ioapic_pin(), irt_index, VEC_USER + r->vector(), r->level(),
+                                             r->active_low());
+    } else {
+        opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
+                                                r->active_low());
+    }
+
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_irq_ctrl_mask_ioapic_pin()
 {
-    [[maybe_unused]] Sys_irq_ctrl_mask_ioapic_pin* r =
-        static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+    Sys_irq_ctrl_mask_ioapic_pin* r = static_cast<Sys_irq_ctrl_mask_ioapic_pin*>(current()->sys_regs());
+    auto& opt_ioapic{Ioapic::by_id(r->ioapic_id())};
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    if (not opt_ioapic.has_value() or r->ioapic_pin() >= opt_ioapic->pin_count()) {
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
+    // The user can unmask pins that have not been previously configured. This is benign, because in this
+    // case the IOAPIC RTEs are invalid and no interrupt will arive. Also when the IOMMU is enabled, there
+    // will not be an IOMMU RTE for the given pin.
+    opt_ioapic->set_mask(r->ioapic_pin(), r->mask());
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_irq_ctrl_assign_msi()
@@ -1006,8 +980,25 @@ void Ec::sys_irq_ctrl_assign_msi()
         sys_finish<Sys_regs::BAD_DEV>();
     }
 
-    // Not implemented yet.
-    sys_finish<Sys_regs::BAD_HYP>();
+    uint32 const aid{Cpu::apic_id[r->cpu()]};
+
+    uint32 msi_addr;
+    uint32 msi_data;
+
+    if (Dmar::ire()) {
+        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
+
+        msi_addr = 0xfee00000 | (1U << 4) | ((0x7fff & irt_index) << 5) | ((irt_index >> 15) << 2);
+        msi_data = 0;
+
+        Dmar::set_irt(irt_index, rid, aid, VEC_USER + r->vector(), false /* edge */);
+    } else {
+        msi_addr = 0xfee00000 | (aid << 12);
+        msi_data = VEC_USER + r->vector();
+    }
+
+    r->set_msi(msi_addr, msi_data);
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::syscall_handler()
@@ -1024,8 +1015,6 @@ void Ec::syscall_handler()
 
     case hypercall_id::HC_ASSIGN_PCI:
         sys_assign_pci();
-    case hypercall_id::HC_ASSIGN_GSI:
-        sys_assign_gsi();
 
     case hypercall_id::HC_CREATE_PD:
         sys_create_pd();

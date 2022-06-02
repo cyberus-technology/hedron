@@ -290,33 +290,6 @@ public:
     inline mword hnt() const { return ARG_3; }
 };
 
-class Sys_assign_gsi : public Sys_regs
-{
-    static constexpr unsigned FLAG_OVERRIDE_CONFIG{1u << 0};
-
-    static constexpr uint64 TRIGGER_MODE_LEVEL{1ull << 32};
-    static constexpr uint64 POLARITY_LOW{1ull << 33};
-
-public:
-    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
-
-    inline mword dev() const { return ARG_2; }
-
-    inline unsigned cpu() const { return static_cast<unsigned>(ARG_3); }
-
-    inline bool has_configuration_override() const { return flags() & FLAG_OVERRIDE_CONFIG; }
-    inline bool level() const { return ARG_3 & TRIGGER_MODE_LEVEL; }
-    inline bool active_low() const { return ARG_3 & POLARITY_LOW; }
-
-    inline mword si() const { return ARG_4; }
-
-    inline void set_msi(uint64 val)
-    {
-        ARG_2 = static_cast<mword>(val >> 32);
-        ARG_3 = static_cast<mword>(val);
-    }
-};
-
 class Sys_machine_ctrl : public Sys_regs
 {
 public:
@@ -412,9 +385,9 @@ public:
 
     inline mword dev() const { return ARG_2 & ~0xfff; }
 
-    inline void set_msi(uint64 val)
+    inline void set_msi(uint32 msi_addr, uint32 msi_data)
     {
-        ARG_2 = static_cast<mword>(val >> 32);
-        ARG_3 = static_cast<mword>(val);
+        ARG_2 = msi_addr;
+        ARG_3 = msi_data;
     }
 };

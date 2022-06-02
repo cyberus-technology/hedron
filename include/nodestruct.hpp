@@ -30,7 +30,10 @@ public:
     template <typename... ARGS> No_destruct(ARGS&&... args) { new (backing) T(forward<ARGS>(args)...); }
 
     T* operator->() { return reinterpret_cast<T*>(backing); }
-    T* operator->() const { return reinterpret_cast<T const*>(backing); }
+    T const* operator->() const { return reinterpret_cast<T const*>(backing); }
+
+    T& operator*() { return *reinterpret_cast<T*>(backing); }
+    T const& operator*() const { return *reinterpret_cast<T const*>(backing); }
 
     T* operator&() { return reinterpret_cast<T*>(backing); }
     T* operator&() const { return reinterpret_cast<T*>(backing); }

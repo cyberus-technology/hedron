@@ -21,6 +21,8 @@
 #pragma once
 
 #include "algorithm.hpp"
+#include "assert.hpp"
+#include "config.hpp"
 #include "list.hpp"
 #include "slab.hpp"
 #include "util.hpp"
@@ -84,6 +86,15 @@ private:
     uint64 lo, hi;
 
 public:
+    enum
+    {
+        // The size of an IRT entry as a power of two.
+        ENTRY_SIZE_ORDER = 4,
+
+        // The IRT has 2^NUM_ENTRIES_ORDER entries.
+        NUM_ENTRIES_ORDER = 14,
+    };
+
     inline void set(uint64 h, uint64 l)
     {
         hi = h;
@@ -93,9 +104,15 @@ public:
 
     static inline void* operator new(size_t)
     {
-        return clflush(Buddy::allocator.alloc(0, Buddy::FILL_0), PAGE_SIZE);
+        constexpr unsigned IRT_SIZE_ORDER{NUM_ENTRIES_ORDER + ENTRY_SIZE_ORDER};
+        static_assert(IRT_SIZE_ORDER >= PAGE_BITS);
+
+        return clflush(
+            // The allocator takes the allocation size as order of pages.
+            Buddy::allocator.alloc(IRT_SIZE_ORDER - PAGE_BITS, Buddy::FILL_0), 1 << IRT_SIZE_ORDER);
     }
 };
+static_assert(sizeof(Dmar_irt) == 1 << Dmar_irt::ENTRY_SIZE_ORDER);
 
 class Dmar : public Forward_list<Dmar>
 {
@@ -246,9 +263,28 @@ public:
         for_each(Forward_list_range{list}, mem_fn_closure(&Dmar::command)(gcmd));
     }
 
-    static inline void set_irt(unsigned i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
+    static inline void set_irt(uint16 i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
     {
+        assert(i < (1 << Dmar_irt::NUM_ENTRIES_ORDER));
         irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
+    }
+
+    static inline void clear_irt(uint16 i)
+    {
+        assert(i < (1 << Dmar_irt::NUM_ENTRIES_ORDER));
+        irt[i].set(0, 0);
+    }
+
+    /// Returns the IRT index to use for the given vector and CPU.
+    static inline uint16 irt_index(uint16 cpu, uint8 vector)
+    {
+        static_assert(1 << Dmar_irt::NUM_ENTRIES_ORDER >= NUM_USER_VECTORS * NUM_CPU,
+                      "IRT too small for number of CPUs");
+        static_assert(Dmar_irt::NUM_ENTRIES_ORDER <= 16, "Index type to small for IRT size");
+
+        assert(cpu < NUM_CPU and vector < NUM_USER_VECTORS);
+
+        return static_cast<uint16>(vector * NUM_CPU + cpu);
     }
 
     static bool ire() { return gcmd & GCMD_IRE; }

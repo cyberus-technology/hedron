@@ -43,7 +43,7 @@ void Hip::build(mword magic, mword addr)
 {
     Hip* h = hip();
 
-    h->signature = 0x41564f4e;
+    h->signature = 0x4e524448;
     h->cpu_offs = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
     h->cpu_size = static_cast<uint16>(sizeof(Hip_cpu));
     h->ioapic_offs = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
@@ -56,7 +56,7 @@ void Hip::build(mword magic, mword addr)
     h->api_flg |= FEAT_VMX | FEAT_SVM;
     h->api_ver = CFG_VER;
     h->sel_num = Space_obj::caps;
-    h->sel_gsi = NUM_GSI;
+    h->num_user_vectors = NUM_USER_VECTORS;
     h->sel_exc = NUM_EXC;
     h->sel_vmi = NUM_VMI;
     h->cfg_page = PAGE_SIZE;

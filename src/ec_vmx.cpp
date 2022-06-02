@@ -20,8 +20,8 @@
 
 #include "dmar.hpp"
 #include "ec.hpp"
-#include "gsi.hpp"
 #include "lapic.hpp"
+#include "vector_info.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
 #include "vmx_preemption_timer.hpp"
@@ -67,8 +67,8 @@ void Ec::vmx_extint()
         Dmar::vector(vector);
     else if (vector >= VEC_LVT)
         Lapic::lvt_vector(vector);
-    else if (vector >= VEC_GSI)
-        Gsi::vector(vector);
+    else if (vector >= VEC_USER)
+        Locked_vector_info::handle_user_interrupt(vector);
 
     ret_user_vmresume();
     UNREACHED;

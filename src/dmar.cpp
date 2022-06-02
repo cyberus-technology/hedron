@@ -72,7 +72,9 @@ void Dmar::init()
     command(GCMD_SRTP);
 
     if (ire()) {
-        write<uint64>(REG_IRTA, Buddy::ptr_to_phys(irt) | 7);
+        // There are only 4 bits to specify the order of entries we want to have.
+        static_assert(Dmar_irt::NUM_ENTRIES_ORDER > 0 and Dmar_irt::NUM_ENTRIES_ORDER <= 16);
+        write<uint64>(REG_IRTA, Buddy::ptr_to_phys(irt) | (Dmar_irt::NUM_ENTRIES_ORDER - 1));
         command(GCMD_SIRTP);
     }
 

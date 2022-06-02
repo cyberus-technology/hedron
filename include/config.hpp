@@ -34,17 +34,14 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
-#define CFG_VER 5006
+#define CFG_VER 6000
 
 #define NUM_CPU 64
 #define NUM_EXC 32
 #define NUM_VMI 256
-#define NUM_GSI 192
 
 // The number of interrupt vectors that are programmable by userspace.
-//
-// This is currently the same set of vectors as NUM_GSI until #196 is implemented.
-#define NUM_USER_VECTORS NUM_GSI
+#define NUM_USER_VECTORS 192
 
 #define NUM_LVT 6
 #define NUM_MSI 1
@@ -60,7 +57,8 @@
 #define SPN_IPI (SPN_LVT + NUM_LVT)
 #define SPN_GSI (SPN_IPI + NUM_IPI + 1)
 
-#define NUM_IOAPIC 9
+// This is the maximum number of IOAPICs possible, because they only have a 4-bit ID.
+#define NUM_IOAPIC 16
 
 // We have one stack per CPU. Each stack will have this size.
 //

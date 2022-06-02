@@ -25,7 +25,6 @@
 #include "cmdline.hpp"
 #include "compiler.hpp"
 #include "console_vga.hpp"
-#include "gsi.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
 #include "idt.hpp"
@@ -93,7 +92,6 @@ extern "C" void init(mword magic, mword mbi)
     }
 
     Idt::build();
-    Gsi::setup();
     Acpi::setup();
     Tss::setup();
     Lapic::setup();

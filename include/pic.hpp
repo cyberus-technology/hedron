@@ -27,7 +27,9 @@ public:
         Io::out<uint8>(0x20, 0x11);
 
         // Program interrupt vector offset.
-        Io::out<uint8>(0x21, VEC_GSI);
+        //
+        // As we mask the PIC below, we should never get this interrupt.
+        Io::out<uint8>(0x21, VEC_USER);
 
         // Slave PIC at IRQ2.
         Io::out<uint8>(0x21, 0x4);
