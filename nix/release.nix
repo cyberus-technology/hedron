@@ -87,8 +87,8 @@ let
   default-debug = hedronBuildSet.gcc10-debug;
 in
 {
-  hedron = pkgs.recurseIntoAttrs {
-    builds = pkgs.recurseIntoAttrs {
+  hedron = {
+    builds = {
       inherit default-release default-debug;
     } // hedronBuildSet;
 
@@ -98,7 +98,7 @@ in
       hedron = hedronBuildSet.clang_13-debug;
     };
 
-    integration-test = pkgs.recurseIntoAttrs testBuilds;
+    integration-test = testBuilds;
 
     coverage = pkgs.callPackage ./coverage.nix {
       hedron = default-debug;
