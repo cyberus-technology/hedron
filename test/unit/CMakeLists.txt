@@ -1,5 +1,7 @@
 message(STATUS "Building tests: Check the README file for instructions on disabling them")
+
 find_package(Catch2 REQUIRED)
+find_package(Threads REQUIRED)
 
 add_executable(test_unit
   acpi_fadt.cpp
@@ -12,6 +14,7 @@ add_executable(test_unit
   mtrr.cpp
   optional.cpp
   page_table.cpp
+  spinlock.cpp
   static_vector.cpp
   string.cpp
   time.cpp
@@ -19,7 +22,8 @@ add_executable(test_unit
   vmx_msr_bitmap.cpp
   vmx_preemption_timer.cpp
   )
-target_link_libraries(test_unit Catch2::Catch2)
+
+target_link_libraries(test_unit Catch2::Catch2 Threads::Threads)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(test_unit PRIVATE -fsanitize=address -fsanitize=undefined)
