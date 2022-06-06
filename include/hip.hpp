@@ -42,8 +42,10 @@ public:
     uint8 core;
     uint8 package;
     uint8 acpi_id;
-    uint8 reserved[3];
-    Cpu::lapic_info_t lapic_info;
+    uint8 apic_id;
+
+    // We add reserved fields here to avoid padding by the compiler.
+    uint8 reserved[2];
 };
 
 // A memory area that is in use when the kernel passes control to the roottask.
@@ -130,6 +132,9 @@ private:
 
     Acpi_gas pm1a_cnt; // 0x70
     Acpi_gas pm1b_cnt; // 0x7c
+
+    uint32 bsp_lapic_svr;
+    uint32 bsp_lapic_lint0;
 
     Hip_cpu cpu_desc[NUM_CPU];
     Hip_ioapic ioapic_desc[NUM_IOAPIC];

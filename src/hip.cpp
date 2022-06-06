@@ -72,6 +72,9 @@ void Hip::build(mword magic, mword addr)
     h->cfg_page = PAGE_SIZE;
     h->cfg_utcb = PAGE_SIZE;
 
+    h->bsp_lapic_svr = Cpu::bsp_lapic_svr;
+    h->bsp_lapic_lint0 = Cpu::bsp_lapic_lint0;
+
     Hip_ioapic* ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);
     if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
@@ -188,11 +191,11 @@ void Hip::add_cpu(Cpu_info const& cpu_info)
     Hip_cpu* cpu = hip()->cpu_desc + Cpu::id();
 
     cpu->acpi_id = Cpu::acpi_id[Cpu::id()];
+    cpu->apic_id = Cpu::apic_id[Cpu::id()];
     cpu->package = static_cast<uint8>(cpu_info.package);
     cpu->core = static_cast<uint8>(cpu_info.core);
     cpu->thread = static_cast<uint8>(cpu_info.thread);
     cpu->flags = 1;
-    cpu->lapic_info = Cpu::lapic_info[Cpu::id()];
 }
 
 void Hip::finalize()

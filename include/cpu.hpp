@@ -154,20 +154,12 @@ public:
         EFL_ID = 1ul << 21    // 0x200000
     };
 
-    static unsigned online;
-    static uint8 acpi_id[NUM_CPU];
-    static uint8 apic_id[NUM_CPU];
+    static inline unsigned online;
+    static inline uint8 acpi_id[NUM_CPU];
+    static inline uint8 apic_id[NUM_CPU];
 
-    struct lapic_info_t {
-        uint32 id, version, svr, reserved;
-        uint32 lvt_timer;
-        uint32 lvt_lint0;
-        uint32 lvt_lint1;
-        uint32 lvt_error;
-        uint32 lvt_perfm;
-        uint32 lvt_therm;
-    };
-    static lapic_info_t lapic_info[NUM_CPU];
+    static inline uint32 bsp_lapic_svr;
+    static inline uint32 bsp_lapic_lint0;
 
     // The TSC value that all CPUs start with after boot or resume.
     static inline uint64 initial_tsc = 0;
