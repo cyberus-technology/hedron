@@ -92,7 +92,7 @@ public:
         ENTRY_SIZE_ORDER = 4,
 
         // The IRT has 2^NUM_ENTRIES_ORDER entries.
-        NUM_ENTRIES_ORDER = 14,
+        NUM_ENTRIES_ORDER = 15,
     };
 
     inline void set(uint64 h, uint64 l)
