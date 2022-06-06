@@ -36,7 +36,7 @@
 /// is backwards compatible and requires a minor version bump.
 #define CFG_VER 7000
 
-#define NUM_CPU 64
+#define NUM_CPU 78
 #define NUM_EXC 32
 #define NUM_VMI 256
 
