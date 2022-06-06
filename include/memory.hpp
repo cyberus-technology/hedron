@@ -31,8 +31,8 @@
 
 // 0xffff_ffff_c000_2000 SPC_LOCAL_IOP_E
 // 0xffff_ffff_c000_0000 SPC_LOCAL / SPC_LOCAL_IOP
-// 0xffff_ffff_bfff_e000 TSS_AREA
-// 0xffff_ffff_bfff_c000 CPU_LOCAL_APIC
+// 0xffff_ffff_bfff_c000 TSS_AREA
+// 0xffff_ffff_bfff_a000 CPU_LOCAL_APIC
 // 0xffff_ffff_bfe0_0000 CPU_LOCAL
 // 0xffff_ffff_bfdf_f000 HV_GLOBAL_FBUF
 
@@ -72,9 +72,9 @@ static_assert(LOAD_ADDR % LOAD_ADDR_ALIGN == 0, "Link-time alignment is broken")
 
 #define HV_GLOBAL_FBUF (CPU_LOCAL - PAGE_SIZE * 1)
 
-#define CPU_LOCAL_APIC (SPC_LOCAL - PAGE_SIZE * 4)
+#define CPU_LOCAL_APIC (SPC_LOCAL - PAGE_SIZE * 6)
 
-#define TSS_AREA (SPC_LOCAL - PAGE_SIZE * 2)
+#define TSS_AREA (SPC_LOCAL - PAGE_SIZE * 4)
 #define TSS_AREA_E (SPC_LOCAL)
 
 #define SPC_LOCAL_IOP (SPC_LOCAL)
