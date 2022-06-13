@@ -60,6 +60,7 @@ target_compile_options(hypervisor PRIVATE
   $<$<BOOL:${CXX_SUPPORTS_CET}>:-fcf-protection=none>
 
   # Warnings
+  $<$<CONFIG:Debug>:-Werror>
   -Wall -Wextra -Wcast-align -Wcast-qual -Wconversion
   -Wdisabled-optimization -Wformat=2 -Wmissing-format-attribute
   -Wmissing-noreturn -Wpacked -Wpointer-arith -Wredundant-decls
@@ -71,7 +72,6 @@ target_compile_options(hypervisor PRIVATE
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   target_compile_options(hypervisor PRIVATE
-    $<$<CONFIG:Debug>:-Werror>
     -Wlogical-op
     -Wstrict-null-sentinel
     # Some functions (e.g. Acpi_table_fadt::init) create big
