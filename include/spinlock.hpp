@@ -30,22 +30,25 @@
 class Spinlock
 {
 private:
+    using Ticket = uint8;
+
     // We use 8-bits for the individual ticket counts in val. If we ever need more CPUs, we need to use larger
     // integer types, because in the worst case each CPU can request one ticket.
     static_assert(NUM_CPU < 256, "Ticket counter can overflow");
 
     // The next ticket that we will give out.
-    uint8 next_ticket{0};
+    Ticket next_ticket{0};
 
     // The ticket that may enter the critical section.
-    uint8 served_ticket{0};
+    Ticket served_ticket{0};
 
 public:
     void lock()
     {
-        uint8 const our_ticket{Atomic::fetch_add<uint8, Atomic::ACQUIRE>(next_ticket, static_cast<uint8>(1))};
+        Ticket const our_ticket{
+            Atomic::fetch_add<Ticket, Atomic::ACQUIRE>(next_ticket, static_cast<Ticket>(1))};
 
-        while (Atomic::load<uint8, Atomic::ACQUIRE>(served_ticket) != our_ticket) {
+        while (Atomic::load<Ticket, Atomic::ACQUIRE>(served_ticket) != our_ticket) {
             pause();
         }
     }
@@ -56,9 +59,9 @@ public:
 
         // Only the lock holder modifies served_ticket, so we are free to use a non-atomic access here,
         // because there can only be other readers besides us.
-        uint8 const next_served_ticket{static_cast<uint8>(served_ticket + 1)};
+        Ticket const next_served_ticket{static_cast<Ticket>(served_ticket + 1)};
 
-        Atomic::store<uint8, Atomic::RELEASE>(served_ticket, next_served_ticket);
+        Atomic::store<Ticket, Atomic::RELEASE>(served_ticket, next_served_ticket);
     }
 
     // Check whether the lock is currently locked.
