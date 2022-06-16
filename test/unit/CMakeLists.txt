@@ -14,6 +14,7 @@ add_executable(test_unit
   page_table.cpp
   static_vector.cpp
   string.cpp
+  time.cpp
   unique_ptr.cpp
   vmx_msr_bitmap.cpp
   vmx_preemption_timer.cpp
