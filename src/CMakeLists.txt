@@ -182,12 +182,6 @@ if(ENABLE_ELF_SEGMENT_CHECKS)
     )
 endif()
 
-install(TARGETS hypervisor DESTINATION share/NOVA COMPONENT Hedron_Application)
+install(TARGETS hypervisor DESTINATION share/hedron COMPONENT Hedron_Application)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hypervisor.elf32
-  DESTINATION share/NOVA COMPONENT Hedron_Application)
-
-# Ease transition to new name by providing a fallback symlink to the
-# old installation path.
-#
-# This should eventually go away once we updated all dependencies.
-install(CODE "execute_process(COMMAND ln -sfT NOVA hedron WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share)")
+  DESTINATION share/hedron COMPONENT Hedron_Application)
