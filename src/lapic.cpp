@@ -45,6 +45,11 @@ void Lapic::setup()
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
 
     Pd::kern->claim_mmio_page(CPU_LOCAL_APIC, apic_base & ~PAGE_MASK);
+
+    // We execute this code once on the BSP before we start to program the LAPIC. Rescue the LAPIC
+    // configuration for potential use by a passthrough VMM.
+    Cpu::bsp_lapic_svr = read(LAPIC_SVR);
+    Cpu::bsp_lapic_lint0 = read(LAPIC_LVT_LINT0);
 }
 
 uint32 Lapic::prepare_cpu_boot(cpu_boot_type type)
@@ -95,10 +100,6 @@ void Lapic::init()
 
     assert_slow(Cpu::find_by_apic_id(id()) == Optional{Cpu::id()});
 
-    Cpu::lapic_info[Cpu::id()].id = read(LAPIC_IDR);
-    Cpu::lapic_info[Cpu::id()].version = read(LAPIC_LVR);
-    Cpu::lapic_info[Cpu::id()].svr = read(LAPIC_SVR);
-
     uint32 svr = read(LAPIC_SVR);
     if (!(svr & 0x100))
         write(LAPIC_SVR, svr | 0x100);
@@ -107,27 +108,21 @@ void Lapic::init()
 
     switch (lvt_max()) {
     default:
-        Cpu::lapic_info[Cpu::id()].lvt_therm = read(LAPIC_LVT_THERM);
         set_lvt(LAPIC_LVT_THERM, DLV_FIXED, VEC_LVT_THERM);
         FALL_THROUGH;
     case 4:
-        Cpu::lapic_info[Cpu::id()].lvt_perfm = read(LAPIC_LVT_PERFM);
         set_lvt(LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
         FALL_THROUGH;
     case 3:
-        Cpu::lapic_info[Cpu::id()].lvt_error = read(LAPIC_LVT_ERROR);
         set_lvt(LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
         FALL_THROUGH;
     case 2:
-        Cpu::lapic_info[Cpu::id()].lvt_lint1 = read(LAPIC_LVT_LINT1);
         set_lvt(LAPIC_LVT_LINT1, DLV_NMI, 0);
         FALL_THROUGH;
     case 1:
-        Cpu::lapic_info[Cpu::id()].lvt_lint0 = read(LAPIC_LVT_LINT0);
         set_lvt(LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
         FALL_THROUGH;
     case 0:
-        Cpu::lapic_info[Cpu::id()].lvt_timer = read(LAPIC_LVT_TIMER);
         set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
         break;
     }

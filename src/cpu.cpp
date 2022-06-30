@@ -46,12 +46,6 @@
 
 char const* const Cpu::vendor_string[] = {"Unknown", "GenuineIntel", "AuthenticAMD"};
 
-// Order of these matters
-unsigned Cpu::online;
-uint8 Cpu::acpi_id[NUM_CPU];
-uint8 Cpu::apic_id[NUM_CPU];
-Cpu::lapic_info_t Cpu::lapic_info[NUM_CPU];
-
 static bool probe_spec_ctrl()
 {
     uint64 ignore;

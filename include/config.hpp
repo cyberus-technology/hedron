@@ -34,9 +34,9 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
-#define CFG_VER 6000
+#define CFG_VER 7000
 
-#define NUM_CPU 64
+#define NUM_CPU 128
 #define NUM_EXC 32
 #define NUM_VMI 256
 

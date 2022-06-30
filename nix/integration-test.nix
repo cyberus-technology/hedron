@@ -21,7 +21,7 @@ stdenv.mkDerivation {
 
     # Test whether Hedron deals with many CPUs. The goal is not to crash. The number of CPUs that we expect to see here should be
     # equal to NUM_CPU.
-    qemu-boot ${grub_image} --cpus 255 --expected-cpus 64 --disk-image | tee -a output.log
+    qemu-boot ${grub_image} --cpus 255 --expected-cpus 128 --disk-image | tee -a output.log
 
     # We boot our disk images with different amounts of RAM to exercise relocation.
     # If this fails, check whether the hypervisor heap actually fits.

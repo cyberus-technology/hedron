@@ -42,8 +42,10 @@ public:
     uint8 core;
     uint8 package;
     uint8 acpi_id;
-    uint8 reserved[3];
-    Cpu::lapic_info_t lapic_info;
+    uint8 apic_id;
+
+    // We add reserved fields here to avoid padding by the compiler.
+    uint8 reserved[2];
 };
 
 // A memory area that is in use when the kernel passes control to the roottask.
@@ -90,46 +92,49 @@ public:
 class Hip
 {
 private:
-    uint32 signature; // 0x0
-    uint16 checksum;  // 0x4
-    uint16 length;    // 0x6
+    uint32 signature;
+    uint16 checksum;
+    uint16 length;
 
-    uint16 cpu_offs;    // 0x8
-    uint16 cpu_size;    // 0xa
-    uint16 ioapic_offs; // 0xc
-    uint16 ioapic_size; // 0xe
+    uint16 cpu_offs;
+    uint16 cpu_size;
+    uint16 ioapic_offs;
+    uint16 ioapic_size;
 
-    uint16 mem_offs; // 0x10
-    uint16 mem_size; // 0x12
-    uint32 api_flg;  // 0x14
+    uint16 mem_offs;
+    uint16 mem_size;
+    uint32 api_flg;
 
-    uint32 api_ver; // 0x18
-    uint32 sel_num; // 0x1c
+    uint32 api_ver;
+    uint32 sel_num;
 
-    uint32 sel_exc; // 0x20
-    uint32 sel_vmi; // 0x24
+    uint32 sel_exc;
+    uint32 sel_vmi;
 
-    uint32 num_user_vectors; // 0x28
-    uint32 cfg_page;         // 0x2c
+    uint32 num_user_vectors;
+    uint32 cfg_page;
 
-    uint32 cfg_utcb; // 0x30
-    uint32 freq_tsc; // 0x34
+    uint32 cfg_utcb;
+    uint32 freq_tsc;
 
-    uint32 freq_bus;      // 0x38
-    uint32 pci_bus_start; // 0x3c
+    uint32 freq_bus;
+    uint32 pci_bus_start;
 
-    uint64 mcfg_base; // 0x40
-    uint64 mcfg_size; // 0x48
+    uint64 mcfg_base;
+    uint64 mcfg_size;
 
-    uint64 dmar_table; // 0x50
-    uint64 hpet_base;  // 0x58
+    uint64 dmar_table;
+    uint64 hpet_base;
 
-    uint64 cap_vmx_sec_exec; // 0x60
+    uint64 cap_vmx_sec_exec;
 
-    uint64 xsdt_rdst_table; // 0x68
+    uint64 xsdt_rdst_table;
 
-    Acpi_gas pm1a_cnt; // 0x70
-    Acpi_gas pm1b_cnt; // 0x7c
+    Acpi_gas pm1a_cnt;
+    Acpi_gas pm1b_cnt;
+
+    uint32 bsp_lapic_svr;
+    uint32 bsp_lapic_lint0;
 
     Hip_cpu cpu_desc[NUM_CPU];
     Hip_ioapic ioapic_desc[NUM_IOAPIC];
