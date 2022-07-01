@@ -1,6 +1,7 @@
 ---
 Checks: -*,
         clang-analyzer-core.uninitialized,
+        clang-analyzer-core.UndefinedBinaryOperatorResult,
         clang-analyzer-deadcode.DeadStores,
         cppcoreguidelines-pro-type-cstyle-cast,
         google-global-names-in-headers,
