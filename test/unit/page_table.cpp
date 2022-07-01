@@ -367,7 +367,7 @@ TEST_CASE("walk_down_and_split creates page table structures", "[page_table]")
 
     // Create all page table levels for virtual address zero.
     Fake_deferred_cleanup cleanup;
-    auto const table{hpt.walk_down_and_split(cleanup, 0, 0)};
+    hpt.walk_down_and_split(cleanup, 0, 0);
 
     // Only upgrading entries from non-present to present requires no shootdown.
     CHECK_FALSE(cleanup.need_tlb_flush());
@@ -426,7 +426,7 @@ TEST_CASE("Can split 1GB pages into 2MB pages", "[page_table]")
     REQUIRE(hpt.lookup(0).order == onegb_order);
 
     Fake_deferred_cleanup cleanup;
-    auto const split_res{hpt.walk_down_and_split(cleanup, 0, 1)};
+    hpt.walk_down_and_split(cleanup, 0, 1);
     CHECK(cleanup.need_tlb_flush());
 
     auto const mapping0{hpt.lookup(0)};

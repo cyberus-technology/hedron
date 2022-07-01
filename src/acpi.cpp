@@ -128,7 +128,8 @@ void Acpi::setup()
         static_cast<Acpi_table_dmar*>(Hpt::remap(dmar))->parse();
 
     if (facs) {
-        Acpi_table_facs* const facsp = static_cast<Acpi_table_facs*>(Hpt::remap(facs));
+        // Without TRACE_ACPI the trace call below doesn't touch its arguments.
+        [[maybe_unused]] Acpi_table_facs* const facsp = static_cast<Acpi_table_facs*>(Hpt::remap(facs));
 
         trace(TRACE_ACPI, "%.4s:%#010lx VER:%2d FLAGS:%#x HW:%#010x LEN:%5u",
               reinterpret_cast<char const*>(&facsp->signature), facs, facsp->version, facsp->flags,

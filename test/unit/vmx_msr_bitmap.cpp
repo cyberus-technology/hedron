@@ -64,7 +64,8 @@ auto all_ones = [](unsigned char byte) { return byte == 0xFF; };
 
 TEST_CASE("MSR bitmap is all ones at init", "[vmx_msr_bitmap]")
 {
-    auto bmp{new Fake_vmx_msr_bitmap};
+    // We only need the side-effects of allocating bmp
+    [[maybe_unused]] auto bmp{new Fake_vmx_msr_bitmap};
     CHECK(std::all_of(fake_bitmap_memory.begin(), fake_bitmap_memory.end(), all_ones));
 }
 
