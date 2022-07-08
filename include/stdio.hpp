@@ -21,19 +21,17 @@
 #pragma once
 
 #include "console.hpp"
-#include "cpu.hpp"
-#include "memory.hpp"
 #include "string.hpp"
+
+// Returns the current CPU ID or a placeholder value if the CPU ID is not yet known.
+//
+// This function is only intended to be called from the trace macro below.
+int trace_id();
 
 #define trace(T, format, ...)                                                                                \
     do {                                                                                                     \
         if (EXPECT_FALSE((trace_mask & (T)) == (T))) {                                                       \
-            mword __esp;                                                                                     \
-            Console::print(                                                                                  \
-                "[%2ld][%s:%d] " format,                                                                     \
-                static_cast<long>(                                                                           \
-                    ((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR ? Cpu::id() : ~0UL),    \
-                FILENAME, __LINE__, ##__VA_ARGS__);                                                          \
+            Console::print("[%3d][%s:%d] " format, trace_id(), FILENAME, __LINE__, ##__VA_ARGS__);           \
         }                                                                                                    \
     } while (0)
 
