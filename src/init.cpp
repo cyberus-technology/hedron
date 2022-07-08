@@ -48,6 +48,10 @@ static char const* get_boot_type(mword magic)
 
 extern "C" void init(mword magic, mword mbi)
 {
+    // When we execute code in this function, CPU-local memory is not yet setup. Access to it might still work
+    // and return bogus values, if we don't actively prevent it.
+    Cpulocal::prevent_accidental_access();
+
     // Setup 0-page and 1-page
     memset(PAGE_0, 0, PAGE_SIZE);
     memset(PAGE_1, ~0u, PAGE_SIZE);

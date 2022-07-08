@@ -161,6 +161,12 @@ public:
     // Set up CPU local memory for the current CPU. Returns the stack pointer.
     static mword setup_cpulocal() asm("setup_cpulocal");
 
+    // Set up CPU-local memory, so that access to it faults.
+    //
+    // This is only useful on the BSP to prevent bugs before setup_cpulocal is called. On APs, setup_cpulocal
+    // is the first C++ code that runs and we don't have an issue.
+    static void prevent_accidental_access();
+
     // Return true, if CPU-local variables can be used.
     //
     // This function can be slow. Don't use it in performance-critical code.
