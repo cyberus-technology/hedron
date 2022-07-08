@@ -161,6 +161,11 @@ public:
     // Set up CPU local memory for the current CPU. Returns the stack pointer.
     static mword setup_cpulocal() asm("setup_cpulocal");
 
+    // Return true, if CPU-local variables can be used.
+    //
+    // This function can be slow. Don't use it in performance-critical code.
+    static bool is_initialized();
+
     template <typename T, size_t OFFSET> static T get_field()
     {
         T res;

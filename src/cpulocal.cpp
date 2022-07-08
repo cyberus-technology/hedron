@@ -16,6 +16,7 @@
  */
 
 #include "cpulocal.hpp"
+#include "algorithm.hpp"
 #include "assert.hpp"
 #include "cpu.hpp"
 #include "hpt.hpp"
@@ -54,4 +55,12 @@ mword Cpulocal::setup_cpulocal()
     Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
+}
+
+bool Cpulocal::is_initialized()
+{
+    uint64 const gs_base{Msr::read(Msr::IA32_GS_BASE)};
+
+    return (gs_base >= reinterpret_cast<mword>(&cpu[0])) and
+           (gs_base < reinterpret_cast<mword>(&cpu[array_size(cpu)]));
 }
