@@ -42,7 +42,11 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
 
     uint32 const hw_id{(id_reg >> ID_SHIFT) & ID_MASK};
     if (hw_id != id) {
-        trace(TRACE_ERROR, "BIOS bug? Got ID %#x from MADT, but %#x from IOAPIC!", id, hw_id);
+        trace(TRACE_ERROR, "BIOS bug? Got ID %#x from MADT, but %#x from IOAPIC! Fixing.", id, hw_id);
+
+        // We believe the BIOS. The Linux kernel is not even treating mismatching IOAPIC IDs as much of a
+        // special case and just silently reassigns the ID to the IOAPIC.
+        write(IOAPIC_ID, id << ID_SHIFT);
     }
 
     // Some BIOSes configure the I/O APIC in virtual wire mode, i.e., pin 0 is
