@@ -28,6 +28,10 @@
 // This function is only intended to be called from the trace macro below.
 int trace_id();
 
+// Emit a log message to all configured consoles.
+//
+// The first parameter is one of the TRACE_ values defined below. Messages will only be printed, if the trace
+// value is included in trace_mask.
 #define trace(T, format, ...)                                                                                \
     do {                                                                                                     \
         if (EXPECT_FALSE((trace_mask & (T)) == (T))) {                                                       \
@@ -35,9 +39,7 @@ int trace_id();
         }                                                                                                    \
     } while (0)
 
-/*
- * Definition of trace events
- */
+// Possible trace events.
 enum
 {
     TRACE_CPU = 1UL << 0,
@@ -56,20 +58,9 @@ enum
     TRACE_ERROR = 1UL << 31,
 };
 
-/*
- * Enabled trace events
- */
-unsigned const trace_mask = TRACE_CPU | TRACE_IOMMU |
+// Enabled trace events.
+constexpr unsigned trace_mask =
 #ifdef DEBUG
-                            //                            TRACE_APIC      |
-                            TRACE_VMX | TRACE_SVM |
-//                            TRACE_ACPI      |
-//                            TRACE_MEMORY    |
-//                            TRACE_PCI       |
-//                            TRACE_SCHEDULE  |
-//                            TRACE_DEL       |
-//                            TRACE_REV       |
-//                            TRACE_RCU       |
-//                            TRACE_SYSCALL   |
+    TRACE_VMX | TRACE_SVM |
 #endif
-                            TRACE_ERROR | 0;
+    TRACE_CPU | TRACE_IOMMU | TRACE_ERROR;
