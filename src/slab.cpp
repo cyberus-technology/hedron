@@ -102,6 +102,10 @@ void Slab_cache::free(void* ptr)
 {
     Lock_guard<Spinlock> guard(lock);
 
+    // we can assert that head != nullptr here, because this can only happen if
+    // someone calls free before calling alloc at least once, which is a bug.
+    assert(head != nullptr);
+
     Slab* slab = reinterpret_cast<Slab*>(reinterpret_cast<mword>(ptr) & ~PAGE_MASK);
 
     bool was_full = slab->full();
@@ -149,7 +153,7 @@ void Slab_cache::free(void* ptr)
             if (slab->next)
                 slab->next->prev = slab->prev;
 
-            if (slab->prev->empty() || (head && head->empty())) {
+            if (slab->prev->empty() || head->empty()) {
                 // There are already empty slabs - delete current slab
                 assert(head != slab);
                 delete slab;

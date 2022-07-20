@@ -37,6 +37,7 @@ Buddy Buddy::allocator(reinterpret_cast<mword>(&_mempool_l), reinterpret_cast<mw
 
 Buddy::Buddy(mword virt, mword f_addr, size_t size)
 {
+    assert(size != 0U);
     mword phys = virt_to_phys(virt);
 
     // Compute maximum aligned block size
