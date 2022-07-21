@@ -16,7 +16,8 @@ DEFAULT_MEM = 512
 QEMU = "qemu-system-x86_64"
 QEMU_DEFAULT_ARGS = [
     "-machine",
-    "q35,accel=tcg",
+    # Try to use KVM if available, but don't die, if it is not.
+    "q35,accel=kvm:tcg",
     # Disable features that TCG doesn't support to avoid ugly warnings
     # in the test.
     "-cpu",
