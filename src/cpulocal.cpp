@@ -16,6 +16,7 @@
  */
 
 #include "cpulocal.hpp"
+#include "algorithm.hpp"
 #include "assert.hpp"
 #include "cpu.hpp"
 #include "hpt.hpp"
@@ -54,4 +55,22 @@ mword Cpulocal::setup_cpulocal()
     Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
+}
+
+void Cpulocal::prevent_accidental_access()
+{
+    // Because our CPU-local memory is addressed via positive offsets relative to GS, we choose the last
+    // canonical address for GS, which will make any (non-byte) access to GS form a non-canonical address and
+    // cause a fault.
+    //
+    // We can't program a non-canonical address, because the CPU would give us a #GP while writing the MSR.
+    Msr::write(Msr::IA32_GS_BASE, CANON_BOUND - 1);
+}
+
+bool Cpulocal::is_initialized()
+{
+    uint64 const gs_base{Msr::read(Msr::IA32_GS_BASE)};
+
+    return (gs_base >= reinterpret_cast<mword>(&cpu[0])) and
+           (gs_base < reinterpret_cast<mword>(&cpu[array_size(cpu)]));
 }

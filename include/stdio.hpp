@@ -21,25 +21,25 @@
 #pragma once
 
 #include "console.hpp"
-#include "cpu.hpp"
-#include "memory.hpp"
 #include "string.hpp"
 
+// Returns the current CPU ID or a placeholder value if the CPU ID is not yet known.
+//
+// This function is only intended to be called from the trace macro below.
+int trace_id();
+
+// Emit a log message to all configured consoles.
+//
+// The first parameter is one of the TRACE_ values defined below. Messages will only be printed, if the trace
+// value is included in trace_mask.
 #define trace(T, format, ...)                                                                                \
     do {                                                                                                     \
         if (EXPECT_FALSE((trace_mask & (T)) == (T))) {                                                       \
-            mword __esp;                                                                                     \
-            Console::print(                                                                                  \
-                "[%2ld][%s:%d] " format,                                                                     \
-                static_cast<long>(                                                                           \
-                    ((reinterpret_cast<mword>(&__esp) - 1) & ~PAGE_MASK) > LINK_ADDR ? Cpu::id() : ~0UL),    \
-                FILENAME, __LINE__, ##__VA_ARGS__);                                                          \
+            Console::print("[%3d][%s:%d] " format, trace_id(), FILENAME, __LINE__, ##__VA_ARGS__);           \
         }                                                                                                    \
     } while (0)
 
-/*
- * Definition of trace events
- */
+// Possible trace events.
 enum
 {
     TRACE_CPU = 1UL << 0,
@@ -58,20 +58,9 @@ enum
     TRACE_ERROR = 1UL << 31,
 };
 
-/*
- * Enabled trace events
- */
-unsigned const trace_mask = TRACE_CPU | TRACE_IOMMU |
+// Enabled trace events.
+constexpr unsigned trace_mask =
 #ifdef DEBUG
-                            //                            TRACE_APIC      |
-                            TRACE_VMX | TRACE_SVM |
-//                            TRACE_ACPI      |
-//                            TRACE_MEMORY    |
-//                            TRACE_PCI       |
-//                            TRACE_SCHEDULE  |
-//                            TRACE_DEL       |
-//                            TRACE_REV       |
-//                            TRACE_RCU       |
-//                            TRACE_SYSCALL   |
+    TRACE_VMX | TRACE_SVM |
 #endif
-                            TRACE_ERROR | 0;
+    TRACE_CPU | TRACE_IOMMU | TRACE_ERROR;

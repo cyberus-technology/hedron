@@ -64,8 +64,12 @@ protected:
     }
 
 public:
+    // Print to any configured console.
+    //
+    // Usually, this function is not called directly. Log messages should be printed via trace().
     FORMAT(1, 2)
     static void print(char const*, ...);
 
+    // Print a fatal error message and die.
     FORMAT(1, 2) NORETURN static void panic(char const*, ...);
 };
