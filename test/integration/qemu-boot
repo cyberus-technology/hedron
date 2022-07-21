@@ -156,7 +156,11 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     ## Tests
 
     for cpu in range(expect_cpus):
-        child.expect(r"CORE:", timeout=5)
+        # When the host system is overcommitted, Hedron will take a
+        # long time to boot CPUs.
+        #
+        # See #214.
+        child.expect(r"CORE:", timeout=20)
 
     page_table_dump = monitor_repl.run_command("info tlb")
     check_page_table(parse_page_table(page_table_dump))
