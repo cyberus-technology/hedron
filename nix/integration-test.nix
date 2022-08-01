@@ -40,4 +40,14 @@ stdenv.mkDerivation {
     cp output.log $out/
     echo "report testlog $out output.log" > $out/nix-support/hydra-build-products
   '';
+
+  requiredSystemFeatures = [
+    # Running Hedron with many (virtual) CPUs on small machines is not working well.
+    #
+    # See #214.
+    "big-parallel"
+
+    # The tests will be faster when KVM is available.
+    "kvm"
+  ];
 }

@@ -7,7 +7,7 @@ stages:
 # Job description helpers
 
 .in_ubuntu:
-  image: ubuntu:hirsute
+  image: ubuntu:latest
   variables:
     DEBIAN_FRONTEND: 'noninteractive'
 
