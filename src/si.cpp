@@ -21,8 +21,6 @@
 
 #include "stdio.hpp"
 
-static Spinlock lock;
-
 Si::Si(Sm* s, mword v) : sm(s), prev(nullptr), next(nullptr), value(v)
 {
     trace(TRACE_SYSCALL, "SI:%p created (SM:%p signal:%#lx)", this, s, v);
@@ -49,52 +47,17 @@ Si::~Si()
         delete sm;
 }
 
-void Si::chain(Sm* si)
-{
-    Sm* kern_sm = static_cast<Sm*>(this);
-    assert(kern_sm);
-    assert(kern_sm->space == static_cast<Space_obj*>(&Pd::kern));
-
-    Lock_guard<Spinlock> guard(lock);
-
-    if (sm && sm->del_rcu())
-        Rcu::call(sm);
-
-    sm = si;
-
-    if (sm) {
-        bool ok = sm->add_ref();
-        assert(ok);
-        if (!ok)
-            sm = nullptr;
-    }
-
-    mword c = kern_sm->reset(true);
-
-    for (unsigned i = 0; i < c; i++)
-        kern_sm->submit();
-}
-
 void Si::submit()
 {
     Sm* i = static_cast<Sm*>(this);
     assert(i);
 
-    if (i->space == static_cast<Space_obj*>(&Pd::kern)) {
-        Sm* si = Atomic::load(i->sm);
-        if (si) {
-            si->submit();
-            return;
-        }
-    }
-
     i->up();
 
-    Sm* sm_chained = Atomic::load(sm);
     /* if !sm than it is just a semaphore */
-    if (!sm_chained)
+    if (!sm)
         return;
 
     /* signal mode - send up() to chained sm */
-    sm_chained->up(nullptr, i);
+    sm->up(nullptr, i);
 }

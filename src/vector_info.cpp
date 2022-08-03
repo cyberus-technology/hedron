@@ -124,7 +124,7 @@ bool Locked_vector_info::handle_user_interrupt()
         // mword in the bitfield has been zero before, but this would require userspace to not use the bits in
         // the kpage for anything beyond interrupt notification.
         if (not kp_bits->atomic_fetch_set(vector_info.kp_bit)) {
-            vector_info.sm->submit();
+            vector_info.sm->up();
         }
 
         handled = true;

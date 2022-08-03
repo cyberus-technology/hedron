@@ -47,6 +47,13 @@ private:
         }
     }
 
+    mword reset()
+    {
+        mword c = counter;
+        counter = 0;
+        return c;
+    }
+
 public:
     // Capability permission bitmask.
     enum
@@ -56,17 +63,6 @@ public:
 
         PERM_ALL = PERM_UP | PERM_DOWN,
     };
-
-    mword reset(bool l = false)
-    {
-        if (l)
-            lock.lock();
-        mword c = counter;
-        counter = 0;
-        if (l)
-            lock.unlock();
-        return c;
-    }
 
     Sm(Pd*, mword, mword = 0, Sm* = nullptr, mword = 0);
     ~Sm()
@@ -133,7 +129,7 @@ public:
             }
 
             if (si)
-                ec->set_si_regs(si->value, si->reset(true));
+                ec->set_si_regs(si->value, si->reset());
 
             ec->release(c);
 

@@ -41,7 +41,5 @@ public:
 
     inline bool queued() const { return next; }
 
-    void chain(Sm* s);
-
     void submit();
 };
