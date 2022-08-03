@@ -112,8 +112,6 @@ public:
     inline unsigned long pd() const { return ARG_2; }
 
     inline mword cnt() const { return ARG_3; }
-
-    inline unsigned long sm() const { return ARG_4; }
 };
 
 class Sys_create_kp : public Sys_regs
@@ -134,8 +132,6 @@ public:
     inline bool remote() const { return flags() & 0x2; }
 
     inline mword pd() const { return ARG_3; }
-
-    inline mword sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
 };
 
 class Sys_pd_ctrl : public Sys_regs

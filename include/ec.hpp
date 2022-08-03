@@ -35,7 +35,6 @@
 #include "queue.hpp"
 #include "regs.hpp"
 #include "sc.hpp"
-#include "si.hpp"
 #include "syscall.hpp"
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
@@ -259,12 +258,6 @@ public:
     {
         if (EXPECT_FALSE(timeout.active()))
             timeout.dequeue();
-    }
-
-    inline void set_si_regs(mword sig, mword cnt)
-    {
-        regs.ARG_2 = sig;
-        regs.ARG_3 = cnt;
     }
 
     inline void save_fsgs_base()

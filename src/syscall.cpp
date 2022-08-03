@@ -396,25 +396,7 @@ void Ec::sys_create_sm()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    Sm* sm;
-
-    if (r->sm()) {
-        Sm* si = capability_cast<Sm>(Space_obj::lookup(r->sm()), Sm::PERM_UP);
-
-        if (EXPECT_FALSE(not si)) {
-            trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        if (si->is_signal()) {
-            /* limit chaining to solely one level */
-            trace(TRACE_ERROR, "%s: SM CAP (%#lx) is signal", __func__, r->sm());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        sm = new Sm(Pd::current(), r->sel(), 0, si, r->cnt());
-    } else
-        sm = new Sm(Pd::current(), r->sel(), r->cnt());
+    Sm* sm = new Sm(Pd::current(), r->sel(), r->cnt());
 
     if (!Space_obj::insert_root(sm)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
@@ -469,12 +451,6 @@ void Ec::sys_revoke()
 
     if (r->remote() && pd->del_rcu())
         Rcu::call(pd);
-
-    if (EXPECT_FALSE(r->sm())) {
-        if (Sm* sm = capability_cast<Sm>(Space_obj::lookup(r->sm()), Sm::PERM_UP); sm) {
-            sm->add_to_rcu();
-        }
-    }
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -668,13 +644,10 @@ void Ec::sys_sm_ctrl()
     switch (r->op()) {
 
     case Sys_sm_ctrl::Sm_operation::Up:
-        sm->submit();
+        sm->up();
         break;
 
     case Sys_sm_ctrl::Sm_operation::Down:
-        if (sm->is_signal())
-            sys_finish<Sys_regs::BAD_CAP>();
-
         current()->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
         sm->dn(r->zc(), r->time());
         break;
