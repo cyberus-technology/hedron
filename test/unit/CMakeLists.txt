@@ -14,6 +14,7 @@ add_executable(test_unit
   mtrr.cpp
   optional.cpp
   page_table.cpp
+  result.cpp
   scope_guard.cpp
   spinlock.cpp
   static_vector.cpp
