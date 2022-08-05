@@ -430,7 +430,7 @@ public:
 
     // Creates mappings in the page table. Returns true, if a TLB shootdown
     // is necessary.
-    NOINLINE void update(DEFERRED_CLEANUP& cleanup, Mapping const& map)
+    NOINLINE Alloc_result_void update(DEFERRED_CLEANUP& cleanup, Mapping const& map)
     {
         assert_slow(root_ != nullptr);
         assert_slow(map.order >= PAGE_BITS and map.order <= max_order());
@@ -449,15 +449,18 @@ public:
         // them. Missing structures are only created, if we actually have
         // something to map.
         bool const do_create{map.present()};
-        pte_pointer_t const table{walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)
-                                      .unwrap("Failed to allocate memory when walking down page table")};
 
-        // We skip filling in new entries when walk_down_and_split has
-        // already finished the job. This happens when we remove mappings
-        // and the walk down step did not found page tables to recurse into.
-        if (table != nullptr) {
-            fill_entries(cleanup, table, modified_level, map);
-        }
+        return walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)
+            .and_then([this, &cleanup, modified_level, map](pte_pointer_t table) -> Alloc_result_void {
+                // We skip filling in new entries when walk_down_and_split has already finished the job. This
+                // happens when we remove mappings and the walk down step did not find page tables to recurse
+                // into.
+                if (table != nullptr) {
+                    fill_entries(cleanup, table, modified_level, map);
+                }
+
+                return Ok_void({});
+            });
     }
 
     // Convenience version of the above method when batching of TLB
@@ -466,7 +469,9 @@ public:
     {
         DEFERRED_CLEANUP cleanup;
 
-        update(cleanup, map);
+        // The function signature makes propagating errors tricky. Even in the case of failure, the
+        // DEFERRED_CLEANUP object needs to be looked at.
+        update(cleanup, map).unwrap("Failed to allocate memory during page table update");
 
         return cleanup;
     }

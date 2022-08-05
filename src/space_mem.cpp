@@ -87,7 +87,8 @@ Tlb_cleanup Space_mem::delegate(Space_mem* snd, mword snd_base, mword rcv_base, 
         assert(Hpt::attr_to_pat(target_mapping.attr) == 0);
 
         if (sub & Space::SUBSPACE_DEVICE) {
-            dpt.update(cleanup, Dpt::convert_mapping(target_mapping));
+            dpt.update(cleanup, Dpt::convert_mapping(target_mapping))
+                .unwrap("Failed to allocate memory when delegating into DPT");
 
             // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching
             // Mode of the IOMMU is set to 1, which implies that even non-present and erroneus
@@ -99,14 +100,16 @@ Tlb_cleanup Space_mem::delegate(Space_mem* snd, mword snd_base, mword rcv_base, 
 
         if (sub & Space::SUBSPACE_GUEST) {
             if (Vmcb::has_npt()) {
-                npt.update(cleanup, target_mapping);
+                npt.update(cleanup, target_mapping)
+                    .unwrap("Failed to allocate memory when delegating into NPT");
             } else {
-                ept.update(cleanup, Ept::convert_mapping(target_mapping));
+                ept.update(cleanup, Ept::convert_mapping(target_mapping))
+                    .unwrap("Failed to allocate memory when delegating into EPT");
             }
         }
 
         if (sub & Space::SUBSPACE_HOST) {
-            hpt.update(cleanup, target_mapping);
+            hpt.update(cleanup, target_mapping).unwrap("Failed to allocate memory when delegating into HPT");
         }
 
         assert(clamped.size() >= target_mapping.size());
