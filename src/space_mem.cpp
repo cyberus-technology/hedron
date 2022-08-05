@@ -90,11 +90,11 @@ Tlb_cleanup Space_mem::delegate(Space_mem* snd, mword snd_base, mword rcv_base, 
             dpt.update(cleanup, Dpt::convert_mapping(target_mapping))
                 .unwrap("Failed to allocate memory when delegating into DPT");
 
-            // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching
-            // Mode of the IOMMU is set to 1, which implies that even non-present and erroneus
-            // mappings may be cached. For all other cases the generic_page_table code should
-            // already call `flush_tlb_later()` when necessary. We cannot easily access this
-            // information here, which is why we always explicitly kick off the flush.
+            // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching Mode of the
+            // IOMMU is set to 1, which implies that even non-present and invalid mappings may be cached. For
+            // all other cases the generic_page_table code should already call `flush_tlb_later()` when
+            // necessary. We cannot easily access this information here, which is why we always explicitly
+            // kick off the flush.
             cleanup.flush_tlb_later();
         }
 
