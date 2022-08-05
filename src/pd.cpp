@@ -63,11 +63,9 @@ Pd::Pd(Pd* own, mword sel, mword a, int creation_flags)
 }
 
 template <typename S>
-Tlb_cleanup Pd::delegate(Pd* snd, mword const snd_base, mword const rcv_base, mword const ord,
-                         mword const attr, mword const sub, char const* deltype)
+void Pd::delegate(Tlb_cleanup& cleanup, Pd* snd, mword const snd_base, mword const rcv_base, mword const ord,
+                  mword const attr, mword const sub, char const* deltype)
 {
-    Tlb_cleanup cleanup;
-
     Mdb* mdb;
     for (mword addr = snd_base; (mdb = snd->S::tree_lookup(addr, true));
          addr = mdb->node_base + (1UL << mdb->node_order)) {
@@ -100,15 +98,15 @@ Tlb_cleanup Pd::delegate(Pd* snd, mword const snd_base, mword const rcv_base, mw
 
         cleanup.merge(S::update(node));
     }
-
-    return cleanup;
 }
 
 template <>
-Tlb_cleanup Pd::delegate<Space_mem>(Pd* snd, mword const snd_base, mword const rcv_base, mword const ord,
-                                    mword const attr, mword const sub, [[maybe_unused]] char const* deltype)
+void Pd::delegate<Space_mem>(Tlb_cleanup& cleanup, Pd* snd, mword const snd_base, mword const rcv_base,
+                             mword const ord, mword const attr, mword const sub,
+                             [[maybe_unused]] char const* deltype)
 {
-    return Space_mem::delegate(snd, snd_base << PAGE_BITS, rcv_base << PAGE_BITS, ord + PAGE_BITS, attr, sub);
+    Space_mem::delegate(cleanup, snd, snd_base << PAGE_BITS, rcv_base << PAGE_BITS, ord + PAGE_BITS, attr,
+                        sub);
 }
 
 template <typename S> void Pd::revoke(mword const base, mword const ord, mword const attr, bool self)
@@ -169,10 +167,11 @@ template <> void Pd::revoke<Space_mem>(mword const base, mword const ord, mword 
         trace(TRACE_ERROR, "Non-self revocation is not supported: Revoking everything!");
     }
 
-    Tlb_cleanup cleanup{Space_mem::revoke(base << PAGE_BITS, ord + PAGE_BITS, attr)};
+    Tlb_cleanup cleanup;
+    Space_mem::revoke(cleanup, base << PAGE_BITS, ord + PAGE_BITS, attr);
 
     shootdown();
-    cleanup.ignore_tlb_flush();
+    cleanup.ignore_tlb_flush(); // because it is done.
 }
 
 mword Pd::clamp(mword snd_base, mword& rcv_base, mword snd_ord, mword rcv_ord)
@@ -277,19 +276,19 @@ void Pd::del_crd(Pd* pd, Crd del, Crd& crd, mword sub, mword hot)
     case Crd::MEM:
         o = clamp(sb, rb, so, ro, hot);
         trace(TRACE_DEL, "DEL MEM PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-        cleanup = delegate<Space_mem>(pd, sb, rb, o, a, sub, "MEM");
+        delegate<Space_mem>(cleanup, pd, sb, rb, o, a, sub, "MEM");
         break;
 
     case Crd::PIO:
         o = clamp(sb, rb, so, ro);
         trace(TRACE_DEL, "DEL I/O PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, rb, rb, o, a);
-        cleanup = delegate<Space_pio>(pd, rb, rb, o, a, sub, "PIO");
+        delegate<Space_pio>(cleanup, pd, rb, rb, o, a, sub, "PIO");
         break;
 
     case Crd::OBJ:
         o = clamp(sb, rb, so, ro, hot);
         trace(TRACE_DEL, "DEL OBJ PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-        cleanup = delegate<Space_obj>(pd, sb, rb, o, a, 0, "OBJ");
+        delegate<Space_obj>(cleanup, pd, sb, rb, o, a, 0, "OBJ");
         break;
     }
 

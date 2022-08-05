@@ -153,8 +153,8 @@ public:
     }
 
     template <typename>
-    Tlb_cleanup delegate(Pd* snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub = 0,
-                         char const* deltype = nullptr);
+    void delegate(Tlb_cleanup& cleanup, Pd* snd, mword snd_base, mword rcv_base, mword ord, mword attr,
+                  mword sub = 0, char const* deltype = nullptr);
 
     template <typename> void revoke(mword, mword, mword, bool);
 

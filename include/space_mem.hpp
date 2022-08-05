@@ -84,10 +84,11 @@ public:
     void claim_mmio_page(mword virt, Paddr phys, bool exclusive = true);
 
     // Delegate memory from one memory space to another.
-    Tlb_cleanup delegate(Space_mem* snd, mword snd_base, mword rcv_base, mword ord, mword attr, mword sub);
+    void delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base, mword ord, mword attr,
+                  mword sub);
 
     // Revoke specific rights from a region of memory.
-    Tlb_cleanup revoke(mword vaddr, mword ord, mword attr);
+    void revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr);
 
     static void shootdown();
 

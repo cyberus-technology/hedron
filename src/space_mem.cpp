@@ -59,17 +59,15 @@ static Hpt::Mapping lookup_and_adjust_rights(Space_mem* snd, mword snd_cur, mwor
 }
 
 // Addresses are in byte-granularity.
-Tlb_cleanup Space_mem::delegate(Space_mem* snd, mword snd_base, mword rcv_base, mword ord, mword attr,
-                                mword sub)
+void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base, mword ord,
+                         mword attr, mword sub)
 {
-    Tlb_cleanup cleanup;
-
     assert(ord >= PAGE_BITS);
 
     if (EXPECT_FALSE(not is_valid_user_mapping(snd_base, ord) or not is_valid_user_mapping(rcv_base, ord))) {
         trace(TRACE_ERROR, "INVALID MEM SB:%#016lx RB:%#016lx O:%#04lx A:%#lx S:%#lx", snd_base, rcv_base,
               ord, attr, sub);
-        return cleanup;
+        return;
     }
 
     Hpt::pte_t const hw_attr{Hpt::hw_attr(attr)};
@@ -127,11 +125,9 @@ Tlb_cleanup Space_mem::delegate(Space_mem* snd, mword snd_base, mword rcv_base, 
             stale_host_tlb.merge(cpus);
         }
     }
-
-    return cleanup;
 }
 
-Tlb_cleanup Space_mem::revoke(mword vaddr, mword ord, mword attr)
+void Space_mem::revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr)
 {
     auto const all_mem_rights{Mdb::MEM_R | Mdb::MEM_W | Mdb::MEM_X};
 
@@ -141,8 +137,8 @@ Tlb_cleanup Space_mem::revoke(mword vaddr, mword ord, mword attr)
               vaddr, ord, attr);
     }
 
-    return delegate(this, vaddr, vaddr, ord, 0,
-                    Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST);
+    delegate(cleanup, this, vaddr, vaddr, ord, 0,
+             Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST);
 }
 
 void Space_mem::shootdown()
