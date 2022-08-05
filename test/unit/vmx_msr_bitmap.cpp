@@ -15,7 +15,7 @@
  * GNU General Public License version 2 for more details.
  */
 
-// Include the class under test first to detect any missing includes early
+// Include the class under test first to detect any missing includes early.
 #include <vmx_msr_bitmap.hpp>
 
 #include <barrier.hpp>
@@ -35,7 +35,7 @@ alignas(PAGE_SIZE) std::array<unsigned char, PAGE_SIZE> fake_bitmap_memory;
 class Fake_page_alloc
 {
 public:
-    static void* alloc_zeroed_page()
+    static Alloc_result<void*> alloc_zeroed_page()
     {
         fake_bitmap_memory.fill(0);
 
@@ -43,7 +43,7 @@ public:
         // the barrier. Until we find out, we prefer to make sure.
         barrier();
 
-        return fake_bitmap_memory.data();
+        return Ok(fake_bitmap_memory.data());
     }
 
     static void free_page(void*)

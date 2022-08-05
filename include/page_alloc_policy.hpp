@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "alloc_result.hpp"
 #include "buddy.hpp"
 #include "types.hpp"
 
@@ -30,9 +31,11 @@ public:
     static pointer phys_to_pointer(entry e) { return static_cast<pointer>(Buddy::phys_to_ptr(e)); }
     static entry pointer_to_phys(pointer p) { return Buddy::ptr_to_phys(p); }
 
-    static pointer alloc_zeroed_page()
+    static Alloc_result<pointer> alloc_zeroed_page()
     {
-        return static_cast<pointer>(Buddy::allocator.alloc(0, Buddy::FILL_0));
+        return Buddy::allocator.try_alloc(0, Buddy::FILL_0).map([](void* p) -> pointer {
+            return static_cast<pointer>(p);
+        });
     }
     static void free_page(pointer ptr) { Buddy::allocator.free(reinterpret_cast<mword>(ptr)); }
 };
