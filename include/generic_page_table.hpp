@@ -421,13 +421,11 @@ public:
     //
     // In case creating page tables is not desired, this function can return
     // a nullptr. This indicates that we could not walk down to the desired level.
-    pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
-                                      bool create = true)
+    Alloc_result<pte_pointer_t> walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
+                                                    bool create = true)
     {
         assert_slow(root_ != nullptr);
-
-        return walk_down_and_split(cleanup, vaddr, to_level, root_, max_levels_ - 1, create)
-            .unwrap("Failed to allocate memory during page table walk down");
+        return walk_down_and_split(cleanup, vaddr, to_level, root_, max_levels_ - 1, create);
     }
 
     // Creates mappings in the page table. Returns true, if a TLB shootdown
@@ -451,7 +449,8 @@ public:
         // them. Missing structures are only created, if we actually have
         // something to map.
         bool const do_create{map.present()};
-        pte_pointer_t const table{walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)};
+        pte_pointer_t const table{walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)
+                                      .unwrap("Failed to allocate memory when walking down page table")};
 
         // We skip filling in new entries when walk_down_and_split has
         // already finished the job. This happens when we remove mappings
@@ -488,7 +487,8 @@ public:
         assert((paddr & ATTR::mask) == 0);
         assert((attr & ~ATTR::mask) == 0 and (attr & ATTR::PTE_P));
 
-        pte_pointer_t const table{walk_down_and_split(cleanup, vaddr, 0, true)};
+        pte_pointer_t const table{walk_down_and_split(cleanup, vaddr, 0, true)
+                                      .unwrap("Failed to allocate memory when replacing read-only page")};
         assert(table != nullptr);
 
         pte_pointer_t const pte_p{table + virt_to_index(0, vaddr)};
