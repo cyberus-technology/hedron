@@ -622,7 +622,6 @@ untrusted userspace PDs.**
 | ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created SM. |
 | ARG2        | Owner PD             | A capability selector to a PD that owns the SM.                                  |
 | ARG3        | Initial Count        | Initial integer value of the semaphore counter.                                  |
-| ARG4        | (Zero)               | Needs to be zero. Used by the signal mechanism that is about to be removed soon. |
 
 ### Out
 
@@ -648,7 +647,6 @@ revoking all rights at the same time. It will be removed, use
 | ARG1[7:0]   | System Call Number | Needs to be `HC_REVOKE`.                                                                  |
 | ARG1[8]     | Self               | If set, the capability is also revoked in the current PD. Ignored for memory revocations. |
 | ARG1[9]     | Remote             | If set, the given PD is used instead of the current one.                                  |
-| ARG1[63:12] | Semaphore Selector | **Deprecated**, specify as 0.                                                             |
 | ARG2        | CRD                | The capability range descriptor describing the region to be removed.                      |
 | ARG3        | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
 

@@ -23,13 +23,8 @@
 #pragma once
 
 #include "ec.hpp"
-#include "si.hpp"
 
-class Sm : public Typed_kobject<Kobject::Type::SM>,
-           public Refcount,
-           public Queue<Ec>,
-           public Queue<Si>,
-           public Si
+class Sm : public Typed_kobject<Kobject::Type::SM>, public Refcount, public Queue<Ec>
 {
 private:
     mword counter;
@@ -57,18 +52,7 @@ public:
         PERM_ALL = PERM_UP | PERM_DOWN,
     };
 
-    mword reset(bool l = false)
-    {
-        if (l)
-            lock.lock();
-        mword c = counter;
-        counter = 0;
-        if (l)
-            lock.unlock();
-        return c;
-    }
-
-    Sm(Pd*, mword, mword = 0, Sm* = nullptr, mword = 0);
+    Sm(Pd*, mword, mword = 0);
     ~Sm()
     {
         while (!counter)
@@ -82,11 +66,6 @@ public:
 
             if (counter) {
                 counter = zero ? 0 : counter - 1;
-
-                Si* si;
-                if (Queue<Si>::dequeue(si = Queue<Si>::head()))
-                    ec->set_si_regs(si->value, static_cast<Sm*>(si)->reset());
-
                 return;
             }
 
@@ -95,7 +74,7 @@ public:
                 return;
             }
 
-            Queue<Ec>::enqueue(ec);
+            enqueue(ec);
         }
 
         if (!block)
@@ -108,7 +87,7 @@ public:
         ec->clr_timeout();
     }
 
-    inline void up(void (*c)() = nullptr, Sm* si = nullptr)
+    inline void up(void (*c)() = nullptr)
     {
         Ec* ec = nullptr;
 
@@ -120,20 +99,10 @@ public:
                 Lock_guard<Spinlock> guard(lock);
 
                 if (!Queue<Ec>::dequeue(ec = Queue<Ec>::head())) {
-
-                    if (si) {
-                        if (si->queued())
-                            return;
-                        Queue<Si>::enqueue(si);
-                    }
-
                     counter++;
                     return;
                 }
             }
-
-            if (si)
-                ec->set_si_regs(si->value, si->reset(true));
 
             ec->release(c);
 
@@ -145,22 +114,11 @@ public:
         {
             Lock_guard<Spinlock> guard(lock);
 
-            if (!Queue<Ec>::dequeue(ec))
+            if (!dequeue(ec))
                 return;
         }
 
         ec->release(Ec::sys_finish<Sys_regs::COM_TIM>);
-    }
-
-    inline void add_to_rcu()
-    {
-        if (!add_ref())
-            return;
-
-        if (!Rcu::call(this))
-            /* enqueued ? - drop our ref and add to rcu if necessary */
-            if (del_rcu())
-                Rcu::call(this);
     }
 
     static inline void* operator new(size_t) { return cache.alloc(); }
