@@ -159,7 +159,7 @@ public:
 
     template <typename> void revoke(mword, mword, mword, bool);
 
-    Xfer xfer_item(Pd*, Crd, Crd, Xfer);
+    Delegate_result<Xfer> xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti);
     void xfer_items(Pd*, Crd, Crd, Xfer*, Xfer*, unsigned long);
 
     void xlt_crd(Pd*, Crd, Crd&);

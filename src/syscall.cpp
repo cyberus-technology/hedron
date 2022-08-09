@@ -520,7 +520,8 @@ void Ec::sys_pd_ctrl_delegate()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    s->set_xfer(dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer));
+    s->set_xfer(
+        dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer).unwrap("Failed to transfer items"));
 
     sys_finish<Sys_regs::SUCCESS>();
 }

@@ -337,7 +337,7 @@ void Pd::rev_crd(Crd crd, bool self)
     }
 }
 
-Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
+Delegate_result<Xfer> Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
 {
     mword set_as_del = 0;
     Crd crd = s_ti.crd();
@@ -358,9 +358,8 @@ Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
         set_as_del = 1;
         [[fallthrough]];
     case Xfer::Kind::DELEGATE:
-        del_crd(src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd, s_ti.subspaces(),
-                s_ti.hotspot())
-            .unwrap("Failed to delegate memory");
+        TRY_OR_RETURN(del_crd(src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd,
+                              s_ti.subspaces(), s_ti.hotspot()));
         break;
 
     default:
@@ -368,13 +367,13 @@ Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
         break;
     };
 
-    return Xfer{crd, s_ti.flags() | set_as_del};
+    return Ok(Xfer{crd, s_ti.flags() | set_as_del});
 }
 
 void Pd::xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti, unsigned long num_typed)
 {
     for (unsigned long cur = 0; cur < num_typed; cur++) {
-        Xfer res{xfer_item(src_pd, xlt, del, *(s_ti - cur))};
+        Xfer res{xfer_item(src_pd, xlt, del, *(s_ti - cur)).unwrap("Failed to transfer items")};
 
         if (d_ti) {
             *(d_ti - cur) = res;
