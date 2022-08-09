@@ -259,7 +259,8 @@ void Ec::sys_create_pd()
     }
 
     Crd crd = r->crd();
-    pd->del_crd(Pd::current(), Crd(Crd::OBJ), crd);
+
+    pd->del_crd(Pd::current(), Crd(Crd::OBJ), crd).unwrap("Failed to delegate into newly created PD");
 
     sys_finish<Sys_regs::SUCCESS>();
 }

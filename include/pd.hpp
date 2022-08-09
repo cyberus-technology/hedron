@@ -163,7 +163,7 @@ public:
     void xfer_items(Pd*, Crd, Crd, Xfer*, Xfer*, unsigned long);
 
     void xlt_crd(Pd*, Crd, Crd&);
-    void del_crd(Pd*, Crd, Crd&, mword = 0, mword = 0);
+    Delegate_result_void del_crd(Pd* pd, Crd del, Crd& crd, mword sub = 0, mword hot = 0);
     void rev_crd(Crd, bool);
 
     static inline void* operator new(size_t) { return cache.alloc(); }
