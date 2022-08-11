@@ -40,11 +40,8 @@ stdenv.mkDerivation {
   '';
 
   postInstall = ''
-    mkdir -p $out/nix-support $out/share
+    mkdir -p $out/share
     cp -r $src/doc $out/share
-    echo "file binary-dist $out/share/hedron/hypervisor" >> $out/nix-support/hydra-build-products
-    echo "file binary-dist $out/share/hedron/hypervisor.elf32" >> $out/nix-support/hydra-build-products
-    echo "doc-pdf manual $out/share/doc/specification.pdf" >> $out/nix-support/hydra-build-products
   '';
 
   meta = {
