@@ -367,6 +367,7 @@ Most hypercalls return a status value in OUT1. The following status values are d
 | `BAD_FTR` | 6       | An invalid feature was requested                                 |
 | `BAD_CPU` | 7       | A portal capability was used on the wrong CPU                    |
 | `BAD_DEV` | 8       | An invalid device ID was passed                                  |
+| `OOM`     | 9       | The hypervisor ran out of memory                                 |
 
 # System Call Reference
 
@@ -563,6 +564,14 @@ functionality as rights delegation via IPC.
 For memory delegations, the CRD controls the type of the _destination_
 page table. The source of delegations is always the source PD's host
 page table.
+
+Delegation operations allocate memory in the kernel and may fail with
+`OOM` when the kernel runs out of memory. In this case, the delegation
+may be partially completed. Userspace can retry the operation when
+more memory is available to the kernel.
+
+Delegation operations can also fail with `BAD_PAR` when source or
+destination ranges do not refer to valid userspace addresses.
 
 ### In
 
