@@ -87,8 +87,13 @@ stages:
   script:
     - ./test/integration/qemu-boot build/src/hypervisor.elf32
     - ./tools/gen_usb.sh grub_image.iso build/src/hypervisor.elf32 tools/grub.cfg.tmpl
-    - ./test/integration/qemu-boot grub_image.iso --disk-image
-    - ./test/integration/qemu-boot grub_image.iso --disk-image --uefi
+    # On Fedora, the default memory size leads to a memory map that is
+    # too fragmented for Grub to find enough contiguous memory.
+    #
+    # See #218 for the issue that is workarounded and #219 for a
+    # longer term solution.
+    - ./test/integration/qemu-boot grub_image.iso --memory 3192 --disk-image
+    - ./test/integration/qemu-boot grub_image.iso --memory 3192 --disk-image --uefi
 
 # Stylecheck Job description
 
