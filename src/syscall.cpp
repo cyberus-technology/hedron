@@ -509,6 +509,18 @@ void Ec::sys_pd_ctrl_map_access_page()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+static Sys_regs::Status to_syscall_status(Delegate_error del_error)
+{
+    switch (del_error.error_type) {
+    case Delegate_error::type::OUT_OF_MEMORY:
+        return Sys_regs::Status::OOM;
+    case Delegate_error::type::INVALID_MAPPING:
+        return Sys_regs::Status::BAD_PAR;
+    }
+
+    UNREACHED;
+}
+
 void Ec::sys_pd_ctrl_delegate()
 {
     Sys_pd_ctrl_delegate* s = static_cast<Sys_pd_ctrl_delegate*>(current()->sys_regs());
@@ -525,10 +537,12 @@ void Ec::sys_pd_ctrl_delegate()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    s->set_xfer(
-        dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer).unwrap("Failed to transfer items"));
-
-    sys_finish<Sys_regs::SUCCESS>();
+    sys_finish(dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer)
+                   .map([s](Xfer x) -> monostate {
+                       s->set_xfer(x);
+                       return {};
+                   })
+                   .map_err([](Delegate_error e) { return to_syscall_status(e.error_type); }));
 }
 
 void Ec::sys_pd_ctrl_msr_access()

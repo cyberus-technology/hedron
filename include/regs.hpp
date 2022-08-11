@@ -77,6 +77,7 @@ public:
         BAD_FTR,
         BAD_CPU,
         BAD_DEV,
+        OOM,
     };
 
     inline hypercall_id id() const { return static_cast<hypercall_id>(ARG_1 & ARG1_ID_MASK); }
