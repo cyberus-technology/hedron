@@ -17,9 +17,8 @@ hedron.overrideAttrs (
 
     makeFlags = [ "test_unit_coverage" ];
     installPhase = ''
-      mkdir -p $out/nix-support
+      mkdir -p $out
       cp -r test_unit_coverage/* $out/
-      echo "report coverage $out index.html" >> $out/nix-support/hydra-build-products
     '';
   }
 )
