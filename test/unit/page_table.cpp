@@ -105,9 +105,9 @@ public:
 
         Fake_memory operator*() const { return Fake_memory{{it_, memory_->memory_.cend()}}; }
 
-        bool operator==(iterator const& rhs) { return memory_ == rhs.memory_ and it_ == rhs.it_; }
+        bool operator==(iterator const& rhs) const { return memory_ == rhs.memory_ and it_ == rhs.it_; }
 
-        bool operator!=(iterator const& rhs) { return not(*this == rhs); }
+        bool operator!=(iterator const& rhs) const { return not(*this == rhs); }
 
         iterator(Fake_memory const* memory) : memory_(memory), it_(memory->memory_.cbegin()) {}
     };
