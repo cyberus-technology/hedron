@@ -45,7 +45,7 @@ void Acpi::delay(unsigned ms)
     unsigned val = read(PM_TMR);
 
     while ((read(PM_TMR) - val) % (1UL << 24) < cnt)
-        pause();
+        relax();
 }
 
 Acpi_table_facs Acpi::get_facs() { return *static_cast<Acpi_table_facs*>(Hpt::remap(facs)); }
@@ -101,7 +101,7 @@ void Acpi::enter_sleep_state(uint8 slp_typa, uint8 slp_typb)
     // For S2 and S3, the wake status will never be set and CPU power will be
     // turned off. For S1, this bit will be set when it's time to wake up again.
     while (not(Acpi::read(PM1_STS) & PM1_STS_WAKE)) {
-        pause();
+        relax();
     }
 }
 

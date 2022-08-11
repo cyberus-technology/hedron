@@ -80,7 +80,7 @@ void Bootstrap::bootstrap()
 
 void Bootstrap::wait_for_all_cpus()
 {
-    for (Atomic::add(barrier, 1UL); Atomic::load(barrier) != Cpu::online; pause())
+    for (Atomic::add(barrier, 1UL); Atomic::load(barrier) != Cpu::online; relax())
         ;
 }
 

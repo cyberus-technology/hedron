@@ -49,7 +49,7 @@ public:
             Atomic::fetch_add<Ticket, Atomic::ACQUIRE>(next_ticket, static_cast<Ticket>(1))};
 
         while (Atomic::load<Ticket, Atomic::ACQUIRE>(served_ticket) != our_ticket) {
-            pause();
+            relax();
         }
     }
 

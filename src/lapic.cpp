@@ -167,7 +167,7 @@ void Lapic::init()
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)
 {
     while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12))
-        pause();
+        relax();
 
     write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
@@ -184,7 +184,7 @@ void Lapic::park_all_but_self(park_fn fn)
     send_ipi(0, VEC_IPI_PRK, DLV_FIXED, DSH_EXC_SELF);
 
     while (Atomic::load(cpu_park_count) != 0) {
-        pause();
+        relax();
     }
 
     park_function();
