@@ -42,14 +42,19 @@
 #include "vector_info.hpp"
 #include "vectors.hpp"
 
-template <Sys_regs::Status S, bool T> void Ec::sys_finish()
+void Ec::sys_finish(Sys_regs::Status status, bool clear_timeout)
 {
-    if (T)
+    if (EXPECT_FALSE(clear_timeout))
         current()->clr_timeout();
 
-    current()->regs.set_status(S);
+    current()->regs.set_status(status);
 
     ret_user_sysexit();
+}
+
+void Ec::sys_finish(Result_void<Sys_regs::Status> result)
+{
+    sys_finish(EXPECT_TRUE(result.is_ok()) ? Sys_regs::Status::SUCCESS : result.unwrap_err());
 }
 
 void Ec::activate()
