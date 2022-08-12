@@ -44,7 +44,10 @@ inline void shutdown()
         asm volatile("cli; hlt");
 }
 
-inline void pause() { asm volatile("pause" : : : "memory"); }
+// Tell the CPU that we are in a busy loop and that it can chill out.
+//
+// This function is not called pause, because this clashes with a function in unistd.h.
+inline void relax() { __builtin_ia32_pause(); }
 
 inline uint64 rdtsc()
 {

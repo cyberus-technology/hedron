@@ -53,7 +53,7 @@ void Console_serial::putc(int c)
         putc('\r');
 
     while (EXPECT_FALSE(!(in(LSR)&0x20)))
-        pause();
+        relax();
 
     out(THR, c);
 }

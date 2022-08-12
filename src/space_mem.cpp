@@ -166,7 +166,7 @@ void Space_mem::shootdown()
         asm volatile("sti" : : : "memory");
 
         while (Counter::remote_tlb_shootdown(cpu) == ctr)
-            pause();
+            relax();
 
         asm volatile("cli" : : : "memory");
     }

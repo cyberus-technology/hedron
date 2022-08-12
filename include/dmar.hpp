@@ -205,7 +205,7 @@ private:
     {
         write<uint32>(REG_GCMD, val);
         while ((read<uint32>(REG_GSTS) & val) != val)
-            pause();
+            relax();
     }
 
     inline void qi_submit(Dmar_qi const& q)
@@ -217,7 +217,7 @@ private:
 
     inline void qi_wait()
     {
-        for (uint64 v = read<uint64>(REG_IQT); v != read<uint64>(REG_IQH); pause())
+        for (uint64 v = read<uint64>(REG_IQT); v != read<uint64>(REG_IQH); relax())
             ;
     }
 
@@ -230,10 +230,10 @@ private:
         } else {
             write<uint64>(REG_CCMD, 1ULL << 63 | 1ULL << 61);
             while (read<uint64>(REG_CCMD) & (1ULL << 63))
-                pause();
+                relax();
             write<uint64>(REG_IOTLB, 1ULL << 63 | 1ULL << 60);
             while (read<uint64>(REG_IOTLB) & (1ULL << 63))
-                pause();
+                relax();
         }
     }
 

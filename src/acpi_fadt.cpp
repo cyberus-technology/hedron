@@ -46,6 +46,6 @@ void Acpi_table_fadt::init(const Acpi_table_fadt* fadt)
     if (fadt->smi_cmd && fadt->acpi_enable) {
         Io::out(fadt->smi_cmd, fadt->acpi_enable);
         while (!(Acpi::read(Acpi::PM1_CNT) & Acpi::PM1_CNT_SCI_EN))
-            pause();
+            relax();
     }
 }

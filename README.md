@@ -47,7 +47,7 @@ You need the following tools to compile the hypervisor:
 
 - cmake 3.13 or higher,
 - binutils 2.30 or higher,
-- gcc 7.4.0 or higher,
+- gcc 10.0.0 or higher,
 - or alternatively, clang 12.0 or higher.
 
 To build and run the unit tests (optional), you need:
