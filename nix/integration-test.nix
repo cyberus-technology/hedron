@@ -36,9 +36,7 @@ stdenv.mkDerivation {
   '';
 
   installPhase = ''
-    mkdir -p $out/nix-support
-    cp output.log $out/
-    echo "report testlog $out output.log" > $out/nix-support/hydra-build-products
+    cp output.log $out
   '';
 
   requiredSystemFeatures = [

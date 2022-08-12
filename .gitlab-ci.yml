@@ -150,6 +150,7 @@ build:ubuntu-make:
 # Lint Job Description
 
 lint:clang-tidy:
+  needs: []
   stage: lint
   tags:
     - native-nix
