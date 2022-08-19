@@ -32,7 +32,7 @@
 #define COMPILER_STRING "clang " __clang_version__
 #define COMPILER_VERSION (__clang_major__ * 100 + __clang_minor__ * 10 + __clang_patchlevel__)
 
-#if (COMPILER_VERSION < 700)
+#if (COMPILER_VERSION < 1200)
 #error "Please upgrade clang to a supported version"
 #endif
 
@@ -46,7 +46,7 @@
 #define COMPILER_VERSION (__GNUC__ * 100 + __GNUC_MINOR__ * 10)
 #endif
 
-#if (COMPILER_VERSION < 700)
+#if (COMPILER_VERSION < 1000)
 #error "Please upgrade GCC to a supported version"
 #endif
 
