@@ -18,5 +18,11 @@ pkgs.mkShell {
 
   inputsFrom = [ release.hedron.builds.default-debug release.hedron.stylecheck ];
 
-  buildInputs = [ pkgs.niv ];
+  buildInputs = [
+    # To manipulate Nix dependencies.
+    pkgs.niv
+
+    # To modify cmake build variables with ccmake.
+    pkgs.cmakeCurses
+  ];
 }
