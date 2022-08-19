@@ -219,4 +219,4 @@ void Console::panic(char const* format, ...)
     shutdown();
 }
 
-extern "C" NORETURN void __cxa_pure_virtual() { UNREACHED; }
+extern "C" [[noreturn]] void __cxa_pure_virtual() { UNREACHED; }

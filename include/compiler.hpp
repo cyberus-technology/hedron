@@ -36,10 +36,6 @@
 #error "Please upgrade clang to a supported version"
 #endif
 
-// Certain functions cannot be marked noreturn, because of this clang issue:
-// https://bugs.llvm.org/show_bug.cgi?id=42651
-#define NORETURN_GCC
-
 #else // GCC
 
 #define COMPILER_STRING "gcc " __VERSION__
@@ -53,8 +49,6 @@
 #if (COMPILER_VERSION < 700)
 #error "Please upgrade GCC to a supported version"
 #endif
-
-#define NORETURN_GCC NORETURN
 
 #endif
 
@@ -76,7 +70,6 @@
 #define INIT_PRIORITY(X) __attribute__((init_priority((X))))
 #define NOINLINE __attribute__((noinline))
 #define NONNULL __attribute__((nonnull))
-#define NORETURN __attribute__((noreturn))
 #define PACKED __attribute__((packed))
 #define REGPARM(X) __attribute__((regparm(X)))
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
