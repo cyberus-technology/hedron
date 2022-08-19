@@ -58,13 +58,6 @@
 
 #define ALIGNED(X) __attribute__((aligned(X)))
 
-// The CPU-local sections do not exist on hosted builds, so prevent people
-// from harming themselves.
-#if !__STDC_HOSTED__
-#define CPULOCAL __attribute__((section(".cpulocal,\"w\",@nobits#")))
-#define CPULOCAL_HOT __attribute__((section(".cpulocal.hot,\"w\",@nobits#")))
-#endif
-
 #define FORMAT(X, Y) __attribute__((format(printf, (X), (Y))))
 
 #define INIT_PRIORITY(X) __attribute__((init_priority((X))))
