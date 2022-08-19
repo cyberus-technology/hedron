@@ -348,7 +348,7 @@ Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
 
         crd = s_ti.crd();
         set_as_del = 1;
-        FALL_THROUGH;
+        [[fallthrough]];
     case Xfer::Kind::DELEGATE:
         del_crd(src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd, s_ti.subspaces(),
                 s_ti.hotspot());

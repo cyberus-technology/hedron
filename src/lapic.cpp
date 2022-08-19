@@ -109,19 +109,19 @@ void Lapic::init()
     switch (lvt_max()) {
     default:
         set_lvt(LAPIC_LVT_THERM, DLV_FIXED, VEC_LVT_THERM);
-        FALL_THROUGH;
+        [[fallthrough]];
     case 4:
         set_lvt(LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
-        FALL_THROUGH;
+        [[fallthrough]];
     case 3:
         set_lvt(LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
-        FALL_THROUGH;
+        [[fallthrough]];
     case 2:
         set_lvt(LAPIC_LVT_LINT1, DLV_NMI, 0);
-        FALL_THROUGH;
+        [[fallthrough]];
     case 1:
         set_lvt(LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
-        FALL_THROUGH;
+        [[fallthrough]];
     case 0:
         set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
         break;

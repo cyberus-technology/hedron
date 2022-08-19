@@ -39,7 +39,6 @@
 // Certain functions cannot be marked noreturn, because of this clang issue:
 // https://bugs.llvm.org/show_bug.cgi?id=42651
 #define NORETURN_GCC
-#define FALL_THROUGH [[clang::fallthrough]]
 
 #else // GCC
 
@@ -56,7 +55,6 @@
 #endif
 
 #define NORETURN_GCC NORETURN
-#define FALL_THROUGH [[gnu::fallthrough]]
 
 #endif
 

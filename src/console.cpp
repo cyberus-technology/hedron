@@ -107,7 +107,7 @@ void Console::vprintf(char const* format, va_list args)
                         break;
                     }
                     mode = MODE_WIDTH;
-                    FALL_THROUGH;
+                    [[fallthrough]];
                 case MODE_WIDTH:
                     width = width * 10 + *format - '0';
                     break;
@@ -175,7 +175,7 @@ void Console::vprintf(char const* format, va_list args)
 
             case 0:
                 format--;
-                FALL_THROUGH;
+                [[fallthrough]];
 
             default:
                 putc(*format);
