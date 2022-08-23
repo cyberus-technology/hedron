@@ -57,6 +57,11 @@ template <typename T> constexpr T&& forward(typename remove_reference<T>::type&&
     return static_cast<T&&>(arg);
 }
 
+template <typename T> typename remove_reference<T>::type&& move(T&& v)
+{
+    return static_cast<typename remove_reference<T>::type&&>(v);
+}
+
 /// Wrap a member function together with its parameters into a callable.
 ///
 /// Example:
