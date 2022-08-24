@@ -153,3 +153,25 @@ accepted because that step calculates the checksum.
 ## Page Table Management
 
 ... write me ...
+
+## Error Handling
+
+Given the history of Hedron as research project, robust error handling
+was initially not a focus. Memory allocation failures lead to kernel
+panics in most of the code base. Many error conditions, such as
+invalid memory delegations, are silent for the user, because they are
+not propagated to the system call layer.
+
+Robust error handling is important. Not propagating errors and instead
+ignoring them or panicing has implications for Hedron development and
+production. In development, silent errors often lead to developer
+confusion. In production, panics turn recoverable errors into
+denial-of-service.
+
+To facilitate convenient and robust error handling, Hedron code can
+(and should) use the `Result` type (see
+`include/result.hpp`). `Result` offers [Rust-style error
+handling](https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html).
+Developers are encouraged to familiarize themselves with Rust-style
+error handling to be able to write readable and concise error handling
+code.
