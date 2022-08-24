@@ -71,5 +71,5 @@ public:
     static void print(char const*, ...);
 
     // Print a fatal error message and die.
-    FORMAT(1, 2) NORETURN static void panic(char const*, ...);
+    [[noreturn]] FORMAT(1, 2) static void panic(char const*, ...);
 };

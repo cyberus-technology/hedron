@@ -102,32 +102,24 @@ private:
     REGPARM(1)
     static void handle_exc(Exc_regs*) asm("exc_handler");
 
-    NORETURN
-    static void handle_vmx() asm("vmx_handler");
+    [[noreturn]] static void handle_vmx() asm("vmx_handler");
 
-    NORETURN
-    static void USED handle_svm() asm("svm_handler");
+    [[noreturn]] static void USED handle_svm() asm("svm_handler");
 
     static bool handle_exc_gp(Exc_regs*);
     static bool handle_exc_pf(Exc_regs*);
 
-    NORETURN
-    static inline void svm_exception(mword);
+    [[noreturn]] static inline void svm_exception(mword);
 
-    NORETURN
-    static inline void svm_cr();
+    [[noreturn]] static inline void svm_cr();
 
-    NORETURN
-    static inline void svm_invlpg();
+    [[noreturn]] static inline void svm_invlpg();
 
-    NORETURN
-    static inline void vmx_exception();
+    [[noreturn]] static inline void vmx_exception();
 
-    NORETURN
-    static inline void vmx_extint();
+    [[noreturn]] static inline void vmx_extint();
 
-    NORETURN
-    static inline void vmx_invlpg();
+    [[noreturn]] static inline void vmx_invlpg();
 
     // Try to fixup a #GP in the kernel. See FIXUP_CALL for when this may be
     // appropriate.
@@ -210,8 +202,7 @@ private:
 
     void transfer_fpu(Ec*);
 
-    NORETURN
-    static void idle();
+    [[noreturn]] static void idle();
 
 public:
     // Capability permission bitmask.
@@ -308,7 +299,7 @@ public:
     // Return to user via the current continuation.
     //
     // This function also resets the kernel stack.
-    NORETURN void return_to_user();
+    [[noreturn]] void return_to_user();
 
     // Access the current EC on a remote core.
     //
@@ -365,127 +356,93 @@ public:
         }
     }
 
-    HOT NORETURN static void ret_user_sysexit();
+    [[noreturn]] HOT static void ret_user_sysexit();
 
-    HOT NORETURN_GCC static void ret_user_iret() asm("ret_user_iret");
+    [[noreturn]] HOT static void ret_user_iret() asm("ret_user_iret");
 
-    NORETURN_GCC
-    static void ret_user_vmresume();
+    [[noreturn]] static void ret_user_vmresume();
 
-    NORETURN_GCC
-    static void ret_user_vmrun();
+    [[noreturn]] static void ret_user_vmrun();
 
-    template <Sys_regs::Status S, bool T = false> NOINLINE NORETURN static void sys_finish();
+    template <Sys_regs::Status S, bool T = false> [[noreturn]] NOINLINE static void sys_finish();
 
-    NORETURN
-    void activate();
+    [[noreturn]] void activate();
 
-    template <void (*)()> NORETURN static void send_msg();
+    template <void (*)()> [[noreturn]] static void send_msg();
 
-    HOT NORETURN static void recv_kern();
+    [[noreturn]] HOT static void recv_kern();
 
-    HOT NORETURN static void recv_user();
+    [[noreturn]] HOT static void recv_user();
 
-    HOT NORETURN static void reply(void (*)() = nullptr, Sm* = nullptr);
+    [[noreturn]] HOT static void reply(void (*)() = nullptr, Sm* = nullptr);
 
-    HOT NORETURN static void sys_call();
+    [[noreturn]] HOT static void sys_call();
 
-    HOT NORETURN static void sys_reply();
+    [[noreturn]] HOT static void sys_reply();
 
-    NORETURN
-    static void sys_create_pd();
+    [[noreturn]] static void sys_create_pd();
 
-    NORETURN
-    static void sys_create_ec();
+    [[noreturn]] static void sys_create_ec();
 
-    NORETURN
-    static void sys_create_sc();
+    [[noreturn]] static void sys_create_sc();
 
-    NORETURN
-    static void sys_create_pt();
+    [[noreturn]] static void sys_create_pt();
 
-    NORETURN
-    static void sys_create_sm();
+    [[noreturn]] static void sys_create_sm();
 
-    NORETURN
-    static void sys_create_kp();
+    [[noreturn]] static void sys_create_kp();
 
-    NORETURN
-    static void sys_revoke();
+    [[noreturn]] static void sys_revoke();
 
-    NORETURN
-    static void sys_pd_ctrl();
+    [[noreturn]] static void sys_pd_ctrl();
 
-    NORETURN
-    static void sys_pd_ctrl_lookup();
+    [[noreturn]] static void sys_pd_ctrl_lookup();
 
-    NORETURN
-    static void sys_pd_ctrl_map_access_page();
+    [[noreturn]] static void sys_pd_ctrl_map_access_page();
 
-    NORETURN
-    static void sys_pd_ctrl_delegate();
+    [[noreturn]] static void sys_pd_ctrl_delegate();
 
-    NORETURN
-    static void sys_pd_ctrl_msr_access();
+    [[noreturn]] static void sys_pd_ctrl_msr_access();
 
-    NORETURN
-    static void sys_ec_ctrl();
+    [[noreturn]] static void sys_ec_ctrl();
 
-    NORETURN
-    static void sys_sc_ctrl();
+    [[noreturn]] static void sys_sc_ctrl();
 
-    NORETURN
-    static void sys_pt_ctrl();
+    [[noreturn]] static void sys_pt_ctrl();
 
-    NORETURN
-    static void sys_sm_ctrl();
+    [[noreturn]] static void sys_sm_ctrl();
 
-    NORETURN
-    static void sys_kp_ctrl();
+    [[noreturn]] static void sys_kp_ctrl();
 
-    NORETURN
-    static void sys_kp_ctrl_map();
+    [[noreturn]] static void sys_kp_ctrl_map();
 
-    NORETURN
-    static void sys_kp_ctrl_unmap();
+    [[noreturn]] static void sys_kp_ctrl_unmap();
 
-    NORETURN
-    static void sys_assign_pci();
+    [[noreturn]] static void sys_assign_pci();
 
-    NORETURN
-    static void sys_machine_ctrl();
+    [[noreturn]] static void sys_machine_ctrl();
 
-    NORETURN
-    static void sys_machine_ctrl_suspend();
+    [[noreturn]] static void sys_machine_ctrl_suspend();
 
-    NORETURN
-    static void sys_machine_ctrl_update_microcode();
+    [[noreturn]] static void sys_machine_ctrl_update_microcode();
 
-    NORETURN
-    static void sys_irq_ctrl();
+    [[noreturn]] static void sys_irq_ctrl();
 
-    NORETURN
-    static void sys_irq_ctrl_configure_vector();
+    [[noreturn]] static void sys_irq_ctrl_configure_vector();
 
-    NORETURN
-    static void sys_irq_ctrl_assign_ioapic_pin();
+    [[noreturn]] static void sys_irq_ctrl_assign_ioapic_pin();
 
-    NORETURN
-    static void sys_irq_ctrl_mask_ioapic_pin();
+    [[noreturn]] static void sys_irq_ctrl_mask_ioapic_pin();
 
-    NORETURN
-    static void sys_irq_ctrl_assign_msi();
+    [[noreturn]] static void sys_irq_ctrl_assign_msi();
 
-    NORETURN
-    static void root_invoke();
+    [[noreturn]] static void root_invoke();
 
     template <bool> static void delegate();
 
-    NORETURN
-    static void dead() { die("IPC Abort"); }
+    [[noreturn]] static void dead() { die("IPC Abort"); }
 
-    NORETURN
-    static void die(char const*, Exc_regs* = &current()->regs);
+    [[noreturn]] static void die(char const*, Exc_regs* = &current()->regs);
 
     static void idl_handler();
 
@@ -493,6 +450,5 @@ public:
 
     static inline void operator delete(void* ptr) { cache.free(ptr); }
 
-    NORETURN
-    static void syscall_handler() asm("syscall_handler");
+    [[noreturn]] static void syscall_handler() asm("syscall_handler");
 };

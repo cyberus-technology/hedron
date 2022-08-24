@@ -52,5 +52,5 @@ class Bootstrap
     static void create_roottask();
 
 public:
-    static NORETURN void bootstrap() asm("bootstrap");
+    [[noreturn]] static void bootstrap() asm("bootstrap");
 };

@@ -97,7 +97,7 @@ private:
 
     static inline void therm_handler();
 
-    static inline void park_handler();
+    [[noreturn]] static inline void park_handler();
 
 public:
     static unsigned freq_tsc;

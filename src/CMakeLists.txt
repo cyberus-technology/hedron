@@ -87,7 +87,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_options(hypervisor PRIVATE
     -Wno-sign-conversion
     -Wno-unused-private-field
-    -Wno-missing-noreturn	# See NORETURN_GCC in include/compiler.h
     -Wno-implicit-int-conversion
     -Wno-static-self-init
     $<$<BOOL:${ENABLE_RETPOLINE}>:-mretpoline>

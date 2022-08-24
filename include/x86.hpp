@@ -37,8 +37,7 @@ inline void* clflush(void* d, size_t n)
     return d;
 }
 
-NORETURN
-inline void shutdown()
+[[noreturn]] inline void shutdown()
 {
     for (;;)
         asm volatile("cli; hlt");
