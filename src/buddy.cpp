@@ -115,7 +115,7 @@ void* Buddy::alloc(unsigned short ord, Fill fill_mem)
         return reinterpret_cast<void*>(virt);
     }
 
-    Console::panic("Out of memory");
+    panic("Out of memory");
 }
 
 /*

@@ -38,7 +38,7 @@ static void xsave_enable(uint64 xcr0)
 void Fpu::probe()
 {
     if (not Cpu::feature(Cpu::FEAT_XSAVE)) {
-        Console::panic("Need XSAVE-capable CPU");
+        panic("Need XSAVE-capable CPU");
     }
 
     uint32 valid_xcr0_lo, valid_xcr0_hi, current_context, discard;

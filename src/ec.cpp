@@ -419,7 +419,7 @@ void Ec::ret_user_vmrun()
     // All of these issues have been caused by refactoring and not being able to test SVM. So we keep it
     // disabled for now until we have working tests on actual hardware.
     if (Vmcb::DISABLE_BROKEN)
-        Console::panic("SVM vCPU entry is broken");
+        panic("SVM vCPU entry is broken");
 
     // clang-format off
     asm volatile ("lea %0, %%rsp;"

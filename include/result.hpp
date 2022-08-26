@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "assert.hpp"
 #include "monostate.hpp"
+#include "panic.hpp"
 #include "util.hpp"
 
 // A wrapper around error values.
@@ -138,7 +138,22 @@ public:
     // It is a bug to call this function when the result does not contain an OK value.
     T unwrap() const
     {
-        assert(is_ok());
+        if (not is_ok()) [[unlikely]] {
+            panic("Tried to unwrap a result that contained an error");
+        }
+
+        return ok_value;
+    }
+
+    // Unrap the contained OK value.
+    //
+    // In case the result contained an error, die with the given message.
+    T expect(char const* msg) const
+    {
+        if (not is_ok()) [[unlikely]] {
+            panic("Failed to unwrap: %s", msg);
+        }
+
         return ok_value;
     }
 
@@ -157,7 +172,10 @@ public:
     // It is a bug to call this function when the result does not contain an error value.
     E unwrap_err() const
     {
-        assert(is_err());
+        if (not is_err()) [[unlikely]] {
+            panic("Tried to unwrap an error that actually contained a result");
+        }
+
         return err_value;
     }
 

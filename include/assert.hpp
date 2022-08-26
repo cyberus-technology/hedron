@@ -25,7 +25,7 @@
 
 // In hosted builds (unit tests), all assertions map to the libc assert macro.
 
-#include "assert.h"
+#include <assert.h>
 #define assert_slow assert
 
 #else
@@ -34,13 +34,12 @@
 // slow. These assertions will not be included in release builds for performance
 // reasons.
 
-#include "console.hpp"
+#include "panic.hpp"
 
 #define assert(X)                                                                                            \
     do {                                                                                                     \
         if (EXPECT_FALSE(!(X))) {                                                                            \
-            Console::panic("Assertion \"%s\" failed at %s:%d:%s", #X, __FILE__, __LINE__,                    \
-                           __PRETTY_FUNCTION__);                                                             \
+            panic("Assertion \"%s\" failed at %s:%d:%s", #X, __FILE__, __LINE__, __PRETTY_FUNCTION__);       \
         }                                                                                                    \
     } while (0)
 

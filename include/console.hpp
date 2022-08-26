@@ -68,8 +68,9 @@ public:
     //
     // Usually, this function is not called directly. Log messages should be printed via trace().
     FORMAT(1, 2)
-    static void print(char const*, ...);
+    static void print(char const* format, ...);
 
-    // Print a fatal error message and die.
-    [[noreturn]] FORMAT(1, 2) static void panic(char const*, ...);
+    // Same as print, just for argument lists.
+    FORMAT(1, 0)
+    static void vprint(const char* format, va_list ap);
 };

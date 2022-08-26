@@ -193,30 +193,28 @@ void Console::vprintf(char const* format, va_list args)
 
 void Console::print(char const* format, ...)
 {
+    va_list ap;
+
+    va_start(ap, format);
+    vprint(format, ap);
+    va_end(ap);
+}
+
+void Console::vprint(const char* format, va_list ap)
+{
     Lock_guard<Spinlock> guard(lock);
 
     for (Console* c = list; c; c = c->next) {
-        va_list args;
-        va_start(args, format);
-        c->vprintf(format, args);
-        va_end(args);
+        va_list copy;
+
+        // We cannot use ap more than once in a call. The callee will modify it even though we pass it by
+        // value.
+        va_copy(copy, ap);
+
+        c->vprintf(format, copy);
+
+        va_end(copy);
     }
-}
-
-void Console::panic(char const* format, ...)
-{
-    {
-        Lock_guard<Spinlock> guard(lock);
-
-        for (Console* c = list; c; c = c->next) {
-            va_list args;
-            va_start(args, format);
-            c->vprintf(format, args);
-            va_end(args);
-        }
-    }
-
-    shutdown();
 }
 
 extern "C" [[noreturn]] void __cxa_pure_virtual() { UNREACHED; }
