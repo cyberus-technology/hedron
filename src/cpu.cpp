@@ -257,7 +257,7 @@ Cpu_info Cpu::init()
     }
 
     if (!feature(FEAT_FSGSBASE)) {
-        Console::panic("Need FSGSBASE-capable CPU");
+        panic("Need FSGSBASE-capable CPU");
     }
     cr4 |= Cpu::CR4_FSGSBASE;
 

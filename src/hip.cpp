@@ -78,7 +78,7 @@ void Hip::build(mword magic, mword addr)
     Hip_ioapic* ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);
     if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
-        Console::panic("Could not add all I/O APICs to Hip!");
+        panic("Could not add all I/O APICs to Hip!");
     }
 
     Hip_mem* mem = h->mem_desc;
@@ -91,7 +91,7 @@ void Hip::build(mword magic, mword addr)
         build_mbi2(mem, addr);
         break;
     default:
-        Console::panic("Unknown multiboot magic number");
+        panic("Unknown multiboot magic number");
         break;
     }
 

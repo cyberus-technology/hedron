@@ -171,7 +171,7 @@ unsigned Acpi::read(Register reg)
     case PM_TMR:
         return hw_read(&pm_tmr);
     default:
-        Console::panic("Unimplemented register Acpi::read");
+        panic("Unimplemented register Acpi::read");
         break;
     }
 
@@ -188,7 +188,7 @@ void Acpi::clear(Register reg, unsigned val)
         hw_write(&gpe1_ena, val, true);
         break;
     default:
-        Console::panic("Unimplemented register Acpi::clear");
+        panic("Unimplemented register Acpi::clear");
         break;
     }
 }
@@ -216,7 +216,7 @@ void Acpi::write(Register reg, unsigned val)
     case PM_TMR: // read-only
         break;
     default:
-        Console::panic("Unimplemented register Acpi::write");
+        panic("Unimplemented register Acpi::write");
         break;
     }
 }
@@ -237,7 +237,7 @@ unsigned Acpi::hw_read(Acpi_gas* gas)
         }
     }
 
-    Console::panic("Unimplemented ASID %d bits=%d", gas->asid, gas->bits);
+    panic("Unimplemented ASID %d bits=%d", gas->asid, gas->bits);
 }
 
 void Acpi::hw_write(Acpi_gas* gas, unsigned val, bool prm)
@@ -267,5 +267,5 @@ void Acpi::hw_write(Acpi_gas* gas, unsigned val, bool prm)
         }
     }
 
-    Console::panic("Unimplemented ASID %d bits=%d prm=%u", gas->asid, gas->bits, prm);
+    panic("Unimplemented ASID %d bits=%d prm=%u", gas->asid, gas->bits, prm);
 }
