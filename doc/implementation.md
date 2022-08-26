@@ -175,3 +175,7 @@ handling](https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.
 Developers are encouraged to familiarize themselves with Rust-style
 error handling to be able to write readable and concise error handling
 code.
+
+So far the error handling in Hedron is transitional. We have many
+places that panic on errors, but shouldn't. To find these places
+search the code base for calls to `unwrap` on results.
