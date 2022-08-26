@@ -73,7 +73,4 @@ public:
     // Same as print, just for argument lists.
     FORMAT(1, 0)
     static void vprint(const char* format, va_list ap);
-
-    // Print a fatal error message and die.
-    [[noreturn]] FORMAT(1, 2) static void panic(char const*, ...);
 };
