@@ -25,7 +25,7 @@
 
 // In hosted builds (unit tests), all assertions map to the libc assert macro.
 
-#include "assert.h"
+#include <assert.h>
 #define assert_slow assert
 
 #else
