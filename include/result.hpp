@@ -145,6 +145,18 @@ public:
         return ok_value;
     }
 
+    // Unrap the contained OK value.
+    //
+    // In case the result contained an error, die with the given message.
+    T expect(char const* msg) const
+    {
+        if (not is_ok()) [[unlikely]] {
+            panic("Failed to unwrap: %s", msg);
+        }
+
+        return ok_value;
+    }
+
     // Unwrap the contained OK value. If it doesn't exist, compute a value using the given function.
     template <typename F> T unwrap_or_else(F&& f) const
     {
