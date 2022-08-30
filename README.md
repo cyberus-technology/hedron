@@ -22,6 +22,10 @@ Hedron is open source under the [GPLv2](./LICENSE) license. Please
 consider talking to us before using it in any production system as
 there are important caveats that may not be very well documented.
 
+## Changelog
+
+A changelog is provided in [CHANGELOG.md](CHANGELOG.md).
+
 ## Building
 
 ### Nix (recommended)

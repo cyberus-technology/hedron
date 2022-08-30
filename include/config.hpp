@@ -34,6 +34,8 @@
 /// numbers is backwards incompatible and requires a major version bump. The
 /// addition of a new hypercall without changing any of the existing hypercalls
 /// is backwards compatible and requires a minor version bump.
+///
+/// Do not forget to update the CHANGELOG.md in the repository.
 #define CFG_VER 7000
 
 #define NUM_CPU 128
