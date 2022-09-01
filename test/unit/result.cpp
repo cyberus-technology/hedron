@@ -40,7 +40,7 @@ TEST_CASE("Basic construction works", "[result]")
     REQUIRE(err_result.is_err());
 
     CHECK(ok_result.unwrap() == 12);
-    CHECK(ok_result.expect("should not fail") == 12);
+    CHECK(ok_result.unwrap("failed") == 12);
     CHECK(err_result.unwrap_err() == Error::SomeOtherError);
 }
 
