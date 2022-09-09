@@ -59,6 +59,8 @@ SECTIONS
 
     INIT_LEN = LOAD_E - LOAD_ADDR;
 
+    /* "+ INIT_LEN": Ensure same offset from base address for load and link addresses.
+       This enables us to set up 2 MiB super pages. */
     .text LINK_ADDR + INIT_LEN : AT (LOAD_ADDR + INIT_LEN)
     {
         *(.text.hot .text.hot.*)

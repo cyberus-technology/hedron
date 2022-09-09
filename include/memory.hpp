@@ -53,7 +53,8 @@
 #define LOAD_ADDR_MIN 0x0000000000200000
 #define LOAD_ADDR_MAX 0x000000003fffffff
 
-// The alignment in physical memory that the bootloader needs to provide.
+// The alignment in physical memory that the bootloader needs to provide (2 MiB).
+// This enables us to us 2 MiB super pages.
 #define LOAD_ADDR_ALIGN 0x200000
 
 #ifdef __cplusplus
