@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "alloc_result.hpp"
 #include "extern.hpp"
 #include "memory.hpp"
 #include "spinlock.hpp"
@@ -76,7 +77,23 @@ public:
 
     static void fill(void* dst, Fill fill_mem, size_t size);
 
+    // Allocate pages of memory or panic.
+    //
+    // See alloc_checked for the semantics of parameters.
+    //
+    // BEWARE:
+    //
+    // This function will panic, when the buddy allocator is out of memory. It should not be used, especially
+    // after early boot, where this function turns out-of-memory situations into denial of service.
+    //
+    // New code should prefer alloc_checked.
     void* alloc(unsigned short ord, Fill fill_mem);
+
+    // Allocate pages of memory.
+    //
+    // ord is the order of pages to allocate. Passing n allocates 2^n pages. The allocated memory will be
+    // initialized according to fill_mem.
+    Alloc_result<void*> try_alloc(unsigned short ord, Fill fill_mem);
 
     void free(mword addr);
 

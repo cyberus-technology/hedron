@@ -53,7 +53,10 @@ public:
     /// Returns the resulting physical address to write to the VMCS
     mword phys_addr() { return PAGE_ALLOC::pointer_to_phys(reinterpret_cast<mword*>(this)); }
 
-    static void* operator new(size_t) { return static_cast<void*>(PAGE_ALLOC::alloc_zeroed_page()); }
+    static void* operator new(size_t)
+    {
+        return PAGE_ALLOC::alloc_zeroed_page().unwrap("Failed to allocate a VMX MSR bitmap");
+    }
 
     static void operator delete(void* ptr) { PAGE_ALLOC::free_page(reinterpret_cast<mword*>(ptr)); }
 

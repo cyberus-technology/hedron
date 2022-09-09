@@ -62,6 +62,9 @@ using Ok_void = Ok<monostate>;
 // conceptually similar to std::variant. Result carries a result of a computation of type T or an error value
 // of type E.
 //
+// This Result type is intended to be largely compatible to the Rust Result type and the methods map 1:1. The
+// intention is to lower the barrier for new developers that are already familiar with Rust.
+//
 // Useful error types are enum class or simple structs containing an enum class. It is useful to implement
 // type conversion operators between error types to unclutter error handling. See the TRY_OR_RETURN macro,
 // which is the equivalent of the Rust '?' operator.
@@ -135,23 +138,15 @@ public:
 
     // Unwrap the contained OK value.
     //
-    // It is a bug to call this function when the result does not contain an OK value.
-    T unwrap() const
-    {
-        if (not is_ok()) [[unlikely]] {
-            panic("Tried to unwrap a result that contained an error");
-        }
-
-        return ok_value;
-    }
-
-    // Unrap the contained OK value.
+    // In case the result contained an error, die with the given optional message. If an error message is
+    // provided, it should state what has failed.
     //
-    // In case the result contained an error, die with the given message.
-    T expect(char const* msg) const
+    // See the following page for examples (in the "expect as error messages" section):
+    // https://doc.rust-lang.org/std/error/index.html#common-message-styles
+    T unwrap(char const* msg = "Result contained an error") const
     {
         if (not is_ok()) [[unlikely]] {
-            panic("Failed to unwrap: %s", msg);
+            panic("Failed unwrap: %s", msg);
         }
 
         return ok_value;

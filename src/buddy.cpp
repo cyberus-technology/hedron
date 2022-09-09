@@ -82,7 +82,7 @@ void Buddy::fill(void* dst, Fill fill_mem, size_t size)
  * @param fill      Initialization mode of allocated memory
  * @return          Pointer to linear memory region
  */
-void* Buddy::alloc(unsigned short ord, Fill fill_mem)
+Alloc_result<void*> Buddy::try_alloc(unsigned short ord, Fill fill_mem)
 {
     Lock_guard<Spinlock> guard(lock);
 
@@ -112,10 +112,19 @@ void* Buddy::alloc(unsigned short ord, Fill fill_mem)
 
         fill(reinterpret_cast<void*>(virt), fill_mem, 1ul << (block->ord + PAGE_BITS));
 
-        return reinterpret_cast<void*>(virt);
+        // We should never hand out a nullptr.
+        assert(virt != 0);
+
+        return Ok(reinterpret_cast<void*>(virt));
     }
 
-    panic("Out of memory");
+    trace(TRACE_ERROR, "Failed allocating %u pages from %p", 1U << ord, __builtin_return_address(0));
+    return Err(Out_of_memory_error());
+}
+
+void* Buddy::alloc(unsigned short ord, Fill fill_mem)
+{
+    return try_alloc(ord, fill_mem).unwrap("Failed to allocate memory");
 }
 
 /*

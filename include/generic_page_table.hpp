@@ -219,7 +219,8 @@ private:
         // We have hit a leaf entry, but need to recurse further. Create the
         // next page table level.
         if (not(entry & ATTR::PTE_P) or is_superpage(cur_level, entry)) {
-            auto const new_page{page_alloc_.alloc_zeroed_page()};
+            auto const new_page{page_alloc_.alloc_zeroed_page().unwrap(
+                "Failed to allocate a new page table for superpage splitting")};
             phys_t const new_phys{page_alloc_.pointer_to_phys(new_page)};
             pte_t const new_entry{new_phys | (ATTR::all_rights & ~ATTR::PTE_S)};
 
@@ -334,8 +335,8 @@ private:
                 // We have to create entries at a lower level, but there is
                 // no page table yet.
                 if (not(old_pte & ATTR::PTE_P)) {
-
-                    auto const zero_page{page_alloc_.alloc_zeroed_page()};
+                    auto const zero_page{
+                        page_alloc_.alloc_zeroed_page().unwrap("Failed to allocate a new page table")};
                     pte_t const new_pte{page_alloc_.pointer_to_phys(zero_page) | ATTR::all_rights};
                     flush_cache_page(zero_page);
 
@@ -525,7 +526,7 @@ public:
     Generic_page_table(level_t max_levels, level_t leaf_levels)
         : Generic_page_table(max_levels, leaf_levels, {}, {})
     {
-        root_ = page_alloc_.alloc_zeroed_page();
+        root_ = page_alloc_.alloc_zeroed_page().unwrap("Failed to allocate page table root");
         flush_cache_page(root_);
     }
 

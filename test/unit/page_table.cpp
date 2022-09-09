@@ -15,8 +15,10 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include <compiler.hpp>
+// Include the class under test first to detect any missing includes early.
 #include <generic_page_table.hpp>
+
+#include <alloc_result.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -178,7 +180,7 @@ public:
 
     // The interface below is used by Generic_page_table.
 
-    pointer alloc_zeroed_page()
+    Alloc_result<pointer> alloc_zeroed_page()
     {
         pointer cur{cur_alloc_};
 
@@ -189,7 +191,7 @@ public:
         // it here. This only works because Fake_memory defaults to zero
         // for unused memory.
 
-        return cur;
+        return Ok(cur);
     }
 
     static pointer phys_to_pointer(entry e) { return {e}; }
