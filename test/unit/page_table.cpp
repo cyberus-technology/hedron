@@ -160,7 +160,11 @@ public:
     }
 };
 
-class Fake_page_alloc
+// A page allocator.
+//
+// The template parameter ALLOC_PAGE_COUNT can be used to artifically limit the number of pages that are
+// handed out. It defaults to "infinity".
+template <size_t ALLOC_PAGE_COUNT = ~0UL> class Fake_page_alloc
 {
     uint64_t cur_alloc_{0x10000000};
 
@@ -182,6 +186,12 @@ public:
 
     Alloc_result<pointer> alloc_zeroed_page()
     {
+        assert(allocated_pages_ <= ALLOC_PAGE_COUNT);
+
+        if (allocated_pages_ == ALLOC_PAGE_COUNT) {
+            return Err(Out_of_memory_error{});
+        }
+
         pointer cur{cur_alloc_};
 
         cur_alloc_ += PAGE_SIZE;
@@ -272,11 +282,16 @@ public:
     static void clflush(pointer, size_t){};
 };
 
-using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush, Fake_page_alloc,
-                                    Fake_deferred_cleanup, Fake_attr>;
+using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush,
+                                    Fake_page_alloc<>, Fake_deferred_cleanup, Fake_attr>;
 
 Fake_hpt::ord_t const twomb_order{PAGE_BITS + BITS_PER_LEVEL_64BIT};
 Fake_hpt::ord_t const onegb_order{PAGE_BITS + 2 * BITS_PER_LEVEL_64BIT};
+
+template <size_t ALLOC_PAGE_COUNT>
+using Memory_constrained_hpt =
+    Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush,
+                       Fake_page_alloc<ALLOC_PAGE_COUNT>, Fake_deferred_cleanup, Fake_attr>;
 
 // Given an iterator into the past of a page table, rewinds this
 // page table to that time in the past.
@@ -478,6 +493,26 @@ TEST_CASE("Update creates new mappings in empty page table", "[page_table]")
         Fake_hpt::ord_t const order{PAGE_BITS + 2 * BITS_PER_LEVEL_64BIT};
         create_and_check(hpt, 1UL << order, 0x80000000U, order);
     }
+}
+
+TEST_CASE("Update deals with out-of-memory errors", "[page_table]")
+{
+    // A page table that will only be able to allocate this many pages as page table backing store.
+    using Hpt = Memory_constrained_hpt<3>;
+
+    Hpt hpt{4, 3};
+    Fake_deferred_cleanup cleanup;
+
+    Hpt::virt_t const vaddr{0x1000};
+
+    // We will be able to partially construct the page table.
+    auto result{hpt.update(cleanup, {vaddr, 0x1000, Fake_attr::PTE_P, PAGE_BITS})};
+
+    REQUIRE(result.is_err());
+
+    // No mapping must be created.
+    auto const mapping(hpt.lookup(vaddr));
+    CHECK(not mapping.present());
 }
 
 TEST_CASE("Update creates no new page tables for unmap attempts", "[page_table]")
