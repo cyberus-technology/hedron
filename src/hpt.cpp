@@ -38,7 +38,8 @@ Hpt Hpt::deep_copy(mword vaddr_start, mword vaddr_end)
         // We don't handle the case where vaddr_start and vaddr_end point into
         // the middle mappings, but this case should also never happen.
         assert(map.vaddr >= vaddr_start and map.vaddr + map.size() <= vaddr_end);
-        dst.update(cleanup, map);
+
+        dst.update(cleanup, map).unwrap("Failed to allocate memory during deep copy");
     }
 
     // We populate an empty page table that is also not yet used anywhere.
@@ -77,8 +78,10 @@ void* Hpt::remap(Paddr phys, bool use_boot_hpt)
     Hpt& hpt{use_boot_hpt ? boot_hpt() : Pd::current()->hpt};
     assert_slow(hpt.is_active());
 
-    hpt.update(cleanup, {SPC_LOCAL_REMAP, phys, attr, order});
-    hpt.update(cleanup, {SPC_LOCAL_REMAP + size, phys + size, attr, order});
+    hpt.update(cleanup, {SPC_LOCAL_REMAP, phys, attr, order})
+        .unwrap("Failed to allocate memory when remapping");
+    hpt.update(cleanup, {SPC_LOCAL_REMAP + size, phys + size, attr, order})
+        .unwrap("Failed to allocate memory when remapping");
 
     // We always need to flush the TLB.
     hpt.flush();

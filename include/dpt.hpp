@@ -62,7 +62,8 @@ public:
         assert(level > 0 and level <= max_levels());
 
         Tlb_cleanup cleanup;
-        pte_pointer_t root{walk_down_and_split(cleanup, 0, level - 1, true)};
+        pte_pointer_t root{walk_down_and_split(cleanup, 0, level - 1, true)
+                               .unwrap("Failed to allocate memory when finding DPT root")};
 
         assert(root != nullptr and not cleanup.need_tlb_flush());
         return Buddy::ptr_to_phys(root);

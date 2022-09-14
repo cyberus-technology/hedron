@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "alloc_result.hpp"
 #include "assert.hpp"
 #include "compiler.hpp"
 #include "math.hpp"
@@ -192,14 +193,14 @@ private:
     }
 
     // See the description of the public version of this function below.
-    pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
-                                      pte_pointer_t pte_p, level_t cur_level, bool create)
+    Alloc_result<pte_pointer_t> walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
+                                                    pte_pointer_t pte_p, level_t cur_level, bool create)
     {
         assert_slow(cur_level >= 0 and cur_level < max_levels_);
         assert_slow(to_level >= 0 and to_level <= cur_level);
 
         if (to_level == cur_level) {
-            return pte_p;
+            return Ok(pte_p);
         }
 
     retry:
@@ -213,14 +214,14 @@ private:
         // In case there is no mapping and we want to downgrade rights, we
         // can already stop.
         if (not(entry & ATTR::PTE_P) and not create) {
-            return nullptr;
+            return Ok(nullptr);
         }
 
         // We have hit a leaf entry, but need to recurse further. Create the
         // next page table level.
         if (not(entry & ATTR::PTE_P) or is_superpage(cur_level, entry)) {
-            auto const new_page{page_alloc_.alloc_zeroed_page().unwrap(
-                "Failed to allocate a new page table for superpage splitting")};
+            auto const new_page{TRY_OR_RETURN(page_alloc_.alloc_zeroed_page())};
+
             phys_t const new_phys{page_alloc_.pointer_to_phys(new_page)};
             pte_t const new_entry{new_phys | (ATTR::all_rights & ~ATTR::PTE_S)};
 
@@ -417,8 +418,11 @@ public:
     // Walk down the page table to the indicated level and return a pointer
     // to the beginning of the page table. Splits any superpages and creates
     // missing page table structures (if desired).
-    pte_pointer_t walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
-                                      bool create = true)
+    //
+    // In case creating page tables is not desired, this function can return
+    // a nullptr. This indicates that we could not walk down to the desired level.
+    Alloc_result<pte_pointer_t> walk_down_and_split(DEFERRED_CLEANUP& cleanup, virt_t vaddr, level_t to_level,
+                                                    bool create = true)
     {
         assert_slow(root_ != nullptr);
         return walk_down_and_split(cleanup, vaddr, to_level, root_, max_levels_ - 1, create);
@@ -426,7 +430,7 @@ public:
 
     // Creates mappings in the page table. Returns true, if a TLB shootdown
     // is necessary.
-    NOINLINE void update(DEFERRED_CLEANUP& cleanup, Mapping const& map)
+    NOINLINE Alloc_result_void update(DEFERRED_CLEANUP& cleanup, Mapping const& map)
     {
         assert_slow(root_ != nullptr);
         assert_slow(map.order >= PAGE_BITS and map.order <= max_order());
@@ -445,14 +449,18 @@ public:
         // them. Missing structures are only created, if we actually have
         // something to map.
         bool const do_create{map.present()};
-        pte_pointer_t const table{walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)};
 
-        // We skip filling in new entries when walk_down_and_split has
-        // already finished the job. This happens when we remove mappings
-        // and the walk down step did not found page tables to recurse into.
-        if (table != nullptr) {
-            fill_entries(cleanup, table, modified_level, map);
-        }
+        return walk_down_and_split(cleanup, map.vaddr, modified_level, do_create)
+            .and_then([this, &cleanup, modified_level, map](pte_pointer_t table) -> Alloc_result_void {
+                // We skip filling in new entries when walk_down_and_split has already finished the job. This
+                // happens when we remove mappings and the walk down step did not find page tables to recurse
+                // into.
+                if (table != nullptr) {
+                    fill_entries(cleanup, table, modified_level, map);
+                }
+
+                return Ok_void({});
+            });
     }
 
     // Convenience version of the above method when batching of TLB
@@ -461,7 +469,9 @@ public:
     {
         DEFERRED_CLEANUP cleanup;
 
-        update(cleanup, map);
+        // The function signature makes propagating errors tricky. Even in the case of failure, the
+        // DEFERRED_CLEANUP object needs to be looked at.
+        update(cleanup, map).unwrap("Failed to allocate memory during page table update");
 
         return cleanup;
     }
@@ -482,7 +492,8 @@ public:
         assert((paddr & ATTR::mask) == 0);
         assert((attr & ~ATTR::mask) == 0 and (attr & ATTR::PTE_P));
 
-        pte_pointer_t const table{walk_down_and_split(cleanup, vaddr, 0, true)};
+        pte_pointer_t const table{walk_down_and_split(cleanup, vaddr, 0, true)
+                                      .unwrap("Failed to allocate memory when replacing read-only page")};
         assert(table != nullptr);
 
         pte_pointer_t const pte_p{table + virt_to_index(0, vaddr)};
