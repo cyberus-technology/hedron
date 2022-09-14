@@ -485,10 +485,11 @@ void Ec::root_invoke()
             for (unsigned long o; size; size -= 1UL << o, phys += 1UL << o, virt += 1UL << o) {
                 Tlb_cleanup cleanup;
 
-                Pd::current()->delegate<Space_mem>(cleanup, &Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS,
-                                                   (o = min(max_order(phys, size), max_order(virt, size))) -
-                                                       PAGE_BITS,
-                                                   attr, Space::SUBSPACE_HOST);
+                Pd::current()
+                    ->delegate<Space_mem>(cleanup, &Pd::kern, phys >> PAGE_BITS, virt >> PAGE_BITS,
+                                          (o = min(max_order(phys, size), max_order(virt, size))) - PAGE_BITS,
+                                          attr, Space::SUBSPACE_HOST)
+                    .unwrap("Failed to map roottask ELF image");
 
                 // This code maps the initial ELF segments into the roottask. This means it is by definition
                 // executed before the roottask had a chance to run. This means, we do not need to TLB flush
@@ -504,9 +505,11 @@ void Ec::root_invoke()
         // don't do this, the destructor doesn't run.
         Tlb_cleanup cleanup;
 
-        Pd::current()->delegate<Space_mem>(cleanup, &Pd::kern, Buddy::ptr_to_phys(&PAGE_H) >> PAGE_BITS,
-                                           (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R,
-                                           Space::SUBSPACE_HOST);
+        Pd::current()
+            ->delegate<Space_mem>(cleanup, &Pd::kern, Buddy::ptr_to_phys(&PAGE_H) >> PAGE_BITS,
+                                  (USER_ADDR - PAGE_SIZE) >> PAGE_BITS, 0, Mdb::MEM_R, Space::SUBSPACE_HOST)
+            .unwrap("Failed to map HIP");
+
         // The PD is not used yet.
         cleanup.ignore_tlb_flush();
     }

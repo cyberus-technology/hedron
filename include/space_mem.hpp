@@ -23,6 +23,7 @@
 #include "config.hpp"
 #include "cpu.hpp"
 #include "cpuset.hpp"
+#include "delegate_result.hpp"
 #include "dpt.hpp"
 #include "ept.hpp"
 #include "hpt.hpp"
@@ -84,8 +85,11 @@ public:
     void claim_mmio_page(mword virt, Paddr phys, bool exclusive = true);
 
     // Delegate memory from one memory space to another.
-    void delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base, mword ord, mword attr,
-                  mword sub);
+    //
+    // This function will take care of flushing DPT TLBs on its own. Host and guest page tables will be marked
+    // dirty in stale_{host,guest}_tlb, but the actual TLB flushing must be taken care of by the caller.
+    Delegate_result_void delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base,
+                                  mword ord, mword attr, mword sub);
 
     // Revoke specific rights from a region of memory.
     void revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr);

@@ -22,6 +22,7 @@
 
 #include "cpulocal.hpp"
 #include "crd.hpp"
+#include "delegate_result.hpp"
 #include "nodestruct.hpp"
 #include "space_mem.hpp"
 #include "space_obj.hpp"
@@ -153,8 +154,8 @@ public:
     }
 
     template <typename>
-    void delegate(Tlb_cleanup& cleanup, Pd* snd, mword snd_base, mword rcv_base, mword ord, mword attr,
-                  mword sub = 0, char const* deltype = nullptr);
+    Delegate_result_void delegate(Tlb_cleanup& cleanup, Pd* snd, mword snd_base, mword rcv_base, mword ord,
+                                  mword attr, mword sub = 0, char const* deltype = nullptr);
 
     template <typename> void revoke(mword, mword, mword, bool);
 

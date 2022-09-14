@@ -26,6 +26,7 @@
 #include "lock_guard.hpp"
 #include "mtrr.hpp"
 #include "pd.hpp"
+#include "scope_guard.hpp"
 #include "space.hpp"
 #include "stdio.hpp"
 #include "svm.hpp"
@@ -59,16 +60,40 @@ static Hpt::Mapping lookup_and_adjust_rights(Space_mem* snd, mword snd_cur, mwor
 }
 
 // Addresses are in byte-granularity.
-void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base, mword ord,
-                         mword attr, mword sub)
+Delegate_result_void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, mword rcv_base,
+                                         mword ord, mword attr, mword sub)
 {
     assert(ord >= PAGE_BITS);
 
     if (EXPECT_FALSE(not is_valid_user_mapping(snd_base, ord) or not is_valid_user_mapping(rcv_base, ord))) {
         trace(TRACE_ERROR, "INVALID MEM SB:%#016lx RB:%#016lx O:%#04lx A:%#lx S:%#lx", snd_base, rcv_base,
               ord, attr, sub);
-        return;
+
+        // We can only return an error here once we have propagated the error to the system call layer. In any
+        // case, this would be a breaking API change, because userspace never saw these errors before and it
+        // needs to handle these now.
+        //
+        // See #229.
+        //
+        // return Err(Delegate_error::invalid_mapping());
+        return Ok_void({});
     }
+
+    // Regardless of whether the operation was a success, we must take care of the TLB to not leave old
+    // mappings around, even if we only managed a partial page table update.
+    Scope_guard g{[this, &cleanup, sub] {
+        if (cleanup.need_tlb_flush()) {
+            if (sub & Space::SUBSPACE_DEVICE) {
+                Dmar::flush_all_contexts();
+            }
+            if (sub & Space::SUBSPACE_GUEST) {
+                stale_guest_tlb.merge(cpus);
+            }
+            if (sub & Space::SUBSPACE_HOST) {
+                stale_host_tlb.merge(cpus);
+            }
+        }
+    }};
 
     Hpt::pte_t const hw_attr{Hpt::hw_attr(attr)};
     mword const snd_end{snd_base + (1ULL << ord)};
@@ -85,46 +110,30 @@ void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, mword snd_base, m
         assert(Hpt::attr_to_pat(target_mapping.attr) == 0);
 
         if (sub & Space::SUBSPACE_DEVICE) {
-            dpt.update(cleanup, Dpt::convert_mapping(target_mapping))
-                .unwrap("Failed to allocate memory when delegating into DPT");
-
             // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching Mode of the
             // IOMMU is set to 1, which implies that even non-present and invalid mappings may be cached. For
             // all other cases the generic_page_table code should already call `flush_tlb_later()` when
             // necessary. We cannot easily access this information here, which is why we always explicitly
             // kick off the flush.
             cleanup.flush_tlb_later();
+
+            TRY_OR_RETURN(dpt.update(cleanup, Dpt::convert_mapping(target_mapping)));
         }
 
         if (sub & Space::SUBSPACE_GUEST) {
-            if (Vmcb::has_npt()) {
-                npt.update(cleanup, target_mapping)
-                    .unwrap("Failed to allocate memory when delegating into NPT");
-            } else {
-                ept.update(cleanup, Ept::convert_mapping(target_mapping))
-                    .unwrap("Failed to allocate memory when delegating into EPT");
-            }
+            TRY_OR_RETURN(Vmcb::has_npt() ? npt.update(cleanup, target_mapping)
+                                          : ept.update(cleanup, Ept::convert_mapping(target_mapping)));
         }
 
         if (sub & Space::SUBSPACE_HOST) {
-            hpt.update(cleanup, target_mapping).unwrap("Failed to allocate memory when delegating into HPT");
+            TRY_OR_RETURN(hpt.update(cleanup, target_mapping));
         }
 
         assert(clamped.size() >= target_mapping.size());
         snd_cur = clamped.vaddr + target_mapping.size();
     }
 
-    if (cleanup.need_tlb_flush()) {
-        if (sub & Space::SUBSPACE_DEVICE) {
-            Dmar::flush_all_contexts();
-        }
-        if (sub & Space::SUBSPACE_GUEST) {
-            stale_guest_tlb.merge(cpus);
-        }
-        if (sub & Space::SUBSPACE_HOST) {
-            stale_host_tlb.merge(cpus);
-        }
-    }
+    return Ok_void({});
 }
 
 void Space_mem::revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr)
@@ -138,7 +147,8 @@ void Space_mem::revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr)
     }
 
     delegate(cleanup, this, vaddr, vaddr, ord, 0,
-             Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST);
+             Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST)
+        .unwrap("Failed to revoke memory");
 }
 
 void Space_mem::shootdown()
