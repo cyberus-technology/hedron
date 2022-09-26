@@ -92,7 +92,6 @@ in
       inherit default-release default-debug;
     } // hedronBuildSet;
 
-    inherit default-release;
     stylecheck = pkgs.callPackage ./stylecheck.nix {};
     clang-tidy = pkgs.callPackage ./clang-tidy.nix {
       hedron = hedronBuildSet.clang_13-debug;
