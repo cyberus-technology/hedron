@@ -370,15 +370,18 @@ Delegate_result<Xfer> Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
     return Ok(Xfer{crd, s_ti.flags() | set_as_del});
 }
 
-void Pd::xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti, unsigned long num_typed)
+Delegate_result_void Pd::xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti,
+                                    unsigned long num_typed)
 {
     for (unsigned long cur = 0; cur < num_typed; cur++) {
-        Xfer res{xfer_item(src_pd, xlt, del, *(s_ti - cur)).unwrap("Failed to transfer items")};
+        Xfer res{TRY_OR_RETURN(xfer_item(src_pd, xlt, del, *(s_ti - cur)))};
 
         if (d_ti) {
             *(d_ti - cur) = res;
         }
     }
+
+    return Ok_void({});
 }
 
 void* Pd::get_access_page()

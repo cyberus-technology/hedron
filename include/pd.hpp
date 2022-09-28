@@ -160,7 +160,12 @@ public:
     template <typename> void revoke(mword, mword, mword, bool);
 
     Delegate_result<Xfer> xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti);
-    void xfer_items(Pd*, Crd, Crd, Xfer*, Xfer*, unsigned long);
+
+    // Bulk version of xfer_item that is used during IPC.
+    //
+    // When this function fails, items will be partially transferred.
+    Delegate_result_void xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti,
+                                    unsigned long num_typed);
 
     void xlt_crd(Pd*, Crd, Crd&);
     Delegate_result_void del_crd(Pd* pd, Crd del, Crd& crd, mword sub = 0, mword hot = 0);

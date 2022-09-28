@@ -442,7 +442,7 @@ public:
 
     [[noreturn]] static void root_invoke();
 
-    template <bool> static void delegate();
+    template <bool> static Delegate_result_void delegate();
 
     [[noreturn]] static void dead() { die("IPC Abort"); }
 

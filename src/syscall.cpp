@@ -71,7 +71,7 @@ void Ec::activate()
     ec->return_to_user();
 }
 
-template <bool C> void Ec::delegate()
+template <bool C> Delegate_result_void Ec::delegate()
 {
     Ec* ec = current()->rcap;
     assert(ec);
@@ -81,10 +81,10 @@ template <bool C> void Ec::delegate()
 
     bool user = C || dst->cont == ret_user_sysexit;
 
-    dst->pd->xfer_items(src->pd, user ? dst->utcb->xlt : Crd(0),
-                        user ? dst->utcb->del
-                             : Crd(Crd::MEM, (dst->cont == ret_user_iret ? dst->regs.cr2 : 0) >> PAGE_BITS),
-                        src->utcb->xfer(), user ? dst->utcb->xfer() : nullptr, src->utcb->ti());
+    return dst->pd->xfer_items(
+        src->pd, user ? dst->utcb->xlt : Crd(0),
+        user ? dst->utcb->del : Crd(Crd::MEM, (dst->cont == ret_user_iret ? dst->regs.cr2 : 0) >> PAGE_BITS),
+        src->utcb->xfer(), user ? dst->utcb->xfer() : nullptr, src->utcb->ti());
 }
 
 template <void (*C)()> void Ec::send_msg()
@@ -172,7 +172,7 @@ void Ec::recv_user()
     ec->utcb->save(current()->utcb.get());
 
     if (EXPECT_FALSE(ec->utcb->tcnt()))
-        delegate<true>();
+        delegate<true>().unwrap("Failed to delegate items in recv_user");
 
     ret_user_sysexit();
 }
@@ -221,7 +221,7 @@ void Ec::sys_reply()
         Utcb* src = current()->utcb.get();
 
         if (EXPECT_FALSE(src->tcnt()))
-            delegate<false>();
+            delegate<false>().unwrap("Failed to delegate items during reply");
 
         bool fpu = false;
 
