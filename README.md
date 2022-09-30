@@ -37,8 +37,15 @@ distributions. This recreates exactly the same binaries we test.
 After [installing Nix](https://nixos.org/download.html), build Hedron
 using:
 
-```sh
-% nix-build
+```bash
+$ nix-build nix/release.nix -A hedron.builds.default-release # For a release build
+$ nix-build nix/release.nix -A hedron.builds.default-debug   # For a debug build
+```
+
+There is a shorthand for building a release build:
+
+```bash
+$ nix-build
 ```
 
 The hypervisor is then found in `result/`. With Nix available, other

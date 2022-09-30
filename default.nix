@@ -1,1 +1,1 @@
-(import ./nix/release.nix {}).hedron.builds.default-debug
+(import ./nix/release.nix {}).hedron.builds.default-release
