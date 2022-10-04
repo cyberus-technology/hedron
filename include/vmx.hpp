@@ -343,6 +343,9 @@ public:
         // This is not a real VM exit, but we use it to signal VM entry
         // failures.
         VMX_FAIL_VMENTRY = NUM_VMI - 3,
+
+        // This bit is set when we never managed to enter the guest.
+        VMX_ENTRY_FAILURE = 1U << 31,
     };
 
     static inline void* operator new(size_t) { return Buddy::allocator.alloc(0, Buddy::FILL_0); }

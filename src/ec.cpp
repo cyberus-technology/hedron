@@ -352,7 +352,14 @@ void Ec::ret_user_vmresume()
     }
 
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
-        die("Invalid XCR0");
+        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", regs.xcr0);
+
+        // Make it look like a normal VM entry failure due to invalid guest state. The VMM receives this the
+        // usual way.
+        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+
+        asm volatile("jmp entry_vmx_failure");
+        UNREACHED;
     }
 
     // If we knew for sure that SPEC_CTRL is available, we could load it via the
