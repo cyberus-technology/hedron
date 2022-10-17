@@ -21,6 +21,7 @@
 #include "pd.hpp"
 #include "hip.hpp"
 #include "mtrr.hpp"
+#include "scope_guard.hpp"
 #include "stdio.hpp"
 #include "svm.hpp"
 
@@ -99,7 +100,7 @@ Delegate_result_void Pd::delegate(Tlb_cleanup& cleanup, Pd* snd, mword const snd
         cleanup.merge(S::update(node));
     }
 
-    return Delegate_result_void::ok({});
+    return Ok_void({});
 }
 
 template <>
@@ -260,7 +261,7 @@ void Pd::xlt_crd(Pd* pd, Crd xlt, Crd& crd)
     crd = Crd(0);
 }
 
-void Pd::del_crd(Pd* pd, Crd del, Crd& crd, mword sub, mword hot)
+Delegate_result_void Pd::del_crd(Pd* pd, Crd del, Crd& crd, mword sub, mword hot)
 {
     Crd::Type st = crd.type(), rt = del.type();
     Tlb_cleanup cleanup;
@@ -270,40 +271,46 @@ void Pd::del_crd(Pd* pd, Crd del, Crd& crd, mword sub, mword hot)
 
     if (st != rt or (not a and rt != Crd::MEM)) {
         crd = Crd(0);
-        return;
+        return Ok_void({});
     }
+
+    // Regardless of whether the delegate operations below fail or succeed, they might have done operations
+    // that require TLB flushing.
+    auto guard{Scope_guard([this, &cleanup, rt]() {
+        if (cleanup.need_tlb_flush() && rt == Crd::OBJ)
+            /* if FRAME_0 got replaced by real pages we have to tell all cpus, done below by shootdown */
+            this->stale_host_tlb.merge(cpus);
+
+        if (cleanup.need_tlb_flush()) {
+            shootdown();
+            cleanup.ignore_tlb_flush(); // because it is done.
+        }
+    })};
 
     switch (rt) {
 
     case Crd::MEM:
         o = clamp(sb, rb, so, ro, hot);
         trace(TRACE_DEL, "DEL MEM PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-        delegate<Space_mem>(cleanup, pd, sb, rb, o, a, sub, "MEM").unwrap("Failed to delegate memory");
+        TRY_OR_RETURN(delegate<Space_mem>(cleanup, pd, sb, rb, o, a, sub, "MEM"));
         break;
 
     case Crd::PIO:
         o = clamp(sb, rb, so, ro);
         trace(TRACE_DEL, "DEL I/O PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, rb, rb, o, a);
-        delegate<Space_pio>(cleanup, pd, rb, rb, o, a, sub, "PIO").unwrap("Failed to delegate I/O ports");
+        TRY_OR_RETURN(delegate<Space_pio>(cleanup, pd, rb, rb, o, a, sub, "PIO"));
         break;
 
     case Crd::OBJ:
         o = clamp(sb, rb, so, ro, hot);
         trace(TRACE_DEL, "DEL OBJ PD:%p->%p SB:%#010lx RB:%#010lx O:%#04lx A:%#lx", pd, this, sb, rb, o, a);
-        delegate<Space_obj>(cleanup, pd, sb, rb, o, a, 0, "OBJ").unwrap("Failed to delegate capabilities");
+        TRY_OR_RETURN(delegate<Space_obj>(cleanup, pd, sb, rb, o, a, 0, "OBJ"));
         break;
     }
 
     crd = Crd(rt, rb, o, a);
 
-    if (cleanup.need_tlb_flush() && rt == Crd::OBJ)
-        /* if FRAME_0 got replaced by real pages we have to tell all cpus, done below by shootdown */
-        this->stale_host_tlb.merge(cpus);
-
-    if (cleanup.need_tlb_flush()) {
-        shootdown();
-        cleanup.ignore_tlb_flush(); // because it is done.
-    }
+    return Ok_void({});
 }
 
 void Pd::rev_crd(Crd crd, bool self)
@@ -330,7 +337,7 @@ void Pd::rev_crd(Crd crd, bool self)
     }
 }
 
-Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
+Delegate_result<Xfer> Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
 {
     mword set_as_del = 0;
     Crd crd = s_ti.crd();
@@ -351,8 +358,8 @@ Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
         set_as_del = 1;
         [[fallthrough]];
     case Xfer::Kind::DELEGATE:
-        del_crd(src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd, s_ti.subspaces(),
-                s_ti.hotspot());
+        TRY_OR_RETURN(del_crd(src_pd->is_priv && s_ti.from_kern() ? &kern : src_pd, del, crd,
+                              s_ti.subspaces(), s_ti.hotspot()));
         break;
 
     default:
@@ -360,18 +367,21 @@ Xfer Pd::xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti)
         break;
     };
 
-    return Xfer{crd, s_ti.flags() | set_as_del};
+    return Ok(Xfer{crd, s_ti.flags() | set_as_del});
 }
 
-void Pd::xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti, unsigned long num_typed)
+Delegate_result_void Pd::xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti,
+                                    unsigned long num_typed)
 {
     for (unsigned long cur = 0; cur < num_typed; cur++) {
-        Xfer res{xfer_item(src_pd, xlt, del, *(s_ti - cur))};
+        Xfer res{TRY_OR_RETURN(xfer_item(src_pd, xlt, del, *(s_ti - cur)))};
 
         if (d_ti) {
             *(d_ti - cur) = res;
         }
     }
+
+    return Ok_void({});
 }
 
 void* Pd::get_access_page()

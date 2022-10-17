@@ -42,14 +42,19 @@
 #include "vector_info.hpp"
 #include "vectors.hpp"
 
-template <Sys_regs::Status S, bool T> void Ec::sys_finish()
+void Ec::sys_finish(Sys_regs::Status status, bool clear_timeout)
 {
-    if (T)
+    if (EXPECT_FALSE(clear_timeout))
         current()->clr_timeout();
 
-    current()->regs.set_status(S);
+    current()->regs.set_status(status);
 
     ret_user_sysexit();
+}
+
+void Ec::sys_finish(Result_void<Sys_regs::Status> result)
+{
+    sys_finish(EXPECT_TRUE(result.is_ok()) ? Sys_regs::Status::SUCCESS : result.unwrap_err());
 }
 
 void Ec::activate()
@@ -66,7 +71,7 @@ void Ec::activate()
     ec->return_to_user();
 }
 
-template <bool C> void Ec::delegate()
+template <bool C> Delegate_result_void Ec::delegate()
 {
     Ec* ec = current()->rcap;
     assert(ec);
@@ -76,10 +81,10 @@ template <bool C> void Ec::delegate()
 
     bool user = C || dst->cont == ret_user_sysexit;
 
-    dst->pd->xfer_items(src->pd, user ? dst->utcb->xlt : Crd(0),
-                        user ? dst->utcb->del
-                             : Crd(Crd::MEM, (dst->cont == ret_user_iret ? dst->regs.cr2 : 0) >> PAGE_BITS),
-                        src->utcb->xfer(), user ? dst->utcb->xfer() : nullptr, src->utcb->ti());
+    return dst->pd->xfer_items(
+        src->pd, user ? dst->utcb->xlt : Crd(0),
+        user ? dst->utcb->del : Crd(Crd::MEM, (dst->cont == ret_user_iret ? dst->regs.cr2 : 0) >> PAGE_BITS),
+        src->utcb->xfer(), user ? dst->utcb->xfer() : nullptr, src->utcb->ti());
 }
 
 template <void (*C)()> void Ec::send_msg()
@@ -167,7 +172,7 @@ void Ec::recv_user()
     ec->utcb->save(current()->utcb.get());
 
     if (EXPECT_FALSE(ec->utcb->tcnt()))
-        delegate<true>();
+        delegate<true>().unwrap("Failed to delegate items in recv_user");
 
     ret_user_sysexit();
 }
@@ -216,7 +221,7 @@ void Ec::sys_reply()
         Utcb* src = current()->utcb.get();
 
         if (EXPECT_FALSE(src->tcnt()))
-            delegate<false>();
+            delegate<false>().unwrap("Failed to delegate items during reply");
 
         bool fpu = false;
 
@@ -259,7 +264,8 @@ void Ec::sys_create_pd()
     }
 
     Crd crd = r->crd();
-    pd->del_crd(Pd::current(), Crd(Crd::OBJ), crd);
+
+    pd->del_crd(Pd::current(), Crd(Crd::OBJ), crd).unwrap("Failed to delegate into newly created PD");
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -503,6 +509,18 @@ void Ec::sys_pd_ctrl_map_access_page()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+static Sys_regs::Status to_syscall_status(Delegate_error del_error)
+{
+    switch (del_error.error_type) {
+    case Delegate_error::type::OUT_OF_MEMORY:
+        return Sys_regs::Status::OOM;
+    case Delegate_error::type::INVALID_MAPPING:
+        return Sys_regs::Status::BAD_PAR;
+    }
+
+    UNREACHED;
+}
+
 void Ec::sys_pd_ctrl_delegate()
 {
     Sys_pd_ctrl_delegate* s = static_cast<Sys_pd_ctrl_delegate*>(current()->sys_regs());
@@ -519,9 +537,12 @@ void Ec::sys_pd_ctrl_delegate()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
-    s->set_xfer(dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer));
-
-    sys_finish<Sys_regs::SUCCESS>();
+    sys_finish(dst_pd->xfer_item(src_pd, s->dst_crd(), s->dst_crd(), xfer)
+                   .map([s](Xfer x) -> monostate {
+                       s->set_xfer(x);
+                       return {};
+                   })
+                   .map_err([](Delegate_error e) { return to_syscall_status(e.error_type); }));
 }
 
 void Ec::sys_pd_ctrl_msr_access()

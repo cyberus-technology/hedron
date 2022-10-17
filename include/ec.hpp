@@ -364,7 +364,11 @@ public:
 
     [[noreturn]] static void ret_user_vmrun();
 
-    template <Sys_regs::Status S, bool T = false> [[noreturn]] NOINLINE static void sys_finish();
+    [[noreturn]] static void sys_finish(Sys_regs::Status status, bool clear_timeout = false);
+    [[noreturn]] static void sys_finish(Result_void<Sys_regs::Status> result);
+
+    // We need a parameter-less version of sys_finish that can be used as EC continuation.
+    template <Sys_regs::Status S, bool T = false> [[noreturn]] static void sys_finish() { sys_finish(S, T); }
 
     [[noreturn]] void activate();
 
@@ -438,7 +442,7 @@ public:
 
     [[noreturn]] static void root_invoke();
 
-    template <bool> static void delegate();
+    template <bool> static Delegate_result_void delegate();
 
     [[noreturn]] static void dead() { die("IPC Abort"); }
 

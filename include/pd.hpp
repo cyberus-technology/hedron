@@ -159,11 +159,16 @@ public:
 
     template <typename> void revoke(mword, mword, mword, bool);
 
-    Xfer xfer_item(Pd*, Crd, Crd, Xfer);
-    void xfer_items(Pd*, Crd, Crd, Xfer*, Xfer*, unsigned long);
+    Delegate_result<Xfer> xfer_item(Pd* src_pd, Crd xlt, Crd del, Xfer s_ti);
+
+    // Bulk version of xfer_item that is used during IPC.
+    //
+    // When this function fails, items will be partially transferred.
+    Delegate_result_void xfer_items(Pd* src_pd, Crd xlt, Crd del, Xfer* s_ti, Xfer* d_ti,
+                                    unsigned long num_typed);
 
     void xlt_crd(Pd*, Crd, Crd&);
-    void del_crd(Pd*, Crd, Crd&, mword = 0, mword = 0);
+    Delegate_result_void del_crd(Pd* pd, Crd del, Crd& crd, mword sub = 0, mword hot = 0);
     void rev_crd(Crd, bool);
 
     static inline void* operator new(size_t) { return cache.alloc(); }
