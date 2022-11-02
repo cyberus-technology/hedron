@@ -36,7 +36,7 @@
 
 let
   cmake-modules = pkgs.callPackage ./cmake-modules.nix { src = sources.cmake-modules; };
-  qemuBoot = pkgs.callPackage ./qemu-boot.nix {};
+  qemuBoot = pkgs.callPackage ./qemu-boot.nix { };
 
   attrsToList = pkgs.lib.mapAttrsToList pkgs.lib.nameValuePair;
 
@@ -61,7 +61,7 @@ let
         }
       );
   in
-    builtins.listToAttrs (builtins.map buildFunction buildConfs);
+  builtins.listToAttrs (builtins.map buildFunction buildConfs);
 
   combinedGrub = pkgs.grub2_efi.overrideAttrs (
     old: {
@@ -92,7 +92,7 @@ in
       inherit default-release default-debug;
     } // hedronBuildSet;
 
-    stylecheck = pkgs.callPackage ./stylecheck.nix {};
+    stylecheck = pkgs.callPackage ./stylecheck.nix { };
     clang-tidy = pkgs.callPackage ./clang-tidy.nix {
       hedron = hedronBuildSet.clang_13-debug;
     };
