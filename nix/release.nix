@@ -31,7 +31,7 @@
 #
 #     nix-build nix/release.nix -A hedron.clang-tidy
 { sources ? import ./sources.nix
-, pkgs ? import sources.nixpkgs {}
+, pkgs ? import sources.nixpkgs { system = "x86_64-linux"; }
 }:
 
 let
