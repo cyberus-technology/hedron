@@ -27,7 +27,7 @@
 #include "rcu.hpp"
 #include "sm.hpp"
 #include "stdio.hpp"
-#include "svm.hpp"
+#include "utcb.hpp"
 #include "vmx.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)
@@ -40,7 +40,6 @@ Ec::Ec(Pd* own, unsigned c)
     trace(TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
     regs.vmcs = nullptr;
-    regs.vmcb = nullptr;
 }
 
 Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
@@ -55,7 +54,6 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
     pd->Space_mem::init(c);
 
     regs.vmcs = nullptr;
-    regs.vmcb = nullptr;
 
     if (not(creation_flags & CREATE_VCPU)) {
         if (glb) {
@@ -165,13 +163,6 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
             cont = send_msg<ret_user_vmresume>;
 
             trace(TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
-        } else if (Hip::feature() & Hip::FEAT_SVM) {
-
-            regs.rax = Buddy::ptr_to_phys(regs.vmcb = new Vmcb(pd->Space_pio::walk(), pd->npt.root()));
-
-            regs.nst_ctrl<Vmcb>();
-            cont = send_msg<ret_user_vmrun>;
-            trace(TRACE_SYSCALL, "EC:%p created (PD:%p VMCB:%p)", this, p, regs.vmcb);
         }
     }
 
@@ -186,8 +177,6 @@ Ec::~Ec()
     if (is_vcpu()) {
         if (Hip::feature() & Hip::FEAT_VMX) {
             delete regs.vmcs;
-        } else if (Hip::feature() & Hip::FEAT_SVM) {
-            delete regs.vmcb;
         }
     } else {
         assert(not vlapic);
@@ -210,11 +199,6 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         if (func == ret_user_vmresume) {
             current()->regs.dst_portal = VMI_RECALL;
             send_msg<ret_user_vmresume>();
-        }
-
-        if (func == ret_user_vmrun) {
-            current()->regs.dst_portal = VMI_RECALL;
-            send_msg<ret_user_vmrun>();
         }
 
         if (func == ret_user_sysexit)
@@ -394,56 +378,6 @@ void Ec::ret_user_vmresume()
                     [exi_reason] "i" (Vmcs::EXI_REASON),
                     [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
                   : "memory");
-    // clang-format on
-
-    UNREACHED;
-}
-
-void Ec::ret_user_vmrun()
-{
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd))
-        handle_hazard(hzd, ret_user_vmrun);
-
-    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
-        Pd::current()->stale_guest_tlb.clr(Cpu::id());
-        current()->regs.vmcb->tlb_control = 1;
-    }
-
-    if (EXPECT_FALSE(not Fpu::load_xcr0(current()->regs.xcr0))) {
-        die("Invalid XCR0");
-    }
-
-    // *** The SVM vCPU entry code is currently broken and needs repair. ***
-    //
-    // There are multiple issue with the code below:
-    //
-    // - LOAD_GPR loads RAX, but RAX needs to point to the VMCB.
-    // - GS is destroyed by VMRUN, so we cannot use it to restore the stack.
-    // - The Vmcb::root() memory reference generates a indirect memory operand via a general-purpose register,
-    //   but all of them are clobbered by VMRUN.
-    //
-    // All of these issues have been caused by refactoring and not being able to test SVM. So we keep it
-    // disabled for now until we have working tests on actual hardware.
-    if (Vmcb::DISABLE_BROKEN)
-        panic("SVM vCPU entry is broken");
-
-    // clang-format off
-    asm volatile ("lea %0, %%rsp;"
-                  EXPAND (LOAD_GPR)
-                  "clgi;"
-                  "sti;"
-                  "vmload %%rax;"
-                  "vmrun %%rax;"
-                  "vmsave %%rax;"
-                  EXPAND (SAVE_GPR)
-                  "mov %1, %%rax;"
-                  "mov %%gs:0, %%rsp;" // Per_cpu::self
-                  "vmload %%rax;"
-                  "cli;"
-                  "stgi;"
-                  "jmp svm_handler;"
-                  : : "m" (current()->regs), "m" (Vmcb::root()) : "memory");
     // clang-format on
 
     UNREACHED;

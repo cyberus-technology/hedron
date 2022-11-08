@@ -79,7 +79,6 @@ static bool is_allowed_to_read(Msr::Register msr)
     // Allowing read access to an MSR might currently imply granting write
     // access as well. Check is_allowed_to_write when modifying this list.
     switch (msr) {
-    case Msr::AMD_SVM_HSAVE_PA:
     case Msr::IA32_APIC_BASE:
     case Msr::IA32_DS_AREA:
     case Msr::IA32_EFER:

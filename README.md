@@ -101,9 +101,9 @@ Intel Atom CPUs (also labeled Pentium Silver or Celeron) should work
 starting with the Goldmont Plus microarchitecture, but are not
 actively tested. Consider running Hedron on Atom systems experimental.
 
-AMD support still exists in the code, but is currently not in a
-production-ready state and is not actively tested. Do not use Hedron
-on AMD systems unless you are a developer and expect to fix things.
+AMD systems are currently not supported. Older versions of Hedron had AMD
+support that was removed due to lack of testing. Please contact the developers
+if you are interested in reviving AMD support.
 
 ### Boot
 

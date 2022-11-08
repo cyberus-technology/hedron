@@ -108,10 +108,6 @@ public:
 
         // Non-architectural MSRs (Intel)
         MSR_PLATFORM_INFO = 0xce,
-
-        // AMD-specific MSRs
-        AMD_IPMR = 0xc0010055,
-        AMD_SVM_HSAVE_PA = 0xc0010117,
     };
 
     enum Feature_Control

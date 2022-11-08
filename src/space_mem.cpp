@@ -29,7 +29,6 @@
 #include "scope_guard.hpp"
 #include "space.hpp"
 #include "stdio.hpp"
-#include "svm.hpp"
 #include "vectors.hpp"
 
 unsigned Space_mem::did_ctr;
@@ -121,8 +120,7 @@ Delegate_result_void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, m
         }
 
         if (sub & Space::SUBSPACE_GUEST) {
-            TRY_OR_RETURN(Vmcb::has_npt() ? npt.update(cleanup, target_mapping)
-                                          : ept.update(cleanup, Ept::convert_mapping(target_mapping)));
+            TRY_OR_RETURN(ept.update(cleanup, Ept::convert_mapping(target_mapping)));
         }
 
         if (sub & Space::SUBSPACE_HOST) {

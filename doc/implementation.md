@@ -132,11 +132,11 @@ and previous initialization/discovery (e.g., of the I/O APICs). This
 step populates the default fields like signature, version, offsets,
 and the I/O APIC as well as memory descriptors. The flags field is
 also adjusted to reflect the boot platform (UEFI or not) and the
-virtualization flags (VMX and SVM) are initialized to being present.
+virtualization flag (VMX) is initialized to being present.
 
 In a third stage, each processor goes through its initialization
 routine and removes any features that are not present or usable. For
-example, if a processor has no VMX or SVM capability, or lacks
+example, if a processor has no VMX capability, or lacks
 essential features (e.g., EPT, URG, etc. in the VMX case), the
 corresponding flag in the HIP is cleared at this point. Lastly,
 it adds itself to the HIP's CPU descriptors before the bootstrap

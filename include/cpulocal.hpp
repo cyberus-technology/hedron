@@ -112,12 +112,6 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     uint8 vmx_timer_shift;
 
-    // SVM-related variables
-    Paddr vmcb_root;
-    unsigned vmcb_asid_ctr;
-    uint32 vmcb_svm_version;
-    uint32 vmcb_svm_feature;
-
     // Statistics
     uint32 counter_tlb_shootdown;
 

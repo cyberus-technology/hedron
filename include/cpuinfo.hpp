@@ -21,7 +21,6 @@ enum class Cpu_vendor : unsigned
 {
     UNKNOWN,
     INTEL,
-    AMD,
 };
 
 struct Cpu_info {
