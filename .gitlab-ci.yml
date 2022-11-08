@@ -100,7 +100,7 @@ stages:
 style_check:clang-format:
   stage: style_check
   tags:
-    - native-nix
+    - native-nix-v2
   script:
     - nix-build nix/release.nix -A hedron.stylecheck
 
@@ -153,7 +153,7 @@ lint:clang-tidy:
   needs: []
   stage: lint
   tags:
-    - native-nix
+    - native-nix-v2
   script:
     - nix-build nix/release.nix -A hedron.clang-tidy
 
@@ -201,7 +201,7 @@ integration_test:nixos:
   stage: integration_test
   needs: []
   tags:
-    - native-nix
+    - native-nix-v2
   script:
     - mkdir -p output
     # Workaround Gitlab CI not archiving across symlinks
