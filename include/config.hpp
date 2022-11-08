@@ -36,7 +36,7 @@
 /// is backwards compatible and requires a minor version bump.
 ///
 /// Do not forget to update the CHANGELOG.md in the repository.
-#define CFG_VER 7000
+#define CFG_VER 8000
 
 #define NUM_CPU 128
 #define NUM_EXC 32

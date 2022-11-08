@@ -6,9 +6,10 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version 
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 8.0
+- **Breaking:** The irq_ctrl system calls have incompatibly changed to allow for more suboperations.
+
 ## API Version 7.0
-<!-- Changelog temporarily removed because GitLab parses the range wrongly.  -->
-<!-- Full changelog: 52590e1c..HEAD -->
 - **Breaking:** The HIP does no longer contain the per-CPU register dump. (33a90899)
 
 ## API Version 6.0

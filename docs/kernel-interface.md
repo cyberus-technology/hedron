@@ -940,7 +940,7 @@ granted to untrusted userspace PDs.**
 | *Register* | *Content*          | *Description*                                                                     |
 |------------|--------------------|-----------------------------------------------------------------------------------|
 | ARG1[7:0]  | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                        |
-| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_IRQ_CTRL_*` to select one of the `irq_ctrl_*` calls below. |
+| ARG1[11:8] | Sub-operation      | Needs to be one of `HC_IRQ_CTRL_*` to select one of the `irq_ctrl_*` calls below. |
 | ...        | ...                |                                                                                   |
 
 ### Out
@@ -979,10 +979,10 @@ interrupt will be masked at the IOAPIC.
 | *Register*  | *Content*          | *Description*                                                                             |
 |-------------|--------------------|-------------------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                                |
-| ARG1[9:8]   | Sub-operation      | Needs to be `HC_IRQ_CTRL_VECTOR`.                                                         |
-| ARG1[11:10] | Ignored            | Should be set to zero.                                                                    |
+| ARG1[11:8]  | Sub-operation      | Needs to be `HC_IRQ_CTRL_VECTOR`.                                                         |
 | ARG1[19:12] | Vector             | The host vector that is configured.                                                       |
 | ARG1[35:20] | CPU number         | The CPU number on which the vector is configured.                                         |
+| ARG1[63:36] | Unused             | Must be zero.                                                                             |
 | ARG2        | Semaphore Selector | The selector referencing a semaphore the hypervisor will associate with the vector.       |
 | ARG3        | KPage Selector     | A object capability referencing a KPage.                                                  |
 | ARG4[14:0]  | Bit inside KPage   | The index of the bit that will be set in the kpage when the associated interrupt arrives. |
@@ -1018,16 +1018,17 @@ unmasked.
 
 ### In
 
-| *Register*  | *Content*              | *Description*                                                                            |
-|-------------|------------------------|------------------------------------------------------------------------------------------|
-| ARG1[7:0]   | System Call Number     | Needs to be `HC_IRQ_CTRL`.                                                               |
-| ARG1[9:8]   | Sub-operation          | Needs to be `HC_IRQ_CTRL_ASSIGN_IOAPIC_PIN`.                                             |
-| ARG1[10]    | Interrupt Trigger Mode | The trigger mode setting of the interrupt (level=1/edge=0);                              |
-| ARG1[11]    | Interrupt Polarity     | The polarity setting of the interrupt (low=1/high=0).                                    |
-| ARG1[19:12] | Vector                 | The host vector this interrupt should be directed to.                                    |
-| ARG1[35:20] | CPU number             | The CPU number this GSI should be routed to.                                             |
-| ARG2[3:0]   | IOAPIC ID              | The ID of the associated IOAPIC device.                                                  |
-| ARG2[11:4]  | IOAPIC PIN             | The PIN index of the interrupt line on the selected IOAPIC device.                       |
+| *Register*  | *Content*              | *Description*                                                      |
+|-------------|------------------------|--------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number     | Needs to be `HC_IRQ_CTRL`.                                         |
+| ARG1[11:8]  | Sub-operation          | Needs to be `HC_IRQ_CTRL_ASSIGN_IOAPIC_PIN`.                       |
+| ARG1[19:12] | Vector                 | The host vector this interrupt should be directed to.              |
+| ARG1[35:20] | CPU number             | The CPU number this GSI should be routed to.                       |
+| ARG1[36]    | Interrupt Trigger Mode | The trigger mode setting of the interrupt (level=1/edge=0);        |
+| ARG1[37]    | Interrupt Polarity     | The polarity setting of the interrupt (low=1/high=0).              |
+| ARG1[63:38] | Unused                 | Must be zero.                                                      |
+| ARG2[3:0]   | IOAPIC ID              | The ID of the associated IOAPIC device.                            |
+| ARG2[11:4]  | IOAPIC PIN             | The PIN index of the interrupt line on the selected IOAPIC device. |
 
 ### Out
 
@@ -1044,9 +1045,9 @@ Mask or unmask a specific interrupt pin of an IOAPIC.
 | *Register*  | *Content*          | *Description*                                                                                      |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number | Needs to be `HC_IRQ_CTRL`.                                                                         |
-| ARG1[9:8]   | Sub-operation      | Needs to be `HC_IRQ_CTRL_MASK_IOAPIC_PIN`.                                                         |
-| ARG1[10]    | Mask/Unmask        | The setting of the mask bit (masked=1/unmasked=0)                                                  |
-| ARG1[63:11] | Ignored            | Should be set to zero.                                                                             |
+| ARG1[11:8]  | Sub-operation      | Needs to be `HC_IRQ_CTRL_MASK_IOAPIC_PIN`.                                                         |
+| ARG1[12]    | Mask/Unmask        | The setting of the mask bit (masked=1/unmasked=0)                                                  |
+| ARG1[63:13] | Unused             | Must be zero.                                                                                      |
 | ARG2[3:0]   | IOAPIC ID          | The ID of the associated IOAPIC device.                                                            |
 | ARG2[11:4]  | IOAPIC PIN         | The PIN index of the interrupt line on the selected IOAPIC device that will be masked or unmasked. |
 
@@ -1081,8 +1082,7 @@ interrupts that they should not be able to.
 | *Register*  | *Content*               | *Description*                                                                              |
 |-------------|-------------------------|--------------------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number      | Needs to be `HC_ASSIGN_MSI`.                                                               |
-| ARG1[9:8]   | Sub-operation           | Needs to be `HC_IRQ_CTRL_ASSIGN_MSI`.                                                      |
-| ARG1[11:10] | Ignored                 | Should be set to zero.                                                                     |
+| ARG1[11:8]  | Sub-operation           | Needs to be `HC_IRQ_CTRL_ASSIGN_MSI`.                                                      |
 | ARG1[19:12] | Vector                  | The host vector this interrupt should be directed to.                                      |
 | ARG1[35:20] | CPU number              | The CPU number this MSI should be routed to.                                               |
 | ARG2[11:0]  | Ignored                 | Should be set to zero.                                                                     |

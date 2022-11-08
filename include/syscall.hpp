@@ -337,7 +337,7 @@ public:
         ASSIGN_MSI = 3,
     };
 
-    inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
+    inline ctrl_op op() const { return static_cast<ctrl_op>(flags()); }
 };
 
 class Sys_irq_ctrl_configure_vector : public Sys_irq_ctrl
@@ -354,8 +354,8 @@ public:
 class Sys_irq_ctrl_assign_ioapic_pin : public Sys_irq_ctrl
 {
 public:
-    inline bool level() const { return flags() & 0x4; }
-    inline bool active_low() const { return flags() & 0x8; }
+    inline bool level() const { return ARG_1 & (1UL << 36); }
+    inline bool active_low() const { return ARG_1 & (1UL << 37); }
 
     inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
     inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
@@ -367,7 +367,7 @@ public:
 class Sys_irq_ctrl_mask_ioapic_pin : public Sys_irq_ctrl
 {
 public:
-    inline bool mask() const { return flags() & 0x4; }
+    inline bool mask() const { return ARG_1 & (1UL << ARG1_SEL_SHIFT); }
 
     inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
     inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
