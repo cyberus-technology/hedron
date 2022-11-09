@@ -1032,9 +1032,13 @@ void Ec::sys_irq_ctrl_assign_lvt()
 
 void Ec::sys_irq_ctrl_mask_lvt()
 {
-    [[maybe_unused]] Sys_irq_ctrl_mask_lvt* r = static_cast<Sys_irq_ctrl_mask_lvt*>(current()->sys_regs());
+    Sys_irq_ctrl_mask_lvt* r = static_cast<Sys_irq_ctrl_mask_lvt*>(current()->sys_regs());
 
-    sys_finish<Sys_regs::BAD_HYP>();
+    sys_irq_ctrl_check_lvt_entry(__func__, r->lvt_entry());
+
+    Lapic::set_therm_mask(r->mask());
+
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_vcpu_ctrl_run()
