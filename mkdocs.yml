@@ -1,0 +1,46 @@
+site_name: Hedron Documentation
+nav:
+  - Home: index.md
+  - User Documentation:
+    - kernel-interface.md
+  - Developer Documentation:
+    - implementation.md
+    - upcoming.md
+    - flexible-heap.md
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/gitlab
+
+markdown_extensions:
+  - toc
+  - admonition
+  - footnotes
+  - pymdownx.superfences:
+      custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+    - search
+    - tags:
+        tags_file: index.md
+    - drawio-exporter:
+        # Diagrams are cached to speed up site generation. The default path is
+        # drawio-exporter, relative to the documentation directory.
+        cache_dir: 'cache/drawio-exporter'
+        # Drawio executable is managed by nix here
+        drawio_executable: null
+        # Additional Draw.io CLI args
+        drawio_args: []
+        format: svg
+        # Embed format
+        #   * The default is to embed via the <img> tag, only rewriting the
+        #     value of the src attribute.
+        #   * Consider <object type="image/svg+xml" data="{img_src}"></object>
+        #     to enable interactive elements (like hyperlinks) in SVGs.
+        embed_format: '{img_open}{img_src}{img_close}'
+        # Glob pattern for matching source files
+        sources: '*.drawio'

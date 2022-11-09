@@ -16,7 +16,11 @@ pkgs.mkShell {
   # These can be debugged via `NIX_DEBUG=1 <command>`.
   hardeningDisable = [ "all" ];
 
-  inputsFrom = [ release.hedron.builds.default-debug release.hedron.stylecheck ];
+  inputsFrom = [
+    release.hedron.builds.default-debug
+    release.hedron.stylecheck
+    release.hedron.docs
+  ];
 
   buildInputs = [
     # To manipulate Nix dependencies.

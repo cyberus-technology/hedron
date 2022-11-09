@@ -86,6 +86,17 @@ Building unit tests can be avoided by passing `-DBUILD_TESTING=OFF` to
 build % ccmake .
 ```
 
+## Documentation
+
+User and developer documentation is provided via mkdocs. This
+documentation is not yet published on an easily accessible
+website. Until this is rectified, you can serve the documentation like
+this:
+
+```sh
+% nix-shell --run "mkdocs serve"
+```
+
 ## Running
 
 ### Supported platforms
