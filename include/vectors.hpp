@@ -31,7 +31,6 @@
 #define VEC_LVT_TIMER (VEC_LVT + 0)
 #define VEC_LVT_ERROR (VEC_LVT + 3)
 #define VEC_LVT_PERFM (VEC_LVT + 4)
-#define VEC_LVT_THERM (VEC_LVT + 5)
 
 #define VEC_MSI_DMAR (VEC_MSI + 0)
 

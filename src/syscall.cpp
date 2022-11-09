@@ -1004,12 +1004,30 @@ void Ec::sys_irq_ctrl_assign_msi()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+static void sys_irq_ctrl_check_lvt_entry(const char* func, Sys_irq_ctrl::lvt_entry lvt_entry)
+{
+    // We only allow the thermal sensor interrupt to be configured.
+    //
+    // The Intel SDM implies that when there are less than 5 LVT entries that the thermal entry is not
+    // there. See Vol. 3 Section 10.4.8 "Local APIC Version Register" and 10.5.1 "Local Vector Table".
+    if (lvt_entry != Sys_irq_ctrl::LVT_THERM || Lapic::lvt_max() < 5) {
+        trace(TRACE_ERROR, "%s: Invalid LVT entry (%u)", func, lvt_entry);
+        Ec::sys_finish<Sys_regs::BAD_PAR>();
+    }
+}
+
 void Ec::sys_irq_ctrl_assign_lvt()
 {
-    [[maybe_unused]] Sys_irq_ctrl_assign_lvt* r =
-        static_cast<Sys_irq_ctrl_assign_lvt*>(current()->sys_regs());
+    Sys_irq_ctrl_assign_lvt* r = static_cast<Sys_irq_ctrl_assign_lvt*>(current()->sys_regs());
 
-    sys_finish<Sys_regs::BAD_HYP>();
+    // Checking the CPU is a bit wasteful here, but it's better than duplicating the input validation check
+    // for the vector.
+    sys_irq_ctrl_check_vector_cpu(__func__, current()->cpu, r->vector());
+    sys_irq_ctrl_check_lvt_entry(__func__, r->lvt_entry());
+
+    Lapic::set_therm_vector(VEC_USER + r->vector());
+
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_irq_ctrl_mask_lvt()

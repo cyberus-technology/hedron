@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "assert.hpp"
 #include "compiler.hpp"
 #include "memory.hpp"
 #include "msr.hpp"
@@ -95,8 +96,6 @@ private:
 
     static inline void perfm_handler();
 
-    static inline void therm_handler();
-
     [[noreturn]] static inline void park_handler();
 
 public:
@@ -147,6 +146,15 @@ public:
     }
 
     static inline unsigned get_timer() { return read(LAPIC_TMR_CCR); }
+
+    // Configure the thermal interrupt as a fixed interrupt that is delivered as the given vector.
+    static inline void set_therm_vector(uint8 vec)
+    {
+        // The LAPIC considers smaller vectors illegal for fixed interrupts.
+        assert(vec >= 16);
+
+        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, vec);
+    }
 
     static void init();
 

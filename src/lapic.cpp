@@ -108,7 +108,8 @@ void Lapic::init()
 
     switch (lvt_max()) {
     default:
-        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, VEC_LVT_THERM);
+        // This vector can be enabled by user space using irq_ctrl_assign_lvt. We keep it masked until then.
+        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, 0, MASKED);
         [[fallthrough]];
     case 4:
         set_lvt(LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
@@ -190,8 +191,6 @@ void Lapic::park_all_but_self(park_fn fn)
     park_function();
 }
 
-void Lapic::therm_handler() {}
-
 void Lapic::perfm_handler() {}
 
 void Lapic::error_handler()
@@ -220,9 +219,6 @@ void Lapic::lvt_vector(unsigned vector)
         break;
     case VEC_LVT_PERFM:
         perfm_handler();
-        break;
-    case VEC_LVT_THERM:
-        therm_handler();
         break;
     }
 
