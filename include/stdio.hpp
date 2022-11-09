@@ -46,7 +46,6 @@ enum
     TRACE_IOMMU = 1UL << 1,
     TRACE_APIC = 1UL << 2,
     TRACE_VMX = 1UL << 4,
-    TRACE_SVM = 1UL << 5,
     TRACE_ACPI = 1UL << 8,
     TRACE_MEMORY = 1UL << 13,
     TRACE_PCI = 1UL << 14,
@@ -61,6 +60,6 @@ enum
 // Enabled trace events.
 constexpr unsigned trace_mask =
 #ifdef DEBUG
-    TRACE_VMX | TRACE_SVM |
+    TRACE_VMX |
 #endif
     TRACE_CPU | TRACE_IOMMU | TRACE_ERROR;

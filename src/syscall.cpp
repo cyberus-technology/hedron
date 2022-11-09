@@ -156,8 +156,6 @@ void Ec::recv_kern()
         fpu = current()->utcb->load_exc(&ec->regs);
     else if (ec->cont == ret_user_vmresume)
         fpu = current()->utcb->load_vmx(&ec->regs);
-    else if (ec->cont == ret_user_vmrun)
-        fpu = current()->utcb->load_svm(&ec->regs);
 
     if (EXPECT_FALSE(fpu))
         ec->transfer_fpu(current());
@@ -231,8 +229,6 @@ void Ec::sys_reply()
             fpu = src->save_exc(&ec->regs);
         else if (ec->cont == ret_user_vmresume)
             fpu = src->save_vmx(&ec->regs);
-        else if (ec->cont == ret_user_vmrun)
-            fpu = src->save_svm(&ec->regs);
 
         if (EXPECT_FALSE(fpu))
             current()->transfer_fpu(ec);
@@ -282,7 +278,7 @@ void Ec::sys_create_ec()
         sys_finish<Sys_regs::BAD_CPU>();
     }
 
-    if (EXPECT_FALSE(r->is_vcpu() && !(Hip::feature() & (Hip::FEAT_VMX | Hip::FEAT_SVM)))) {
+    if (EXPECT_FALSE(r->is_vcpu() && !(Hip::feature() & Hip::FEAT_VMX))) {
         trace(TRACE_ERROR, "%s: VCPUs not supported", __func__);
         sys_finish<Sys_regs::BAD_FTR>();
     }
@@ -1048,5 +1044,4 @@ void Ec::syscall_handler()
 
 template void Ec::sys_finish<Sys_regs::COM_ABT>();
 template void Ec::send_msg<Ec::ret_user_vmresume>();
-template void Ec::send_msg<Ec::ret_user_vmrun>();
 template void Ec::send_msg<Ec::ret_user_iret>();

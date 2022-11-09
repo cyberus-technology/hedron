@@ -23,7 +23,6 @@
 #include "mtrr.hpp"
 #include "scope_guard.hpp"
 #include "stdio.hpp"
-#include "svm.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)
 Slab_cache Pd::cache(sizeof(Pd), 32);

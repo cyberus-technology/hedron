@@ -201,7 +201,7 @@ void Sc::rke_handler()
     // interrupt handler.
     //
     // For guest TLB invalidations, there is no need to go through the
-    // scheduler, because ret_user_vmresume / ret_user_vmrun will take care of
+    // scheduler, because ret_user_vmresume will take care of
     // guest TLB invalidations unconditionally.
 
     if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id()))

@@ -104,16 +104,8 @@ private:
 
     [[noreturn]] static void handle_vmx() asm("vmx_handler");
 
-    [[noreturn]] static void USED handle_svm() asm("svm_handler");
-
     static bool handle_exc_gp(Exc_regs*);
     static bool handle_exc_pf(Exc_regs*);
-
-    [[noreturn]] static inline void svm_exception(mword);
-
-    [[noreturn]] static inline void svm_cr();
-
-    [[noreturn]] static inline void svm_invlpg();
 
     [[noreturn]] static inline void vmx_exception();
 
@@ -361,8 +353,6 @@ public:
     [[noreturn]] HOT static void ret_user_iret() asm("ret_user_iret");
 
     [[noreturn]] static void ret_user_vmresume();
-
-    [[noreturn]] static void ret_user_vmrun();
 
     [[noreturn]] static void sys_finish(Sys_regs::Status status, bool clear_timeout = false);
     [[noreturn]] static void sys_finish(Result_void<Sys_regs::Status> result);

@@ -39,12 +39,11 @@
 #include "msr.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
-#include "svm.hpp"
 #include "tss.hpp"
 #include "vmx.hpp"
 #include "x86.hpp"
 
-char const* const Cpu::vendor_string[] = {"Unknown", "GenuineIntel", "AuthenticAMD"};
+char const* const Cpu::vendor_string[] = {"Unknown", "GenuineIntel"};
 
 static bool probe_spec_ctrl()
 {
@@ -118,7 +117,6 @@ Cpu_info Cpu::check_features()
 
         switch (static_cast<uint8>(eax)) {
         default:
-            cpuid(0x8000000a, Vmcb::svm_version(), ebx, ecx, Vmcb::svm_feature());
             [[fallthrough]];
         case 0x4 ... 0x9:
             cpuid(0x80000004, name[8], name[9], name[10], name[11]);
@@ -145,11 +143,6 @@ Cpu_info Cpu::check_features()
     cpu_info.thread = top & ((1u << t_bits) - 1);
     cpu_info.core = top >> t_bits & ((1u << c_bits) - 1);
     cpu_info.package = top >> (t_bits + c_bits);
-
-    // Disable C1E on AMD Rev.F and beyond because it stops LAPIC clock
-    if (cpu_info.vendor == Cpu_vendor::AMD)
-        if (cpu_info.family > 0xf || (cpu_info.family == 0xf && cpu_info.model >= 0x40))
-            Msr::write(Msr::AMD_IPMR, Msr::read(Msr::AMD_IPMR) & ~(3ul << 27));
 
     set_feature(FEAT_IA32_SPEC_CTRL, probe_spec_ctrl());
 
@@ -264,7 +257,6 @@ Cpu_info Cpu::init()
     set_cr4(cr4);
 
     Vmcs::init();
-    Vmcb::init();
 
     Mca::init(cpu_info);
 

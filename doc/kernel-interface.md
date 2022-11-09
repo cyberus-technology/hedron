@@ -69,6 +69,9 @@ This section describes the features of the `api_flg` field in the HIP.
 | SVM    | 2     | The platform supports AMD Secure Virtual Machine, and the feature has been activated.       |
 | UEFI   | 3     | Hedron was booted via UEFI.                                                                 |
 
+**Note**: Support for AMD SVM has been removed. SVM support will not be reported
+by Hedron, even on a system supporting it.
+
 ## Capabilities
 
 A capability is a reference to a kernel object plus associated access

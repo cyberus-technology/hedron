@@ -59,7 +59,6 @@ public:
         FEAT_SMAP = 116,
         FEAT_1GB_PAGES = 154,
         FEAT_CMP_LEGACY = 161,
-        FEAT_SVM = 162,
         FEAT_XSAVEOPT = 192,
 
         FEAT_IBRS_IBPB = 7 * 32 + 26,
@@ -128,9 +127,8 @@ public:
 
     enum
     {
-        EFER_LME = 1UL << 8,   // 0x100
-        EFER_LMA = 1UL << 10,  // 0x400
-        EFER_SVME = 1UL << 12, // 0x1000
+        EFER_LME = 1UL << 8,  // 0x100
+        EFER_LMA = 1UL << 10, // 0x400
     };
 
     enum

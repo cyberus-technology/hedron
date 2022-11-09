@@ -29,7 +29,6 @@
 #include "hazards.hpp"
 #include "types.hpp"
 
-class Vmcb;
 class Vmcs;
 
 class Sys_regs
@@ -124,7 +123,6 @@ public:
         struct {
             union {
                 Vmcs* vmcs;
-                Vmcb* vmcb;
             };
 
             // This member needs to have the same offset in the data
@@ -178,17 +176,11 @@ public:
 
     inline bool user() const { return cs & 3; }
 
-    void svm_update_shadows();
-
-    void svm_set_cpu_ctrl0(mword);
-    void svm_set_cpu_ctrl1(mword);
     void vmx_set_cpu_ctrl0(mword);
     void vmx_set_cpu_ctrl1(mword);
 
-    mword svm_read_gpr(unsigned);
     mword vmx_read_gpr(unsigned);
 
-    void svm_write_gpr(unsigned, mword);
     void vmx_write_gpr(unsigned, mword);
 
     template <typename T> void nst_ctrl();
