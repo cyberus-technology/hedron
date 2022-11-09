@@ -242,7 +242,7 @@ __start_bsp:
                          * EBP now contains the difference between LOAD_ADDR and our true load
                          * address. We now start creating our boot page table in preallocated
                          * memory. A high-level description of this code lives in
-                         * doc/implementation.md.
+                         * docs/implementation.md.
                          *
                          * Prepare the low 1 GiB of virtual memory. Because this memory has to be
                          * executable, we make it read-only to not create X+W memory.

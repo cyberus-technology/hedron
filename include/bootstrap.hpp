@@ -23,7 +23,7 @@
 
 /// Initialization for the kernel after initial boot or a suspend/resume cycle.
 ///
-/// See doc/implementation.md for a general overview of the boot flow.
+/// See docs/implementation.md for a general overview of the boot flow.
 class Bootstrap
 {
     /// A spinlock that serializes CPU initialization.

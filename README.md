@@ -154,7 +154,7 @@ The [Hedron Github
 ### User Space Applications
 
 Hedron's system calls are documented in the [Kernel Interface
-documentation](./doc/kernel-interface.md). This document is
+documentation](./docs/kernel-interface.md). This document is
 unfortunately not complete yet.
 
 ## Credits

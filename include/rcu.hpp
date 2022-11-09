@@ -23,7 +23,7 @@
 
 /// The central Read-Copy-Update implementation.
 ///
-/// See doc/implementation.md for a longer description of how RCU works in
+/// See docs/implementation.md for a longer description of how RCU works in
 /// Hedron.
 class Rcu
 {
