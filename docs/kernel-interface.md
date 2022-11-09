@@ -354,6 +354,8 @@ Hypercalls are identified by these values.
 | `IRQ_CTRL_ASSIGN_IOAPIC_PIN`       | 1       |
 | `IRQ_CTRL_MASK_IOAPIC_PIN`         | 2       |
 | `IRQ_CTRL_ASSIGN_MSI`              | 3       |
+| `IRQ_CTRL_ASSIGN_LVT`              | 4       |
+| `IRQ_CTRL_MASK_LVT`                | 5       |
 
 ## Hypercall Status
 
@@ -1096,3 +1098,66 @@ interrupts that they should not be able to.
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
 | OUT2       | MSI address        | The MSI address to program into the device.                 |
 | OUT3       | MSI data           | The MSI data to program into the device                     |
+
+## `irq_ctrl_assign_lvt`
+
+Configures a Local APIC Local Vector Table (LVT) entry on the
+**current CPU** to arrive at the given vector. See the Intel
+SDM Vol. 3 Section 10.5.1 "Local Vector Table" for information about
+LVTs in general.
+
+The LVT numbers of LVT entries that can be modified using this
+interface are as follows:
+
+| *Number* | *LVT Entry*    |
+|----------|----------------|
+| 0        | Thermal Sensor |
+
+These concrete LVT entry numbers are Hedron-specific. Other LVT
+entries may be supported in the future. Configuring LVT entries that
+the platform does not support results in a `BAD_PAR` return value.
+
+When this function returns, the respective LVT entry is unmasked.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                           |
+|-------------|--------------------|-------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_ASSIGN_MSI`.                                            |
+| ARG1[11:8]  | Sub-operation      | Needs to be `HC_IRQ_CTRL_ASSIGN_LVT`.                                   |
+| ARG1[19:12] | Vector             | The host vector this interrupt should be directed to.                   |
+| ARG1[63:20] | Unused             | Must be zero.                                                           |
+| ARG2[7:0]   | LVT Entry Number   | The number of the LVT entry that should be assigned. (See table above.) |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+
+## `irq_ctrl_mask_lvt`
+
+Mask or unmask a Local APIC LVT entry on the **current** CPU.
+
+Unmasking LVT entries that have not been configured with
+`irq_ctrl_assign_lvt` leads to interrupts arriving at Hedron and being
+ignored.
+
+Configuring LVT entries that the platform does not support results in
+a `BAD_PAR` return value.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                                |
+|-------------|--------------------|------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_ASSIGN_MSI`.                                                 |
+| ARG1[11:8]  | Sub-operation      | Needs to be `HC_IRQ_CTRL_MASK_LVT`.                                          |
+| ARG1[12]    | Mask/Unmask        | The setting of the mask bit (masked=1/unmasked=0)                            |
+| ARG1[63:13] | Unused             | Must be zero.                                                                |
+| ARG2[7:0]   | LVT Entry Number   | The number of the LVT entry is masked/unmasked. (See `irq_ctrl_assign_lvt`.) |
+
+### Out
+
+| *Register* | *Content*          | *Description*                                               |
+|------------|--------------------|-------------------------------------------------------------|
+| OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
