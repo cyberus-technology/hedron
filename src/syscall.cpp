@@ -848,6 +848,10 @@ void Ec::sys_irq_ctrl()
         sys_irq_ctrl_mask_ioapic_pin();
     case Sys_irq_ctrl::ASSIGN_MSI:
         sys_irq_ctrl_assign_msi();
+    case Sys_irq_ctrl::ASSIGN_LVT:
+        sys_irq_ctrl_assign_lvt();
+    case Sys_irq_ctrl::MASK_LVT:
+        sys_irq_ctrl_mask_lvt();
 
     default:
         // This is currently not reachable, because the above cases are exhaustive, but this can change when
@@ -998,6 +1002,21 @@ void Ec::sys_irq_ctrl_assign_msi()
 
     r->set_msi(msi_addr, msi_data);
     sys_finish<Sys_regs::SUCCESS>();
+}
+
+void Ec::sys_irq_ctrl_assign_lvt()
+{
+    [[maybe_unused]] Sys_irq_ctrl_assign_lvt* r =
+        static_cast<Sys_irq_ctrl_assign_lvt*>(current()->sys_regs());
+
+    sys_finish<Sys_regs::BAD_HYP>();
+}
+
+void Ec::sys_irq_ctrl_mask_lvt()
+{
+    [[maybe_unused]] Sys_irq_ctrl_mask_lvt* r = static_cast<Sys_irq_ctrl_mask_lvt*>(current()->sys_regs());
+
+    sys_finish<Sys_regs::BAD_HYP>();
 }
 
 void Ec::sys_vcpu_ctrl_run()

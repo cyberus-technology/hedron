@@ -438,6 +438,10 @@ public:
 
     [[noreturn]] static void sys_irq_ctrl_assign_msi();
 
+    [[noreturn]] static void sys_irq_ctrl_assign_lvt();
+
+    [[noreturn]] static void sys_irq_ctrl_mask_lvt();
+
     [[noreturn]] static void root_invoke();
 
     template <bool> static Delegate_result_void delegate();
