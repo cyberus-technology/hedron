@@ -6,6 +6,13 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 8.2
+- **New:** We introduced the `HC_IRQ_CTRL_ASSIGN_LVT` and `HC_IRQ_CTRL_MASK_LVT` system calls to allow
+  manipulating LAPIC LVT entries. Currently only the thermal interrupt is accessible via this interface.
+
+## API Version 8.1
+- This version has no user-visible changes.
+
 ## API Version 8.0
 - **Breaking:** The irq_ctrl system calls have incompatibly changed to allow for more suboperations.
 
