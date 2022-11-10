@@ -41,13 +41,13 @@ public:
         DISABLE_REPLYCAP = 1ul << 2
     };
 
-    inline unsigned long pt() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long pt() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 };
 
 class Sys_create_pd : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -59,7 +59,7 @@ public:
 class Sys_create_ec : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -81,7 +81,7 @@ public:
 class Sys_create_sc : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -93,7 +93,7 @@ public:
 class Sys_create_pt : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -107,7 +107,7 @@ public:
 class Sys_create_sm : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 
@@ -117,7 +117,7 @@ public:
 class Sys_create_kp : public Sys_regs
 {
 public:
-    inline unsigned long sel() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned long pd() const { return ARG_2; }
 };
@@ -163,7 +163,7 @@ public:
 class Sys_pd_ctrl_delegate : public Sys_regs
 {
 public:
-    inline mword src_pd() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline mword src_pd() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline mword dst_pd() const { return ARG_2; }
 
@@ -181,7 +181,7 @@ public:
 class Sys_pd_ctrl_msr_access : public Sys_regs
 {
 public:
-    inline uint32 msr_index() const { return static_cast<uint32>(ARG_1 >> ARG1_SEL_SHIFT); }
+    inline uint32 msr_index() const { return static_cast<uint32>(ARG_1 >> ARG1_VALUE_SHIFT); }
     inline uint64 msr_value() const { return ARG_2; }
     inline bool is_write() const { return flags() & 4; }
 
@@ -191,7 +191,7 @@ public:
 class Sys_reply : public Sys_regs
 {
 public:
-    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sm() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 };
 
 class Sys_ec_ctrl : public Sys_regs
@@ -202,7 +202,7 @@ public:
         RECALL,
     };
 
-    inline unsigned long ec() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long ec() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned op() const { return flags() & 0x3; }
 };
@@ -210,7 +210,7 @@ public:
 class Sys_sc_ctrl : public Sys_regs
 {
 public:
-    inline unsigned long sc() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sc() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline void set_time(uint64 val)
     {
@@ -222,7 +222,7 @@ public:
 class Sys_pt_ctrl : public Sys_regs
 {
 public:
-    inline unsigned long pt() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long pt() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline mword id() const { return ARG_2; }
 };
@@ -237,7 +237,7 @@ public:
         Down = 1,
     };
 
-    inline unsigned long sm() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long sm() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline unsigned op() const { return flags() & 0x1; }
 
@@ -255,7 +255,7 @@ public:
         UNMAP,
     };
 
-    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline mword kp() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3); }
 };
@@ -263,7 +263,7 @@ public:
 class Sys_kp_ctrl_map : public Sys_regs
 {
 public:
-    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline mword kp() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline mword dst_pd() const { return ARG_2; }
 
@@ -273,13 +273,13 @@ public:
 class Sys_kp_ctrl_unmap : public Sys_regs
 {
 public:
-    inline mword kp() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline mword kp() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 };
 
 class Sys_assign_pci : public Sys_regs
 {
 public:
-    inline unsigned long pd() const { return ARG_1 >> ARG1_SEL_SHIFT; }
+    inline unsigned long pd() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
     inline mword dev() const { return ARG_2; }
 
@@ -301,7 +301,7 @@ public:
 class Sys_machine_ctrl_suspend : public Sys_machine_ctrl
 {
 private:
-    static constexpr size_t SLP_TYPA_SHIFT{ARG1_SEL_SHIFT};
+    static constexpr size_t SLP_TYPA_SHIFT{ARG1_VALUE_SHIFT};
     static constexpr size_t SLP_TYPB_SHIFT{SLP_TYPA_SHIFT + 8};
 
 public:
@@ -322,7 +322,7 @@ public:
 class Sys_machine_ctrl_update_microcode : public Sys_machine_ctrl
 {
 public:
-    inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> ARG1_SEL_SHIFT; }
+    inline unsigned size() const { return static_cast<unsigned>(ARG_1) >> ARG1_VALUE_SHIFT; }
     inline mword update_address() const { return static_cast<mword>(ARG_2); }
 };
 
@@ -343,8 +343,8 @@ public:
 class Sys_irq_ctrl_configure_vector : public Sys_irq_ctrl
 {
 public:
-    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
-    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_VALUE_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_VALUE_SHIFT + 8)); }
 
     inline mword sm() const { return static_cast<mword>(ARG_2); }
     inline mword kp() const { return static_cast<mword>(ARG_3); }
@@ -354,11 +354,11 @@ public:
 class Sys_irq_ctrl_assign_ioapic_pin : public Sys_irq_ctrl
 {
 public:
-    inline bool level() const { return ARG_1 & (1UL << 36); }
-    inline bool active_low() const { return ARG_1 & (1UL << 37); }
+    inline bool level() const { return ARG_1 & (1UL << (ARG1_VALUE_SHIFT + 24)); }
+    inline bool active_low() const { return ARG_1 & (1UL << (ARG1_VALUE_SHIFT + 25)); }
 
-    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
-    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_VALUE_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_VALUE_SHIFT + 8)); }
 
     inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
     inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
@@ -367,7 +367,7 @@ public:
 class Sys_irq_ctrl_mask_ioapic_pin : public Sys_irq_ctrl
 {
 public:
-    inline bool mask() const { return ARG_1 & (1UL << ARG1_SEL_SHIFT); }
+    inline bool mask() const { return ARG_1 & (1UL << ARG1_VALUE_SHIFT); }
 
     inline uint8 ioapic_id() const { return static_cast<uint8>(ARG_2 & 0xF); }
     inline uint8 ioapic_pin() const { return static_cast<uint8>(ARG_2 >> 4); }
@@ -376,8 +376,8 @@ public:
 class Sys_irq_ctrl_assign_msi : public Sys_irq_ctrl
 {
 public:
-    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_SEL_SHIFT); }
-    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_SEL_SHIFT + 8)); }
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_VALUE_SHIFT); }
+    inline uint16 cpu() const { return static_cast<uint16>(ARG_1 >> (ARG1_VALUE_SHIFT + 8)); }
 
     inline mword dev() const { return ARG_2 & ~0xfff; }
 

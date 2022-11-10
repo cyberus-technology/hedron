@@ -35,7 +35,10 @@ class Sys_regs
 {
 protected:
     static constexpr size_t ARG1_FLAGS_SHIFT{8};
-    static constexpr size_t ARG1_SEL_SHIFT{12};
+
+    // Any value in ARG1 has to co-exist with the system call number and flags. The value starts at this bit
+    // offset.
+    static constexpr size_t ARG1_VALUE_SHIFT{12};
 
     static constexpr mword ARG1_ID_MASK{0xffu};
     static constexpr mword ARG1_FLAGS_MASK{0xfu};
