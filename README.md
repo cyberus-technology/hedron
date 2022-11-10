@@ -86,6 +86,17 @@ Building unit tests can be avoided by passing `-DBUILD_TESTING=OFF` to
 build % ccmake .
 ```
 
+## Documentation
+
+User and developer documentation is provided via [mkdocs](https://www.mkdocs.org/).
+The documentation of the `master` branch is published
+[here](http://supernova-core.doc.vpn.cyberus-technology.de/hedron/). Locally,
+you can serve the documentation as follows:
+
+```sh
+% nix-shell --run "mkdocs serve"
+```
+
 ## Running
 
 ### Supported platforms
@@ -154,7 +165,7 @@ The [Hedron Github
 ### User Space Applications
 
 Hedron's system calls are documented in the [Kernel Interface
-documentation](./doc/kernel-interface.md). This document is
+documentation](./docs/kernel-interface.md). This document is
 unfortunately not complete yet.
 
 ## Credits

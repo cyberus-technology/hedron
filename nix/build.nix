@@ -39,11 +39,6 @@ stdenv.mkDerivation {
     patchShebangs tools/check-elf-segments
   '';
 
-  postInstall = ''
-    mkdir -p $out/share
-    cp -r $src/doc $out/share
-  '';
-
   meta = {
     description = "Hedron hypervisor by Cyberus Technology";
     homepage = "https://github.com/cyberus-technology/hedron";

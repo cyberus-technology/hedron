@@ -3,6 +3,7 @@ stages:
   - build
   - lint
   - integration_test
+  - deploy
 
 # Job description helpers
 
@@ -215,3 +216,20 @@ integration_test:nixos:
     expire_in: 1 week
     paths:
       - output/
+
+# Deployments
+
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public/
+    - nix-build ./nix/release.nix -A hedron.docs
+    - cp -R result/* public/
+  artifacts:
+    paths:
+      - public
+  tags:
+    - native-nix-v2
+  only:
+    - master
+  needs: []

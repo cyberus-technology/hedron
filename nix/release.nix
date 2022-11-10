@@ -103,5 +103,7 @@ in
       hedron = default-debug;
       inherit cmake-modules;
     };
+
+    docs = pkgs.callPackage ./docs.nix {};
   };
 }
