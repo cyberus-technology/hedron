@@ -88,10 +88,10 @@ build % ccmake .
 
 ## Documentation
 
-User and developer documentation is provided via mkdocs. This
-documentation is not yet published on an easily accessible
-website. Until this is rectified, you can serve the documentation like
-this:
+User and developer documentation is provided via [mkdocs](https://www.mkdocs.org/).
+The documentation of the `master` branch is published
+[here](http://supernova-core.doc.vpn.cyberus-technology.de/hedron/). Locally,
+you can serve the documentation as follows:
 
 ```sh
 % nix-shell --run "mkdocs serve"
