@@ -432,6 +432,15 @@ void Ec::sys_create_kp()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_create_vcpu()
+{
+    [[maybe_unused]] Sys_create_vcpu* r = static_cast<Sys_create_vcpu*>(current()->sys_regs());
+    trace(TRACE_SYSCALL, "EC:%p SYS_CREATE VCPU: %#lx", current(), r->sel());
+
+    // This feature is still under construction, thus return "invalid feature requested".
+    sys_finish<Sys_regs::BAD_FTR>();
+}
+
 void Ec::sys_revoke()
 {
     Sys_revoke* r = static_cast<Sys_revoke*>(current()->sys_regs());
@@ -991,6 +1000,40 @@ void Ec::sys_irq_ctrl_assign_msi()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+void Ec::sys_vcpu_ctrl_run()
+{
+    [[maybe_unused]] Sys_vcpu_ctrl_run* r = static_cast<Sys_vcpu_ctrl_run*>(current()->sys_regs());
+    trace(TRACE_SYSCALL, "EC:%p, SYS_VCPU_CTRL_RUN VCPU: %#lx", current(), r->sel());
+
+    // This feature is still under construction, thus return "invalid feature requested".
+    sys_finish<Sys_regs::BAD_FTR>();
+}
+
+void Ec::sys_vcpu_ctrl_poke()
+{
+    [[maybe_unused]] Sys_vcpu_ctrl_poke* r = static_cast<Sys_vcpu_ctrl_poke*>(current()->sys_regs());
+    trace(TRACE_SYSCALL, "EC:%p, SYS_VCPU_CTRL_POKE VCPU: %#lx", current(), r->sel());
+
+    // This feature is still under construction, thus return "invalid feature requested".
+    sys_finish<Sys_regs::BAD_FTR>();
+}
+
+void Ec::sys_vcpu_ctrl()
+{
+    Sys_vcpu_ctrl* r = static_cast<Sys_vcpu_ctrl*>(current()->sys_regs());
+
+    switch (r->op()) {
+    case Sys_vcpu_ctrl::RUN: {
+        sys_vcpu_ctrl_run();
+    }
+    case Sys_vcpu_ctrl::POKE: {
+        sys_vcpu_ctrl_poke();
+    }
+    };
+
+    sys_finish<Sys_regs::BAD_PAR>();
+}
+
 void Ec::syscall_handler()
 {
     // System call handler functions are all marked noreturn.
@@ -1018,6 +1061,8 @@ void Ec::syscall_handler()
         sys_create_sm();
     case hypercall_id::HC_CREATE_KP:
         sys_create_kp();
+    case hypercall_id::HC_CREATE_VCPU:
+        sys_create_vcpu();
 
     case hypercall_id::HC_PD_CTRL:
         sys_pd_ctrl();
@@ -1031,6 +1076,8 @@ void Ec::syscall_handler()
         sys_sm_ctrl();
     case hypercall_id::HC_KP_CTRL:
         sys_kp_ctrl();
+    case hypercall_id::HC_VCPU_CTRL:
+        sys_vcpu_ctrl();
 
     case hypercall_id::HC_MACHINE_CTRL:
         sys_machine_ctrl();
