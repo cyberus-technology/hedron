@@ -122,6 +122,20 @@ public:
     inline unsigned long pd() const { return ARG_2; }
 };
 
+class Sys_create_vcpu : public Sys_regs
+{
+public:
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
+
+    inline unsigned long pd() const { return ARG_2; }
+
+    inline unsigned long state_kp() const { return ARG_3; }
+
+    inline unsigned long vlapic_kp() const { return ARG_4; }
+
+    inline unsigned long fpu_kp() const { return ARG_5; }
+};
+
 class Sys_revoke : public Sys_regs
 {
 public:
@@ -386,4 +400,29 @@ public:
         ARG_2 = msi_addr;
         ARG_3 = msi_data;
     }
+};
+
+class Sys_vcpu_ctrl : public Sys_regs
+{
+public:
+    enum ctrl_op
+    {
+        RUN = 0,
+        POKE = 1,
+    };
+
+    inline ctrl_op op() const { return static_cast<ctrl_op>(flags() & 0x3u); }
+};
+
+class Sys_vcpu_ctrl_run : public Sys_vcpu_ctrl
+{
+public:
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
+    inline Mtd mtd() const { return Mtd(ARG_2); }
+};
+
+class Sys_vcpu_ctrl_poke : public Sys_vcpu_ctrl
+{
+public:
+    inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 };
