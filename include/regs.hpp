@@ -80,6 +80,7 @@ public:
         BAD_CPU,
         BAD_DEV,
         OOM,
+        BUSY,
     };
 
     inline hypercall_id id() const { return static_cast<hypercall_id>(ARG_1 & ARG1_ID_MASK); }
