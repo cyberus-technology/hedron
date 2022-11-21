@@ -37,6 +37,7 @@ public:
         PT,
         SM,
         KP,
+        VCPU,
     };
 
     inline Type type() const { return objtype; }
