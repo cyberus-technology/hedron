@@ -359,18 +359,19 @@ Hypercalls are identified by these values.
 
 Most hypercalls return a status value in OUT1. The following status values are defined:
 
-| *Status*  | *Value* | *Description*                                                    |
-|-----------|---------|------------------------------------------------------------------|
-| `SUCCESS` | 0       | The operation completed successfully                             |
-| `TIMEOUT` | 1       | The operation timed out                                          |
-| `ABORT`   | 2       | The operation was aborted                                        |
-| `BAD_HYP` | 3       | An invalid hypercall was called                                  |
-| `BAD_CAP` | 4       | A hypercall referred to an empty or otherwise invalid capability |
-| `BAD_PAR` | 5       | A hypercall used invalid parameters                              |
-| `BAD_FTR` | 6       | An invalid feature was requested                                 |
-| `BAD_CPU` | 7       | A portal capability was used on the wrong CPU                    |
-| `BAD_DEV` | 8       | An invalid device ID was passed                                  |
-| `OOM`     | 9       | The hypervisor ran out of memory                                 |
+| *Status*  | *Value* | *Description*                                                            |
+|-----------|---------|--------------------------------------------------------------------------|
+| `SUCCESS` | 0       | The operation completed successfully                                     |
+| `TIMEOUT` | 1       | The operation timed out                                                  |
+| `ABORT`   | 2       | The operation was aborted                                                |
+| `BAD_HYP` | 3       | An invalid hypercall was called                                          |
+| `BAD_CAP` | 4       | A hypercall referred to an empty or otherwise invalid capability         |
+| `BAD_PAR` | 5       | A hypercall used invalid parameters                                      |
+| `BAD_FTR` | 6       | An invalid feature was requested                                         |
+| `BAD_CPU` | 7       | A portal capability was used on the wrong CPU                            |
+| `BAD_DEV` | 8       | An invalid device ID was passed                                          |
+| `OOM`     | 9       | The hypervisor ran out of memory                                         |
+| `BUSY`    | 10      | The operation couldn't complete successfully because a resource is busy. |
 
 # System Call Reference
 

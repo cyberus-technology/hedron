@@ -386,6 +386,8 @@ public:
 
     [[noreturn]] static void sys_create_kp();
 
+    [[noreturn]] static void sys_create_vcpu();
+
     [[noreturn]] static void sys_revoke();
 
     [[noreturn]] static void sys_pd_ctrl();
@@ -411,6 +413,12 @@ public:
     [[noreturn]] static void sys_kp_ctrl_map();
 
     [[noreturn]] static void sys_kp_ctrl_unmap();
+
+    [[noreturn]] static void sys_vcpu_ctrl();
+
+    [[noreturn]] static void sys_vcpu_ctrl_run();
+
+    [[noreturn]] static void sys_vcpu_ctrl_poke();
 
     [[noreturn]] static void sys_assign_pci();
 
