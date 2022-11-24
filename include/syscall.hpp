@@ -349,6 +349,13 @@ public:
         ASSIGN_IOAPIC_PIN = 1,
         MASK_IOAPIC_PIN = 2,
         ASSIGN_MSI = 3,
+        ASSIGN_LVT = 4,
+        MASK_LVT = 5,
+    };
+
+    enum lvt_entry
+    {
+        LVT_THERM = 0,
     };
 
     inline ctrl_op op() const { return static_cast<ctrl_op>(flags()); }
@@ -400,6 +407,20 @@ public:
         ARG_2 = msi_addr;
         ARG_3 = msi_data;
     }
+};
+
+class Sys_irq_ctrl_assign_lvt : public Sys_irq_ctrl
+{
+public:
+    inline uint8 vector() const { return static_cast<uint8>(ARG_1 >> ARG1_VALUE_SHIFT); }
+    inline lvt_entry lvt_entry() const { return static_cast<enum lvt_entry>(ARG_2 & 0xff); }
+};
+
+class Sys_irq_ctrl_mask_lvt : public Sys_irq_ctrl
+{
+public:
+    inline bool mask() const { return ARG_1 & (1UL << ARG1_VALUE_SHIFT); }
+    inline lvt_entry lvt_entry() const { return static_cast<enum lvt_entry>(ARG_2 & 0xff); }
 };
 
 class Sys_vcpu_ctrl : public Sys_regs

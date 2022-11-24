@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "assert.hpp"
 #include "compiler.hpp"
 #include "memory.hpp"
 #include "msr.hpp"
@@ -74,6 +75,11 @@ private:
         DSH_EXC_SELF = 3U << 18,
     };
 
+    enum Mask
+    {
+        MASKED = 1U << 16,
+    };
+
     static inline uint32 read(Register reg)
     {
         return *reinterpret_cast<uint32 volatile*>(CPU_LOCAL_APIC + (reg << 4));
@@ -94,8 +100,6 @@ private:
     static inline void error_handler();
 
     static inline void perfm_handler();
-
-    static inline void therm_handler();
 
     [[noreturn]] static inline void park_handler();
 
@@ -147,6 +151,27 @@ public:
     }
 
     static inline unsigned get_timer() { return read(LAPIC_TMR_CCR); }
+
+    // Configure the thermal interrupt as a fixed interrupt that is delivered as the given vector.
+    static inline void set_therm_vector(uint8 vec)
+    {
+        // The LAPIC considers smaller vectors illegal for fixed interrupts.
+        assert(vec >= 16);
+
+        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, vec);
+    }
+
+    static inline void set_therm_mask(bool masked)
+    {
+        const uint32 old_lvt_therm = read(LAPIC_LVT_THERM);
+
+        if ((old_lvt_therm & 0xff) == 0) {
+            // The thermal interrupt hasn't been programmed yet. Ignore mask requests.
+            return;
+        }
+
+        write(LAPIC_LVT_THERM, (old_lvt_therm & ~MASKED) | (masked ? MASKED : 0));
+    }
 
     static void init();
 
