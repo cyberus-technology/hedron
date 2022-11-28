@@ -74,6 +74,12 @@ public:
         PERM_ALL = PERM_KP_CTRL,
     };
 
+    // This constructor is just a workaround because the FPU needs a kpage and we currently can't provide a
+    // kpage in the create_ec syscall (because all the possible parameters are used). As soon as this issue is
+    // solved this constructor has to be removed, because a kpage that the user space has no access to makes
+    // little to no sense.
+    Kp(Pd* own);
+
     Kp(Pd* own, mword sel);
     ~Kp();
 

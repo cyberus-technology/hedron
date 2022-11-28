@@ -26,6 +26,11 @@
 INIT_PRIORITY(PRIO_SLAB)
 Slab_cache Kp::cache(sizeof(Kp), 32);
 
+Kp::Kp(Pd* own) : Typed_kobject(static_cast<Space_obj*>(own)), data(Buddy::allocator.alloc(0, Buddy::FILL_0))
+{
+    trace(TRACE_SYSCALL, "KP: %p without selector created (PD:%p, Data: %p)", this, own, data);
+}
+
 Kp::Kp(Pd* own, mword sel)
     : Typed_kobject(static_cast<Space_obj*>(own), sel, PERM_ALL, free),
       data(Buddy::allocator.alloc(0, Buddy::FILL_0))
