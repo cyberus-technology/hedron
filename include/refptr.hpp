@@ -74,7 +74,8 @@ public:
 template <typename T> class Refptr
 {
 private:
-    T* const ptr{nullptr};
+    // A pointer to a reference-counted object.
+    T* ptr{nullptr};
 
 public:
     // Prevent default copy operations to avoid letting the reference count
@@ -82,17 +83,65 @@ public:
     Refptr& operator=(Refptr const&) = delete;
     Refptr(Refptr const&) = delete;
 
-    operator T*() const { return ptr; }
-    T* operator->() const { return ptr; }
-
-    Refptr(T* p) : ptr(p->add_ref() ? p : nullptr) {}
-
-    ~Refptr()
+    operator T*() const
     {
-        if (!ptr)
-            return;
+        assert_slow(ptr != nullptr);
+        return ptr;
+    }
 
-        if (ptr->del_rcu())
+    T* operator->() const
+    {
+        assert_slow(ptr != nullptr);
+        return ptr;
+    }
+
+    Refptr() = default;
+    Refptr(T* p) : ptr(p != nullptr and p->add_ref() ? p : nullptr) {}
+
+    ~Refptr() { release(); }
+
+    /// Returns the stored pointer.
+    T* get() const { return ptr; }
+
+    operator bool() const { return ptr != nullptr; }
+
+    /// Releases the stored pointer, i.e. decreases the reference count of the stored pointer and clears the
+    /// stored pointer. The returned pointer may be used until the next RCU quiescent state (transition to
+    /// userspace). Afterwards it is not safe to use the returned pointer.
+    ///
+    /// @return nullptr if the stored pointer was a nullptr or if this was the last reference to the object.
+    /// The stored pointer otherwise.
+    T* release()
+    {
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+
+        if (ptr->del_rcu()) {
             Rcu::call(ptr);
+            return nullptr;
+        }
+
+        T* old{ptr};
+        ptr = nullptr;
+        return old;
+    }
+
+    /// Resets the stored pointer to the given pointer. This includes decreasing the reference count of the
+    /// stored pointer and increasing the reference count of the given pointer.
+    ///
+    /// @param new_ptr The pointer to store. If new_ptr->add_ref() returns false, the stored pointer will be a
+    /// nullptr.
+    void reset(T* new_ptr = nullptr)
+    {
+        release();
+
+        if (new_ptr == nullptr) {
+            return;
+        }
+
+        if (new_ptr->add_ref()) {
+            ptr = new_ptr;
+        }
     }
 };
