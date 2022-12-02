@@ -31,7 +31,7 @@
 
 void Bootstrap::bootstrap()
 {
-    // If we already have the idle EC, we've been here before and it we go
+    // If we already have the idle EC, we've been here before, and we go
     // through here as part of resume from ACPI sleep states.
     bool const is_initial_boot = not Ec::idle_ec();
 
