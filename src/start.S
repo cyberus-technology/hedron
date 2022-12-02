@@ -30,6 +30,34 @@
 #define MULTIBOOT2_MAGIC         0x36d76289
 #define MULTIBOOT2_TAG_END       0
 #define MULTIBOOT2_TAG_LOAD_BASE 21
+
+/*
+ * x86 control register bits
+ *
+ * See Intel SDM Vol. 3, 2.5 Control Registers for more information.
+ */
+
+#define CR4_DE (1 << 3)
+#define CR4_PAE (1 << 5)
+#define CR4_PGE (1 << 7)
+#define CR4_OSFXSR (1 << 9)
+#define CR4_OSXMMEXCPT (1 << 10)
+
+#define CR0_PE (1 << 0)
+#define CR0_MP (1 << 1)
+#define CR0_NE (1 << 5)
+#define CR0_WP (1 << 16)
+#define CR0_PG (1 << 31)
+
+/*
+ * IA32_EFER MSR bits
+ */
+
+#define IA32_EFER_REG (0xc0000080)
+#define IA32_EFER_SYSCALL (1 << 0)
+#define IA32_EFER_LME (1 << 8)
+#define IA32_EFER_NXE (1 << 11)
+
 /*
  * The boot stack that we used during early CPU boot.
  */
@@ -106,30 +134,27 @@ __boot_gdt__:
 .endm
 
 /*
- * Set up Long Mode (64-bit) by enabling paging and toggling the relevant MSR.
+ * Set up Long Mode (64-bit) by enabling paging and other relevant features in the corresponding MSR and CR registers.
  *
  * rel needs to contain the relative load offset.
  */
 .macro                  INIT_PAGING rel
                         mov     %eax, %edi /* backup - used by multiboot */
-                        mov     $0xc0000080, %ecx
-                        rdmsr
 
-                        /*
-                         * Enable the following features in IA32_EFER:
-                         *
-                         * - the SYSCALL/SYSRET instructions,
-                         * - the page table NX bits,
-                         * - IA-32e (64-bit) mode.
-                         */
-                        or      $0x901, %eax
+                        mov     $IA32_EFER_REG, %ecx
+                        rdmsr
+                        or      $(IA32_EFER_SYSCALL | IA32_EFER_LME | IA32_EFER_NXE), %eax
                         wrmsr
-                        mov     $0x6b8, %edx
+
+                        mov     $(CR4_DE | CR4_PAE | CR4_PGE | CR4_OSFXSR | CR4_OSXMMEXCPT), %edx
                         mov     %edi, %eax /* restore - used by multiboot */
                         mov     %edx, %cr4
+
+                        /* Set top level page table. */
                         lea     PDBR(\rel), %edx
                         mov     %edx, %cr3
-                        mov     $0x80010023, %edx
+
+                        mov     $(CR0_PE | CR0_MP | CR0_NE | CR0_WP | CR0_PG), %edx
                         mov     %edx, %cr0
 .endm
 
