@@ -205,8 +205,8 @@ __start_bsp:
                          * This is currently not exhaustive. If we find a missing feature, we try to
                          * reset the box.
                          *
-                         * We need to make sure not to clobber RAX and RBX as they hold information from
-                         * the bootloader.
+                         * We need to make sure not to clobber eax and ebx as they hold information from
+                         * the Multiboot bootloader.
                          */
                         mov     %eax, %esi
                         mov     %ebx, %edi
@@ -220,6 +220,7 @@ __start_bsp:
                         ud2a
 .nx_ok:
 
+                        /* Restore registers from Multiboot boot flow. */
                         mov     %esi, %eax
                         mov     %edi, %ebx
 
@@ -418,6 +419,10 @@ __start_all_hi:
                          */
                         mov     %ebp, PHYS_RELOCATION
 
+                        /*
+                         * Prepare Multiboot magic and MBI pointer as arguments
+                         * for C++ code.
+                         */
                         mov     %rax, %rdi
                         mov     %rbx, %rsi
 
