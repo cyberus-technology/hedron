@@ -23,22 +23,31 @@
 #include "gdt.hpp"
 #include "mca.hpp"
 
-void Ec::load_fpu() { fpu.load(); }
+void Ec::load_fpu()
+{
+    // The idle EC never switches to user space and we do not use the FPU inside the kernel. Thus we can
+    // skip loading or saving the FPU-state in case this EC is an idle EC to improve the performance.
+    if (not is_idle_ec()) {
+        fpu.load();
+    }
+}
 
-void Ec::save_fpu() { fpu.save(); }
+void Ec::save_fpu()
+{
+    // See comment in Ec::load_fpu.
+    if (not is_idle_ec()) {
+        fpu.save();
+    }
+}
 
 void Ec::transfer_fpu(Ec* from_ec)
 {
-    if (from_ec == this)
+    if (from_ec == this) {
         return;
-
-    if (!from_ec->is_idle_ec()) {
-        from_ec->save_fpu();
     }
 
-    if (!is_idle_ec()) {
-        load_fpu();
-    }
+    from_ec->save_fpu();
+    load_fpu();
 }
 
 bool Ec::handle_exc_gp(Exc_regs* r)
