@@ -21,11 +21,17 @@
 
 #pragma once
 
-#include "slab.hpp"
+#include "memory.hpp"
+#include "refptr.hpp"
+#include "types.hpp"
+
+class Kp;
 
 class Fpu
 {
 private:
+    static constexpr size_t FXSAVE_HEADER_SIZE{32ul}; // Intel SDM Vol. 1 Chap. 10.5.1
+
     struct FxsaveHdr {
         uint16 fcw;
         uint16 fsw;
@@ -37,14 +43,21 @@ private:
         uint32 mxcsr;
         uint32 mxcsr_mask;
     };
+    static_assert(sizeof(FxsaveHdr) == FXSAVE_HEADER_SIZE);
+    static constexpr size_t FXSAVE_AREA_SIZE{512ul}; // Intel SDM Vol. 1 Chap. 10.5.1
+
+    struct FxsaveData {
+        uint8 fpu_data[FXSAVE_AREA_SIZE - FXSAVE_HEADER_SIZE];
+    };
 
     struct FpuCtx {
         FxsaveHdr legacy_hdr;
+        FxsaveData legacy_data;
     };
+    static_assert(sizeof(FpuCtx) <= PAGE_SIZE, "FpuCtx has to fit into a kernel page.");
 
-    FpuCtx* data;
-
-    static Slab_cache* cache;
+    Refptr<Kp> data_;
+    FpuCtx* data();
 
     enum class Mode : uint8
     {
@@ -70,6 +83,6 @@ public:
     static bool load_xcr0(uint64 xcr0);
     static void restore_xcr0();
 
-    Fpu();
-    ~Fpu() { cache->free(data); }
+    explicit Fpu(Kp* data_kp);
+    ~Fpu() = default;
 };

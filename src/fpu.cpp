@@ -20,10 +20,10 @@
 
 #include "fpu.hpp"
 #include "cpu.hpp"
+#include "kp.hpp"
 #include "x86.hpp"
 
 Fpu::FpuConfig Fpu::config;
-Slab_cache* Fpu::cache;
 
 static const uint64 required_xsave_state{Cpu::XCR0_X87};
 static const uint64 supported_xsave_state{Cpu::XCR0_X87 | Cpu::XCR0_SSE | Cpu::XCR0_AVX |
@@ -55,11 +55,18 @@ void Fpu::probe()
     Fpu::config = {xcr0, current_context,
                    Cpu::feature(Cpu::FEAT_XSAVEOPT) ? Fpu::Mode::XSAVEOPT : Fpu::Mode::XSAVE};
 
-    static Slab_cache fpu_cache{Fpu::config.context_size, 64};
-    cache = &fpu_cache;
+    if (Fpu::config.context_size > PAGE_SIZE) {
+        panic("Context size is too large for a kernel-page.");
+    }
 }
 
 void Fpu::init() { xsave_enable(config.xsave_scb); }
+
+Fpu::FpuCtx* Fpu::data()
+{
+    assert_slow(data_);
+    return reinterpret_cast<FpuCtx*>(data_->data_page());
+}
 
 void Fpu::save()
 {
@@ -68,10 +75,10 @@ void Fpu::save()
 
     switch (config.mode) {
     case Mode::XSAVEOPT:
-        asm volatile("xsaveopt %0" : "=m"(*data) : "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
+        asm volatile("xsaveopt %0" : "=m"(*data()) : "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
         break;
     case Mode::XSAVE:
-        asm volatile("xsave %0" : "=m"(*data) : "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
+        asm volatile("xsave %0" : "=m"(*data()) : "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
         break;
     }
 }
@@ -81,7 +88,7 @@ void Fpu::load()
     uint32 xsave_scb_hi{static_cast<uint32>(config.xsave_scb >> 32)};
     uint32 xsave_scb_lo{static_cast<uint32>(config.xsave_scb)};
 
-    asm volatile("xrstor %0" : : "m"(*data), "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
+    asm volatile("xrstor %0" : : "m"(*data()), "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
 }
 
 static bool is_valid_xcr0(uint64 xsave_scb, uint64 xcr0)
@@ -114,9 +121,9 @@ bool Fpu::load_xcr0(uint64 xcr0)
 
 void Fpu::restore_xcr0() { set_xcr(0, config.xsave_scb); }
 
-Fpu::Fpu() : data(static_cast<FpuCtx*>(cache->alloc()))
+Fpu::Fpu(Kp* data_kp) : data_(data_kp)
 {
     // Mask exceptions by default according to SysV ABI spec.
-    data->legacy_hdr.fcw = 0x37f;
-    data->legacy_hdr.mxcsr = 0x1f80;
+    data()->legacy_hdr.fcw = 0x37f;
+    data()->legacy_hdr.mxcsr = 0x1f80;
 }

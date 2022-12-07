@@ -24,6 +24,7 @@
 #include "ec.hpp"
 #include "elf.hpp"
 #include "hip.hpp"
+#include "kp.hpp"
 #include "rcu.hpp"
 #include "sm.hpp"
 #include "stdio.hpp"
@@ -35,8 +36,10 @@ Slab_cache Ec::cache(sizeof(Ec), 32);
 
 Ec::Ec(Pd* own, unsigned c)
     : Typed_kobject(static_cast<Space_obj*>(own)), cont(Ec::idle), pd(own), pd_user_page(own),
-      cpu(static_cast<uint16>(c)), glb(true)
+      cpu(static_cast<uint16>(c)), glb(true), fpu(new Kp(own))
 {
+    // The idle EC gets a Fpu and a KP for the Fpu, as this has the least complexity of all alternatives (e.g.
+    // using an optional<Fpu> or having an Fpu that handles a nullptr in the constructor).
     trace(TRACE_SYSCALL, "EC:%p created (PD:%p Kernel)", this, own);
 
     regs.vmcs = nullptr;
@@ -45,7 +48,7 @@ Ec::Ec(Pd* own, unsigned c)
 Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags)
     : Typed_kobject(static_cast<Space_obj*>(own), sel, Ec::PERM_ALL, free, pre_free), cont(f), pd(p),
       pd_user_page((creation_flags & MAP_USER_PAGE_IN_OWNER) ? own : p), cpu(static_cast<uint16>(c)),
-      glb(!!f), evt(e)
+      glb(!!f), evt(e), fpu(new Kp(own))
 {
     assert(u < USER_ADDR);
     assert((u & PAGE_MASK) == 0);
