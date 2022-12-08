@@ -48,11 +48,22 @@ SECTIONS
      * During the boot process, we set up page tables to map LINK_ADDR to LOAD_ADDR.
      */
 
+    /*
+     * The syntax for output sections, including load address, link address,
+     * and fillexpr, is explained here:
+     * https://sourceware.org/binutils/docs/ld/Output-Section-Attributes.html
+     *
+     * The fillexp (0xcc) is used to fill gaps (e.g., from alignment) inside
+     * the section. This is our best effort approach to fail fast if the IP is
+     * at unexpected addresses.
+     */
+
     .init LOAD_ADDR :
     {
         *(.init.multiboot)
         *(.init)
-    } : init = 0x90909090
+    } : init = 0xcc /* x86 opcode for "int3" */
+
     . = ALIGN(4K);
 
     PROVIDE (LOAD_E = .);
@@ -65,7 +76,7 @@ SECTIONS
     {
         *(.text.hot .text.hot.*)
         *(.text .text.* .gnu.linkonce.t.*)
-    } : kern_rx = 0x90909090
+    } : kern_rx = 0xcc
 
     .rodata : AT (VIRT_TO_PHYS_NORELOC(ADDR (.rodata)))
     {
