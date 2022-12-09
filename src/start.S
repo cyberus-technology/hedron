@@ -133,7 +133,9 @@ __boot_gdt__:
 .endm
 
 /*
- * Set up Long Mode (64-bit) by enabling paging and other relevant features in the corresponding MSR and CR registers.
+ * Prepares Long Mode (64-bit) by enabling paging and other relevant features
+ * in the corresponding MSR and CR registers. After this code is done, the
+ * machine is in IA-32e compatibility mode.
  *
  * rel needs to contain the relative load offset.
  */
@@ -380,8 +382,11 @@ __start_bsp:
                         INIT_PAGING %ebp
 
                         /*
-                         * Far jmp from 32-bit mode. The destination will be updated
-                         * to reflect relocation. See above.
+                         * Far jmp (ljmp opcode) from IA-32e compatiblity mode
+                         * to actual 64-bit mode.
+                         *
+                         * The destination will be updated to reflect relocation.
+                         * See above.
                          */
                         .byte 0xea
 1:
