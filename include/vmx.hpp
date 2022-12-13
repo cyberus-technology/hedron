@@ -460,7 +460,7 @@ struct Msr_area {
         return Buddy::allocator.alloc(0, Buddy::FILL_0);
     }
 
-    static inline void destroy(Msr_area* obj) { Buddy::allocator.free(reinterpret_cast<mword>(obj)); }
+    static inline void operator delete(void* ptr) { Buddy::allocator.free(reinterpret_cast<mword>(ptr)); }
 };
 static_assert(sizeof(Msr_area) == Msr_area::MSR_COUNT * sizeof(Msr_entry),
               "MSR area size does not match the MSR count.");
