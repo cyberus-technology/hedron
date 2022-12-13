@@ -33,13 +33,13 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
 
     // Vcpu::run has to do the following things:
     // - set a proper RSP
+    // - set the host CR3
     // - Ec::regs.nst_ctrl<VMCS>();
 
-    const mword host_cr3{pd->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? pd->did : 0)};
     const mword io_bitmap{pd->Space_pio::walk()};
-    vmcs = make_unique<Vmcs>(0, io_bitmap, host_cr3, pd->ept, Cpu::id());
+    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, Cpu::id());
 
-    // We restore the host MSRs in the VM Exit path by ourselfes, thus the VM Exit shouldn't restore any MSRs
+    // We restore the host MSRs in the VM Exit path, thus the VM Exit shouldn't restore any MSRs
     Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);
     Vmcs::write(Vmcs::EXI_MSR_LD_CNT, 0);
 
