@@ -166,9 +166,8 @@ void Slab_cache::free(void* ptr)
             else {
                 // curr is a nullptr, i.e. the last allocation lead to a completely full slab cache. We
                 // enqueue this slab as the head of our list.
-                slab->prev = nullptr;
-                slab->next = head;
-                head = head->prev = slab;
+                slab->enqueue(nullptr, head);
+                head = slab;
             }
         }
 
