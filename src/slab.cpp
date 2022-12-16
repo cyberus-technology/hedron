@@ -93,12 +93,10 @@ Slab_cache::Slab_cache(unsigned long elem_size, unsigned elem_align)
 void Slab_cache::grow()
 {
     Slab* slab = new Slab(this);
+    slab->enqueue(nullptr, head);
 
-    if (head)
-        head->prev = slab;
-
-    slab->next = head;
-    head = curr = slab;
+    head = slab;
+    curr = slab;
 }
 
 void* Slab_cache::alloc(Buddy::Fill fill_mem)
