@@ -53,6 +53,17 @@ void Slab::free(void* ptr)
     head = link;
 }
 
+void Slab::dequeue()
+{
+    if (prev != nullptr) {
+        prev->next = next;
+    }
+
+    if (next != nullptr) {
+        next->prev = prev;
+    }
+}
+
 Slab_cache::Slab_cache(unsigned long elem_size, unsigned elem_align)
     : curr(nullptr), head(nullptr), size(align_up(elem_size, sizeof(mword))),
       buff(align_up(size + sizeof(mword), elem_align)), elem((PAGE_SIZE - sizeof(Slab)) / buff)

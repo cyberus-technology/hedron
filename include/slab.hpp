@@ -89,7 +89,8 @@ public:
 
     inline bool empty() const { return avail == cache->elem; }
 
-    void enqueue();
+    // Dequeues this slab. After dequeueing, this slab can't be found in the list of slabs anymore, but this
+    // slab keeps its next and prev pointers.
     void dequeue();
 
     inline void* alloc();
