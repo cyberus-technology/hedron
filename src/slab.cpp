@@ -181,27 +181,31 @@ void Slab_cache::free(void* ptr)
         // list of slabs. To ease checking for an empty slab, head always points to the empty slab in the list
         // if one exists.
 
-        if (slab->prev) {
+        if (slab->prev == nullptr) {
+            // This slab is now empty and has no prev, i.e. it is already the head. Thus we can just leave.
+            assert(slab == head);
+            return;
+        }
 
-            if (slab == curr) {
-                // This slab shouldn't be curr, because we will move it to the head.
-                curr = slab->prev;
-            }
+        if (slab == curr) {
+            // This slab shouldn't be curr, because we will move it to the head. We know that this slab has a
+            // prev because we just checked it.
+            curr = slab->prev;
+        }
 
-            // This slab is empty but it is not the head. We either have to delete it or make it the new head.
-            slab->dequeue();
+        // This slab is empty but it is not the head. We either have to delete it or make it the new head.
+        slab->dequeue();
 
-            if (slab->prev->empty() || head->empty()) {
-                // There are already empty slabs - delete current slab. We can assert that head != slab,
-                // because we already know that this slab has a prev.
-                assert(head != slab);
-                delete slab;
-            } else {
-                // There are partial slabs in front of us and there is currently no empty slab, thus we can
-                // enqueue this slab as the new head.
-                slab->enqueue(nullptr, head);
-                head = slab;
-            }
+        if (slab->prev->empty() || head->empty()) {
+            // There are already empty slabs - delete current slab. We can assert that head != slab,
+            // because we already know that this slab has a prev.
+            assert(head != slab);
+            delete slab;
+        } else {
+            // There are partial slabs in front of us and there is currently no empty slab, thus we can
+            // enqueue this slab as the new head.
+            slab->enqueue(nullptr, head);
+            head = slab;
         }
     }
 }
