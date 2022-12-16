@@ -89,6 +89,9 @@ void* Slab_cache::alloc(Buddy::Fill fill_mem)
         ret = curr->alloc();
 
         if (EXPECT_FALSE(curr->full())) {
+            // curr always points to the slab that will be used for the next allocation. If curr is full, we
+            // have to move it to curr-prev. If curr has no prev, curr will be a nullptr and the next
+            // allocation will call Slab_cache::grow, which makes curr and head point to an empty slab.
             curr = curr->prev;
         }
     }
@@ -106,15 +109,18 @@ void Slab_cache::free(void* ptr)
     // someone calls free before calling alloc at least once, which is a bug.
     assert(head != nullptr);
 
+    // The slab that holds the element that will be free'd. In the following comments it will be refered to as
+    // 'this slab'.
     Slab* slab = reinterpret_cast<Slab*>(reinterpret_cast<mword>(ptr) & ~PAGE_MASK);
 
-    bool was_full = slab->full();
+    const bool was_full = slab->full();
 
     slab->free(ptr); // Deallocate from slab
 
     if (EXPECT_FALSE(was_full)) {
 
-        // There are full slabs in front of us and we're partial; requeue
+        // The list of slabs is ordered so that all full slabs come after curr, and all partial or free slabs
+        // come before curr. Thus if this slab is in the 'full'-part of the list, it has to be requeued.
         if (slab->prev && slab->prev->full()) {
 
             // Dequeue
@@ -122,8 +128,10 @@ void Slab_cache::free(void* ptr)
             if (slab->next)
                 slab->next->prev = slab->prev;
 
-            // Enqueue after curr
+            // We want this slab to be the new curr.
             if (curr) {
+                // curr is not a nullptr, i.e. the slab cache was not full. We enqueue this slab between a
+                // full and a partial (or empty) slab.
                 slab->prev = curr;
                 slab->next = curr->next;
                 curr->next = curr->next->prev = slab;
@@ -131,35 +139,44 @@ void Slab_cache::free(void* ptr)
 
             // Enqueue as head
             else {
+                // curr is a nullptr, i.e. the last allocation lead to a completely full slab cache. We
+                // enqueue this slab as the head of our list.
                 slab->prev = nullptr;
                 slab->next = head;
                 head = head->prev = slab;
             }
         }
 
+        // If this call to free lead to a partial slab that was full before, we always enqueue this slab
+        // directly before a full slab. Thus this slab has to be the new curr.
         curr = slab;
 
     } else if (EXPECT_FALSE(slab->empty())) {
 
-        // There are slabs in front of us and we're empty; requeue
+        // We want the slab cache to delete empty pages when a free leads to more than one empty slab in our
+        // list of slabs. To ease checking for an empty slab, head always points to the empty slab in the list
+        // if one exists.
+
         if (slab->prev) {
 
-            // Make slab in front of us current if we were current
-            if (slab == curr)
+            if (slab == curr) {
+                // This slab shouldn't be curr, because we will move it to the head.
                 curr = slab->prev;
+            }
 
-            // Dequeue
+            // This slab is empty but it is not the head. We either have to delete it or make it the new head.
             slab->prev->next = slab->next;
             if (slab->next)
                 slab->next->prev = slab->prev;
 
             if (slab->prev->empty() || head->empty()) {
-                // There are already empty slabs - delete current slab
+                // There are already empty slabs - delete current slab. We can assert that head != slab,
+                // because we already know that this slab has a prev.
                 assert(head != slab);
                 delete slab;
             } else {
-                // There are partial slabs in front of us - requeue empty one
-                // Enqueue as head
+                // There are partial slabs in front of us and there is currently no empty slab, thus we can
+                // enqueue this slab as the new head.
                 slab->prev = nullptr;
                 slab->next = head;
                 head = head->prev = slab;

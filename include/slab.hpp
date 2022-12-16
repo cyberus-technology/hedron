@@ -25,12 +25,18 @@
 
 class Slab;
 
+/**
+ * The slab cache is an allocator for fixed size objects that are smaller than a page. The slab cache holds a
+ * list of slabs. If the slab cache is full, i.e. all elements are allocated, it allocates a new, empty slab.
+ */
 class Slab_cache
 {
 private:
     Spinlock lock;
+
+    // The slab that will be used for the next allocation, or a nullptr if the the slab cache is full.
     Slab* curr;
-    Slab* head;
+    Slab* head; // The head of our list of slabs.
 
     /*
      * Back end allocator
@@ -40,7 +46,7 @@ private:
 public:
     unsigned long size; // Size of an element
     unsigned long buff; // Size of an element buffer (includes link field)
-    unsigned long elem; // Number of elements
+    unsigned long elem; // Number of elements that one slab can hold
 
     Slab_cache(unsigned long elem_size, unsigned elem_align);
 
@@ -55,14 +61,19 @@ public:
     void free(void* ptr);
 };
 
+/**
+ * A slab is one page of memory that is split up into a number of fixed size elements. As long as an
+ * element is not used, it holds a pointer to another unused element, i.e. this implementation uses a free
+ * list to find unallocated elements.
+ */
 class Slab
 {
 public:
-    unsigned long avail;
+    unsigned long avail; // The amount of free elements in this slab
     Slab_cache* cache;
     Slab* prev; // Prev slab in cache
     Slab* next; // Next slab in cache
-    char* head;
+    char* head; // A pointer to the start of this slab's free list
 
     static inline void* operator new(size_t)
     {
