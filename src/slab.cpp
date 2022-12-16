@@ -153,10 +153,7 @@ void Slab_cache::free(void* ptr)
         // come before curr. Thus if this slab is in the 'full'-part of the list, it has to be requeued.
         if (slab->prev && slab->prev->full()) {
 
-            // Dequeue
-            slab->prev->next = slab->next;
-            if (slab->next)
-                slab->next->prev = slab->prev;
+            slab->dequeue();
 
             // We want this slab to be the new curr.
             if (curr) {
@@ -195,9 +192,7 @@ void Slab_cache::free(void* ptr)
             }
 
             // This slab is empty but it is not the head. We either have to delete it or make it the new head.
-            slab->prev->next = slab->next;
-            if (slab->next)
-                slab->next->prev = slab->prev;
+            slab->dequeue();
 
             if (slab->prev->empty() || head->empty()) {
                 // There are already empty slabs - delete current slab. We can assert that head != slab,
