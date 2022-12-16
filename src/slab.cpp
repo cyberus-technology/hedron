@@ -159,9 +159,7 @@ void Slab_cache::free(void* ptr)
             if (curr) {
                 // curr is not a nullptr, i.e. the slab cache was not full. We enqueue this slab between a
                 // full and a partial (or empty) slab.
-                slab->prev = curr;
-                slab->next = curr->next;
-                curr->next = curr->next->prev = slab;
+                slab->enqueue(curr, curr->next);
             }
 
             // Enqueue as head
