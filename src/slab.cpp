@@ -199,9 +199,8 @@ void Slab_cache::free(void* ptr)
             } else {
                 // There are partial slabs in front of us and there is currently no empty slab, thus we can
                 // enqueue this slab as the new head.
-                slab->prev = nullptr;
-                slab->next = head;
-                head = head->prev = slab;
+                slab->enqueue(nullptr, head);
+                head = slab;
             }
         }
     }
