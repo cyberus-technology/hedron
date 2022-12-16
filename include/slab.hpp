@@ -89,6 +89,9 @@ public:
 
     inline bool empty() const { return avail == cache->elem; }
 
+    // Enqueues this slab between new_prev and new_next. Panics if new_prev and new_next are not adjacent.
+    void enqueue(Slab* new_prev, Slab* new_next);
+
     // Dequeues this slab. After dequeueing, this slab can't be found in the list of slabs anymore, but this
     // slab keeps its next and prev pointers.
     void dequeue();

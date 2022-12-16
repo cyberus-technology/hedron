@@ -53,6 +53,25 @@ void Slab::free(void* ptr)
     head = link;
 }
 
+void Slab::enqueue(Slab* new_prev, Slab* new_next)
+{
+    next = new_next;
+    prev = new_prev;
+
+    // To make sure that we don't screw up the list of slabs when we enqueue a new slab, we assert that
+    // new_prev was the predecessor of new_next, and that new_next was the successor of new_prev.
+
+    if (new_next != nullptr) {
+        assert(new_next->prev == new_prev);
+        new_next->prev = this;
+    }
+
+    if (new_prev != nullptr) {
+        assert(new_prev->next == new_next);
+        new_prev->next = this;
+    }
+}
+
 void Slab::dequeue()
 {
     if (prev != nullptr) {
