@@ -28,6 +28,7 @@ class Slab;
 /**
  * The slab cache is an allocator for fixed size objects that are smaller than a page. The slab cache holds a
  * list of slabs. If the slab cache is full, i.e. all elements are allocated, it allocates a new, empty slab.
+ * The slab cache holds at most one completely free slab and returns further ones as they become empty.
  */
 class Slab_cache
 {

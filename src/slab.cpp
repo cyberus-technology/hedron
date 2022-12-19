@@ -133,7 +133,7 @@ void Slab_cache::free(void* ptr)
 {
     Lock_guard<Spinlock> guard(lock);
 
-    // we can assert that head != nullptr here, because this can only happen if
+    // We can assert that head != nullptr here, because this can only happen if
     // someone calls free before calling alloc at least once, which is a bug.
     assert(head != nullptr);
 
@@ -145,36 +145,32 @@ void Slab_cache::free(void* ptr)
 
     slab->free(ptr); // Deallocate from slab
 
+    // The list of slabs is ordered so that all full slabs come after curr, and all partial or free slabs
+    // come before curr. We will reorder the list if necessary.
+
     if (EXPECT_FALSE(was_full)) {
+        // This slab was full and is now partial. We will make curr point to it.
 
-        // The list of slabs is ordered so that all full slabs come after curr, and all partial or free slabs
-        // come before curr. Thus if this slab is in the 'full'-part of the list, it has to be requeued.
         if (slab->prev && slab->prev->full()) {
-
+            // This slab's predecessor is full, thus we have to requeue it to make the above explained
+            // invariant hold true.
             slab->dequeue();
 
-            // We want this slab to be the new curr.
             if (curr) {
-                // curr is not a nullptr, i.e. the slab cache was not full. We enqueue this slab between a
-                // full and a partial (or empty) slab.
+                // curr is not a nullptr. We enqueue this slab between curr and curr's successor (which is a
+                // full slab).
                 slab->enqueue(curr, curr->next);
-            }
-
-            // Enqueue as head
-            else {
-                // curr is a nullptr, i.e. the last allocation lead to a completely full slab cache. We
-                // enqueue this slab as the head of our list.
+            } else {
+                // curr is a nullptr, i.e. all slabs (except for this slab) are full. We enqueue this slab as
+                // the new head.
                 slab->enqueue(nullptr, head);
                 head = slab;
             }
         }
 
-        // If this call to free lead to a partial slab that was full before, we always enqueue this slab
-        // directly before a full slab. Thus this slab has to be the new curr.
         curr = slab;
 
     } else if (EXPECT_FALSE(slab->empty())) {
-
         // We want the slab cache to delete empty pages when a free leads to more than one empty slab in our
         // list of slabs. To ease checking for an empty slab, head always points to the empty slab in the list
         // if one exists.
@@ -186,22 +182,19 @@ void Slab_cache::free(void* ptr)
         }
 
         if (slab == curr) {
-            // This slab shouldn't be curr, because we will move it to the head. We know that this slab has a
-            // prev because we just checked it.
+            // This slab shouldn't be curr, because it will be either deleted or moved to the head.
+            assert(slab->prev != nullptr);
             curr = slab->prev;
         }
 
-        // This slab is empty but it is not the head. We either have to delete it or make it the new head.
         slab->dequeue();
 
         if (slab->prev->empty() || head->empty()) {
-            // There are already empty slabs - delete current slab. We can assert that head != slab,
-            // because we already know that this slab has a prev.
+            // There are already empty slabs, thus we delete this slab.
             assert(head != slab);
             delete slab;
         } else {
-            // There are partial slabs in front of us and there is currently no empty slab, thus we can
-            // enqueue this slab as the new head.
+            // There is currently no empty slab, thus we enqueue this slab as the new head.
             slab->enqueue(nullptr, head);
             head = slab;
         }
