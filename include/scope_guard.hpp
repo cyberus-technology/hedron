@@ -60,9 +60,14 @@
 // computed and _then_ the destructors run.
 //
 // Code that relies on this behavior should be avoided to keep code easy to understand and read.
+//
+// Please note that the cleanup function must be a function that returns void.
 template <typename F> class Scope_guard
 {
     F scope_cleanup_fn;
+
+    static_assert(is_void<decltype(scope_cleanup_fn())>::value,
+                  "Tried to instantiate a scope guard with a function that doesn't return void.");
 
 public:
     Scope_guard() = delete;

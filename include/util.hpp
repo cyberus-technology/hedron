@@ -62,6 +62,15 @@ template <typename T> typename remove_reference<T>::type&& move(T&& v)
     return static_cast<typename remove_reference<T>::type&&>(v);
 }
 
+template <typename T, typename U> struct is_same : false_type {
+};
+
+template <typename T> struct is_same<T, T> : true_type {
+};
+
+template <typename T> struct is_void : is_same<void, T> {
+};
+
 /// Wrap a member function together with its parameters into a callable.
 ///
 /// Example:
