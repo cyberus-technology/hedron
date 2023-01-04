@@ -151,32 +151,63 @@ void Space_mem::revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr)
 
 void Space_mem::shootdown()
 {
+    Bitmap<uint32, NUM_CPU> stale_cpus{false};
+
+    // Collect all the TLB shootdown counters and send IPIs. These counters are increased by each CPU when it
+    // receives the IPI. See Sc::rke_handler for more details.
     for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
-
-        if (!Hip::cpu_online(cpu))
+        if (!Hip::cpu_online(cpu)) {
             continue;
+        }
 
+        // We check whatever PD is currently running on the remote CPU. This may be another PD than what we
+        // intended the shootdown for.
+        //
+        // If the PD is not the one we are actually interested in, the one we are interested in will
+        // invalidate its TLB lazily when it is activated via Pd::make_current.
         Pd* pd = Pd::remote(cpu);
 
+        // We still send a shootdown IPI, if this PD that we find has stale TLBs on the given CPU. This
+        // happens regardless of whether this is the intended PD. This is a left-over from the past, where
+        // revoke could recursively unmap memory from multiple PDs.
         if (!pd->stale_host_tlb.chk(cpu) && !pd->stale_guest_tlb.chk(cpu))
             continue;
 
+        // There is a special case for the current CPU. We don't need to send an IPI, because before user code
+        // executes again, it will check its hazards and do the TLB flush then.
         if (Cpu::id() == cpu) {
             Cpu::hazard() |= HZD_SCHED;
             continue;
         }
 
-        unsigned ctr = Counter::remote_tlb_shootdown(cpu);
+        // Take a snapshot of the shootdown IPI counter from the remote CPU and remember that we have to wait
+        // for this CPU to receive it. See the comment at the while loop below.
+        tlb_shootdown()[cpu] = Counter::remote_tlb_shootdown(cpu);
+        stale_cpus[cpu] = true;
 
         Lapic::send_ipi(cpu, VEC_IPI_RKE);
-
-        asm volatile("sti" : : : "memory");
-
-        while (Counter::remote_tlb_shootdown(cpu) == ctr)
-            relax();
-
-        asm volatile("cli" : : : "memory");
     }
+
+    // We have to open interrupts here, because otherwise we could deadlock with other CPUs sending us IPIs
+    // and waiting for a result.
+    asm volatile("sti" : : : "memory");
+
+    // Wait for IPIs to arrive.
+    for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
+        // Only CPUs to which we sent an IPI are interesting.
+        if (!stale_cpus[cpu]) {
+            continue;
+        }
+
+        // Once the remote CPU has received the IPI, we will break out of this loop. It doesn't matter whether
+        // the remote CPU receives the IPI we sent or whether another CPU is doing a shootdown as well and its
+        // IPI arrived first. We only need the other CPU to go through Sc::rke_handler.
+        while (Counter::remote_tlb_shootdown(cpu) == tlb_shootdown()[cpu]) {
+            relax();
+        }
+    }
+
+    asm volatile("cli" : : : "memory");
 }
 
 static void map_typed_range(Hpt& hpt, Paddr start, Paddr end, Hpt::pte_t attr, unsigned t)

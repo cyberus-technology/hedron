@@ -134,6 +134,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // Global descriptor table
     alignas(8) Gdt::Gdt_array gdt;
+
+    // Space_mem shootdown table.
+    uint16 space_mem_tlb_shootdown[NUM_CPU];
 };
 
 static_assert(OFFSETOF(Per_cpu, self) == STACK_SIZE,
