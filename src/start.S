@@ -37,7 +37,6 @@
  * See Intel SDM Vol. 3, 2.5 Control Registers for more information.
  */
 
-#define CR4_DE (1 << 3)
 #define CR4_PAE (1 << 5)
 #define CR4_PGE (1 << 7)
 #define CR4_OSFXSR (1 << 9)
@@ -146,7 +145,7 @@ __boot_gdt__:
                         or      $(IA32_EFER_SYSCALL | IA32_EFER_LME | IA32_EFER_NXE), %eax
                         wrmsr
 
-                        mov     $(CR4_DE | CR4_PAE | CR4_PGE | CR4_OSFXSR | CR4_OSXMMEXCPT), %edx
+                        mov     $(CR4_PAE | CR4_PGE | CR4_OSFXSR | CR4_OSXMMEXCPT), %edx
                         mov     %edi, %eax /* restore - used by multiboot */
                         mov     %edx, %cr4
 
