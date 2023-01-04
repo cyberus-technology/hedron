@@ -113,7 +113,10 @@ struct alignas(PAGE_SIZE) Per_cpu {
     uint8 vmx_timer_shift;
 
     // Statistics
-    uint32 counter_tlb_shootdown;
+
+    uint16 counter_tlb_shootdown;
+    static_assert((1 << 16) > NUM_CPU,
+                  "The TLB shootdown counter must hold more values than the number of CPUs we support");
 
     // CPU-related variables (that are not performance critical)
     uint32 cpu_features[9];

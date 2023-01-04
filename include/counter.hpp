@@ -29,7 +29,7 @@ class Counter
 public:
     CPULOCAL_ACCESSOR(counter, tlb_shootdown);
 
-    static inline unsigned remote_tlb_shootdown(unsigned cpu)
+    static inline uint16 remote_tlb_shootdown(unsigned cpu)
     {
         return Atomic::load(Cpulocal::get_remote(cpu).counter_tlb_shootdown);
     }
