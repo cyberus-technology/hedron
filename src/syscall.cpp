@@ -39,6 +39,7 @@
 #include "stdio.hpp"
 #include "suspend.hpp"
 #include "utcb.hpp"
+#include "vcpu.hpp"
 #include "vector_info.hpp"
 #include "vectors.hpp"
 
@@ -434,11 +435,46 @@ void Ec::sys_create_kp()
 
 void Ec::sys_create_vcpu()
 {
-    [[maybe_unused]] Sys_create_vcpu* r = static_cast<Sys_create_vcpu*>(current()->sys_regs());
+    Sys_create_vcpu* r = static_cast<Sys_create_vcpu*>(current()->sys_regs());
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE VCPU: %#lx", current(), r->sel());
 
-    // This feature is still under construction, thus return "invalid feature requested".
-    sys_finish<Sys_regs::BAD_FTR>();
+    Pd* pd_parent{capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION)};
+    if (EXPECT_FALSE(not pd_parent)) {
+        trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Kp* kp_vcpu_state{capability_cast<Kp>(Space_obj::lookup(r->state_kp()))};
+    if (EXPECT_FALSE(not kp_vcpu_state)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (vCPU State KP) (%#lx)", __func__, r->state_kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Kp* kp_vlapic{capability_cast<Kp>(Space_obj::lookup(r->vlapic_kp()))};
+    if (EXPECT_FALSE(not kp_vlapic)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (VLAPIC KP) (%#lx)", __func__, r->vlapic_kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Kp* kp_fpu{capability_cast<Kp>(Space_obj::lookup(r->fpu_kp()))};
+    if (EXPECT_FALSE(not kp_fpu)) {
+        trace(TRACE_ERROR, "%s: Bad KP CAP (FPU KP) (%#lx)", __func__, r->fpu_kp());
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    Vcpu* vcpu = new Vcpu({.owner_pd = pd_parent,
+                           .cap_selector = r->sel(),
+                           .kp_vcpu_state = kp_vcpu_state,
+                           .kp_vlapic_page = kp_vlapic,
+                           .kp_fpu_state = kp_fpu});
+
+    if (!Space_obj::insert_root(vcpu)) {
+        trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
+        delete vcpu;
+        sys_finish<Sys_regs::BAD_CAP>();
+    }
+
+    sys_finish<Sys_regs::SUCCESS>();
 }
 
 void Ec::sys_revoke()
