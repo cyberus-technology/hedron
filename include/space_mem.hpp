@@ -32,6 +32,8 @@
 
 class Space_mem
 {
+    CPULOCAL_ACCESSOR(space_mem, tlb_shootdown);
+
 public:
     Hpt hpt;
 

@@ -193,7 +193,7 @@ void Sc::rke_handler()
     // We increase the counter as early as possible to avoid making the
     // shootdown loop wait for longer than needed.
 
-    Atomic::add(Counter::tlb_shootdown(), static_cast<uint32>(1));
+    Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
 
     // In case of host TLB invalidations, we need to enforce that we go through
     // the scheduler, because there we call Pd::make_current, which performs the

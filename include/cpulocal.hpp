@@ -113,7 +113,10 @@ struct alignas(PAGE_SIZE) Per_cpu {
     uint8 vmx_timer_shift;
 
     // Statistics
-    uint32 counter_tlb_shootdown;
+
+    uint16 counter_tlb_shootdown;
+    static_assert((1 << 16) > NUM_CPU,
+                  "The TLB shootdown counter must hold more values than the number of CPUs we support");
 
     // CPU-related variables (that are not performance critical)
     uint32 cpu_features[9];
@@ -131,6 +134,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     // Global descriptor table
     alignas(8) Gdt::Gdt_array gdt;
+
+    // Space_mem shootdown table.
+    uint16 space_mem_tlb_shootdown[NUM_CPU];
 };
 
 static_assert(OFFSETOF(Per_cpu, self) == STACK_SIZE,
