@@ -85,6 +85,10 @@ public:
     explicit Vcpu(const Vcpu_init_config& init_cfg);
     ~Vcpu() = default;
 
+    // Prepares this vCPU to be executed (e.g. transfers the modified vCPU state fields) and then enters this
+    // vCPU.
+    [[noreturn]] void run() {}
+
     static inline void* operator new(size_t) { return cache.alloc(); }
     static inline void operator delete(void* ptr) { cache.free(ptr); }
 };
