@@ -141,6 +141,9 @@ public:
     // vCPU. An EC has to acquire this vCPU before it is allowed to execute it.
     [[noreturn]] void run();
 
+    // Handles a VM exit. This function should only be called by a EC in its VM exit path!
+    [[noreturn]] void handle_vmx() {}
+
     static inline void* operator new(size_t) { return cache.alloc(); }
     static inline void operator delete(void* ptr) { cache.free(ptr); }
 };
