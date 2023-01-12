@@ -21,6 +21,7 @@
 #include "dmar.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
+#include "vcpu.hpp"
 #include "vector_info.hpp"
 #include "vectors.hpp"
 #include "vmx.hpp"
@@ -99,6 +100,13 @@ void Ec::handle_vmx()
     Cpu::hazard() |= HZD_DS_ES | HZD_TR;
     Cpu::setup_msrs();
     Fpu::restore_xcr0();
+
+    // If this EC is a vCPU, the VMM is using the old way of handling vCPUs and the EC has to handle the VM
+    // exit. Otherwise the VMM is using a vCPU kernel object and we just pass the control flow to it.
+    if (not current()->is_vcpu()) {
+        assert(current()->vcpu != nullptr);
+        current()->vcpu->handle_vmx();
+    }
 
     mword reason = Vmcs::read(Vmcs::EXI_REASON) & 0xff;
 
