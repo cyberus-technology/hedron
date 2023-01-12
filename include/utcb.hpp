@@ -97,6 +97,11 @@ protected:
             uint64 cr0_mon, cr4_mon;
             uint64 spec_ctrl;
             uint64 tsc_timeout;
+
+            // If this UTCB belongs to a vCPU, this field holds the reason for the last VM exit. This field is
+            // 32 bits in size, because a VMX_ENTRY_FAILURE needs 32 bits.
+            uint32 exit_reason;
+            uint32 reserved3;
         };
 
         mword data_begin;
