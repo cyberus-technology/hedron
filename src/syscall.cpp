@@ -48,6 +48,12 @@ void Ec::sys_finish(Sys_regs::Status status, bool clear_timeout)
     if (EXPECT_FALSE(clear_timeout))
         current()->clr_timeout();
 
+    if (EXPECT_FALSE(current()->vcpu)) {
+        // If there was a vCPU object associated to the current EC, we release our ownership of it and we
+        // release the refptr.
+        Ec::release_vcpu();
+    }
+
     current()->regs.set_status(status);
 
     ret_user_sysexit();
