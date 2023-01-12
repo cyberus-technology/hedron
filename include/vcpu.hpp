@@ -121,6 +121,12 @@ private:
     // passes control flow to Ec::run_vcpu.
     [[noreturn]] void continue_running();
 
+    // Handles a VM exit due to an exception.
+    [[noreturn]] inline void handle_exception();
+
+    // Handles a VM exit due to an extint.
+    [[noreturn]] inline void handle_extint();
+
 public:
     // Capability permission bitmask.
     enum
@@ -150,7 +156,7 @@ public:
     [[noreturn]] void run();
 
     // Handles a VM exit. This function should only be called by a EC in its VM exit path!
-    [[noreturn]] void handle_vmx() {}
+    [[noreturn]] void handle_vmx();
 
     static inline void* operator new(size_t) { return cache.alloc(); }
     static inline void operator delete(void* ptr) { cache.free(ptr); }
