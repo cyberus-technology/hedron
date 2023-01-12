@@ -1083,13 +1083,40 @@ void Ec::sys_irq_ctrl_mask_lvt()
     sys_finish<Sys_regs::SUCCESS>();
 }
 
+static Sys_regs::Status to_syscall_status(Vcpu_acquire_error acq_error)
+{
+    switch (acq_error.error_type) {
+    case Vcpu_acquire_error::type::BUSY:
+        return Sys_regs::Status::BUSY;
+    case Vcpu_acquire_error::type::BAD_CPU:
+        return Sys_regs::Status::BAD_CPU;
+    default:
+        panic("Unimplemented vCPU acquire error!");
+    }
+}
+
 void Ec::sys_vcpu_ctrl_run()
 {
-    [[maybe_unused]] Sys_vcpu_ctrl_run* r = static_cast<Sys_vcpu_ctrl_run*>(current()->sys_regs());
+    Sys_vcpu_ctrl_run* r = static_cast<Sys_vcpu_ctrl_run*>(current()->sys_regs());
     trace(TRACE_SYSCALL, "EC:%p, SYS_VCPU_CTRL_RUN VCPU: %#lx", current(), r->sel());
 
-    // This feature is still under construction, thus return "invalid feature requested".
-    sys_finish<Sys_regs::BAD_FTR>();
+    Vcpu* vcpu = capability_cast<Vcpu>(Space_obj::lookup(r->sel()));
+    if (EXPECT_FALSE(not vcpu)) {
+        trace(TRACE_ERROR, "%s: Bad vCPU CAP (%#lx)", __func__, r->sel());
+        sys_finish(Sys_regs::BAD_CAP);
+    }
+
+    auto result{Ec::try_acquire_vcpu(vcpu)};
+
+    if (result.is_err()) {
+        trace(TRACE_ERROR, "Refusing to claim vCPU.");
+        sys_finish(result.map_err([](auto e) { return to_syscall_status(e); }));
+    }
+
+    assert(result.is_ok());
+
+    // We have successfully claimed the vCPU. We will release prior to returning to the VMM in sys_finish.
+    Ec::current()->run_vcpu(r->mtd());
 }
 
 void Ec::sys_vcpu_ctrl_poke()
