@@ -113,6 +113,14 @@ private:
     // This pointer NEEDS to be accessed using atomic ops!
     Ec* owner{nullptr};
 
+    // Transfers the VMCS contents into the vCPU state page, sets the given exit reason in the vCPU state page
+    // and returns to the VMM with the given status.
+    [[noreturn]] void return_to_vmm(uint32 exit_reason, Sys_regs::Status status);
+
+    // Called during handling of a VM exit. This function prepares the vCPU to do another VM entry and then
+    // passes control flow to Ec::run_vcpu.
+    [[noreturn]] void continue_running();
+
 public:
     // Capability permission bitmask.
     enum

@@ -202,3 +202,30 @@ void Vcpu::run()
 
     UNREACHED;
 }
+
+void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
+{
+    // We want to transfer the whole state, thus we set all MTD bits except for TLB and FPU. (Utcb::load_vmx
+    // doesn't use Mtd::TLB and we already saved the FPU)
+    const Mtd mtd{0x1dfffffful};
+
+    // We reset the dst_portal to make sure that Utcb::load_vmx also transfers IDT_VECTORING_INFO_FIELD and
+    // IDT_VECTORING_ERROR_CODE.
+    regs.dst_portal = 0;
+    regs.mtd = mtd.val;
+
+    // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
+    [[maybe_unused]] const bool save_fpu{utcb()->load_vmx(&regs)};
+    utcb()->exit_reason = exit_reason;
+
+    // We do not clear the owner here, because the owner has the duty to release the ownership.
+
+    // Return to the VMM
+    Ec::sys_finish(status);
+}
+
+void Vcpu::continue_running()
+{
+    // We don't have to clear the owner here and Ec::resume_vcpu will check the necessary hazards for us.
+    Ec::current()->resume_vcpu();
+}
