@@ -34,7 +34,6 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     // Vcpu::run has to do the following things:
     // - set a proper RSP
     // - set the host CR3
-    // - Ec::regs.nst_ctrl<VMCS>();
 
     const mword io_bitmap{pd->Space_pio::walk()};
     vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, Cpu::id());
@@ -89,6 +88,14 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
 
     // Register the APIC access page
     Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
+
+    // TODO: Utcb::save_vmx takes a Cpu_regs object as parameter and does a regs->vmcs->make_current(). Thus
+    // the regs must know the address of the VMCS. This is just a workaround, see hedron#252
+    regs.vmcs = vmcs.get();
+
+    // TODO: We have to keep in mind that we, if we remove the line above, also have to look into this
+    // function, as it will throw an assertion if we don't set the vmcs member. See hedron#252.
+    regs.nst_ctrl<Vmcs>();
 
     vmcs->clear();
 }

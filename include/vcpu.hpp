@@ -23,6 +23,7 @@
 #include "mtd.hpp"
 #include "pd.hpp"
 #include "refptr.hpp"
+#include "regs.hpp"
 #include "slab.hpp"
 #include "unique_ptr.hpp"
 #include "utcb.hpp"
@@ -63,6 +64,12 @@ private:
     Unique_ptr<Vmcs> vmcs;
     Unique_ptr<Msr_area> guest_msr_area;
     Unique_ptr<Vmx_msr_bitmap> msr_bitmap;
+
+    // The VMCS does not contain general-purpose register content, so we have to save them separately.
+    //
+    // TODO: When we decouple the vCPU-State and the UTCB in the future, the VM exit path can store the
+    // registers directly in the vCPU state page. See hedron#252.
+    Cpu_regs regs;
 
     Fpu fpu;
 
