@@ -22,6 +22,7 @@
 #include "ec.hpp"
 #include "hip.hpp"
 #include "space_obj.hpp"
+#include "stdio.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)
 Slab_cache Vcpu::cache(sizeof(Vcpu), 32);
@@ -124,4 +125,80 @@ void Vcpu::mtd(Mtd mtd)
 {
     assert(Atomic::load(owner) == Ec::current());
     regs.mtd |= mtd.val;
+}
+
+void Vcpu::run()
+{
+    // Only the owner of a vCPU is allowed to run it.
+    assert(Atomic::load(owner) == Ec::current());
+
+    vmcs->make_current();
+
+    // entry_vmx in entry.S pushes the GPRs of the guest onto the stack directly after a VM exit. By making
+    // the stack pointer point just behind our Sys_regs structure we make sure that the GPRs are saved in this
+    // member variable.
+    Vmcs::write(Vmcs::HOST_RSP, host_rsp());
+
+    const mword host_cr3{Pd::current()->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? Pd::current()->did : 0)};
+    Vmcs::write(Vmcs::HOST_CR3, host_cr3);
+
+    // We always load the vCPUs FPU state in the VM entry path, thus we are not interested in the return
+    // value.
+    [[maybe_unused]] const bool fpu_needs_save{utcb()->save_vmx(&regs)};
+    regs.mtd = 0;
+
+    // Invalidate stale guest TLB entries if necessary.
+    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
+        Pd::current()->stale_guest_tlb.clr(Cpu::id());
+
+        // We have to use an INVEPT here as opposed to INVVPID, because the paging structures might have
+        // changed and INVVPID does not flush guest-physical mappings.
+        Pd::current()->ept.invalidate();
+    }
+
+    // A page fault during VMX non-root mode may not update the guests CR2, thus we have to restore the guests
+    // CR2 here. See Intel SDM Vol. 3 Chap. 27.1 - Architectural state before a VM exit
+    if (EXPECT_FALSE(get_cr2() != utcb()->cr2)) {
+        set_cr2(utcb()->cr2);
+    }
+
+    Ec::current()->save_fpu();
+
+    // We have to set the guests xcr0 before loading its FPU state to make sure that XRSTOR loads the correct
+    // registers.
+    if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
+        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
+
+        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        asm volatile("jmp entry_vmx_failure");
+        UNREACHED;
+    }
+
+    // The VMCS does not contain any FPU state, thus we have to context switch it. After the VM entry the
+    // guest will execute using this FPU state, which we also have to save after the VM exit.
+    fpu.load();
+
+    // clang-format off
+    asm volatile ("lea %[regs], %%rsp;"
+                  EXPAND (LOAD_GPR)
+                  "vmresume;"
+                  "vmlaunch;"
+
+                  // If we return from vmlaunch, we have an VM entry
+                  // failure. Deflect this to the normal exit handling.
+
+                  "mov %[exi_reason], %%ecx;"
+                  "mov %[fail_vmentry], %%eax;"
+                  "vmwrite %%rax, %%rcx;"
+
+                  "jmp entry_vmx_failure;"
+
+                  :
+                  : [regs] "m" (regs),
+                    [exi_reason] "i" (Vmcs::EXI_REASON),
+                    [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
+                  : "memory");
+    // clang-format on
+
+    UNREACHED;
 }

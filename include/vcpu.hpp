@@ -82,6 +82,8 @@ private:
     const Refptr<Kp> kp_vlapic_page;
     const Refptr<Kp> kp_fpu_state;
 
+    Utcb* utcb() { return reinterpret_cast<Utcb*>(kp_vcpu_state.get()->data_page()); }
+
     const unsigned cpu_id; // The ID of the CPU this vCPU is running on.
     Unique_ptr<Vmcs> vmcs;
     Unique_ptr<Msr_area> guest_msr_area;
@@ -92,6 +94,11 @@ private:
     // TODO: When we decouple the vCPU-State and the UTCB in the future, the VM exit path can store the
     // registers directly in the vCPU state page. See hedron#252.
     Cpu_regs regs;
+
+    // The first thing we do after a VM exit is to save the general-purpose register content by pushing it
+    // onto the stack. By making the host rsp point to the regs-structure we ensure that the register content
+    // is stored in this structure.
+    mword host_rsp() { return reinterpret_cast<mword>(static_cast<Sys_regs*>(&regs) + 1); }
 
     Fpu fpu;
 
@@ -131,8 +138,8 @@ public:
     void mtd(Mtd mtd);
 
     // Prepares this vCPU to be executed (e.g. transfers the modified vCPU state fields) and then enters this
-    // vCPU.
-    [[noreturn]] void run() {}
+    // vCPU. An EC has to acquire this vCPU before it is allowed to execute it.
+    [[noreturn]] void run();
 
     static inline void* operator new(size_t) { return cache.alloc(); }
     static inline void operator delete(void* ptr) { cache.free(ptr); }

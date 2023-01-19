@@ -103,8 +103,15 @@ protected:
     };
 };
 
+class Vcpu;
+
 class Utcb : public Utcb_head, private Utcb_data
 {
+    // TODO: the Vcpu class needs direct access to some members of this class. Making the Vcpu a friend of
+    // the Utcb is just a workaround! We should decouple the vCPU-State and the UTCB in the near future. See
+    // hedron#252.
+    friend class Vcpu;
+
 private:
     static mword const words = (PAGE_SIZE - sizeof(Utcb_head)) / sizeof(mword);
 

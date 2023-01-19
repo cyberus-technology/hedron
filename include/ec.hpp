@@ -194,9 +194,6 @@ private:
         regs.rip = regs.ARG_IP;
     }
 
-    void load_fpu();
-    void save_fpu();
-
     void transfer_fpu(Ec*);
 
     [[noreturn]] static void idle();
@@ -272,6 +269,11 @@ public:
 
         wrfsbase(regs.fs_base);
     }
+
+    // We have to make load_fpu and save_fpu public becaue the vCPU has to save and restore the FPU content of
+    // the EC that is executing the vCPU.
+    void load_fpu();
+    void save_fpu();
 
     inline void make_current()
     {
