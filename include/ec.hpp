@@ -39,6 +39,7 @@
 #include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "unique_ptr.hpp"
+#include "vcpu.hpp"
 #include "vlapic.hpp"
 #include "vmx_msr_bitmap.hpp"
 
@@ -96,6 +97,10 @@ private:
     mword user_vlapic{0};
 
     Fpu fpu;
+
+    // Ec::run_vcpu needs a way to find the right vcpu when the continuation points to it. Having a cpu-local
+    // "current" vCPU doesn't make much sense, because we would have to ask the EC for the right vCPU anyway.
+    Refptr<Vcpu> vcpu;
 
     static Slab_cache cache;
 
@@ -347,6 +352,25 @@ public:
             Rcu::call(s);
         }
     }
+
+    // Tries to acquire the given vCPU as Ec::current. If the EC was able to acquire the vCPU, Ec::vcpu is set
+    // to point to the given vCPU. Otherwise Ec::vcpu will continue to be a nullptr. An EC is only allowed to
+    // modify a vCPUs state or to run it after successfully acquiring it.
+    static Vcpu_acquire_result try_acquire_vcpu(Vcpu* vcpu_);
+
+    // Releases the ownership of the vCPU associated with this EC and also clears Ec::vcpu. An EC is only
+    // allowed to release a vCPU if it successfully acquired it before. After releasing the vCPU, the EC has
+    // to acquire it again before it may run it again.
+    static void release_vcpu();
+
+    // Sets the given MTD bits in Ec::vcpu and then calls Ec::resume_vcpu to execute the associated vCPU. An
+    // EC is only allowed to do this if it successfully acquired a vCPU before.
+    [[noreturn]] static void run_vcpu(Mtd mtd);
+
+    // Enter the vCPU that is associated with this EC (Ec::vcpu). This function can only be called if
+    // Ec::try_acquire_vcpu has been called before to acquire and set Ec::vcpu. Returning to user space using
+    // Ec::sys_finish clears Ec::vcpu again.
+    [[noreturn]] static void resume_vcpu();
 
     [[noreturn]] HOT static void ret_user_sysexit();
 
