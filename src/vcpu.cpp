@@ -119,3 +119,9 @@ void Vcpu::release()
     bool result{Atomic::cmp_swap(owner, Ec::current(), static_cast<Ec*>(nullptr))};
     assert(result);
 }
+
+void Vcpu::mtd(Mtd mtd)
+{
+    assert(Atomic::load(owner) == Ec::current());
+    regs.mtd |= mtd.val;
+}

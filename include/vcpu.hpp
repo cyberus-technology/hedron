@@ -126,6 +126,10 @@ public:
     // Clears the owner of this vCPU. Only the owner of a vCPU is allowed to release the vCPU.
     void release();
 
+    // Unions the current MTD-bits of this vCPU with the given MTD-bits. An EC has to acquire this vCPU before
+    // modifying its MTD bits!
+    void mtd(Mtd mtd);
+
     // Prepares this vCPU to be executed (e.g. transfers the modified vCPU state fields) and then enters this
     // vCPU.
     [[noreturn]] void run() {}
