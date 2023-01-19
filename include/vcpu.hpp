@@ -40,6 +40,28 @@ struct Vcpu_init_config {
     Kp* kp_fpu_state;
 };
 
+// Acquiring a vCPU can fail for multiple reasons. See the different constructors below.
+struct Vcpu_acquire_error {
+    enum class type
+    {
+        BUSY,
+        BAD_CPU,
+    };
+
+    type error_type;
+
+    Vcpu_acquire_error() = delete;
+    Vcpu_acquire_error(type error_type_) : error_type(error_type_) {}
+
+    // Acquiring a vCPU failed because the vCPU already has an owner.
+    static Vcpu_acquire_error busy() { return type::BUSY; }
+
+    // Acquiring the vCPU failed because the vCPU cannot run on the CPU the acquiring EC is running on.
+    static Vcpu_acquire_error bad_cpu() { return type::BAD_CPU; }
+};
+
+using Vcpu_acquire_result = Result_void<Vcpu_acquire_error>;
+
 // A virtual CPU. Objects of this class are passive objects, i.e. they have no associated SC and can only run
 // when user space executes a `vcpu_ctrl_run` system call.
 class Vcpu : public Typed_kobject<Kobject::Type::VCPU>, public Refcount
@@ -73,6 +95,17 @@ private:
 
     Fpu fpu;
 
+    // The EC this vCPU is currently executing on. This variable has to be set prior to any modifications to
+    // the vCPUs state and cleared before returning to the VMM. If a EC tries to modify the vCPUs state
+    // without being the owner, this is a bug!
+    //
+    // This pointer is also a 'busy'-flag. Using this pointer instead of a boolean has the advantage that no
+    // other EC can modify this vCPU while a EC that is already executing this vCPU is currently not
+    // scheduled.
+    //
+    // This pointer NEEDS to be accessed using atomic ops!
+    Ec* owner{nullptr};
+
 public:
     // Capability permission bitmask.
     enum
@@ -84,6 +117,14 @@ public:
 
     explicit Vcpu(const Vcpu_init_config& init_cfg);
     ~Vcpu() = default;
+
+    // Trys to set the current EC as the new owner. ECs are only allowed to modify the vCPUs state or to run
+    // it after a successful call to this function. The owner of a vCPU has the duty to release it, the vCPU
+    // will never clear its owner by itself.
+    Vcpu_acquire_result try_acquire();
+
+    // Clears the owner of this vCPU. Only the owner of a vCPU is allowed to release the vCPU.
+    void release();
 
     // Prepares this vCPU to be executed (e.g. transfers the modified vCPU state fields) and then enters this
     // vCPU.

@@ -17,7 +17,9 @@
 
 #include "vcpu.hpp"
 
+#include "atomic.hpp"
 #include "cpu.hpp"
+#include "ec.hpp"
 #include "hip.hpp"
 #include "space_obj.hpp"
 
@@ -98,4 +100,22 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     regs.nst_ctrl<Vmcs>();
 
     vmcs->clear();
+}
+
+Vcpu_acquire_result Vcpu::try_acquire()
+{
+    if (cpu_id != Cpu::id()) {
+        return Err(Vcpu_acquire_error::bad_cpu());
+    }
+
+    if (Atomic::cmp_swap(owner, static_cast<Ec*>(nullptr), Ec::current())) {
+        return Ok_void({});
+    }
+    return Err(Vcpu_acquire_error::busy());
+}
+
+void Vcpu::release()
+{
+    bool result{Atomic::cmp_swap(owner, Ec::current(), static_cast<Ec*>(nullptr))};
+    assert(result);
 }
