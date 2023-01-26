@@ -1121,11 +1121,17 @@ void Ec::sys_vcpu_ctrl_run()
 
 void Ec::sys_vcpu_ctrl_poke()
 {
-    [[maybe_unused]] Sys_vcpu_ctrl_poke* r = static_cast<Sys_vcpu_ctrl_poke*>(current()->sys_regs());
+    Sys_vcpu_ctrl_poke* r = static_cast<Sys_vcpu_ctrl_poke*>(current()->sys_regs());
     trace(TRACE_SYSCALL, "EC:%p, SYS_VCPU_CTRL_POKE VCPU: %#lx", current(), r->sel());
 
-    // This feature is still under construction, thus return "invalid feature requested".
-    sys_finish<Sys_regs::BAD_FTR>();
+    Vcpu* vcpu = capability_cast<Vcpu>(Space_obj::lookup(r->sel()));
+    if (EXPECT_FALSE(not vcpu)) {
+        trace(TRACE_ERROR, "%s: Bad vCPU CAP (%#lx)", __func__, r->sel());
+        sys_finish(Sys_regs::BAD_CAP);
+    }
+
+    vcpu->poke();
+    sys_finish(Sys_regs::SUCCESS);
 }
 
 void Ec::sys_vcpu_ctrl()
