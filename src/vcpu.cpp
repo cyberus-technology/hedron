@@ -137,10 +137,28 @@ void Vcpu::run()
     // Only the owner of a vCPU is allowed to run it. This check must always come first in this function!
     assert(Atomic::load(owner) == Ec::current());
 
-    has_entered = true;
-
     vmcs->make_current();
     clear_exit_reason_shadow();
+
+    if (EXPECT_FALSE(Atomic::exchange(poked, false))) {
+        // Someone poked this vCPU, this means that this vCPU must return to user space as soon as possible.
+        //
+        // If we haven't entered the vCPU at least once since the last call to run_vcpu, we must enter it
+        // now and make sure that we immediately return. We do this to update all modified vCPU state and
+        // inject all pending events.
+        //
+        // If we already entered the vCPU at least once, we can just return to the VMM. As the exit reason we
+        // use `VMX-preemption timer expired`.
+        if (has_entered) {
+            return_to_vmm(Vmcs::VMX_PREEMPT, Sys_regs::SUCCESS);
+        }
+
+        // We set the preemption timer to 0 to make sure that we exit immediately after entering the vCPU.
+        utcb()->tsc_timeout = 0;
+        mtd(Mtd(Mtd::TSC_TIMEOUT));
+    }
+
+    has_entered = true;
 
     // entry_vmx in entry.S pushes the GPRs of the guest onto the stack directly after a VM exit. By making
     // the stack pointer point just behind our Sys_regs structure we make sure that the GPRs are saved in this
@@ -337,6 +355,9 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     utcb()->exit_reason = exit_reason;
 
     has_entered = false;
+
+    // We can unconditionally clear the poked flag here, because we are just about to return to the VMM.
+    Atomic::store(poked, false);
 
     // Return to the VMM. Ec::sys_finish releases the ownership of this vCPU by calling Vcpu::release.
     Ec::sys_finish(status);
