@@ -147,10 +147,13 @@ void Vcpu::run()
     const mword host_cr3{Pd::current()->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? Pd::current()->did : 0)};
     Vmcs::write(Vmcs::HOST_CR3, host_cr3);
 
+    // This a workaround until hedron#252 is resolved.
+    utcb()->mtd = regs.mtd;
     // We always load the vCPUs FPU state in the VM entry path, thus we are not interested in the return
     // value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->save_vmx(&regs)};
     regs.mtd = 0;
+    utcb()->mtd = 0;
 
     // Invalidate stale guest TLB entries if necessary.
     if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
@@ -316,8 +319,12 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     regs.dst_portal = 0;
     regs.mtd = mtd.val;
 
+    // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
+    // we don't have to put anything into the UTCB.
+
     // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
+    regs.mtd = 0;
     utcb()->exit_reason = exit_reason;
 
     // We do not clear the owner here, because the owner has the duty to release the ownership.
