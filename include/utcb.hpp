@@ -97,14 +97,26 @@ protected:
             uint64 cr0_mon, cr4_mon;
             uint64 spec_ctrl;
             uint64 tsc_timeout;
+
+            // If this UTCB belongs to a vCPU, this field holds the reason for the last VM exit. This field is
+            // 32 bits in size, because a VMX_ENTRY_FAILURE needs 32 bits.
+            uint32 exit_reason;
+            uint32 reserved3;
         };
 
         mword data_begin;
     };
 };
 
+class Vcpu;
+
 class Utcb : public Utcb_head, private Utcb_data
 {
+    // TODO: the Vcpu class needs direct access to some members of this class. Making the Vcpu a friend of
+    // the Utcb is just a workaround! We should decouple the vCPU-State and the UTCB in the near future. See
+    // hedron#252.
+    friend class Vcpu;
+
 private:
     static mword const words = (PAGE_SIZE - sizeof(Utcb_head)) / sizeof(mword);
 

@@ -294,6 +294,11 @@ bool Utcb::load_vmx(Cpu_regs* regs)
 
 bool Utcb::save_vmx(Cpu_regs* regs)
 {
+    if (mtd == 0) {
+        // Mtd is 0, thus mtd & Mtd::FPU is zero too.
+        return false;
+    }
+
     if (mtd & Mtd::GPR_ACDB) {
         regs->rax = rax;
         regs->rcx = rcx;
