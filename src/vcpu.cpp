@@ -134,7 +134,7 @@ void Vcpu::mtd(Mtd mtd)
 
 void Vcpu::run()
 {
-    // Only the owner of a vCPU is allowed to run it.
+    // Only the owner of a vCPU is allowed to run it. This check must always come first in this function!
     assert(Atomic::load(owner) == Ec::current());
 
     has_entered = true;
@@ -338,9 +338,7 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
 
     has_entered = false;
 
-    // We do not clear the owner here, because the owner has the duty to release the ownership.
-
-    // Return to the VMM
+    // Return to the VMM. Ec::sys_finish releases the ownership of this vCPU by calling Vcpu::release.
     Ec::sys_finish(status);
 }
 
@@ -348,4 +346,23 @@ void Vcpu::continue_running()
 {
     // We don't have to clear the owner here and Ec::resume_vcpu will check the necessary hazards for us.
     Ec::current()->resume_vcpu();
+}
+
+void Vcpu::poke()
+{
+    if (Atomic::exchange(poked, true)) {
+        // The vCPU has already been poked before. Whoever set Vcpu::poked initially has already sent the IPI.
+        return;
+    }
+
+    if (Atomic::load(owner) == nullptr) {
+        // The vCPU has no owner and thus is not running. We don't have to send an IPI.
+        return;
+    }
+
+    if (Cpu::id() != cpu_id and Ec::remote(cpu_id) == Atomic::load(owner)) {
+        // The owner of this vCPU is currently executing on another CPU, i.e. the vCPU is currently
+        // executing. We send an IPI to force a VM exit.
+        Lapic::send_ipi(cpu_id, VEC_IPI_RKE);
+    }
 }
