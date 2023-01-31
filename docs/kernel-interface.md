@@ -5,9 +5,9 @@ document should be correct, but the document itself is incomplete.**
 
 This document describes the system call interface for the Hedron hypervisor.
 
-# Data Structures
+## Data Structures
 
-## Hypervisor Information Page (HIP)
+### Hypervisor Information Page (HIP)
 
 The HIP is a region of memory exported by the hypervisor to the
 roottask. It contains system information that the roottask can
@@ -51,14 +51,14 @@ Check `include/hip.hpp` for its layout.
 Additional fields are not yet documented. Please consider documenting
 them.
 
-### API Version
+#### API Version
 
 The Hedron API uses semantic versioning. The low 12 bits of the
 `api_ver` field is the minor version. Increases of the minor version
 happen for backward compatible changes. The upper bits are the major
 version. It is increased for backward incompatible changes.
 
-### Features
+#### Features
 
 This section describes the features of the `api_flg` field in the HIP.
 
@@ -72,7 +72,7 @@ This section describes the features of the `api_flg` field in the HIP.
 **Note**: Support for AMD SVM has been removed. SVM support will not be reported
 by Hedron, even on a system supporting it.
 
-## Capabilities
+### Capabilities
 
 A capability is a reference to a kernel object plus associated access
 permissions. Capabilities are opaque and immutable to the user. They
@@ -95,13 +95,13 @@ system calls, see below. When capabilities are created they hold all
 permissions. When capabilities are delegated their permissions can be
 downgraded, but never upgraded.
 
-## Capability Permissions
+### Capability Permissions
 
 Each type of object capability has a different set of permission
 bits. There are five permission bits in total. Permissions marked with
 0 are unused and should be specified as zero.
 
-### Memory Capabilities
+#### Memory Capabilities
 
 | 4 | 3 | 2 | 1 | 0 |
 |---|---|---|---|---|
@@ -111,7 +111,7 @@ Memory capabilities can control eXecute, Write, and Read
 permissions. Depending on the platform execute permissions may imply
 read permissions.
 
-### Port I/O Capabilities
+#### Port I/O Capabilities
 
 | 4 | 3 | 2 | 1 | 0 |
 |---|---|---|---|---|
@@ -120,7 +120,7 @@ read permissions.
 I/O port capabilities only have a single permission that allows
 reading and writing the I/O port.
 
-### Protection Domain (PD) Object Capability
+#### Protection Domain (PD) Object Capability
 
 | 4 | 3 | 2 | 1 | 0      |
 |---|---|---|---|--------|
@@ -131,7 +131,7 @@ the PD capability can be used to create object capabilities. If the `create`
 bit is set, this PD capability can be used to create object capabilities with a
 `create_*` system call.
 
-### Execution Context (EC) Object Capability
+#### Execution Context (EC) Object Capability
 
 | 4 | 3  | 2  | 1 | 0  |
 |---|----|----|---|----|
@@ -143,7 +143,7 @@ If `sc` is set, `create_sc` is allowed to bind a scheduling context.
 
 if `pt` is set, `create_pt` can bind a portal.
 
-### Scheduling Context (SC) Object Capability
+#### Scheduling Context (SC) Object Capability
 
 | 4 | 3 | 2 | 1 | 0  |
 |---|---|---|---|----|
@@ -151,7 +151,7 @@ if `pt` is set, `create_pt` can bind a portal.
 
 If `ct` is set, the `sc_ctrl` system call is permitted.
 
-### Portal (PT) Object Capability
+#### Portal (PT) Object Capability
 
 | 4 | 3 | 2 | 1    | 0  |
 |---|---|---|------|----|
@@ -161,7 +161,7 @@ If `ct` is set, the `pt_ctrl` system call is permitted.
 
 If `call` is set, the portal can be traversed using `call`.
 
-### Semaphore (SM) Object Capability
+#### Semaphore (SM) Object Capability
 
 | 4 | 3 | 2 | 1    | 0  |
 |---|---|---|------|----|
@@ -171,7 +171,7 @@ If `up` is set, the `sm_ctrl` system call is permitted to do an "up" operation.
 
 If `down` is set, the `sm_ctrl` system call is permitted to do a "down" operation.
 
-### Kernel Page (KP) Object Capability
+#### Kernel Page (KP) Object Capability
 
 | 4 | 3 | 2 | 1 | 0  |
 |---|---|---|---|----|
@@ -179,13 +179,13 @@ If `down` is set, the `sm_ctrl` system call is permitted to do a "down" operatio
 
 If `ct` is set, the `kp_ctrl` system call is permitted.
 
-## Capability Range Descriptor (CRD)
+### Capability Range Descriptor (CRD)
 
 A CRD is a 64-bit value that describes a range of capabilities of a
 specific kind. The three kinds of capabilities have slightly different
 layouts for their CRDs.
 
-### Null CRD
+#### Null CRD
 
 A null CRD does not refer to any capabilites.
 
@@ -194,7 +194,7 @@ A null CRD does not refer to any capabilites.
 | `CRD[1:0]`  | Kind      | Needs to be `0` for a Null CRD. |
 | `CRD[63:2]` | Ignored   | Should be set to zero.          |
 
-### Memory CRD
+#### Memory CRD
 
 A memory CRD refers to pages of address space.
 
@@ -205,7 +205,7 @@ A memory CRD refers to pages of address space.
 | `CRD[11:7]`  | Order       | Describes the size of this memory region as power-of-two of pages of memory.                     |
 | `CRD[63:12]` | Base        | The page number of the first page in the region. This number must be naturally aligned by order. |
 
-### Port I/O CRD
+#### Port I/O CRD
 
 A port I/O CRD refers to a range of x86 I/O ports.
 
@@ -217,7 +217,7 @@ A port I/O CRD refers to a range of x86 I/O ports.
 | `CRD[63:12]` | Base        | The address of the first I/O port. It must be naturally aligned by order. |
 |              |             |                                                                           |
 
-### Object CRD
+#### Object CRD
 
 | *Field*      | *Content*   | *Description*                                                                            |
 |--------------|-------------|------------------------------------------------------------------------------------------|
@@ -226,7 +226,7 @@ A port I/O CRD refers to a range of x86 I/O ports.
 | `CRD[11:7]`  | Order       | Describes the size of this region as power-of-two of individual capabilities.            |
 | `CRD[63:12]` | Base        | The first capability selector. This number must be naturally aligned by order.           |
 
-## Delegate Flags
+### Delegate Flags
 
 Delegate flags are specified as an unsigned 64-bit value. The flags
 describe how capabilities are be transferred. It is used in the
@@ -242,7 +242,7 @@ describe how capabilities are be transferred. It is used in the
 | `DLGFLAGS[11]`    | Hypervisor | Source is actually hypervisor PD. Only valid when used by the roottask, silently ignored otherwise.            |
 | `DLGFLAGS[63:12]` | Hotspot    | The hotspot used to disambiguate send and receive windows.                                                     |
 
-## User Thread Control Block (UTCB)
+### User Thread Control Block (UTCB)
 
 UTCBs belong to Execution Contexts. Each EC representing an ordinary
 thread (as opposed to a vCPU) always has an associated UTCB. It is
@@ -251,7 +251,7 @@ used to send and receive message data and architectural state via IPC.
 The UTCB is 4KiB in size. It's detailed layout is given in
 `include/utcb.hpp`.
 
-### TSC Timeout
+#### TSC Timeout
 
 The `tsc_timeout` utcb field in addition to the `Mtd::TSC_TIMEOUT` MTD bit
 allow to specify a relative timeout value. The `tsc_timeout` value counts down
@@ -270,7 +270,7 @@ and the timeout is rounded up to the internal precision.
 Further, if the user does not program the TSC timeout there might be a TSC
 timeout related spurious VM exit which can be ignored.
 
-## Virtual LAPIC (vLAPIC) Page
+### Virtual LAPIC (vLAPIC) Page
 
 vLAPIC pages belong to Execution Contexts. A vCPU may have exactly one
 vLAPIC page. A vCPU never has an UTCB. See `create_ec` for the
@@ -282,7 +282,7 @@ Manual Vol. 3 describes its content and layout in the "APIC
 Virtualization and Virtual Interrupts" chapter. In the Intel
 documentation, this page is called "virtual-APIC page".
 
-## APIC Access Page
+### APIC Access Page
 
 The APIC Access Page is a page of memory that is used to mark the
 location of the Virtual LAPIC in a VM. Use of the APIC Access Page can
@@ -293,9 +293,9 @@ on how the APIC Access Page changes the operation of Intel VT in the
 "APIC Virtualization and Virtual Interrupts" chapter. In the Intel
 documentation, this page is called "APIC-access page".
 
-# System Call Binary Interface for x86_64
+## System Call Binary Interface for x86_64
 
-## Register Usage
+### Register Usage
 
 System call parameters are passed in registers. The following register names are used in the System Call Reference below.
 
@@ -310,12 +310,12 @@ System call parameters are passed in registers. The following register names are
 | `OUT1`         | `RDI`             |
 | `OUT2`         | `RSI`             |
 
-## Modified Registers
+### Modified Registers
 
 Only registers listed above are modified by the kernel. Note that `RCX` and `R11` are modified by
 the CPU as part of executing the `SYSCALL` instruction.
 
-## Hypercall Numbers
+### Hypercall Numbers
 
 Hypercalls are identified by these values.
 
@@ -357,7 +357,7 @@ Hypercalls are identified by these values.
 | `IRQ_CTRL_ASSIGN_LVT`              | 4       |
 | `IRQ_CTRL_MASK_LVT`                | 5       |
 
-## Hypercall Status
+### Hypercall Status
 
 Most hypercalls return a status value in OUT1. The following status values are defined:
 
@@ -375,9 +375,9 @@ Most hypercalls return a status value in OUT1. The following status values are d
 | `OOM`     | 9       | The hypervisor ran out of memory                                         |
 | `BUSY`    | 10      | The operation couldn't complete successfully because a resource is busy. |
 
-# System Call Reference
+## System Call Reference
 
-## call
+### call
 
 Performs an IPC call to a PT. Because a PT is permanently bound to an EC, 
 and ECs belongs to specific CPUs, the PT must be bound to the same CPU 
@@ -385,7 +385,7 @@ as the caller. All data is transferred via the UTCB. The SC is donated to
 the callee. Thus, the complete time it takes to handle the call is accounted
 to the caller until the callee replies.
 
-### In
+#### In
 
 | *Register*  | *Content*             | *Description*                                   |
 |-------------|-----------------------|-------------------------------------------------|
@@ -393,13 +393,13 @@ to the caller until the callee replies.
 | ARG1[11:8]  | Flags                 | 0 for blocking, 1 for non-blocking              |
 | ARG1[63:12] | Portal selector       | Capability selector of the destination portal   |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## reply
+### reply
 
 Replies to a PT call by sending data via the UTCB of the callee local EC to the UTCB of the caller EC.
 Only makes sense in portal handlers, such as exception handlers or other application-specific 
@@ -407,13 +407,13 @@ IPC endpoints. It's undefined behaviour, if you execute this syscall in a global
 the promised functionality of the portal was fulfilled. This system call does not return. The caller
 returns from its `call` system call instead.
 
-### In
+#### In
 
 | *Register*  | *Content*             | *Description*                                   |
 |-------------|-----------------------|-------------------------------------------------|
 | ARG1[7:0]   | System Call Number    | Needs to be `HC_REPLY`.                         |
 
-## create_ec
+### create_ec
 
 `create_ec` creates an EC kernel object and a capability pointing to
 the newly created kernel object.
@@ -440,7 +440,7 @@ that results from adding the event reason to the event base. For vCPUs
 the event reason are VM exit reasons, for normal ECs the reasons are
 exception numbers.
 
-### In
+#### In
 
 | *Register*  | *Content*             | *Description*                                                                                               |
 |-------------|-----------------------|-------------------------------------------------------------------------------------------------------------|
@@ -456,17 +456,17 @@ exception numbers.
 | ARG4        | Stack Pointer         | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
 | ARG5        | Event Base            | The Event Base of the newly created EC.                                                                     |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## ec_ctrl
+### ec_ctrl
 
 The `ec_ctrl` system call allows to interact with execution contexts.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                   |
 |-------------|--------------------|---------------------------------------------------------------------------------|
@@ -475,11 +475,11 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 | ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC.                   |
 | ...         | ...                |                                                                                 |
 
-### Out
+#### Out
 
 See the specific `ec_ctrl` sub-operation.
 
-## ec_ctrl_recall
+### ec_ctrl_recall
 
 `ec_ctrl_recall` forces the given execution context to enter its
 recall exception handler via its recall exception portal as soon as
@@ -489,7 +489,7 @@ they are scheduled to run.
 The common use case for recall is to force a vCPU into its `RECALL`
 handler to be able to inject interrupts into a virtual machine.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                 |
 |-------------|--------------------|---------------------------------------------------------------|
@@ -497,13 +497,13 @@ handler to be able to inject interrupts into a virtual machine.
 | ARG1[9:8]   | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
 | ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC. |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
-## create_pd
+### create_pd
 
 `create_pd` creates a PD kernel object and a capability pointing to
 the newly created kernel object. Protection domains are security
@@ -527,7 +527,7 @@ this right on via the corresponding flag.
 **Passthrough access is inherently insecure and should not be granted to
 untrusted userspace PDs.**
 
-### In
+#### In
 
 | *Register*  | *Content*            | *Description*                                                                                                      |
 |-------------|----------------------|--------------------------------------------------------------------------------------------------------------------|
@@ -538,18 +538,18 @@ untrusted userspace PDs.**
 | ARG2        | Parent PD            | A capability selector to the parent PD.                                                                            |
 | ARG3        | CRD                  | A capability range descriptor. If this is not empty, the capabilities will be delegated from parent to new PD.     |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## pd_ctrl
+### pd_ctrl
 
 The `pd_ctrl` system call allows modification of protection domain
 kernel objects and rights transfers.
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                                   |
 |------------|--------------------|---------------------------------------------------------------------------------|
@@ -557,11 +557,11 @@ kernel objects and rights transfers.
 | ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_PD_CTRL_*` to select one of the `pd_ctrl_*` calls below. |
 | ...        | ...                |                                                                                 |
 
-### Out
+#### Out
 
 See the specific `pd_ctrl` sub-operation.
 
-## pd_ctrl_delegate
+### pd_ctrl_delegate
 
 `pd_ctrl_delegate` transfers memory, port I/O and object capabilities
 from one protection domain to another. It allows the same
@@ -579,7 +579,7 @@ more memory is available to the kernel.
 Delegation operations can also fail with `BAD_PAR` when source or
 destination ranges do not refer to valid userspace addresses.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                                      |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------|
@@ -591,13 +591,13 @@ destination ranges do not refer to valid userspace addresses.
 | ARG4        | Delegate Flags     | See [Delegate Flags](#delegate-flags) section.                                                     |
 | ARG5        | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.                 |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## pd_ctrl_msr_access
+### pd_ctrl_msr_access
 
 `pd_ctrl_msr_access` allows access to MSRs from passthrough PDs (see
 `create_pd`). Several MSRs that are critical to the operation of the
@@ -606,7 +606,7 @@ hypervisor are not accessible.
 **MSR access is inherently insecure and should not be granted to
 untrusted userspace PDs.**
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                         |
 |-------------|--------------------|-----------------------------------------------------------------------|
@@ -617,19 +617,19 @@ untrusted userspace PDs.**
 | ARG1[63:12] | MSR Index          | The MSR to read or write.                                             |
 | ARG2        | MSR Value          | If the operation is a write, the value to write, otherwise ignored.   |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 | OUT2       | MSR Value | MSR value when the operation is a read. |
 
-## create_sm
+### create_sm
 
 `create_sm` creates an SM kernel object and a capability pointing to the newly created kernel object.
 
 
-### In
+#### In
 
 | *Register*  | *Content*            | *Description*                                                                    |
 |-------------|----------------------|----------------------------------------------------------------------------------|
@@ -638,13 +638,13 @@ untrusted userspace PDs.**
 | ARG2        | Owner PD             | A capability selector to a PD that owns the SM.                                  |
 | ARG3        | Initial Count        | Initial integer value of the semaphore counter.                                  |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## revoke
+### revoke
 
 The `revoke` system call is used to remove capabilities from a
 protection domain. For object capabilities and I/O ports, capabilities
@@ -655,7 +655,7 @@ Usage with memory CRDs is **deprecated** and currently limited to
 revoking all rights at the same time. It will be removed, use
 `pd_ctrl_delegate` instead.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                             |
 |-------------|--------------------|-------------------------------------------------------------------------------------------|
@@ -665,13 +665,13 @@ revoking all rights at the same time. It will be removed, use
 | ARG2        | CRD                | The capability range descriptor describing the region to be removed.                      |
 | ARG3        | PD                 | If remote is set, this is the PD to revoke rights from.                                   |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## machine_ctrl
+### machine_ctrl
 
 The `machine_ctrl` system call is used to perform global operations on
 the machine the hypervisor is running on. Individual operations
@@ -683,7 +683,7 @@ this system call.
 **Access to `machine_ctrl` is inherently insecure and should not be
 granted to untrusted userspace PDs.**
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                                             |
 |------------|--------------------|-------------------------------------------------------------------------------------------|
@@ -691,11 +691,11 @@ granted to untrusted userspace PDs.**
 | ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_MACHINE_CTRL_*` to select one of the `machine_ctrl_*` calls below. |
 | ...        | ...                |                                                                                           |
 
-### Out
+#### Out
 
 See the specific `machine_ctrl` sub-operation.
 
-## machine_ctrl_suspend
+### machine_ctrl_suspend
 
 The `machine_ctrl_suspend` system call performs the last step of
 putting the system into an ACPI sleep state. It will park all
@@ -733,7 +733,7 @@ transitions are not supported in general.
 
 Hardware-reduced ACPI platforms are **not** supported.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                               |
 |-------------|--------------------|---------------------------------------------|
@@ -743,7 +743,7 @@ Hardware-reduced ACPI platforms are **not** supported.
 | ARG1[19:12] | PM1a_CNT.SLP_TYP   | The value to write into `PM1a_CNT.SLP_TYP`. |
 | ARG1[27:20] | PM1b_CNT.SLP_TYP   | The value to write into `PM1b_CNT.SLP_TYP`. |
 
-### Out
+#### Out
 
 | *Register*  | *Content*     | *Description*                                                         |
 |-------------|---------------|-----------------------------------------------------------------------|
@@ -751,7 +751,7 @@ Hardware-reduced ACPI platforms are **not** supported.
 | OUT2[62:0]  | Waking Vector | The value of the FACS waking vector                                   |
 | OUT2[63:62] | Waking Mode   | The desired execution mode, only Real Mode (0) is supported right now |
 
-## machine_ctrl_update_microcode
+### machine_ctrl_update_microcode
 
 The `machine_ctrl_update_microcode` system call performs the microcode update
 supplied as a physical address.
@@ -766,7 +766,7 @@ platform, the kernel does no additional checks.
 caution. The kernel also does not rediscover features after the update was
 applied.**
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                   |
 |-------------|--------------------|-------------------------------------------------|
@@ -777,20 +777,20 @@ applied.**
 | ARG1[63:10] | Ignored            | Should be set to zero.                          |
 | ARG2        | Update address     | Physical address of the update BLOB.            |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
-## sm_ctrl
+### sm_ctrl
 
 The `sm_ctrl`-syscall consists of the two sub calls `sm_ctrl_up` and `sm_ctrl_down`.
 
-## sm_ctrl_up
+### sm_ctrl_up
 Performs an "up" operation on the underlying semaphore.
 
-### In
+#### In
 
 | *Register*  | *Content*                     | *Description*                         |
 |-------------|-------------------------------|---------------------------------------|
@@ -799,18 +799,18 @@ Performs an "up" operation on the underlying semaphore.
 | ARG1[11:9]  | Ignored                       | Should be set to zero.                |
 | ARG1[63:12] | SM selector                   | Capability selector of the semaphore. |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
-## sm_ctrl_down
+### sm_ctrl_down
 Performs a "down" operation on the underlying semaphore. The timeout parameter can be disabled
 by setting it to zero. Setting it to a value different from zero enables the usage of a semaphore
 as timer based on clock ticks.
 
-### In
+#### In
 
 | *Register*  | *Content*                     | *Description*                         |
 |-------------|-------------------------------|---------------------------------------|
@@ -823,19 +823,19 @@ as timer based on clock ticks.
 | ARG3[31:0]  | TSC Deadline Timeout (Lower)  | Lower 32-bits of the timeout.         |
 | ARG3[63:32] | Ignored                       | Should be set to zero.                |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
-## create_kp
+### create_kp
 
 Create a new kernel page object. This object is used for shared memory
 between kernel and user space. Kernel pages can be mapped to user space
 using `kp_ctrl`.
 
-### In
+#### In
 
 | *Register*  | *Content*            | *Description*                                                                    |
 |-------------|----------------------|----------------------------------------------------------------------------------|
@@ -843,17 +843,17 @@ using `kp_ctrl`.
 | ARG1[63:12] | Destination Selector | A capability selector in the current PD that will point to the newly created KP. |
 | ARG2        | Owner PD             | A capability selector to a PD that owns the KP.                                  |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## kp_ctrl
+### kp_ctrl
 
 The `kp_ctrl` system calls allow modification of kernel page kernel objects.
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                                   |
 |------------|--------------------|---------------------------------------------------------------------------------|
@@ -861,16 +861,16 @@ The `kp_ctrl` system calls allow modification of kernel page kernel objects.
 | ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_KP_CTRL_*` to select one of the `kp_ctrl_*` calls below. |
 | ...        | ...                |                                                                                 |
 
-### Out
+#### Out
 
 See the specific `kp_ctrl` sub-operation.
 
-## kp_ctrl_map
+### kp_ctrl_map
 
 This system call allows mapping a kernel page into the host address space.
 Kernel pages can only be mapped _once_. Afterwards, mapping attempts will fail.
 
-### In
+#### In
 
 | *Register*  | *Content*           | *Description*                                                                           |
 |-------------|---------------------|-----------------------------------------------------------------------------------------|
@@ -880,13 +880,13 @@ Kernel pages can only be mapped _once_. Afterwards, mapping attempts will fail.
 | ARG2        | Destination PD      | A capability selector for the destination PD that will receive the kernel page mapping. |
 | ARG3        | Destination Address | The page aligned virtual address in user space where the kernel page will be mapped.    |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## `kp_ctrl_unmap`
+### `kp_ctrl_unmap`
 
 Unmap kernel pages from user space. A kernel page can only be mapped in a single
 location. Calling `kp_ctrl_unmap` to unmap a kernel page is a necessary prerequisite
@@ -896,7 +896,7 @@ Although this system call returns a `BAD_PAR` status when called with a kernel p
 that is not mapped, it **cannot detect** whether an existing mapping has been
 unmapped/overmapped using `pd_ctrl_delegate`.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                |
 |-------------|--------------------|--------------------------------------------------------------|
@@ -904,13 +904,13 @@ unmapped/overmapped using `pd_ctrl_delegate`.
 | ARG1[9:8]   | Sub-operation      | Needs to be `HC_KP_CTRL_UNMAP`.                              |
 | ARG1[63:12] | KP Selector        | A capability selector in the current PD that points to a KP. |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## irq_ctrl
+### irq_ctrl
 
 The `irq_ctrl` system call is used to perform operations on the
 interrupt configuration. Individual operations on interrupts are
@@ -938,7 +938,7 @@ this system call.
 **Access to `irq_ctrl` is inherently insecure and should not be
 granted to untrusted userspace PDs.**
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                                     |
 |------------|--------------------|-----------------------------------------------------------------------------------|
@@ -946,11 +946,11 @@ granted to untrusted userspace PDs.**
 | ARG1[11:8] | Sub-operation      | Needs to be one of `HC_IRQ_CTRL_*` to select one of the `irq_ctrl_*` calls below. |
 | ...        | ...                |                                                                                   |
 
-### Out
+#### Out
 
 See the specific `irq_ctrl` sub-operation.
 
-## `irq_ctrl_configure_vector`
+### `irq_ctrl_configure_vector`
 
 This system call connects an interrupt vector on a CPU to a
 semaphore/kpage pair. In essence, this configures how userspace will
@@ -977,7 +977,7 @@ kpage. The IOMMU Interrupt Remapping Table Entry for this interrupt
 will be cleared. In case of a pin-based (IOAPIC) interrupt the
 interrupt will be masked at the IOAPIC.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                             |
 |-------------|--------------------|-------------------------------------------------------------------------------------------|
@@ -990,13 +990,13 @@ interrupt will be masked at the IOAPIC.
 | ARG3        | KPage Selector     | A object capability referencing a KPage.                                                  |
 | ARG4[14:0]  | Bit inside KPage   | The index of the bit that will be set in the kpage when the associated interrupt arrives. |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
 
-## `irq_ctrl_assign_ioapic_pin`
+### `irq_ctrl_assign_ioapic_pin`
 
 This system call configures an IOAPIC pin to deliver interrupts to the
 given CPU and vector. If Hedron was booted with IOMMU support, the
@@ -1019,7 +1019,7 @@ must be unmasked using `irq_ctrl_mask_ioapic_pin`.
 When this function returns, the respective IOAPIC pin is initially
 unmasked.
 
-### In
+#### In
 
 | *Register*  | *Content*              | *Description*                                                      |
 |-------------|------------------------|--------------------------------------------------------------------|
@@ -1033,17 +1033,17 @@ unmasked.
 | ARG2[3:0]   | IOAPIC ID              | The ID of the associated IOAPIC device.                            |
 | ARG2[11:4]  | IOAPIC PIN             | The PIN index of the interrupt line on the selected IOAPIC device. |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
 
-## `irq_ctrl_mask_ioapic_pin`
+### `irq_ctrl_mask_ioapic_pin`
 
 Mask or unmask a specific interrupt pin of an IOAPIC.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                                      |
 |-------------|--------------------|----------------------------------------------------------------------------------------------------|
@@ -1054,13 +1054,13 @@ Mask or unmask a specific interrupt pin of an IOAPIC.
 | ARG2[3:0]   | IOAPIC ID          | The ID of the associated IOAPIC device.                                                            |
 | ARG2[11:4]  | IOAPIC PIN         | The PIN index of the interrupt line on the selected IOAPIC device that will be masked or unmasked. |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
 
-## `irq_ctrl_assign_msi`
+### `irq_ctrl_assign_msi`
 
 Configures an MSI to arrive at the given CPU and vector. This system
 call returns the MSI address/data pair that userspace must program
@@ -1080,7 +1080,7 @@ remove entries in the IOMMU using `irq_ctrl_configure_vector`. Failing
 to remove entries can result in PCI devices being able to trigger
 interrupts that they should not be able to.
 
-### In
+#### In
 
 | *Register*  | *Content*               | *Description*                                                                              |
 |-------------|-------------------------|--------------------------------------------------------------------------------------------|
@@ -1091,7 +1091,7 @@ interrupts that they should not be able to.
 | ARG2[11:0]  | Ignored                 | Should be set to zero.                                                                     |
 | ARG2[63:12] | Device Config/MMIO Page | The host-linear address of the PCI configuration space or HPET MMIO region as page number. |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
@@ -1099,7 +1099,7 @@ interrupts that they should not be able to.
 | OUT2       | MSI address        | The MSI address to program into the device.                 |
 | OUT3       | MSI data           | The MSI data to program into the device                     |
 
-## `irq_ctrl_assign_lvt`
+### `irq_ctrl_assign_lvt`
 
 Configures a Local APIC Local Vector Table (LVT) entry on the
 **current CPU** to arrive at the given vector. See the Intel
@@ -1119,7 +1119,7 @@ the platform does not support results in a `BAD_PAR` return value.
 
 When this function returns, the respective LVT entry is unmasked.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                           |
 |-------------|--------------------|-------------------------------------------------------------------------|
@@ -1129,13 +1129,13 @@ When this function returns, the respective LVT entry is unmasked.
 | ARG1[63:20] | Unused             | Must be zero.                                                           |
 | ARG2[7:0]   | LVT Entry Number   | The number of the LVT entry that should be assigned. (See table above.) |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
 
-## `irq_ctrl_mask_lvt`
+### `irq_ctrl_mask_lvt`
 
 Mask or unmask a Local APIC LVT entry on the **current** CPU.
 
@@ -1146,7 +1146,7 @@ ignored.
 Configuring LVT entries that the platform does not support results in
 a `BAD_PAR` return value.
 
-### In
+#### In
 
 | *Register*  | *Content*          | *Description*                                                                |
 |-------------|--------------------|------------------------------------------------------------------------------|
@@ -1156,7 +1156,7 @@ a `BAD_PAR` return value.
 | ARG1[63:13] | Unused             | Must be zero.                                                                |
 | ARG2[7:0]   | LVT Entry Number   | The number of the LVT entry is masked/unmasked. (See `irq_ctrl_assign_lvt`.) |
 
-### Out
+#### Out
 
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
