@@ -14,7 +14,8 @@ theme:
     repo: fontawesome/brands/gitlab
 
 markdown_extensions:
-  - toc
+  - toc:
+      toc_depth: 2
   - admonition
   - footnotes
   - pymdownx.superfences:
