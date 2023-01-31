@@ -215,7 +215,6 @@ A port I/O CRD refers to a range of x86 I/O ports.
 | `CRD[6:2]`   | Permissions | See I/O port capability permissions above.                                |
 | `CRD[11:7]`  | Order       | Describes the size of the range as power-of-two of individual I/O ports.  |
 | `CRD[63:12]` | Base        | The address of the first I/O port. It must be naturally aligned by order. |
-|              |             |                                                                           |
 
 #### Object CRD
 
@@ -299,6 +298,8 @@ documentation, this page is called "APIC-access page".
 
 System call parameters are passed in registers. The following register names are used in the System Call Reference below.
 
+#### Input Parameters
+
 | *Logical Name* | *Actual Register* |
 |----------------|-------------------|
 | `ARG1`         | `RDI`             |
@@ -306,6 +307,10 @@ System call parameters are passed in registers. The following register names are
 | `ARG3`         | `RDX`             |
 | `ARG4`         | `RAX`             |
 | `ARG5`         | `R8`              |
+
+#### Output Parameters
+
+| *Logical Name* | *Actual Register* |
 |----------------|-------------------|
 | `OUT1`         | `RDI`             |
 | `OUT2`         | `RSI`             |
@@ -335,27 +340,6 @@ Hypercalls are identified by these values.
 | `HC_CREATE_KP`                     | 16      |
 | `HC_KP_CTRL`                       | 17      |
 | `HC_IRQ_CTRL`                      | 18      |
-|------------------------------------|---------|
-| `HC_PD_CTRL_DELEGATE`              | 2       |
-| `HC_PD_CTRL_MSR_ACCESS`            | 3       |
-|------------------------------------|---------|
-| `HC_EC_CTRL_RECALL`                | 0       |
-|------------------------------------|---------|
-| `HC_MACHINE_CTRL_SUSPEND`          | 0       |
-| `HC_MACHINE_CTRL_UPDATE_MICROCODE` | 1       |
-|------------------------------------|---------|
-| `SM_CTRL_UP`                       | 0       |
-| `SM_CTRL_DOWN`                     | 1       |
-|------------------------------------|---------|
-| `KP_CTRL_MAP`                      | 0       |
-| `KP_CTRL_UNMAP`                    | 1       |
-|------------------------------------|---------|
-| `IRQ_CTRL_CONFIGURE_VECTOR`        | 0       |
-| `IRQ_CTRL_ASSIGN_IOAPIC_PIN`       | 1       |
-| `IRQ_CTRL_MASK_IOAPIC_PIN`         | 2       |
-| `IRQ_CTRL_ASSIGN_MSI`              | 3       |
-| `IRQ_CTRL_ASSIGN_LVT`              | 4       |
-| `IRQ_CTRL_MASK_LVT`                | 5       |
 
 ### Hypercall Status
 
@@ -466,6 +450,12 @@ exception numbers.
 
 The `ec_ctrl` system call allows to interact with execution contexts.
 
+#### Sub-operations
+
+| *Constant*          | *Value* |
+|---------------------|---------|
+| `HC_EC_CTRL_RECALL` | 0       |
+
 #### In
 
 | *Register*  | *Content*          | *Description*                                                                   |
@@ -549,6 +539,13 @@ untrusted userspace PDs.**
 The `pd_ctrl` system call allows modification of protection domain
 kernel objects and rights transfers.
 
+#### Sub-operations
+
+| *Constant*              | *Value* |
+|-------------------------|---------|
+| `HC_PD_CTRL_DELEGATE`   | 2       |
+| `HC_PD_CTRL_MSR_ACCESS` | 3       |
+
 #### In
 
 | *Register* | *Content*          | *Description*                                                                   |
@@ -622,12 +619,11 @@ untrusted userspace PDs.**
 | *Register* | *Content* | *Description*                                |
 |------------|-----------|----------------------------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
-| OUT2       | MSR Value | MSR value when the operation is a read. |
+| OUT2       | MSR Value | MSR value when the operation is a read.      |
 
 ### create_sm
 
 `create_sm` creates an SM kernel object and a capability pointing to the newly created kernel object.
-
 
 #### In
 
@@ -682,6 +678,13 @@ this system call.
 
 **Access to `machine_ctrl` is inherently insecure and should not be
 granted to untrusted userspace PDs.**
+
+#### Sub-operations
+
+| *Constant*                         | *Value* |
+|------------------------------------|---------|
+| `HC_MACHINE_CTRL_SUSPEND`          | 0       |
+| `HC_MACHINE_CTRL_UPDATE_MICROCODE` | 1       |
 
 #### In
 
@@ -787,6 +790,25 @@ applied.**
 
 The `sm_ctrl`-syscall consists of the two sub calls `sm_ctrl_up` and `sm_ctrl_down`.
 
+#### Sub-operations
+
+| *Constant*        | *Value* |
+|-------------------|---------|
+| `HC_SM_CTRL_UP`   | 0       |
+| `HC_SM_CTRL_DOWN` | 1       |
+
+#### In
+
+| *Register* | *Content*          | *Description*                                                                   |
+|------------|--------------------|---------------------------------------------------------------------------------|
+| ARG1[7:0]  | System Call Number | Needs to be `HC_SM_CTRL`.                                                       |
+| ARG1[9:8]  | Sub-operation      | Needs to be one of `HC_SM_CTRL_*` to select one of the `sm_ctrl_*` calls below. |
+| ...        | ...                |                                                                                 |
+
+#### Out
+
+See the specific `sm_ctrl` sub-operation.
+
 ### sm_ctrl_up
 Performs an "up" operation on the underlying semaphore.
 
@@ -852,6 +874,13 @@ using `kp_ctrl`.
 ### kp_ctrl
 
 The `kp_ctrl` system calls allow modification of kernel page kernel objects.
+
+#### Sub-operations
+
+| *Constant*      | *Value* |
+|-----------------|---------|
+| `KP_CTRL_MAP`   | 0       |
+| `KP_CTRL_UNMAP` | 1       |
 
 #### In
 
@@ -937,6 +966,17 @@ this system call.
 
 **Access to `irq_ctrl` is inherently insecure and should not be
 granted to untrusted userspace PDs.**
+
+#### Sub-operations
+
+| *Constant*                   | *Value* |
+|------------------------------|---------|
+| `IRQ_CTRL_CONFIGURE_VECTOR`  | 0       |
+| `IRQ_CTRL_ASSIGN_IOAPIC_PIN` | 1       |
+| `IRQ_CTRL_MASK_IOAPIC_PIN`   | 2       |
+| `IRQ_CTRL_ASSIGN_MSI`        | 3       |
+| `IRQ_CTRL_ASSIGN_LVT`        | 4       |
+| `IRQ_CTRL_MASK_LVT`          | 5       |
 
 #### In
 
