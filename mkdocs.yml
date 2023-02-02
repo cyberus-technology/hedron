@@ -2,16 +2,23 @@ site_name: Hedron Documentation
 nav:
   - Home: index.md
   - User Documentation:
-    - kernel-interface.md
+    - System Call Interface:
+      - user-documentation/index.md
+      - user-documentation/data-structures.md
+      - user-documentation/syscall-binary-interface.md
+      - user-documentation/syscall-reference.md
   - Developer Documentation:
-    - implementation.md
-    - upcoming.md
-    - flexible-heap.md
+    - Implementation Details: implementation.md
+    - Design Proposals: proposals.md
+    - Upcoming Changes: upcoming.md
 
 theme:
   name: material
   icon:
     repo: fontawesome/brands/gitlab
+  features:
+    - navigation.indexes
+    - navigation.instant
 
 markdown_extensions:
   - toc:

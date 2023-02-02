@@ -1,10 +1,12 @@
-# Flexible Heap Size for Hedron
+# Proposals
+
+## Flexible Heap Size for Hedron
 
 This document outlines a design proposal for the Hedron heap. Hedron
 and bootloader developers are the intended audience. This document
 assumes knowledge about Hedron's boot flow.
 
-## Problem Statement
+### Problem Statement
 
 Hedron memory allocations are served by a buddy allocator that uses
 statically allocated memory as a backing store. The size of this
@@ -38,7 +40,7 @@ in physical memory. If the ELF image contains 1 GiB of BSS segment
 for the compile time heap, the bootloader will not find enough space,
 because low memory is usually fragmented.
 
-## Assumptions
+### Assumptions
 
 For the solution below, we assume the memory map of the system is
 already immutable when Hedron starts.
@@ -48,7 +50,7 @@ Hedron when UEFI boot services are shut down. The reason is that
 before Hedron starts, components may have already obtained a memory
 map.
 
-## Solution Outline
+### Solution Outline
 
 We have the following goals:
 
@@ -59,7 +61,7 @@ We have the following goals:
 - We want a solution that doesn't require Hedron to modify the memory
   map.
 
-### UEFI Boot
+#### UEFI Boot
 
 For UEFI, we already require a separate loader to boot Hedron. This
 loader is either a UEFI or Multiboot2 application and loads Hedron via
@@ -97,7 +99,7 @@ accessing this memory region.
 In case Hedron does not find the special memory region, it will
 continue relying on its (now smaller) built-in heap.
 
-### BIOS Boot (Recommended)
+#### BIOS Boot (Recommended)
 
 For BIOS boot, we technically don't need a specific loader, but
 [Bender](https://github.com/blitz/bender) usage is near universal.
@@ -107,14 +109,14 @@ as the UEFI loader has. This is also the path to deprecating and
 removing Multiboot 1 support in Hedron, because Bender will act as the
 crutch for Multiboot 1 compatibility in the meantime.
 
-### BIOS Boot (Alternative 1)
+#### BIOS Boot (Alternative 1)
 
 We build the same logic into Bender as for the UEFI loader. Bender
 communicates the location of the heap via a special memory region in
 the Multiboot1 memory map. Bender is also a good location for making
 the size of the heap configurable.
 
-### BIOS Boot (Alternative 2)
+#### BIOS Boot (Alternative 2)
 
 If building the heap allocation logic into Bender is undesirable, an
 alternative is to build this logic into Hedron itself. For Multiboot1
@@ -125,12 +127,12 @@ decision how much heap to allocate would happen in different stages of
 the boot process. It also complicates the Hedron implementation, which
 is where we need complexity the least.
 
-## Implementation Outline
+### Implementation Outline
 
 This section gives a rough idea how certain parts of the above
 solution can be implemented.
 
-### Virtual-to-Physical Translations (and vice versa)
+#### Virtual-to-Physical Translations (and vice versa)
 
 Hedron currently translates virtual to physical addresses (and back)
 using simple arithmetic. Once we add a dynamically allocated heap this

@@ -1,4 +1,4 @@
-# Hedron: Implementation Details
+# Implementation Details
 
 The purpose of this document is to describe the implementation of the
 Hedron hypervisor. This document is meant for the person hacking on

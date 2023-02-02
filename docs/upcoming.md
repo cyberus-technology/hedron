@@ -1,4 +1,4 @@
-# Hedron: Upcoming Changes to the System Call Interface
+# Upcoming Changes to the System Call Interface
 
 This document contains documentation for yet-to-be-implemented Hedron
 features. Once features are done, the description will move from this
