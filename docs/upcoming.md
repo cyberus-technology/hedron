@@ -1,4 +1,4 @@
-# Hedron: Upcoming Changes to the System Call Interface
+# Upcoming Changes to the System Call Interface
 
 This document contains documentation for yet-to-be-implemented Hedron
 features. Once features are done, the description will move from this
@@ -9,9 +9,9 @@ documentation.
 
 Consider each section of this document a design proposal.
 
-# New System Call: `machine_ctrl`
+## New System Call: `machine_ctrl`
 
-## Hypercall Numbers
+### Hypercall Numbers
 
 | *Constant*                   | *Value*         |
 |------------------------------|-----------------|
@@ -19,16 +19,16 @@ Consider each section of this document a design proposal.
 |------------------------------|-----------------|
 | `HC_MACHINE_CTRL_MSR_ACCESS` | 1               |
 
-## pd_ctrl_msr_access
+### pd_ctrl_msr_access
 
 _Will move to `machine_ctrl_msr_access`._
 
-## machine_ctrl_msr_access
+### machine_ctrl_msr_access
 
 _Moved without changes (except the hypercall and sub-operation
 identifiers) from `pd_ctrl_msr_access`._
 
-# New Kernel Object: `KPAGE`
+## New Kernel Object: `KPAGE`
 
 See #99 for context. KPAGE is a kernel object that wraps access to a
 single page in the kernel heap. These pages have so far been
@@ -41,7 +41,7 @@ dedicated kernel object for these pages would:
 It would also allow for safely reclaiming shared memory between
 userspace and the kernel.
 
-## Modified System Call: `create_ec`
+### Modified System Call: `create_ec`
 
 `create_ec` is modified to take KP selectors instead of pointers for
 UTCB and vLAPIC page. In a second step, the `XSAVE` Area (FPU content)
@@ -52,7 +52,7 @@ code), which allows selecting which PD a UTCB/vLAPIC is mapped in,
 will be removed. Its functionality can be achieved by userspace
 choosing where to map the kernel page.
 
-# New Kernel Object: `VCPU`
+## New Kernel Object: `VCPU`
 
 Execution Contexts (ECs) currently do double-duty as both normal host
 threads and vCPUs. Whether a EC represents a host thread or vCPU
@@ -98,7 +98,7 @@ This simplifies a list of things:
   userspace can access FPU state directly,
 - ...
 
-## Design Issues
+### Design Issues
 
 Introducing a vCPU kernel object type triggers the same design issues
 around hypercall IDs and permission bits as introducing the KPage
@@ -129,13 +129,13 @@ we want to retain functionality to partially copy state from VMCS to
 the host, we can offer a `vcpu_ctrl` option to configure the bitmap
 per VM exit.
 
-## New System Call: `create_vcpu`
+### New System Call: `create_vcpu`
 
 This system call creates a new vCPU object. vCPUs correspond to a VMCS
 in Hedron. Each vCPU executes with the guest page table of its parent
 PD.
 
-### Layout of the vCPU State Page
+#### Layout of the vCPU State Page
 
 The layout of the vCPU State Page will be similar to the current UTCB
 layout for vCPUs to ease transition. The UTCB header will not be used.
@@ -143,13 +143,13 @@ layout for vCPUs to ease transition. The UTCB header will not be used.
 An exit reason field is added that contains the content of the exit
 reason VMCS field for Intel CPUs.
 
-### Layout of the FPU State Page
+#### Layout of the FPU State Page
 
 The FPU state page contains the state of the vCPU's FPU as if saved by
 `XSAVE`. The layout of this region is determined by hardware. See the
 Intel SDM Vol. 1 Chapter 13.4 "XSAVE Area".
 
-### Layout of the vLAPIC Page
+#### Layout of the vLAPIC Page
 
 The vLAPIC page contains the state of the virtual LAPIC as it is
 needed for hardware-accelerated Local APIC emulation. The layout of
@@ -157,7 +157,7 @@ this page is determined by hardware. When a vLAPIC page is provided,
 the vCPU will also respect the APIC access page. See the Intel SDM
 Vol. 3 Chapter 29 "APIC Virtualization and Virtual Interrupts".
 
-### In
+#### In
 
 | *Register* | *Content*                 | *Description*                                                                             |
 |------------|---------------------------|-------------------------------------------------------------------------------------------|
@@ -169,17 +169,17 @@ Vol. 3 Chapter 29 "APIC Virtualization and Virtual Interrupts".
 | ARG4       | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                                     |
 | ARG5       | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                             |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## New System Call: `vcpu_ctrl`
+### New System Call: `vcpu_ctrl`
 
 The `vcpu_ctrl` system call allows to interact with vCPU objects.
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                                       |
 |------------|--------------------|-------------------------------------------------------------------------------------|
@@ -188,11 +188,11 @@ The `vcpu_ctrl` system call allows to interact with vCPU objects.
 | ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.                      |
 | ...        | ...                |                                                                                     |
 
-### Out
+#### Out
 
 See the specific `vcpu_ctrl` sub-operation.
 
-## New System Call: `vcpu_ctrl_run`
+### New System Call: `vcpu_ctrl_run`
 
 This system call runs the given vCPU until a vCPU exit happens or the
 vCPU is poked with `vcpu_ctrl_poke`. The MTD parameter controls which
@@ -206,7 +206,7 @@ vCPUs can be executed using this system call from any EC on any host
 CPU, but only one at a time. Attempts to run the same vCPU object
 concurrently will fail.
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                           |
 |------------|--------------------|-------------------------------------------------------------------------|
@@ -215,18 +215,18 @@ concurrently will fail.
 | ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.          |
 | ARG2       | Modified State MTD | A MTD bitfield that has set bits for each vCPU state that was modified. |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## New System Call: `vcpu_ctrl_poke`
+### New System Call: `vcpu_ctrl_poke`
 
 Causes the specified vCPU to exit as soon as possible. The exit reason
 may be any exit reason including host IRQ exit.
 
-### In
+#### In
 
 | *Register* | *Content*          | *Description*                                                  |
 |------------|--------------------|----------------------------------------------------------------|
@@ -234,16 +234,16 @@ may be any exit reason including host IRQ exit.
 | ARG1[5:4]  | Sub-operation      | Needs to be `HC_VCPU_CTRL_POKE`.                               |
 | ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU. |
 
-### Out
+#### Out
 
 | *Register* | *Content* | *Description*           |
 |------------|-----------|-------------------------|
 | OUT1[7:0]  | Status    | See "Hypercall Status". |
 
-## Modified System Call: `create_ec`
+### Modified System Call: `create_ec`
 
 The vCPU flag is removed together with all vCPU related functionality.
 
-## Modified System Call: `ec_ctrl_recall`
+### Modified System Call: `ec_ctrl_recall`
 
 This system call will not work on vCPU objects.
