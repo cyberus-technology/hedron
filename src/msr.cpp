@@ -29,7 +29,7 @@ bool Msr::read_safe(Register msr, uint64& val)
     uint32 h{0}, l{0};
     bool skipped;
 
-    asm volatile(FIXUP_CALL(rdmsr) : FIXUP_SKIPPED(skipped), "+a"(l), "+d"(h) : "c"(msr));
+    asm volatile(FIXUP_CALL("rdmsr") : FIXUP_SKIPPED(skipped), "+a"(l), "+d"(h) : "c"(msr));
 
     val = (static_cast<uint64>(h) << 32) | l;
     return not skipped;
@@ -44,7 +44,7 @@ bool Msr::write_safe(Register msr, uint64 val)
 {
     bool skipped;
 
-    asm volatile(FIXUP_CALL(wrmsr)
+    asm volatile(FIXUP_CALL("wrmsr")
                  : FIXUP_SKIPPED(skipped)
                  : "a"(static_cast<mword>(val)), "d"(static_cast<mword>(val >> 32)), "c"(msr));
 

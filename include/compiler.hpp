@@ -80,8 +80,8 @@
 // See Ec::fixup() for the code that repairs the #GP (and sets RFLAGS.CF).
 #define FIXUP_CALL(insn)                                                                                     \
     "clc\n"                                                                                                  \
-    "1: " #insn "; 2:\n"                                                                                     \
-    ".section .fixup,\"a\"; .align 8;" EXPAND(WORD) " 1b,2b; .previous"
+    "1: " insn "; 2:\n"                                                                                      \
+    ".section .fixup,\"a\"; .align 8; .quad 1b,2b; .previous"
 
 // The inline assembly output constraint to use to capture whether an instruction
 // executed via FIXUP_CALL was skipped.
