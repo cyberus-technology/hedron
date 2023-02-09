@@ -172,8 +172,18 @@ void Vcpu::run()
 
     Ec::current()->save_fpu();
 
-    // We have to set the guests xcr0 before loading its FPU state to make sure that XRSTOR loads the correct
-    // registers.
+    // The VMCS does not contain any FPU state, thus we have to context switch it. After the VM entry the
+    // guest will execute using this FPU state, which we also have to save after the VM exit.
+    if (EXPECT_FALSE(not fpu.load_from_user())) {
+        trace(TRACE_ERROR, "Refusing VM entry because loading the FPU state caused a #GP exception");
+
+        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        asm volatile("jmp entry_vmx_failure");
+        UNREACHED;
+    }
+
+    // We set the guests XCR0 after loading its FPU state, because for the sake of simplicity and robustness
+    // we always save and restore the whole FPU state.
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
         trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
 
@@ -181,10 +191,6 @@ void Vcpu::run()
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
-
-    // The VMCS does not contain any FPU state, thus we have to context switch it. After the VM entry the
-    // guest will execute using this FPU state, which we also have to save after the VM exit.
-    fpu.load();
 
     // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
@@ -216,14 +222,14 @@ void Vcpu::handle_vmx()
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
 
+    // Restore XCR0 before context switching the FPU, to use our own value instead of the guest's.
+    Fpu::restore_xcr0();
+
     // The FPU content is still the state of our guest, thus to not corrupt it we immeadiately save it.
     // Currently we save the FPU too often, e.g. in case of a EXTINT we don't have to save the FPU if we
     // immediately reenter the vCPU, but we don't know whether Ec::resume_vcpu reschedules us.
     fpu.save();
 
-    // Before loading the EC's FPU state we have to restore the xcr0 to make sure XRSTOR considers the right
-    // FPU registers.
-    Fpu::restore_xcr0();
     Ec::current()->load_fpu();
 
     uint32 exit_reason{static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON))};
