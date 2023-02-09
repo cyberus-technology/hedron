@@ -80,6 +80,13 @@ public:
     void save();
     void load();
 
+    // Loads the FPU state with support for handling invalid XSAVE areas. Returns true if loading the state
+    // succeeded, returns false if it resulted in a #GP.
+    //
+    // This function has to be used in situation where the user space has access to the FPU state and thus may
+    // provide a faulty state.
+    bool load_from_user();
+
     static bool load_xcr0(uint64 xcr0);
     static void restore_xcr0();
 

@@ -19,6 +19,7 @@
  */
 
 #include "fpu.hpp"
+#include "compiler.hpp"
 #include "cpu.hpp"
 #include "kp.hpp"
 #include "x86.hpp"
@@ -89,6 +90,19 @@ void Fpu::load()
     uint32 xsave_scb_lo{static_cast<uint32>(config.xsave_scb)};
 
     asm volatile("xrstor %0" : : "m"(*data()), "d"(xsave_scb_hi), "a"(xsave_scb_lo) : "memory");
+}
+
+bool Fpu::load_from_user()
+{
+    uint32 xsave_scb_hi{static_cast<uint32>(config.xsave_scb >> 32)};
+    uint32 xsave_scb_lo{static_cast<uint32>(config.xsave_scb)};
+
+    bool skipped{false};
+    asm volatile(FIXUP_CALL("xrstor %[xsave_area]")
+                 : FIXUP_SKIPPED(skipped)
+                 : [xsave_area] "m"(*data()), "d"(xsave_scb_hi), "a"(xsave_scb_lo));
+
+    return not skipped;
 }
 
 static bool is_valid_xcr0(uint64 xsave_scb, uint64 xcr0)
