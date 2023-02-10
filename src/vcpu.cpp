@@ -137,6 +137,8 @@ void Vcpu::run()
     // Only the owner of a vCPU is allowed to run it.
     assert(Atomic::load(owner) == Ec::current());
 
+    has_entered = true;
+
     vmcs->make_current();
     clear_exit_reason_shadow();
 
@@ -333,6 +335,8 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
     regs.mtd = 0;
     utcb()->exit_reason = exit_reason;
+
+    has_entered = false;
 
     // We do not clear the owner here, because the owner has the duty to release the ownership.
 

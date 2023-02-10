@@ -110,7 +110,7 @@ private:
     // other EC can modify this vCPU while a EC that is already executing this vCPU is currently not
     // scheduled.
     //
-    // This pointer NEEDS to be accessed using atomic ops!
+    // This pointer must be accessed using atomic ops!
     Ec* owner{nullptr};
 
     // True if we entered this vCPU at least once during Vcpu::run.
