@@ -6,6 +6,10 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 8.4
+- **New** We introduced the `HC_VCPU_CTRL_POKE` system call which a VMM can use to cause a VM exit that returns to user
+  space as soon as possible.
+
 ## API Version 8.3
 - **New** We introduced the `HC_CREATE_VCPU` and the `HC_VCPU_CTRL_RUN` system calls which a VMM can use
   to create the new vCPU kernel objects and also run them.
