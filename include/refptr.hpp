@@ -85,7 +85,7 @@ public:
 
     operator T*() const
     {
-        assert_slow(ptr != nullptr);
+        // We allow implicit conversions to the underlying pointer type even if the pointer is nullptr.
         return ptr;
     }
 
