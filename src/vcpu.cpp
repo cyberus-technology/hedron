@@ -150,6 +150,11 @@ void Vcpu::run()
         // If we already entered the vCPU at least once, we can just return to the VMM. As the exit reason we
         // use `VMX-preemption timer expired`.
         if (has_entered) {
+            // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the
+            // value of regs.dst_poral. Thus we put VMI_RECALL into regs.dst_portal to make sure that we do
+            // not leak the host interrupt info into the VMM.
+            regs.dst_portal = VMI_RECALL;
+
             return_to_vmm(Vmcs::VMX_PREEMPT, Sys_regs::SUCCESS);
         }
 
@@ -341,17 +346,15 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     // (Utcb::load_vmx doesn't use Mtd::TLB and we already saved the FPU)
     const Mtd mtd{0x1dfffffful};
 
-    // We reset the dst_portal to make sure that Utcb::load_vmx also transfers IDT_VECTORING_INFO_FIELD
-    // and IDT_VECTORING_ERROR_CODE.
-    regs.dst_portal = 0;
-    regs.mtd = mtd.val;
-
     // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
     // we don't have to put anything into the UTCB.
+    regs.mtd = mtd.val;
 
     // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
     regs.mtd = 0;
+    regs.dst_portal = 0;
+
     utcb()->exit_reason = exit_reason;
 
     has_entered = false;
