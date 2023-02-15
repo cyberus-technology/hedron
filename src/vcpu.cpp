@@ -147,10 +147,13 @@ void Vcpu::run()
     const mword host_cr3{Pd::current()->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? Pd::current()->did : 0)};
     Vmcs::write(Vmcs::HOST_CR3, host_cr3);
 
+    // This a workaround until hedron#252 is resolved.
+    utcb()->mtd = regs.mtd;
     // We always load the vCPUs FPU state in the VM entry path, thus we are not interested in the return
     // value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->save_vmx(&regs)};
     regs.mtd = 0;
+    utcb()->mtd = 0;
 
     // Invalidate stale guest TLB entries if necessary.
     if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
@@ -169,8 +172,18 @@ void Vcpu::run()
 
     Ec::current()->save_fpu();
 
-    // We have to set the guests xcr0 before loading its FPU state to make sure that XRSTOR loads the correct
-    // registers.
+    // The VMCS does not contain any FPU state, thus we have to context switch it. After the VM entry the
+    // guest will execute using this FPU state, which we also have to save after the VM exit.
+    if (EXPECT_FALSE(not fpu.load_from_user())) {
+        trace(TRACE_ERROR, "Refusing VM entry because loading the FPU state caused a #GP exception");
+
+        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        asm volatile("jmp entry_vmx_failure");
+        UNREACHED;
+    }
+
+    // We set the guests XCR0 after loading its FPU state, because for the sake of simplicity and robustness
+    // we always save and restore the whole FPU state.
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
         trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
 
@@ -178,10 +191,6 @@ void Vcpu::run()
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
-
-    // The VMCS does not contain any FPU state, thus we have to context switch it. After the VM entry the
-    // guest will execute using this FPU state, which we also have to save after the VM exit.
-    fpu.load();
 
     // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
@@ -213,14 +222,14 @@ void Vcpu::handle_vmx()
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
 
+    // Restore XCR0 before context switching the FPU, to use our own value instead of the guest's.
+    Fpu::restore_xcr0();
+
     // The FPU content is still the state of our guest, thus to not corrupt it we immeadiately save it.
     // Currently we save the FPU too often, e.g. in case of a EXTINT we don't have to save the FPU if we
     // immediately reenter the vCPU, but we don't know whether Ec::resume_vcpu reschedules us.
     fpu.save();
 
-    // Before loading the EC's FPU state we have to restore the xcr0 to make sure XRSTOR considers the right
-    // FPU registers.
-    Fpu::restore_xcr0();
     Ec::current()->load_fpu();
 
     uint32 exit_reason{static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON))};
@@ -316,8 +325,12 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     regs.dst_portal = 0;
     regs.mtd = mtd.val;
 
+    // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
+    // we don't have to put anything into the UTCB.
+
     // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
+    regs.mtd = 0;
     utcb()->exit_reason = exit_reason;
 
     // We do not clear the owner here, because the owner has the duty to release the ownership.
