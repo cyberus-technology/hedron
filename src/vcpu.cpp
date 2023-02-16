@@ -190,8 +190,7 @@ void Vcpu::run()
         Pd::current()->ept.invalidate();
     }
 
-    // A page fault during VMX non-root mode may not update the guests CR2, thus we have to restore the guests
-    // CR2 here. See Intel SDM Vol. 3 Chap. 27.1 - Architectural state before a VM exit
+    // Intel VT does not context switch the CR2, thus we have to do this.
     if (EXPECT_FALSE(get_cr2() != utcb()->cr2)) {
         set_cr2(utcb()->cr2);
     }
