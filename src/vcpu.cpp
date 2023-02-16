@@ -218,6 +218,16 @@ void Vcpu::run()
         UNREACHED;
     }
 
+    // If we knew for sure that SPEC_CTRL is available, we could load it via the MSR area (guest_msr_area).
+    // The problem is that older CPUs may boot with a microcode that doesn't expose SPEC_CTRL. It only becomes
+    // available once microcode is updated. So we manually context switch it instead.
+    //
+    // Another complication is that userspace may set invalid bits and we don't have the knowledge to sanitize
+    // the value. To avoid dying with a #GP in the kernel, we just handle it and carry on.
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
+        Msr::write_safe(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
+    }
+
     // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
@@ -247,6 +257,25 @@ void Vcpu::handle_vmx()
 {
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
+
+    // To defend against Spectre v2 other kernels would stuff the return stack buffer (RSB) here to avoid the
+    // guest injecting branch targets. This is not necessary for us, because we start from a fresh stack and
+    // do not execute RET instructions without having a matching CALL.
+
+    // See the corresponding check in Vcpu::run for the rationale of manually context switching
+    // IA32_SPEC_CTRL.
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL))) {
+        mword const guest_spec_ctrl = Msr::read(Msr::IA32_SPEC_CTRL);
+
+        regs.spec_ctrl = guest_spec_ctrl;
+
+        // Don't leak the guests SPEC_CTRL settings into the host and disable
+        // all hardware-based mitigations.  We do this early to avoid
+        // performance penalties due to enabled mitigation features.
+        if (guest_spec_ctrl != 0) {
+            Msr::write(Msr::IA32_SPEC_CTRL, 0);
+        }
+    }
 
     // Restore XCR0 before context switching the FPU, to use our own value instead of the guest's.
     Fpu::restore_xcr0();
