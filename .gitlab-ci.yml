@@ -210,7 +210,9 @@ integration_test:nixos:
     - mkdir -p output/compilers/
     - cp -r $(nix-build --no-out-link nix/release.nix -A hedron.builds) output/compilers/
     - mkdir -p output/integration-test/
-    - cp -r $(nix-build --no-out-link nix/release.nix -A hedron.integration-test) output/integration-test/
+    # We limit integration test builds to low concurrency to avoid
+    # overloading the build box and timing out.
+    - cp -r $(nix-build -j1 --no-out-link nix/release.nix -A hedron.integration-test) output/integration-test/
     - mkdir -p output/coverage/
     - cp -r $(nix-build --no-out-link nix/release.nix -A hedron.coverage) output/coverage/
   artifacts:
