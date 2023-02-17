@@ -167,6 +167,7 @@ public:
 
     CPULOCAL_ACCESSOR(cpu, features);
     CPULOCAL_ACCESSOR(cpu, bsp);
+    CPULOCAL_ACCESSOR(cpu, maxphyaddr_ord);
 
     static Cpu_info init();
 

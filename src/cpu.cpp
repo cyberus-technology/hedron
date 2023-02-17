@@ -79,6 +79,11 @@ Cpu_info Cpu::check_features()
         cpu_info.platform = static_cast<unsigned>(Msr::read(Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
+    // We only support 64-bit Intel CPUs. This means they do support PAE. For these systems, the Intel SDM
+    // states that they at least support 36 bits of physical memory. See Intel SDM Vol. 3 Section 4.1.4
+    // "Enumeration of Paging Features by CPUID".
+    maxphyaddr_ord() = 36;
+
     // EAX contains the highest supported CPUID leaf. Fall through from the
     // highest supported to the lowest CPUID leaf.
     switch (static_cast<uint8>(eax)) {
@@ -118,7 +123,11 @@ Cpu_info Cpu::check_features()
         switch (static_cast<uint8>(eax)) {
         default:
             [[fallthrough]];
-        case 0x4 ... 0x9:
+        case 0x8:
+            cpuid(0x80000008, eax, ebx, ecx, edx);
+            maxphyaddr_ord() = eax & 0xff;
+            [[fallthrough]];
+        case 0x4 ... 0x7:
             cpuid(0x80000004, name[8], name[9], name[10], name[11]);
             [[fallthrough]];
         case 0x3:
