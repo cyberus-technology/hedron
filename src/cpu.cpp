@@ -160,12 +160,11 @@ void Cpu::update_features()
 
     trace(TRACE_CPU, "SPEC_CTRL available: %d", feature(FEAT_IA32_SPEC_CTRL));
 
-    // Hedron detects CPU features once, during startup.
-    // In case of Microcode updates becomes available for each cpu, including its Hyperthread siblings.
     // According to the Intel specification chapter 9.11.6.3 "Update in a System Supporting Intel
-    // Hyperthreading Technology" Microcode updates needs to be loaded for each logical CPU core. The
-    // Hyperthreads are part of that core. Because of this we need to update the internal feature bitmap for
-    // each hyperthread sibling during a microcode update on one logical CPU core.
+    // Hyperthreading Technology" microcode updates need to be loaded only once for each CPU core. This means
+    // that the user is free to load them from any hyperthread on the core. The effect of the update is
+    // visible for all hyperthreads, though. This means, we need to update our feature bitmap on all sibling
+    // cores as well.
     auto set_sibling_features = [](unsigned long sibling_id, const Hip_cpu& cpu_desc) {
         trace(TRACE_CPU, "CPU %u:%u:%u updated CPU features", cpu_desc.package, cpu_desc.core,
               cpu_desc.thread);
