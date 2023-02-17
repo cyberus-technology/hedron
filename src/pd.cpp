@@ -45,6 +45,11 @@ Pd::Pd() : Typed_kobject(static_cast<Space_obj*>(this)), Space_pio(this)
     mark_avail_phys(0, LOAD_ADDR + PHYS_RELOCATION);
 
     // The memory after the second ELF segment to "infinity".
+    //
+    // We could use Cpu::maxphyaddr_ord() here (if we sort out constructor order issues). That would remove
+    // our ability to see problems though. If the user maps unaddressable memory now, they get an error from
+    // the delegate system call. If we don't create these unreachable entries here, the delegate would succeed
+    // and just map nothing.
     mark_avail_phys(reinterpret_cast<mword>(&LOAD_END) + PHYS_RELOCATION, 1ULL << hpt.max_order());
 
     // HIP
