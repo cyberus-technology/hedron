@@ -138,6 +138,7 @@ void Vcpu::run()
     assert(Atomic::load(owner) == Ec::current());
 
     vmcs->make_current();
+    clear_exit_reason_shadow();
 
     // entry_vmx in entry.S pushes the GPRs of the guest onto the stack directly after a VM exit. By making
     // the stack pointer point just behind our Sys_regs structure we make sure that the GPRs are saved in this
@@ -177,7 +178,7 @@ void Vcpu::run()
     if (EXPECT_FALSE(not fpu.load_from_user())) {
         trace(TRACE_ERROR, "Refusing VM entry because loading the FPU state caused a #GP exception");
 
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
@@ -187,7 +188,7 @@ void Vcpu::run()
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
         trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
 
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
@@ -232,7 +233,7 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    uint32 exit_reason{static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON))};
+    uint32 exit_reason{get_exit_reason()};
 
     switch (exit_reason) {
     case Vmcs::VMX_EXC_NMI:
