@@ -140,8 +140,22 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
                 Msr::Register::IA32_FLUSH_CMD,
             };
 
+            static const Msr::Register passthrough_guest_accessible_msrs[] = {
+                // APERF and MPERF can be used by the guest to compute the average
+                // effective cpu frequency between the last mwait and the next mwait.
+                // See SDM 15.5.5 MPERF and APERF Under HDC.
+                Msr::Register::IA32_APERF,
+                Msr::Register::IA32_MPERF,
+            };
+
             for (auto msr : guest_accessible_msrs) {
                 msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+            }
+
+            if (pd->is_passthrough) {
+                for (auto msr : passthrough_guest_accessible_msrs) {
+                    msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+                }
             }
 
             Vmcs::write(Vmcs::MSR_BITMAP, msr_bitmap->phys_addr());

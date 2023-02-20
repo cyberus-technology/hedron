@@ -43,6 +43,8 @@ public:
         IA32_BIOS_UPDT_TRIG = 0x79,
         IA32_BIOS_SIGN_ID = 0x8b,
         IA32_SMM_MONITOR_CTL = 0x9b,
+        IA32_APERF = 0xe7,
+        IA32_MPERF = 0xe8,
         IA32_MTRR_CAP = 0xfe,
         IA32_ARCH_CAP = 0x10a,
         IA32_FLUSH_CMD = 0x10b,
