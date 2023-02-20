@@ -224,7 +224,7 @@ destination ranges do not refer to valid userspace addresses.
 | ARG1[63:12] | Source PD          | A capability selector for the source protection domain to copy access rights and capabilites from. |
 | ARG2        | Destination PD     | A capability selector for the destination protection domain that will receive these rights.        |
 | ARG3        | Source CRD         | A capability range descriptor describing the send window in the source PD.                         |
-| ARG4        | Delegate Flags     | See [Delegate Flags](/user-documentation/data-structures#delegate-flags) section.                  |
+| ARG4        | Delegate Flags     | See [Delegate Flags](../data-structures#delegate-flags) section.                                   |
 | ARG5        | Destination CRD    | A capability range descriptor describing the receive window in the destination PD.                 |
 
 ### Out
