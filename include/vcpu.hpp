@@ -21,6 +21,7 @@
 #include "kobject.hpp"
 #include "kp.hpp"
 #include "mtd.hpp"
+#include "optional.hpp"
 #include "pd.hpp"
 #include "refptr.hpp"
 #include "regs.hpp"
@@ -127,36 +128,28 @@ private:
     // This bool must be accessed using atomic ops!
     bool poked{false};
 
-    // This is the value of the exit_reason_shadow-field if it is cleared. In this case the values inside the
-    // VMCS has to be used.
-    static constexpr uint32 EXIT_REASON_CLEAR{~0u};
-
-    // The exit reason, if this value does not eqaul EXIT_REASON_CLEAR. Otherwise the exit reason from the
-    // VMCS is the actual exit reason.
+    // A synthetic exit reason that is set when the exit reason in the VMCS is stale. Use exit_reason() to
+    // always get the correct exit reason.
     //
-    // Some CPUs cannot write to the exit_reason-field of the VMCS. Thus if we want to set a exit reason, we
-    // write it to this field. The VM exit path then has to use this value instead of the one inside the VMCS.
-    uint32 exit_reason_shadow{Vcpu::EXIT_REASON_CLEAR};
+    // We need to set custom exit reasons in some situations, such as aborting a VM entry. Some CPUs cannot
+    // write to the VMCS exit reason field of the VMCS. Thus if we want to set a exit reason, we write it to
+    // this shadow instead. The VM exit path then has to use this value instead of the one inside the VMCS.
+    Optional<uint32> exit_reason_shadow{};
 
-    // Clears the exit_reason_shadow-field. This has to be done early in the VM entry path.
-    void clear_exit_reason_shadow() { exit_reason_shadow = Vcpu::EXIT_REASON_CLEAR; }
-
-    // Sets the exit_reason_shadow-field to the given exit_reason.
-    void set_exit_reason_shadow(uint32 exit_reason) { exit_reason_shadow = exit_reason; }
-
-    // Returns the current exit reason. This function always uses the exit_reason_shadow-field if it is not
-    // cleared, otherwise it reads from the VMCS:
-    uint32 get_exit_reason()
+    // Returns the current exit reason. See comment above in exit_reason_shadow for an explanation why this
+    // exists.
+    uint32 exit_reason()
     {
-        if (exit_reason_shadow == Vcpu::EXIT_REASON_CLEAR) {
-            return static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON));
+        if (not exit_reason_shadow.has_value()) {
+            // Avoid reading the exit reason multiple times, because it may be costly.
+            exit_reason_shadow = static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON));
         }
-        return exit_reason_shadow;
+
+        return exit_reason_shadow.value();
     }
 
-    // Transfers the VMCS contents into the vCPU state page, sets the given exit reason in the vCPU state
-    // page and returns to the VMM with the given status.
-    [[noreturn]] void return_to_vmm(uint32 exit_reason, Sys_regs::Status status);
+    // Transfers the VMCS contents into the vCPU state page and returns to the VMM with the given status.
+    [[noreturn]] void return_to_vmm(Sys_regs::Status status);
 
     // Called during handling of a VM exit. This function prepares the vCPU to do another VM entry and then
     // passes control flow to Ec::run_vcpu.
