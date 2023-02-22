@@ -840,3 +840,145 @@ a `BAD_PAR` return value.
 | *Register* | *Content*          | *Description*                                               |
 |------------|--------------------|-------------------------------------------------------------|
 | OUT1[7:0]  | Status             | See "Hypercall Status".                                     |
+
+## `create_vcpu`
+
+`create_vcpu` creates a vCPU kernel object and a capability pointing to the
+newly created kernel object. A vCPU corresponds to a VMCS in Hedron. Each vCPU
+executes with the nested page tables of its parent PD.
+
+### Layout of the vCPU State Page
+
+The layout of the vCPU State Page is a superset of the current UTCB. The UTCB
+header is not used.
+
+The vCPU State Page contains an exit reason field that contains the content of
+the `Exit reason` VMCS field for Intel CPUs.
+
+### Layout of the FPU State Page
+
+The FPU state page contains the state of the vCPU's FPU as if saved by `XSAVE`.
+The layout of this region is determined by hardware. See the Intel SDM Vol. 1
+Chapter 13.4 "XSAVE Area".
+
+### Layout of the vLAPIC Page
+
+The vLAPIC page contains the state of the virtual LAPIC as it is needed for
+hardware-accelerated Local APIC emulation. The layout of this page is
+determined by hardware. When a vLAPIC page is provided, the vCPU will also
+respect the APIC access page. See the Intel SDM Vol. 3 Chapter 29 "APIC
+Virtualization and Virtual Interrupts".
+
+### Initial State
+
+This section describes the initial state of a vCPU:
+
+- **VMX-preemption timer value**. Set to the maximum value.
+- **Pin-Based VM-Execution Controls**. The following controls are enabled by
+  default and cannot be disabled by the VMM:
+    - External-interrupt exiting
+    - NMI exiting
+    - Virtual NMIs
+    - Activate VMX-preemption timer
+- **Processor-Based VM-Execution Controls**. The following controls are enabled
+  by default and cannot be disabled by the VMM:
+    - HLT exiting
+    - Unconditional I/O exiting
+    - Activate secondary controls
+    - Enable VPID (if available and not disabled using the `novpid` command-line
+      parameter)
+    - Unrestricted guest
+
+### In
+
+| *Register* | *Content*                 | *Description*                                                                      |
+|------------|---------------------------|------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                      |
+| ARG1[7:4]  | Reserved                  | Must be zero.                                                                      |
+| ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created vCPU. |
+| ARG2       | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.            |
+| ARG3       | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                  |
+| ARG4       | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                              |
+| ARG5       | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                      |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## `vcpu_ctrl`
+
+The `vcpu_ctrl` system call allows to interact with vCPU objects.
+
+### Sub-operations
+
+| *Constant*          | *Value* |
+|---------------------|---------|
+| `HC_VCPU_CTRL_RUN`  | 0       |
+| `HC_VCPU_CTRL_POKE` | 1       |
+
+### In
+
+| *Register* | *Content*          | *Description*                                                                       |
+|------------|--------------------|-------------------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                                         |
+| ARG1[5:4]  | Sub-operation      | Needs to be one of `HC_VCPU_CTRL_*` to select one of the `vcpu_ctrl_*` calls below. |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.                      |
+| ...        | ...                |                                                                                     |
+
+### Out
+
+See the specific `vcpu_ctrl` sub-operation.
+
+## `vcpu_ctrl_run`
+
+This system call runs the given vCPU until a VM exit happens or the vCPU is
+poked with `vcpu_ctrl_poke`. The MTD parameter controls which state the
+hypervisor needs to copy into the underlying hardware data structures.
+
+When this system call returns successfully, the exit reason can be read from
+the vCPU state page. vCPUs **will** spuriously exit with preemption timer exits.
+
+Assuming the vCPU is not in a faulty state, a poked vCPU will always be entered
+to make sure that event injection will always be performed.
+
+vCPUs can be executed using this system call from any EC that runs on the same
+CPU the vCPU was created on, but only one at a time. Attempts to run the same
+vCPU object concurrently will fail.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                           |
+|------------|--------------------|-------------------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                             |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_VCPU_CTRL_RUN`.                                         |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU.          |
+| ARG2       | Modified State MTD | A MTD bitfield that has set bits for each vCPU state that was modified. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
+
+## `vcpu_ctrl_poke`
+
+Causes the specified vCPU to exit as soon as possible. If the vCPU extst due to
+the poke, the exit reason will be `VMX-preemption timer expired` (52). If the
+CPU was already on its VM exit path, the poke will not alter the exit reason.
+Thus the VMM **must not** rely on getting a specific exit reason after a poke.
+
+### In
+
+| *Register* | *Content*          | *Description*                                                  |
+|------------|--------------------|----------------------------------------------------------------|
+| ARG1[3:0]  | System Call Number | Needs to be `HC_VCPU_CTRL`.                                    |
+| ARG1[5:4]  | Sub-operation      | Needs to be `HC_VCPU_CTRL_POKE`.                               |
+| ARG1[63:8] | vCPU Selector      | A capability selector in the current PD that points to a vCPU. |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |

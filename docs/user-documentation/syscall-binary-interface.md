@@ -46,6 +46,8 @@ Hypercalls are identified by these values.
 | `HC_CREATE_KP`                     | 16      |
 | `HC_KP_CTRL`                       | 17      |
 | `HC_IRQ_CTRL`                      | 18      |
+| `HC_CREATE_VCPU`                   | 19      |
+| `HC_VCPU_CTRL`                     | 20      |
 
 ## Hypercall Status
 
