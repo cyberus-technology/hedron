@@ -134,10 +134,36 @@ void Vcpu::mtd(Mtd mtd)
 
 void Vcpu::run()
 {
-    // Only the owner of a vCPU is allowed to run it.
+    // Only the owner of a vCPU is allowed to run it. This check must always come first in this function!
     assert(Atomic::load(owner) == Ec::current());
 
     vmcs->make_current();
+    clear_exit_reason_shadow();
+
+    if (EXPECT_FALSE(Atomic::exchange(poked, false))) {
+        // Someone poked this vCPU, this means that this vCPU must return to user space as soon as possible.
+        //
+        // If we haven't entered the vCPU at least once since the last call to run_vcpu, we must enter it
+        // now and make sure that we immediately return. We do this to update all modified vCPU state and
+        // inject all pending events.
+        //
+        // If we already entered the vCPU at least once, we can just return to the VMM. As the exit reason we
+        // use `VMX-preemption timer expired`.
+        if (has_entered) {
+            // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the
+            // value of regs.dst_poral. Thus we put VMI_RECALL into regs.dst_portal to make sure that we do
+            // not leak the host interrupt info into the VMM.
+            regs.dst_portal = VMI_RECALL;
+
+            return_to_vmm(Vmcs::VMX_PREEMPT, Sys_regs::SUCCESS);
+        }
+
+        // We set the preemption timer to 0 to make sure that we exit immediately after entering the vCPU.
+        utcb()->tsc_timeout = 0;
+        mtd(Mtd(Mtd::TSC_TIMEOUT));
+    }
+
+    has_entered = true;
 
     // entry_vmx in entry.S pushes the GPRs of the guest onto the stack directly after a VM exit. By making
     // the stack pointer point just behind our Sys_regs structure we make sure that the GPRs are saved in this
@@ -164,8 +190,7 @@ void Vcpu::run()
         Pd::current()->ept.invalidate();
     }
 
-    // A page fault during VMX non-root mode may not update the guests CR2, thus we have to restore the guests
-    // CR2 here. See Intel SDM Vol. 3 Chap. 27.1 - Architectural state before a VM exit
+    // Intel VT does not context switch the CR2, thus we have to do this.
     if (EXPECT_FALSE(get_cr2() != utcb()->cr2)) {
         set_cr2(utcb()->cr2);
     }
@@ -177,7 +202,7 @@ void Vcpu::run()
     if (EXPECT_FALSE(not fpu.load_from_user())) {
         trace(TRACE_ERROR, "Refusing VM entry because loading the FPU state caused a #GP exception");
 
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
@@ -187,9 +212,19 @@ void Vcpu::run()
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
         trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
 
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
+    }
+
+    // If we knew for sure that SPEC_CTRL is available, we could load it via the MSR area (guest_msr_area).
+    // The problem is that older CPUs may boot with a microcode that doesn't expose SPEC_CTRL. It only becomes
+    // available once microcode is updated. So we manually context switch it instead.
+    //
+    // Another complication is that userspace may set invalid bits and we don't have the knowledge to sanitize
+    // the value. To avoid dying with a #GP in the kernel, we just handle it and carry on.
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
+        Msr::write_safe(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
     }
 
     // clang-format off
@@ -222,6 +257,25 @@ void Vcpu::handle_vmx()
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
 
+    // To defend against Spectre v2 other kernels would stuff the return stack buffer (RSB) here to avoid the
+    // guest injecting branch targets. This is not necessary for us, because we start from a fresh stack and
+    // do not execute RET instructions without having a matching CALL.
+
+    // See the corresponding check in Vcpu::run for the rationale of manually context switching
+    // IA32_SPEC_CTRL.
+    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL))) {
+        mword const guest_spec_ctrl = Msr::read(Msr::IA32_SPEC_CTRL);
+
+        regs.spec_ctrl = guest_spec_ctrl;
+
+        // Don't leak the guests SPEC_CTRL settings into the host and disable
+        // all hardware-based mitigations.  We do this early to avoid
+        // performance penalties due to enabled mitigation features.
+        if (guest_spec_ctrl != 0) {
+            Msr::write(Msr::IA32_SPEC_CTRL, 0);
+        }
+    }
+
     // Restore XCR0 before context switching the FPU, to use our own value instead of the guest's.
     Fpu::restore_xcr0();
 
@@ -232,7 +286,7 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    uint32 exit_reason{static_cast<uint32>(Vmcs::read(Vmcs::EXI_REASON))};
+    uint32 exit_reason{get_exit_reason()};
 
     switch (exit_reason) {
     case Vmcs::VMX_EXC_NMI:
@@ -320,22 +374,23 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     // (Utcb::load_vmx doesn't use Mtd::TLB and we already saved the FPU)
     const Mtd mtd{0x1dfffffful};
 
-    // We reset the dst_portal to make sure that Utcb::load_vmx also transfers IDT_VECTORING_INFO_FIELD
-    // and IDT_VECTORING_ERROR_CODE.
-    regs.dst_portal = 0;
-    regs.mtd = mtd.val;
-
     // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
     // we don't have to put anything into the UTCB.
+    regs.mtd = mtd.val;
 
     // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
     [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
     regs.mtd = 0;
+    regs.dst_portal = 0;
+
     utcb()->exit_reason = exit_reason;
 
-    // We do not clear the owner here, because the owner has the duty to release the ownership.
+    has_entered = false;
 
-    // Return to the VMM
+    // We can unconditionally clear the poked flag here, because we are just about to return to the VMM.
+    Atomic::store(poked, false);
+
+    // Return to the VMM. Ec::sys_finish releases the ownership of this vCPU by calling Vcpu::release.
     Ec::sys_finish(status);
 }
 
@@ -343,4 +398,23 @@ void Vcpu::continue_running()
 {
     // We don't have to clear the owner here and Ec::resume_vcpu will check the necessary hazards for us.
     Ec::current()->resume_vcpu();
+}
+
+void Vcpu::poke()
+{
+    if (Atomic::exchange(poked, true)) {
+        // The vCPU has already been poked before. Whoever set Vcpu::poked initially has already sent the IPI.
+        return;
+    }
+
+    if (Atomic::load(owner) == nullptr) {
+        // The vCPU has no owner and thus is not running. We don't have to send an IPI.
+        return;
+    }
+
+    if (Cpu::id() != cpu_id and Ec::remote(cpu_id) == Atomic::load(owner)) {
+        // The owner of this vCPU is currently executing on another CPU, i.e. the vCPU is currently
+        // executing. We send an IPI to force a VM exit.
+        Lapic::send_ipi(cpu_id, VEC_IPI_RKE);
+    }
 }

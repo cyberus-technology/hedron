@@ -245,7 +245,7 @@ bool Utcb::load_vmx(Cpu_regs* regs)
         tsc_aux = static_cast<uint32>(guest_msr_area->ia32_tsc_aux.msr_data);
     }
 
-    if (mtd & Mtd::TSC_TIMEOUT) {
+    if (m & Mtd::TSC_TIMEOUT) {
         tsc_timeout = vmx_timer::get();
     }
 
