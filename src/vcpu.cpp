@@ -218,6 +218,17 @@ void Vcpu::run()
         UNREACHED;
     }
 
+    // Restore Debug Registers. DR7 is special. The CPU sets it to 0x400 during VM exit. This means all debug
+    // functionality is off and we don't need to clean up any of the other debug registers.
+    asm volatile("mov %[dr0], %%dr0\n"
+                 "mov %[dr1], %%dr1\n"
+                 "mov %[dr2], %%dr2\n"
+                 "mov %[dr3], %%dr3\n"
+                 "mov %[dr6], %%dr6\n"
+                 :
+                 : [dr0] "r"(regs.dr0), [dr1] "r"(regs.dr1), [dr2] "r"(regs.dr2), [dr3] "r"(regs.dr3),
+                   [dr6] "r"(regs.dr6));
+
     // If we knew for sure that SPEC_CTRL is available, we could load it via the MSR area (guest_msr_area).
     // The problem is that older CPUs may boot with a microcode that doesn't expose SPEC_CTRL. It only becomes
     // available once microcode is updated. So we manually context switch it instead.
@@ -286,6 +297,17 @@ void Vcpu::handle_vmx()
     fpu.save();
 
     Ec::current()->load_fpu();
+
+    // Save Debug Registers. DR7 is special. The CPU loads a default value on VM exit that disables all
+    // debugging functionality. That means, we don't have to restore any values in the other registers here,
+    // because they are not used.
+    asm volatile("mov %%dr0, %[dr0]\n"
+                 "mov %%dr1, %[dr1]\n"
+                 "mov %%dr2, %[dr2]\n"
+                 "mov %%dr3, %[dr3]\n"
+                 "mov %%dr6, %[dr6]\n"
+                 : [dr0] "=r"(regs.dr0), [dr1] "=r"(regs.dr1), [dr2] "=r"(regs.dr2), [dr3] "=r"(regs.dr3),
+                   [dr6] "=r"(regs.dr6));
 
     // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
     switch (exit_reason() & 0xffff) {

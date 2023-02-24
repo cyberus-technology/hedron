@@ -140,6 +140,13 @@ public:
 
             mword spec_ctrl;
             uint32 exc_bitmap;
+
+            // Debug Registers. DR7 is stored in the VMCS.
+            mword dr0;
+            mword dr1;
+            mword dr2;
+            mword dr3;
+            mword dr6;
         };
     };
 
