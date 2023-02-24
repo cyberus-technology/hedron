@@ -40,8 +40,8 @@ Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(
 
     uint64 eptp = ept.vmcs_eptp();
     uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
-    uint32 exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER;
-    uint32 ent = 0;
+    uint32 exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER | EXI_SAVE_DR;
+    uint32 ent = ENT_LOAD_DR;
 
     write(PF_ERROR_MASK, 0);
     write(PF_ERROR_MATCH, 0);
