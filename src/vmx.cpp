@@ -38,10 +38,11 @@ Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(
 {
     make_current();
 
-    uint64 eptp = ept.vmcs_eptp();
-    uint32 pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
-    uint32 exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER | EXI_SAVE_DR;
-    uint32 ent = ENT_LOAD_DR;
+    uint64 const eptp = ept.vmcs_eptp();
+    uint32 const pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
+    uint32 const exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER | EXI_SAVE_DR | EXI_SAVE_EFER | EXI_LOAD_EFER |
+                       EXI_HOST_64 | EXI_SAVE_PAT | EXI_LOAD_PAT;
+    uint32 const ent = ENT_LOAD_DR | ENT_LOAD_EFER | ENT_LOAD_PAT;
 
     write(PF_ERROR_MASK, 0);
     write(PF_ERROR_MATCH, 0);
@@ -66,10 +67,6 @@ Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(
 
     write(HOST_PAT, Msr::read(Msr::IA32_CR_PAT));
     write(HOST_EFER, Msr::read(Msr::IA32_EFER));
-    exi |= EXI_SAVE_EFER | EXI_LOAD_EFER | EXI_HOST_64;
-    exi |= EXI_SAVE_PAT | EXI_LOAD_PAT;
-    ent |= ENT_LOAD_EFER;
-    ent |= ENT_LOAD_PAT;
 
     write(PIN_CONTROLS, (pin | ctrl_pin().set) & ctrl_pin().clr);
     write(EXI_CONTROLS, (exi | ctrl_exi().set) & ctrl_exi().clr);
