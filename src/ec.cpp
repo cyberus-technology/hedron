@@ -309,6 +309,8 @@ void Ec::ret_user_iret()
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);
 
+    assert_slow(Pd::is_pcid_valid());
+
     asm volatile("lea %[regs], %%rsp\n"
 
                  // Load all general-purpose registers now that RSP points at
