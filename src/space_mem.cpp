@@ -108,6 +108,14 @@ Delegate_result_void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, m
         auto const target_mapping{clamped.move_by(rcv_base - snd_base)};
         assert(Hpt::attr_to_pat(target_mapping.attr) == 0);
 
+        if (EXPECT_FALSE(target_mapping.present() and
+                         (target_mapping.paddr + target_mapping.size() > (1ULL << Cpu::maxphyaddr_ord())))) {
+            trace(TRACE_ERROR,
+                  "Declining to map physical region %#lx+%#lx because it is beyond MAXPHYADDR (2^%u)",
+                  target_mapping.paddr, target_mapping.size(), Cpu::maxphyaddr_ord());
+            return Err(Delegate_error::invalid_mapping());
+        }
+
         if (sub & Space::SUBSPACE_DEVICE) {
             // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching Mode of the
             // IOMMU is set to 1, which implies that even non-present and invalid mappings may be cached. For

@@ -79,6 +79,11 @@ Cpu_info Cpu::check_features()
         cpu_info.platform = static_cast<unsigned>(Msr::read(Msr::IA32_PLATFORM_ID) >> 50) & 7;
     }
 
+    // We only support 64-bit Intel CPUs. This means they do support PAE. For these systems, the Intel SDM
+    // states that they at least support 36 bits of physical memory. See Intel SDM Vol. 3 Section 4.1.4
+    // "Enumeration of Paging Features by CPUID".
+    maxphyaddr_ord() = 36;
+
     // EAX contains the highest supported CPUID leaf. Fall through from the
     // highest supported to the lowest CPUID leaf.
     switch (static_cast<uint8>(eax)) {
@@ -118,7 +123,11 @@ Cpu_info Cpu::check_features()
         switch (static_cast<uint8>(eax)) {
         default:
             [[fallthrough]];
-        case 0x4 ... 0x9:
+        case 0x8:
+            cpuid(0x80000008, eax, ebx, ecx, edx);
+            maxphyaddr_ord() = eax & 0xff;
+            [[fallthrough]];
+        case 0x4 ... 0x7:
             cpuid(0x80000004, name[8], name[9], name[10], name[11]);
             [[fallthrough]];
         case 0x3:
@@ -160,12 +169,11 @@ void Cpu::update_features()
 
     trace(TRACE_CPU, "SPEC_CTRL available: %d", feature(FEAT_IA32_SPEC_CTRL));
 
-    // Hedron detects CPU features once, during startup.
-    // In case of Microcode updates becomes available for each cpu, including its Hyperthread siblings.
     // According to the Intel specification chapter 9.11.6.3 "Update in a System Supporting Intel
-    // Hyperthreading Technology" Microcode updates needs to be loaded for each logical CPU core. The
-    // Hyperthreads are part of that core. Because of this we need to update the internal feature bitmap for
-    // each hyperthread sibling during a microcode update on one logical CPU core.
+    // Hyperthreading Technology" microcode updates need to be loaded only once for each CPU core. This means
+    // that the user is free to load them from any hyperthread on the core. The effect of the update is
+    // visible for all hyperthreads, though. This means, we need to update our feature bitmap on all sibling
+    // cores as well.
     auto set_sibling_features = [](unsigned long sibling_id, const Hip_cpu& cpu_desc) {
         trace(TRACE_CPU, "CPU %u:%u:%u updated CPU features", cpu_desc.package, cpu_desc.core,
               cpu_desc.thread);
