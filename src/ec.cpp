@@ -249,6 +249,8 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
+    assert_slow(Pd::is_pcid_valid());
+
     // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
