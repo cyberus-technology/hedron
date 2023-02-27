@@ -192,4 +192,12 @@ public:
 
     // The boot page table as constructed in start.S.
     static Hpt& boot_hpt();
+
+    // Returns the current PCID, i.e. the lower 12 bit of the CR3.
+    static inline mword current_pcid()
+    {
+        mword cr3;
+        asm volatile("mov %%cr3, %0" : "=r"(cr3));
+        return cr3 & PAGE_MASK;
+    }
 };
