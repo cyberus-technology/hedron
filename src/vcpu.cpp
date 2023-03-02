@@ -192,8 +192,8 @@ void Vcpu::run()
     }
 
     // Intel VT does not context switch the CR2, thus we have to do this.
-    if (EXPECT_FALSE(get_cr2() != utcb()->cr2)) {
-        set_cr2(utcb()->cr2);
+    if (EXPECT_FALSE(get_cr2() != regs.cr2)) {
+        set_cr2(regs.cr2);
     }
 
     Ec::current()->save_fpu();
