@@ -287,7 +287,8 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    switch (exit_reason()) {
+    // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
+    switch (exit_reason() & 0xffff) {
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_EXTINT:
