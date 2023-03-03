@@ -211,7 +211,7 @@ void Vcpu::run()
     // We set the guests XCR0 after loading its FPU state, because for the sake of simplicity and robustness
     // we always save and restore the whole FPU state.
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
-        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
+        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", regs.xcr0);
 
         exit_reason_shadow = Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE;
         asm volatile("jmp entry_vmx_failure");
