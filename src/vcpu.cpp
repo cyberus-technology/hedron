@@ -138,7 +138,7 @@ void Vcpu::run()
     assert(Atomic::load(owner) == Ec::current());
 
     vmcs->make_current();
-    clear_exit_reason_shadow();
+    exit_reason_shadow = Optional<uint32>{};
 
     if (EXPECT_FALSE(Atomic::exchange(poked, false))) {
         // Someone poked this vCPU, this means that this vCPU must return to user space as soon as possible.
@@ -155,7 +155,8 @@ void Vcpu::run()
             // not leak the host interrupt info into the VMM.
             regs.dst_portal = VMI_RECALL;
 
-            return_to_vmm(Vmcs::VMX_PREEMPT, Sys_regs::SUCCESS);
+            exit_reason_shadow = Vmcs::VMX_PREEMPT;
+            return_to_vmm(Sys_regs::SUCCESS);
         }
 
         // We set the preemption timer to 0 to make sure that we exit immediately after entering the vCPU.
@@ -202,7 +203,7 @@ void Vcpu::run()
     if (EXPECT_FALSE(not fpu.load_from_user())) {
         trace(TRACE_ERROR, "Refusing VM entry because loading the FPU state caused a #GP exception");
 
-        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        exit_reason_shadow = Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE;
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
@@ -212,7 +213,7 @@ void Vcpu::run()
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
         trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
 
-        set_exit_reason_shadow(Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
+        exit_reason_shadow = Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE;
         asm volatile("jmp entry_vmx_failure");
         UNREACHED;
     }
@@ -286,9 +287,7 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    uint32 exit_reason{get_exit_reason()};
-
-    switch (exit_reason) {
+    switch (exit_reason()) {
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_EXTINT:
@@ -305,7 +304,7 @@ void Vcpu::handle_vmx()
         break;
     }
 
-    return_to_vmm(exit_reason, Sys_regs::SUCCESS);
+    return_to_vmm(Sys_regs::SUCCESS);
 }
 
 void Vcpu::handle_exception()
@@ -347,7 +346,7 @@ void Vcpu::handle_exception()
         Ec::die("A VM exit that was caused by a NMI occured.");
     }
 
-    return_to_vmm(Vmcs::VMX_EXC_NMI, Sys_regs::SUCCESS);
+    return_to_vmm(Sys_regs::SUCCESS);
 }
 
 void Vcpu::handle_extint()
@@ -368,7 +367,7 @@ void Vcpu::handle_extint()
     continue_running();
 }
 
-void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
+void Vcpu::return_to_vmm(Sys_regs::Status status)
 {
     // We want to transfer the whole state, thus we set all MTD bits except for TLB and FPU.
     // (Utcb::load_vmx doesn't use Mtd::TLB and we already saved the FPU)
@@ -383,7 +382,7 @@ void Vcpu::return_to_vmm(uint32 exit_reason, Sys_regs::Status status)
     regs.mtd = 0;
     regs.dst_portal = 0;
 
-    utcb()->exit_reason = exit_reason;
+    utcb()->exit_reason = exit_reason();
 
     has_entered = false;
 
