@@ -192,8 +192,8 @@ void Vcpu::run()
     }
 
     // Intel VT does not context switch the CR2, thus we have to do this.
-    if (EXPECT_FALSE(get_cr2() != utcb()->cr2)) {
-        set_cr2(utcb()->cr2);
+    if (EXPECT_FALSE(get_cr2() != regs.cr2)) {
+        set_cr2(regs.cr2);
     }
 
     Ec::current()->save_fpu();
@@ -211,7 +211,7 @@ void Vcpu::run()
     // We set the guests XCR0 after loading its FPU state, because for the sake of simplicity and robustness
     // we always save and restore the whole FPU state.
     if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
-        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", utcb()->xcr0);
+        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", regs.xcr0);
 
         exit_reason_shadow = Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE;
         asm volatile("jmp entry_vmx_failure");
@@ -287,7 +287,8 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    switch (exit_reason()) {
+    // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
+    switch (exit_reason() & 0xffff) {
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_EXTINT:
