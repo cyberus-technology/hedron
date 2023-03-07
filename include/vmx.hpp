@@ -238,6 +238,7 @@ public:
 
     enum Ctrl_exi
     {
+        EXI_SAVE_DR = 1UL << 2,
         EXI_HOST_64 = 1UL << 9,
         EXI_INTA = 1UL << 15,
         EXI_SAVE_PAT = 1UL << 18,
@@ -249,6 +250,7 @@ public:
 
     enum Ctrl_ent
     {
+        ENT_LOAD_DR = 1UL << 2,
         ENT_GUEST_64 = 1UL << 9,
         ENT_LOAD_PAT = 1UL << 14,
         ENT_LOAD_EFER = 1UL << 15,
