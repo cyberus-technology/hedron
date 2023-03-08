@@ -171,6 +171,15 @@ public:
     Delegate_result_void del_crd(Pd* pd, Crd del, Crd& crd, mword sub = 0, mword hot = 0);
     void rev_crd(Crd, bool);
 
+    // Returns true if the current PCID is valid. This can also mean that PCID is not enabled. Returns false
+    // if PCID is enabled and the PCID has an invalid value.
+    //
+    // This function should be used before returning to user space to avoid #65 in the future.
+    static inline bool is_pcid_valid()
+    {
+        return !Cpu::feature(Cpu::Feature::FEAT_PCID) or Hpt::current_pcid() == Pd::current()->did;
+    }
+
     static inline void* operator new(size_t) { return cache.alloc(); }
 
     static inline void* operator new(size_t, void* p) { return p; }

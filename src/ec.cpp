@@ -249,6 +249,8 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
+    assert_slow(Pd::is_pcid_valid());
+
     // clang-format off
     asm volatile ("lea %[regs], %%rsp;"
                   EXPAND (LOAD_GPR)
@@ -308,6 +310,8 @@ void Ec::ret_user_iret()
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);
+
+    assert_slow(Pd::is_pcid_valid());
 
     asm volatile("lea %[regs], %%rsp\n"
 
