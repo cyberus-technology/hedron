@@ -188,7 +188,7 @@ public:
     explicit Vcpu(const Vcpu_init_config& init_cfg);
     ~Vcpu() = default;
 
-    // Trys to set the current EC as the new owner. ECs are only allowed to modify the vCPUs state or to run
+    // Tries to set the current EC as the new owner. ECs are only allowed to modify the vCPUs state or to run
     // it after a successful call to this function. The owner of a vCPU has the duty to release it, the vCPU
     // will never clear its owner by itself.
     Vcpu_acquire_result try_acquire();
