@@ -40,6 +40,7 @@
 #include "pd.hpp"
 #include "stdio.hpp"
 #include "tss.hpp"
+#include "vcpu.hpp"
 #include "vmx.hpp"
 #include "x86.hpp"
 
@@ -265,6 +266,7 @@ Cpu_info Cpu::init()
     set_cr4(cr4);
 
     Vmcs::init();
+    Vcpu::init();
 
     Mca::init(cpu_info);
 

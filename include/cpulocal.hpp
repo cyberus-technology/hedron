@@ -112,6 +112,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
 
     uint8 vmx_timer_shift;
 
+    // vCPU-related variables
+    mword vcpu_host_dr[5];
+
     // Statistics
 
     uint16 counter_tlb_shootdown;
