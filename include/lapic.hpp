@@ -72,6 +72,7 @@ private:
     enum Shorthand
     {
         DSH_NONE = 0U << 18,
+        DSH_SELF = 1U << 18,
         DSH_EXC_SELF = 3U << 18,
     };
 
@@ -196,7 +197,11 @@ public:
     // This is the counterpart to prepare_cpu_boot.
     static void restore_low_memory();
 
-    static void send_ipi(unsigned, unsigned, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
+    // Sends an IPI with the given vector to the given cpu.
+    static void send_ipi(unsigned cpu, unsigned vector, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
+
+    // Sends a self IPI with the given vector.
+    static void send_self_ipi(unsigned vector);
 
     // Stop all CPUs except the current one.
     //
