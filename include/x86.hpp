@@ -83,12 +83,26 @@ RD_SPECIAL_REG(cr0)
 RD_SPECIAL_REG(cr2)
 RD_SPECIAL_REG(cr4)
 
+RD_SPECIAL_REG(dr0)
+RD_SPECIAL_REG(dr1)
+RD_SPECIAL_REG(dr2)
+RD_SPECIAL_REG(dr3)
+RD_SPECIAL_REG(dr6)
+RD_SPECIAL_REG(dr7)
+
 #define WR_SPECIAL_REG(reg)                                                                                  \
     inline void CONCAT2(set_, reg)(mword val) { asm volatile("mov %0, %%" #reg ::"r"(val)); }
 
 WR_SPECIAL_REG(cr0)
 WR_SPECIAL_REG(cr2)
 WR_SPECIAL_REG(cr4)
+
+WR_SPECIAL_REG(dr0)
+WR_SPECIAL_REG(dr1)
+WR_SPECIAL_REG(dr2)
+WR_SPECIAL_REG(dr3)
+WR_SPECIAL_REG(dr6)
+WR_SPECIAL_REG(dr7)
 
 inline mword get_xcr(uint32 n)
 {
