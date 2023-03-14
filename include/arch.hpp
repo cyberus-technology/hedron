@@ -33,7 +33,6 @@
 #define ELF_CLASS 2
 #define ELF_MACHINE 62
 #define PTE_BPL 9
-#define PTE_LEV 4
 #define ARG_IP rcx
 #define ARG_SP r11
 #define ARG_1 rdi
