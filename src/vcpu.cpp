@@ -149,6 +149,8 @@ void Vcpu::load_dr()
 {
     mword const* const host_dr = Vcpu::host_dr();
 
+    // If these assertions fail our debug register caching is broken. No function besides save_dr and load_dr
+    // must touch the debug registers.
     assert_slow(get_dr0() == host_dr[0]);
     assert_slow(get_dr1() == host_dr[1]);
     assert_slow(get_dr2() == host_dr[2]);
@@ -161,23 +163,23 @@ void Vcpu::load_dr()
     // debug register instructions in the common case where we just enter and exit the same vCPU.
 
     if (EXPECT_FALSE(host_dr[0] != regs.dr0)) {
-        asm volatile("mov %0, %%dr0" ::"r"(regs.dr0));
+        set_dr0(regs.dr0);
     }
 
     if (EXPECT_FALSE(host_dr[1] != regs.dr1)) {
-        asm volatile("mov %0, %%dr1" ::"r"(regs.dr1));
+        set_dr1(regs.dr1);
     }
 
     if (EXPECT_FALSE(host_dr[2] != regs.dr2)) {
-        asm volatile("mov %0, %%dr2" ::"r"(regs.dr2));
+        set_dr2(regs.dr2);
     }
 
     if (EXPECT_FALSE(host_dr[3] != regs.dr3)) {
-        asm volatile("mov %0, %%dr3" ::"r"(regs.dr3));
+        set_dr3(regs.dr3);
     }
 
     if (EXPECT_FALSE(host_dr[4] != regs.dr6)) {
-        asm volatile("mov %0, %%dr6" ::"r"(regs.dr6));
+        set_dr6(regs.dr6);
     }
 }
 
@@ -190,19 +192,11 @@ void Vcpu::save_dr()
     // not used.
     //
     // We read the debug regiters only once here and cache their values, because reading them is expensive.
-    asm volatile("mov %%dr0, %[dr0]\n"
-                 "mov %%dr1, %[dr1]\n"
-                 "mov %%dr2, %[dr2]\n"
-                 "mov %%dr3, %[dr3]\n"
-                 "mov %%dr6, %[dr6]\n"
-                 : [dr0] "=r"(regs.dr0), [dr1] "=r"(regs.dr1), [dr2] "=r"(regs.dr2), [dr3] "=r"(regs.dr3),
-                   [dr6] "=r"(regs.dr6));
-
-    host_dr[0] = regs.dr0;
-    host_dr[1] = regs.dr1;
-    host_dr[2] = regs.dr2;
-    host_dr[3] = regs.dr3;
-    host_dr[4] = regs.dr6;
+    host_dr[0] = regs.dr0 = get_dr0();
+    host_dr[1] = regs.dr1 = get_dr1();
+    host_dr[2] = regs.dr2 = get_dr2();
+    host_dr[3] = regs.dr3 = get_dr3();
+    host_dr[4] = regs.dr6 = get_dr6();
 }
 
 void Vcpu::run()
