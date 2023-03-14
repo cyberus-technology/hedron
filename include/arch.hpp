@@ -28,7 +28,6 @@
 // clang-format on
 
 #define ARCH "x86_64"
-#define WORD .quad
 #define PTR_SIZE 8
 #define ELF_PHDR Ph64
 #define ELF_CLASS 2

@@ -36,13 +36,13 @@ handlers:
 .macro                  INTRGATE DPL
                         .align  4, 0x90
 1:                      .data
-                         WORD   1b + \DPL
+                        .quad   1b + \DPL
                         .previous
 .endm
 
 .macro                  TASKGATE
                         .data
-                         WORD   0
+                        .quad   0
                         .previous
 .endm
 
