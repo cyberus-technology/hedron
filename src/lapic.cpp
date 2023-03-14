@@ -167,11 +167,23 @@ void Lapic::init()
 
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)
 {
-    while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12))
+    while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12)) {
         relax();
+    }
 
-    write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
+    // Intel SDM Vol. 3 Chap. 10.6 - Issuing Interprocessor Interrupts
+    // The destination shorthand can be used to send an IPI using a single write to the low doubleword of the
+    // ICR, because it is used in place of the 8-bit destination field.
+    if (EXPECT_TRUE(dsh == Shorthand::DSH_NONE)) {
+        // If no shorthand is used, we have to write the upper part of the ICR.
+        write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
+    }
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
+}
+
+void Lapic::send_self_ipi(unsigned vector)
+{
+    send_ipi(0 /* unused */, vector, Delivery_mode::DLV_FIXED, Shorthand::DSH_SELF);
 }
 
 void Lapic::park_all_but_self(park_fn fn)

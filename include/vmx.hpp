@@ -342,6 +342,9 @@ public:
         VMX_WBINVD = 54,
         VMX_XSETBV = 55,
 
+        // This is a Hedron-specific exit reason we use it to signal VM exits due to a poke.
+        VMX_POKED = NUM_VMI - 1,
+
         // This is not a real VM exit, but we use it to signal VM entry
         // failures.
         VMX_FAIL_VMENTRY = NUM_VMI - 3,

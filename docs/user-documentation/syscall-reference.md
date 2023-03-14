@@ -964,10 +964,11 @@ vCPU object concurrently will fail.
 
 ## `vcpu_ctrl_poke`
 
-Causes the specified vCPU to exit as soon as possible. If the vCPU extst due to
-the poke, the exit reason will be `VMX-preemption timer expired` (52). If the
-CPU was already on its VM exit path, the poke will not alter the exit reason.
-Thus the VMM **must not** rely on getting a specific exit reason after a poke.
+Causes the specified vCPU to exit as soon as possible. If the vCPU exits due to
+the poke, the exit reason will be `Poked` (255). Please note that this is a
+Hedron-specific exit reason. If the CPU was already on its VM exit path, the
+poke will not alter the exit reason. Thus the VMM **must not** rely on getting
+a specific exit reason after a poke.
 
 ### In
 

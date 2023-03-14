@@ -140,7 +140,7 @@ void Vcpu::run()
     vmcs->make_current();
     exit_reason_shadow = Optional<uint32>{};
 
-    if (EXPECT_FALSE(Atomic::exchange(poked, false))) {
+    if (EXPECT_FALSE(Atomic::load(poked))) {
         // Someone poked this vCPU, this means that this vCPU must return to user space as soon as possible.
         //
         // If we haven't entered the vCPU at least once since the last call to run_vcpu, we must enter it
@@ -148,20 +148,19 @@ void Vcpu::run()
         // inject all pending events.
         //
         // If we already entered the vCPU at least once, we can just return to the VMM. As the exit reason we
-        // use `VMX-preemption timer expired`.
+        // use `VMX_POKED`.
         if (has_entered) {
             // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the
             // value of regs.dst_poral. Thus we put VMI_RECALL into regs.dst_portal to make sure that we do
             // not leak the host interrupt info into the VMM.
             regs.dst_portal = VMI_RECALL;
 
-            exit_reason_shadow = Vmcs::VMX_PREEMPT;
+            exit_reason_shadow = Vmcs::VMX_POKED;
             return_to_vmm(Sys_regs::SUCCESS);
         }
 
-        // We set the preemption timer to 0 to make sure that we exit immediately after entering the vCPU.
-        utcb()->tsc_timeout = 0;
-        mtd(Mtd(Mtd::TSC_TIMEOUT));
+        // We send ourselves an IPI to make the guest exit immediately (or very soon).
+        Lapic::send_self_ipi(VEC_IPI_RKE);
     }
 
     has_entered = true;
