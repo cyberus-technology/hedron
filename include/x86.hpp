@@ -25,6 +25,9 @@
 #include "compiler.hpp"
 #include "types.hpp"
 
+#define CONCAT2(A, B) A##B
+#define CONCAT3(A, B, C) A##B##C
+
 template <typename T> inline void clflush(T* t) { asm volatile("clflush %0" : : "m"(*t) : "memory"); }
 
 NONNULL
@@ -67,32 +70,25 @@ inline void cpuid(unsigned leaf, uint32& eax, uint32& ebx, uint32& ecx, uint32& 
 
 inline void wbinvd() { asm volatile("wbinvd" ::: "memory"); }
 
-inline mword get_cr0()
-{
-    mword cr0;
-    asm volatile("mov %%cr0, %0" : "=r"(cr0));
-    return cr0;
-}
+// Write a reader function for a special register.
+#define RD_SPECIAL_REG(reg)                                                                                  \
+    inline mword CONCAT2(get_, reg)()                                                                        \
+    {                                                                                                        \
+        mword reg;                                                                                           \
+        asm volatile("mov %%" #reg ", %0" : "=r"(reg));                                                      \
+        return reg;                                                                                          \
+    }
 
-inline void set_cr0(mword cr0) { asm volatile("mov %0, %%cr0" : : "r"(cr0)); }
+RD_SPECIAL_REG(cr0)
+RD_SPECIAL_REG(cr2)
+RD_SPECIAL_REG(cr4)
 
-inline mword get_cr2()
-{
-    mword cr2;
-    asm volatile("mov %%cr2, %0" : "=r"(cr2));
-    return cr2;
-}
+#define WR_SPECIAL_REG(reg)                                                                                  \
+    inline void CONCAT2(set_, reg)(mword val) { asm volatile("mov %0, %%" #reg ::"r"(val)); }
 
-inline void set_cr2(mword cr2) { asm volatile("mov %0, %%cr2" : : "r"(cr2)); }
-
-inline mword get_cr4()
-{
-    mword cr4;
-    asm volatile("mov %%cr4, %0" : "=r"(cr4));
-    return cr4;
-}
-
-inline void set_cr4(mword cr4) { asm volatile("mov %0, %%cr4" : : "r"(cr4)); }
+WR_SPECIAL_REG(cr0)
+WR_SPECIAL_REG(cr2)
+WR_SPECIAL_REG(cr4)
 
 inline mword get_xcr(uint32 n)
 {
@@ -107,8 +103,6 @@ inline void set_xcr(uint32 n, mword val)
 }
 
 inline void swapgs() { asm volatile("swapgs"); }
-
-#define CONCAT3(A, B, C) A##B##C
 
 #define WR_SEGMENT_BASE(seg)                                                                                 \
     inline void CONCAT3(wr, seg, base)(uint64 value) { asm volatile("wr" #seg "base %0" ::"r"(value)); }
