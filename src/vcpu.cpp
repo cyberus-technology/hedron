@@ -149,6 +149,12 @@ void Vcpu::load_dr()
 {
     mword const* const host_dr = Vcpu::host_dr();
 
+    assert_slow(get_dr0() == host_dr[0]);
+    assert_slow(get_dr1() == host_dr[1]);
+    assert_slow(get_dr2() == host_dr[2]);
+    assert_slow(get_dr3() == host_dr[3]);
+    assert_slow(get_dr6() == host_dr[4]);
+
     // Restore Debug Registers of the vCPU. DR7 is special and will be restored by vmlaunch/vmresume.
     //
     // We only write to the debug registers when their values have changed. This avoids the expensive mov to
