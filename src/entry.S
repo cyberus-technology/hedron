@@ -46,12 +46,6 @@ handlers:
                         .previous
 .endm
 
-.macro                  TASKGATE
-                        .data
-                        .quad   0
-                        .previous
-.endm
-
 .macro                  RESTORE_STACK
                         mov     %gs:0, %rsp // Per_cpu::self
 .endm
@@ -96,26 +90,32 @@ entry_exc_error:        SAVE_STATE
 
 EXCEPTION               0x0,    IDT_MODE_DPL0
 EXCEPTION               0x1,    IDT_MODE_DPL0
-TASKGATE
+EXCEPTION               0x2,    IDT_MODE_DPL0_ALTSTACK
 EXCEPTION               0x3,    IDT_MODE_DPL3
 EXCEPTION               0x4,    IDT_MODE_DPL3
 EXCEPTION               0x5,    IDT_MODE_DPL0
 EXCEPTION               0x6,    IDT_MODE_DPL0
 EXCEPTION               0x7,    IDT_MODE_DPL0
-TASKGATE
-TASKGATE
+EXCEPTION_ERROR         0x8,    IDT_MODE_DPL0_ALTSTACK
+EXCEPTION               0x9,    IDT_MODE_DPL0 // Unused
 EXCEPTION_ERROR         0xa,    IDT_MODE_DPL0
 EXCEPTION_ERROR         0xb,    IDT_MODE_DPL0
 EXCEPTION_ERROR         0xc,    IDT_MODE_DPL0
 EXCEPTION_ERROR         0xd,    IDT_MODE_DPL0
 EXCEPTION_ERROR         0xe,    IDT_MODE_DPL0
-TASKGATE
+EXCEPTION               0xf,    IDT_MODE_DPL0 // Unused
 EXCEPTION               0x10,   IDT_MODE_DPL0
 EXCEPTION_ERROR         0x11,   IDT_MODE_DPL0
 EXCEPTION               0x12,   IDT_MODE_DPL0
 EXCEPTION               0x13,   IDT_MODE_DPL0
+
+/*
+ * Reserved Exception Entries
+ */
+.set e,0x14
 .rept                   NUM_EXC - 0x14
-TASKGATE
+EXCEPTION               e,      IDT_MODE_DPL0
+ .set                   e,      e+1
 .endr
 
 /*

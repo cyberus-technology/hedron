@@ -24,10 +24,10 @@
 
 ALIGNED(8) Idt Idt::idt[VEC_MAX];
 
-void Idt::set(Idt::Type type, unsigned dpl, unsigned selector, mword offset)
+void Idt::set(Idt::Type type, unsigned dpl, unsigned selector, mword offset, unsigned ist)
 {
     val[0] = static_cast<uint32>(selector << 16 | (offset & 0xffff));
-    val[1] = static_cast<uint32>((offset & 0xffff0000) | 1u << 15 | dpl << 13 | type);
+    val[1] = static_cast<uint32>((offset & 0xffff0000) | 1u << 15 | dpl << 13 | type | ist);
     val[2] = static_cast<uint32>(offset >> 32);
     val[3] = 0;
 }
@@ -39,24 +39,27 @@ void Idt::build()
         const mword handler{handlers[vector] & ~IDT_MODE_MASK};
 
         unsigned dpl;
+        unsigned ist;
 
         switch (idt_mode) {
         case IDT_MODE_DPL0:
             dpl = 0;
+            ist = 0;
             break;
         case IDT_MODE_DPL3:
             dpl = 3;
+            ist = 0;
+            break;
+        case IDT_MODE_DPL0_ALTSTACK:
+            dpl = 0;
+            ist = 1;
             break;
         default:
             // We messed up the handlers table if we got here.
             assert(false);
         }
 
-        if (handler) {
-            idt[vector].set(SYS_INTR_GATE, dpl, SEL_KERN_CODE, handler);
-        } else {
-            idt[vector].set(SYS_TASK_GATE, 0, SEL_TSS_RUN, 0);
-        }
+        idt[vector].set(SYS_INTR_GATE, dpl, SEL_KERN_CODE, handler, ist);
     }
 }
 

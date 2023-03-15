@@ -26,3 +26,6 @@
 
 // An IDT entry that is available to userspace via `int`, `int3`, or `into` instructions.
 #define IDT_MODE_DPL3 1
+
+// Same as IDT_MODE_DPL0, but the handler will execute on an alternate stack.
+#define IDT_MODE_DPL0_ALTSTACK 2

@@ -30,7 +30,7 @@ class Idt : public Descriptor
 private:
     uint32 val[4];
 
-    void set(Type type, unsigned dpl, unsigned selector, mword offset);
+    void set(Type type, unsigned dpl, unsigned selector, mword offset, unsigned ist);
 
 public:
     static Idt idt[VEC_MAX];
