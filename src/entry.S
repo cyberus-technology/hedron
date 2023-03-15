@@ -67,14 +67,22 @@ handlers:
 .macro                  EXCEPTION VEC, MODE
 INTRGATE                \MODE
                         push    $\VEC
+.if \MODE == IDT_MODE_DPL0_ALTSTACK
+                        jmp     entry_exc_altstack
+.else
                         jmp     entry_exc
+.endif
 .endm
 
 .macro                  EXCEPTION_ERROR VEC, MODE
 INTRGATE                \MODE
                         push    (%rsp)
                         movq    $\VEC, 8(%rsp)
+.if \MODE == IDT_MODE_DPL0_ALTSTACK
+                        jmp     entry_exc_error_altstack
+.else
                         jmp     entry_exc_error
+.endif
 .endm
 
 /*
@@ -87,6 +95,28 @@ entry_exc_error:        SAVE_STATE
                         mov     %rbx, %ARG_1
                         call    exc_handler
                         jmp     ret_from_interrupt
+
+/*
+ * Alternate Stack Exception Entries
+ *
+ * We assume here that we interrupted the kernel at an arbitrary position even
+ * where interrupts are normally disabled.
+ */
+
+entry_exc_altstack:     push    $0
+entry_exc_error_altstack:
+                        SAVE_GPR
+                        mov     %rsp, %ARG_1
+                        rdgsbase %rbp // preserved across call
+                        cld
+
+                        // ARG_1 = Exc_regs
+                        call    exc_handler_altstack
+
+                        wrgsbase %rbp
+                        LOAD_GPR
+                        add     $(2 * PTR_SIZE), %rsp
+                        iretq
 
 EXCEPTION               0x0,    IDT_MODE_DPL0
 EXCEPTION               0x1,    IDT_MODE_DPL0

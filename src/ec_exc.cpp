@@ -91,14 +91,6 @@ void Ec::handle_exc(Exc_regs* r)
 
     switch (r->vec) {
 
-    case Cpu::EXC_NMI:
-        panic("Received Non-Maskable Interrupt (NMI) at RIP %#lx", r->rip);
-        break;
-
-    case Cpu::EXC_DF:
-        panic("Received Double Fault at RIP %#lx", r->rip);
-        break;
-
     case Cpu::EXC_GP:
         if (handle_exc_gp(r))
             return;
@@ -118,4 +110,24 @@ void Ec::handle_exc(Exc_regs* r)
         send_msg<ret_user_iret>();
 
     die("EXC", r);
+}
+
+void Ec::handle_exc_altstack(Exc_regs* r)
+{
+    // When we enter here, the GS base and KERNEL_GS_BASE MSR are not set up for kernel use. This means we
+    // cannot use CPU-local variables or exit from this handler other than returning from this function.
+
+    switch (r->vec) {
+    case Cpu::EXC_NMI:
+        panic("Received Non-Maskable Interrupt (NMI) at RIP %#lx", r->rip);
+        break;
+
+    case Cpu::EXC_DF:
+        panic("Received Double Fault at RIP %#lx", r->rip);
+        break;
+
+    default:
+        panic("Unexpected interrupt received: %ld at RIP %#lx", r->vec, r->rip);
+        break;
+    }
 }
