@@ -847,6 +847,8 @@ a `BAD_PAR` return value.
 newly created kernel object. A vCPU corresponds to a VMCS in Hedron. Each vCPU
 executes with the nested page tables of its parent PD.
 
+The vCPU can only be run on the CPU that is given during creation.
+
 ### Layout of the vCPU State Page
 
 The layout of the vCPU State Page is a superset of the current UTCB. The UTCB
@@ -891,15 +893,16 @@ This section describes the initial state of a vCPU:
 
 ### In
 
-| *Register* | *Content*                 | *Description*                                                                      |
-|------------|---------------------------|------------------------------------------------------------------------------------|
-| ARG1[3:0]  | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                      |
-| ARG1[7:4]  | Reserved                  | Must be zero.                                                                      |
-| ARG1[63:8] | Destination Selector      | A capability selector in the current PD that will point to the newly created vCPU. |
-| ARG2       | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.            |
-| ARG3       | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                  |
-| ARG4       | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                              |
-| ARG5       | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                      |
+| *Register*  | *Content*                 | *Description*                                                                      |
+|-------------|---------------------------|------------------------------------------------------------------------------------|
+| ARG1[3:0]   | System Call Number        | Needs to be `HC_CREATE_VCPU`.                                                      |
+| ARG1[7:4]   | Reserved                  | Must be zero.                                                                      |
+| ARG1[63:8]  | Destination Selector      | A capability selector in the current PD that will point to the newly created vCPU. |
+| ARG2[11:0]  | CPU number                | The CPU this vCPU will run on.                                                     |
+| ARG2[63:12] | Parent PD                 | A capability selector to a PD domain in which the vCPU will execute in.            |
+| ARG3        | vCPU State KPage Selector | A selector of a KPage that is used for vCPU state                                  |
+| ARG4        | vLAPIC KPage Selector     | A selector of a KPage that is used as the vLAPIC page                              |
+| ARG5        | FPU State KPage Selector  | A selector of a KPAge that is used for FPU state (XSAVE Area)                      |
 
 ### Out
 
@@ -943,9 +946,10 @@ the vCPU state page. vCPUs **will** spuriously exit with preemption timer exits.
 Assuming the vCPU is not in a faulty state, a poked vCPU will always be entered
 to make sure that event injection will always be performed.
 
-vCPUs can be executed using this system call from any EC that runs on the same
-CPU the vCPU was created on, but only one at a time. Attempts to run the same
-vCPU object concurrently will fail.
+vCPUs can be executed using this system call from any EC that runs on
+the same CPU the vCPU was created for, but only one at a
+time. Attempts to run the same vCPU object concurrently or from
+different CPUs will fail.
 
 ### In
 
