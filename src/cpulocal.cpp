@@ -25,11 +25,19 @@
 #include "tss.hpp"
 
 alignas(PAGE_SIZE) Per_cpu Cpulocal::cpu[NUM_CPU];
+alignas(PAGE_SIZE) Alt_stack Cpulocal::altstack[NUM_CPU];
 
 Per_cpu& Cpulocal::get_remote(unsigned cpu_id)
 {
     assert(cpu_id < NUM_CPU);
     return Cpulocal::cpu[cpu_id];
+}
+
+// Return the stack pointer to the alternate stack.
+mword Cpulocal::alt_stack_pointer(unsigned cpu_id)
+{
+    assert(cpu_id < array_size(altstack));
+    return reinterpret_cast<mword>(altstack[cpu_id].stack + array_size(altstack[cpu_id].stack));
 }
 
 mword Cpulocal::setup_cpulocal()
@@ -49,6 +57,7 @@ mword Cpulocal::setup_cpulocal()
     // Establish stack guard page by unmapping the last (lowest) page of the stack.
     static_assert(STACK_SIZE > PAGE_SIZE, "Stack is too small to place a stack guard");
     Hpt::unmap_kernel_page(local.stack);
+    Hpt::unmap_kernel_page(altstack[*opt_cpu_id].stack);
 
     mword const gs_base{reinterpret_cast<mword>(&local.self)};
     Msr::write(Msr::IA32_GS_BASE, gs_base);

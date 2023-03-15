@@ -51,6 +51,11 @@ void Tss::build()
 {
     auto& tss{local()};
 
+    // The normal kernel stack.
     tss.sp0 = reinterpret_cast<mword>(&Cpulocal::get().self);
+
+    // See entry.S for when this is used.
+    tss.ist[1] = Cpulocal::alt_stack_pointer(Cpu::id());
+
     tss.iobm = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&tss));
 }
