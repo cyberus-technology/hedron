@@ -35,7 +35,7 @@ Slab_cache Vcpu::cache(sizeof(Vcpu), 32);
 Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     : Typed_kobject(static_cast<Space_obj*>(init_cfg.owner_pd), init_cfg.cap_selector, Vcpu::PERM_ALL, free),
       pd(init_cfg.owner_pd), kp_vcpu_state(init_cfg.kp_vcpu_state), kp_vlapic_page(init_cfg.kp_vlapic_page),
-      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(Cpu::id()), fpu(kp_fpu_state.get())
+      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(init_cfg.cpu), fpu(kp_fpu_state.get())
 {
     assert(Hip::feature() & Hip::FEAT_VMX);
 
@@ -44,7 +44,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     // - set the host CR3
 
     const mword io_bitmap{pd->Space_pio::walk()};
-    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, Cpu::id());
+    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, cpu_id);
 
     // We restore the host MSRs in the VM Exit path, thus the VM Exit shouldn't restore any MSRs
     Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);

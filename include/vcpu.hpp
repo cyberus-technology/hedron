@@ -39,6 +39,7 @@ struct Vcpu_init_config {
     Kp* kp_vcpu_state;
     Kp* kp_vlapic_page;
     Kp* kp_fpu_state;
+    unsigned cpu;
 };
 
 // Acquiring a vCPU can fail for multiple reasons. See the different constructors below.

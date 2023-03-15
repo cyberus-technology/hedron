@@ -472,7 +472,8 @@ void Ec::sys_create_vcpu()
                            .cap_selector = r->sel(),
                            .kp_vcpu_state = kp_vcpu_state,
                            .kp_vlapic_page = kp_vlapic,
-                           .kp_fpu_state = kp_fpu});
+                           .kp_fpu_state = kp_fpu,
+                           .cpu = Cpu::id()});
 
     if (!Space_obj::insert_root(vcpu)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
