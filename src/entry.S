@@ -23,20 +23,26 @@
 
 #include "arch.hpp"
 #include "hazards.hpp"
+#include "idt_handlers.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
 #include "vectors.hpp"
 
+/*
+ * handlers is an array of entry points for interrupts. We align entries
+ * to have space for metainformation in the low bits. See idt.cpp for how
+ * the handlers array is converted into the IDT.
+ */
 .data
 .global                 handlers
 handlers:
 
 .text
 
-.macro                  INTRGATE DPL
+.macro                  INTRGATE MODE
                         .align  4, 0x90
 1:                      .data
-                        .quad   1b + \DPL
+                        .quad   1b + \MODE
                         .previous
 .endm
 
@@ -64,14 +70,14 @@ handlers:
 1:
 .endm
 
-.macro                  EXCEPTION VEC, DPL
-INTRGATE                \DPL
+.macro                  EXCEPTION VEC, MODE
+INTRGATE                \MODE
                         push    $\VEC
                         jmp     entry_exc
 .endm
 
-.macro                  EXCEPTION_ERROR VEC, DPL
-INTRGATE                \DPL
+.macro                  EXCEPTION_ERROR VEC, MODE
+INTRGATE                \MODE
                         push    (%rsp)
                         movq    $\VEC, 8(%rsp)
                         jmp     entry_exc_error
@@ -88,26 +94,26 @@ entry_exc_error:        SAVE_STATE
                         call    exc_handler
                         jmp     ret_from_interrupt
 
-EXCEPTION               0x0,    0
-EXCEPTION               0x1,    0
+EXCEPTION               0x0,    IDT_MODE_DPL0
+EXCEPTION               0x1,    IDT_MODE_DPL0
 TASKGATE
-EXCEPTION               0x3,    3
-EXCEPTION               0x4,    3
-EXCEPTION               0x5,    0
-EXCEPTION               0x6,    0
-EXCEPTION               0x7,    0
+EXCEPTION               0x3,    IDT_MODE_DPL3
+EXCEPTION               0x4,    IDT_MODE_DPL3
+EXCEPTION               0x5,    IDT_MODE_DPL0
+EXCEPTION               0x6,    IDT_MODE_DPL0
+EXCEPTION               0x7,    IDT_MODE_DPL0
 TASKGATE
 TASKGATE
-EXCEPTION_ERROR         0xa,    0
-EXCEPTION_ERROR         0xb,    0
-EXCEPTION_ERROR         0xc,    0
-EXCEPTION_ERROR         0xd,    0
-EXCEPTION_ERROR         0xe,    0
+EXCEPTION_ERROR         0xa,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xb,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xc,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xd,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xe,    IDT_MODE_DPL0
 TASKGATE
-EXCEPTION               0x10,   0
-EXCEPTION_ERROR         0x11,   0
-EXCEPTION               0x12,   0
-EXCEPTION               0x13,   0
+EXCEPTION               0x10,   IDT_MODE_DPL0
+EXCEPTION_ERROR         0x11,   IDT_MODE_DPL0
+EXCEPTION               0x12,   IDT_MODE_DPL0
+EXCEPTION               0x13,   IDT_MODE_DPL0
 .rept                   NUM_EXC - 0x14
 TASKGATE
 .endr
@@ -117,7 +123,7 @@ TASKGATE
  */
 .set                    VEC, NUM_EXC
 .rept                   NUM_USER_VECTORS
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_user_vector
 .set                    VEC, VEC + 1
@@ -133,7 +139,7 @@ entry_user_vector:      push    $0
  * LVT Entries
  */
 .rept                   NUM_LVT
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_lvt
 .set                    VEC, VEC + 1
@@ -149,7 +155,7 @@ entry_lvt:              push    $0
  * MSI Entries
  */
 .rept                   NUM_MSI
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_msi
 .set                    VEC, VEC + 1
@@ -165,7 +171,7 @@ entry_msi:              push    $0
  * IPI Entries
  */
 .rept                   NUM_IPI
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_ipi
 .set                    VEC, VEC + 1

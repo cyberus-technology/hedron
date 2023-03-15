@@ -17,7 +17,9 @@
  */
 
 #include "idt.hpp"
+#include "assert.hpp"
 #include "extern.hpp"
+#include "idt_handlers.hpp"
 #include "selectors.hpp"
 
 ALIGNED(8) Idt Idt::idt[VEC_MAX];
@@ -32,11 +34,26 @@ void Idt::set(Idt::Type type, unsigned dpl, unsigned selector, mword offset)
 
 void Idt::build()
 {
-    mword* ptr = handlers;
+    for (unsigned vector = 0; vector < VEC_MAX; vector++) {
+        const mword idt_mode{handlers[vector] & IDT_MODE_MASK};
+        const mword handler{handlers[vector] & ~IDT_MODE_MASK};
 
-    for (unsigned vector = 0; vector < VEC_MAX; vector++, ptr++) {
-        if (*ptr) {
-            idt[vector].set(SYS_INTR_GATE, *ptr & 3, SEL_KERN_CODE, *ptr & ~3);
+        unsigned dpl;
+
+        switch (idt_mode) {
+        case IDT_MODE_DPL0:
+            dpl = 0;
+            break;
+        case IDT_MODE_DPL3:
+            dpl = 3;
+            break;
+        default:
+            // We messed up the handlers table if we got here.
+            assert(false);
+        }
+
+        if (handler) {
+            idt[vector].set(SYS_INTR_GATE, dpl, SEL_KERN_CODE, handler);
         } else {
             idt[vector].set(SYS_TASK_GATE, 0, SEL_TSS_RUN, 0);
         }
