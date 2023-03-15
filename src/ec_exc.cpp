@@ -91,6 +91,14 @@ void Ec::handle_exc(Exc_regs* r)
 
     switch (r->vec) {
 
+    case Cpu::EXC_NMI:
+        panic("Received Non-Maskable Interrupt (NMI) at RIP %#lx", r->rip);
+        break;
+
+    case Cpu::EXC_DF:
+        panic("Received Double Fault at RIP %#lx", r->rip);
+        break;
+
     case Cpu::EXC_GP:
         if (handle_exc_gp(r))
             return;

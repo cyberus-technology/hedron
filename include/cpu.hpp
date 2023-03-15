@@ -74,7 +74,9 @@ public:
     enum
     {
         EXC_DB = 1,
+        EXC_NMI = 2,
         EXC_NM = 7,
+        EXC_DF = 8,
         EXC_TS = 10,
         EXC_GP = 13,
         EXC_PF = 14,
