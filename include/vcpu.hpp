@@ -161,6 +161,18 @@ private:
     // Handles a VM exit due to an extint.
     [[noreturn]] inline void handle_extint();
 
+    // The current values of debug registers DR0-3 and DR6 on this CPU. DR6 is stored at dr[4].
+    //
+    // These are the values that are in the registers right now. We cache them, because reading them is
+    // expensive.
+    CPULOCAL_ACCESSOR(vcpu, host_dr);
+
+    // Restores debug registers DR0-3 and DR6.
+    void load_dr();
+
+    // Saves debug registers DR0-3 and DR6.
+    void save_dr();
+
 public:
     // Capability permission bitmask.
     enum
@@ -170,10 +182,13 @@ public:
         PERM_ALL = PERM_VCPU_CTRL,
     };
 
+    // Initializes debug register shadows. This function needs to be called once per (physical) CPU.
+    static void init();
+
     explicit Vcpu(const Vcpu_init_config& init_cfg);
     ~Vcpu() = default;
 
-    // Trys to set the current EC as the new owner. ECs are only allowed to modify the vCPUs state or to run
+    // Tries to set the current EC as the new owner. ECs are only allowed to modify the vCPUs state or to run
     // it after a successful call to this function. The owner of a vCPU has the duty to release it, the vCPU
     // will never clear its owner by itself.
     Vcpu_acquire_result try_acquire();

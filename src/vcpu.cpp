@@ -108,6 +108,19 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     vmcs->clear();
 }
 
+void Vcpu::init()
+{
+    mword* dr = Vcpu::host_dr();
+
+    asm volatile(
+        "mov %%dr0, %[dr0]\n"
+        "mov %%dr1, %[dr1]\n"
+        "mov %%dr2, %[dr2]\n"
+        "mov %%dr3, %[dr3]\n"
+        "mov %%dr6, %[dr6]\n"
+        : [dr0] "=r"(dr[0]), [dr1] "=r"(dr[1]), [dr2] "=r"(dr[2]), [dr3] "=r"(dr[3]), [dr6] "=r"(dr[4]));
+}
+
 Vcpu_acquire_result Vcpu::try_acquire()
 {
     if (cpu_id != Cpu::id()) {
@@ -130,6 +143,60 @@ void Vcpu::mtd(Mtd mtd)
 {
     assert(Atomic::load(owner) == Ec::current());
     regs.mtd |= mtd.val;
+}
+
+void Vcpu::load_dr()
+{
+    mword const* const host_dr = Vcpu::host_dr();
+
+    // If these assertions fail our debug register caching is broken. No function besides save_dr and load_dr
+    // must touch the debug registers.
+    assert_slow(get_dr0() == host_dr[0]);
+    assert_slow(get_dr1() == host_dr[1]);
+    assert_slow(get_dr2() == host_dr[2]);
+    assert_slow(get_dr3() == host_dr[3]);
+    assert_slow(get_dr6() == host_dr[4]);
+
+    // Restore Debug Registers of the vCPU. DR7 is special and will be restored by vmlaunch/vmresume.
+    //
+    // We only write to the debug registers when their values have changed. This avoids the expensive mov to
+    // debug register instructions in the common case where we just enter and exit the same vCPU.
+
+    if (EXPECT_FALSE(host_dr[0] != regs.dr0)) {
+        set_dr0(regs.dr0);
+    }
+
+    if (EXPECT_FALSE(host_dr[1] != regs.dr1)) {
+        set_dr1(regs.dr1);
+    }
+
+    if (EXPECT_FALSE(host_dr[2] != regs.dr2)) {
+        set_dr2(regs.dr2);
+    }
+
+    if (EXPECT_FALSE(host_dr[3] != regs.dr3)) {
+        set_dr3(regs.dr3);
+    }
+
+    if (EXPECT_FALSE(host_dr[4] != regs.dr6)) {
+        set_dr6(regs.dr6);
+    }
+}
+
+void Vcpu::save_dr()
+{
+    mword* const host_dr = Vcpu::host_dr();
+
+    // Save Debug Registers. DR7 is special. The CPU loads a default value on VM exit that disables all
+    // debugging functionality. That means, we don't have to restore any host values here, because they are
+    // not used.
+    //
+    // We read the debug regiters only once here and cache their values, because reading them is expensive.
+    host_dr[0] = regs.dr0 = get_dr0();
+    host_dr[1] = regs.dr1 = get_dr1();
+    host_dr[2] = regs.dr2 = get_dr2();
+    host_dr[3] = regs.dr3 = get_dr3();
+    host_dr[4] = regs.dr6 = get_dr6();
 }
 
 void Vcpu::run()
@@ -217,16 +284,7 @@ void Vcpu::run()
         UNREACHED;
     }
 
-    // Restore Debug Registers. DR7 is special. The CPU sets it to 0x400 during VM exit. This means all debug
-    // functionality is off and we don't need to clean up any of the other debug registers.
-    asm volatile("mov %[dr0], %%dr0\n"
-                 "mov %[dr1], %%dr1\n"
-                 "mov %[dr2], %%dr2\n"
-                 "mov %[dr3], %%dr3\n"
-                 "mov %[dr6], %%dr6\n"
-                 :
-                 : [dr0] "r"(regs.dr0), [dr1] "r"(regs.dr1), [dr2] "r"(regs.dr2), [dr3] "r"(regs.dr3),
-                   [dr6] "r"(regs.dr6));
+    load_dr();
 
     // If we knew for sure that SPEC_CTRL is available, we could load it via the MSR area (guest_msr_area).
     // The problem is that older CPUs may boot with a microcode that doesn't expose SPEC_CTRL. It only becomes
@@ -297,16 +355,7 @@ void Vcpu::handle_vmx()
 
     Ec::current()->load_fpu();
 
-    // Save Debug Registers. DR7 is special. The CPU loads a default value on VM exit that disables all
-    // debugging functionality. That means, we don't have to restore any values in the other registers here,
-    // because they are not used.
-    asm volatile("mov %%dr0, %[dr0]\n"
-                 "mov %%dr1, %[dr1]\n"
-                 "mov %%dr2, %[dr2]\n"
-                 "mov %%dr3, %[dr3]\n"
-                 "mov %%dr6, %[dr6]\n"
-                 : [dr0] "=r"(regs.dr0), [dr1] "=r"(regs.dr1), [dr2] "=r"(regs.dr2), [dr3] "=r"(regs.dr3),
-                   [dr6] "=r"(regs.dr6));
+    save_dr();
 
     // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
     switch (exit_reason() & 0xffff) {

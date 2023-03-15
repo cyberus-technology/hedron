@@ -42,7 +42,7 @@ CHECK_CXX_COMPILER_FLAG(-fcf-protection=none CXX_SUPPORTS_CET)
 
 target_compile_options(hypervisor PRIVATE
   # Optimization
-  $<IF:$<CONFIG:Debug>,-Og,-Os>
+  $<IF:$<CONFIG:Debug>,-Og,-O2>
   -m64 -march=core2 -mcmodel=kernel -mno-red-zone -fno-PIC
 
   # Language
