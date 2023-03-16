@@ -65,10 +65,6 @@ void Bootstrap::bootstrap()
         // clobbered for booting APs.
         Lapic::restore_low_memory();
 
-        // Reset the spinlock and barrier we use to synchronize CPUs on
-        // bootup. This is to prepare for the next suspend/resume cycle.
-        rearm();
-
         if (is_initial_boot) {
             Hip::finalize();
             create_roottask();

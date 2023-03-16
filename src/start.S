@@ -470,6 +470,13 @@ __start_all_hi:
 .globl __resume_bsp_hi
 __resume_bsp_hi:        INIT_STATE
 
+                        /*
+                         * The APs are not yet running. Rearm the boot synchronization
+                         * mechanisms, so we can start them later.
+                         */
+                        movq    $0, boot_lock
+                        movq    $0, boot_barrier
+
                         call    setup_cpulocal
                         mov     %rax, %rsp
 
