@@ -77,6 +77,16 @@ void Ec::vmx_extint()
 
 void Ec::handle_vmx()
 {
+    Cpu::hazard() |= HZD_DS_ES | HZD_TR;
+    Cpu::setup_msrs();
+
+    // If this EC is a vCPU, the VMM is using the old way of handling vCPUs and the EC has to handle the VM
+    // exit. Otherwise the VMM is using a vCPU kernel object and we just pass the control flow to it.
+    if (not current()->is_vcpu()) {
+        assert(current()->vcpu != nullptr);
+        current()->vcpu->handle_vmx();
+    }
+
     // To defend against Spectre v2 other kernels would stuff the return stack
     // buffer (RSB) here to avoid the guest injecting branch targets. This is
     // not necessary for us, because we start from a fresh stack and do not
@@ -95,16 +105,6 @@ void Ec::handle_vmx()
         if (guest_spec_ctrl != 0) {
             Msr::write(Msr::IA32_SPEC_CTRL, 0);
         }
-    }
-
-    Cpu::hazard() |= HZD_DS_ES | HZD_TR;
-    Cpu::setup_msrs();
-
-    // If this EC is a vCPU, the VMM is using the old way of handling vCPUs and the EC has to handle the VM
-    // exit. Otherwise the VMM is using a vCPU kernel object and we just pass the control flow to it.
-    if (not current()->is_vcpu()) {
-        assert(current()->vcpu != nullptr);
-        current()->vcpu->handle_vmx();
     }
 
     Fpu::restore_xcr0();
