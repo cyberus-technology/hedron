@@ -185,6 +185,12 @@ public:
     // This function can be slow. Don't use it in performance-critical code.
     static bool is_initialized();
 
+    // Restores GS base in case its content is unknown.
+    //
+    // This function makes no attempt at saving the GS base and the caller is responsible for that, if it
+    // needs to be restored later.
+    static void restore_for_nmi();
+
     template <typename T, size_t OFFSET> static T get_field()
     {
         T res;

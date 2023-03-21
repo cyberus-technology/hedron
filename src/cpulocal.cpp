@@ -83,3 +83,12 @@ bool Cpulocal::is_initialized()
     return (gs_base >= reinterpret_cast<mword>(&cpu[0])) and
            (gs_base < reinterpret_cast<mword>(&cpu[array_size(cpu)]));
 }
+
+void Cpulocal::restore_for_nmi()
+{
+    if (auto const opt_cpu_id{Cpu::find_by_apic_id(Lapic::early_id())}; opt_cpu_id.has_value()) {
+        wrgsbase(reinterpret_cast<mword>(&Cpulocal::cpu[*opt_cpu_id].self));
+    } else {
+        panic("Failed to find CPU-local memory");
+    }
+}

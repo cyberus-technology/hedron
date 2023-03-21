@@ -114,16 +114,25 @@ void Ec::handle_exc(Exc_regs* r)
 
 void Ec::handle_exc_altstack(Exc_regs* r)
 {
-    // When we enter here, the GS base and KERNEL_GS_BASE MSR are not set up for kernel use. This means we
-    // cannot use CPU-local variables or exit from this handler other than returning from this function.
+    // When we enter here, the GS base and KERNEL_GS_BASE MSR are not set up for kernel use. We restore GS
+    // base and leave KERNEL_GS_BASE as is.
+    //
+    // This means we can use CPU-local variables, but not exit from this handler via any path that expects
+    // SWAPGS to work. Also the register state has only been saved on the current stack. This means any return
+    // from this interrupt must happen via a return from this function.
+    //
+    // If we interrupted the kernel, we could have interrupted the kernel at any point. It could have been
+    // holding an spinlock to modify a data structure. So grabbing spinlocks here is not safe.
+
+    Cpulocal::restore_for_nmi();
 
     switch (r->vec) {
     case Cpu::EXC_NMI:
-        panic("Received Non-Maskable Interrupt (NMI) at RIP %#lx", r->rip);
+        panic("Received Non-Maskable Interrupt (NMI) on CPU %u at RIP %#lx", Cpu::id(), r->rip);
         break;
 
     case Cpu::EXC_DF:
-        panic("Received Double Fault at RIP %#lx", r->rip);
+        panic("Received Double Fault at on CPU %u at RIP %#lx", Cpu::id(), r->rip);
         break;
 
     default:
