@@ -167,6 +167,10 @@ def test_hypervisor(qemu, args, expect_multiboot_version, expect_cpus):
     check_page_table(parse_page_table(page_table_dump))
 
     child.expect(r"Killed EC:.*\(No ELF\)", timeout=5)
+
+    monitor_repl.run_command("nmi")
+    child.expect(r"Received Non-Maskable Interrupt \(NMI\) on CPU", timeout=5)
+
     child.close()
 
 
