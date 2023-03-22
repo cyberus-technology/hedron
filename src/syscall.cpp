@@ -444,6 +444,11 @@ void Ec::sys_create_vcpu()
     Sys_create_vcpu* r = static_cast<Sys_create_vcpu*>(current()->sys_regs());
     trace(TRACE_SYSCALL, "EC:%p SYS_CREATE VCPU: %#lx", current(), r->sel());
 
+    if (EXPECT_FALSE(!Hip::cpu_online(r->cpu()))) {
+        trace(TRACE_ERROR, "%s: Invalid CPU (%#x)", __func__, r->cpu());
+        sys_finish<Sys_regs::BAD_CPU>();
+    }
+
     Pd* pd_parent{capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION)};
     if (EXPECT_FALSE(not pd_parent)) {
         trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
@@ -472,7 +477,8 @@ void Ec::sys_create_vcpu()
                            .cap_selector = r->sel(),
                            .kp_vcpu_state = kp_vcpu_state,
                            .kp_vlapic_page = kp_vlapic,
-                           .kp_fpu_state = kp_fpu});
+                           .kp_fpu_state = kp_fpu,
+                           .cpu = r->cpu()});
 
     if (!Space_obj::insert_root(vcpu)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());

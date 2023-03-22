@@ -127,7 +127,9 @@ class Sys_create_vcpu : public Sys_regs
 public:
     inline unsigned long sel() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 
-    inline unsigned long pd() const { return ARG_2; }
+    inline unsigned cpu() const { return ARG_2 & 0xfff; }
+
+    inline unsigned long pd() const { return ARG_2 >> 12; }
 
     inline unsigned long state_kp() const { return ARG_3; }
 
