@@ -104,8 +104,8 @@ private:
 
     static Slab_cache cache;
 
-    REGPARM(1)
     static void handle_exc(Exc_regs*) asm("exc_handler");
+    [[noreturn]] static void handle_exc_altstack(Exc_regs*) asm("exc_handler_altstack");
 
     [[noreturn]] static void handle_vmx() asm("vmx_handler");
 

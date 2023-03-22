@@ -23,26 +23,26 @@
 
 #include "arch.hpp"
 #include "hazards.hpp"
+#include "idt_handlers.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
 #include "vectors.hpp"
 
+/*
+ * handlers is an array of entry points for interrupts. We align entries
+ * to have space for metainformation in the low bits. See idt.cpp for how
+ * the handlers array is converted into the IDT.
+ */
 .data
 .global                 handlers
 handlers:
 
 .text
 
-.macro                  INTRGATE DPL
+.macro                  INTRGATE MODE
                         .align  4, 0x90
 1:                      .data
-                         WORD   1b + \DPL
-                        .previous
-.endm
-
-.macro                  TASKGATE
-                        .data
-                         WORD   0
+                        .quad   1b + \MODE
                         .previous
 .endm
 
@@ -64,17 +64,25 @@ handlers:
 1:
 .endm
 
-.macro                  EXCEPTION VEC, DPL
-INTRGATE                \DPL
+.macro                  EXCEPTION VEC, MODE
+INTRGATE                \MODE
                         push    $\VEC
+.if \MODE == IDT_MODE_DPL0_ALTSTACK
+                        jmp     entry_exc_altstack
+.else
                         jmp     entry_exc
+.endif
 .endm
 
-.macro                  EXCEPTION_ERROR VEC, DPL
-INTRGATE                \DPL
+.macro                  EXCEPTION_ERROR VEC, MODE
+INTRGATE                \MODE
                         push    (%rsp)
                         movq    $\VEC, 8(%rsp)
+.if \MODE == IDT_MODE_DPL0_ALTSTACK
+                        jmp     entry_exc_error_altstack
+.else
                         jmp     entry_exc_error
+.endif
 .endm
 
 /*
@@ -88,28 +96,56 @@ entry_exc_error:        SAVE_STATE
                         call    exc_handler
                         jmp     ret_from_interrupt
 
-EXCEPTION               0x0,    0
-EXCEPTION               0x1,    0
-TASKGATE
-EXCEPTION               0x3,    3
-EXCEPTION               0x4,    3
-EXCEPTION               0x5,    0
-EXCEPTION               0x6,    0
-EXCEPTION               0x7,    0
-TASKGATE
-TASKGATE
-EXCEPTION_ERROR         0xa,    0
-EXCEPTION_ERROR         0xb,    0
-EXCEPTION_ERROR         0xc,    0
-EXCEPTION_ERROR         0xd,    0
-EXCEPTION_ERROR         0xe,    0
-TASKGATE
-EXCEPTION               0x10,   0
-EXCEPTION_ERROR         0x11,   0
-EXCEPTION               0x12,   0
-EXCEPTION               0x13,   0
+/*
+ * Alternate Stack Exception Entries
+ *
+ * We assume here that we interrupted the kernel at an arbitrary position even
+ * where interrupts are normally disabled.
+ */
+
+entry_exc_altstack:     push    $0
+entry_exc_error_altstack:
+                        SAVE_GPR
+                        mov     %rsp, %ARG_1
+                        rdgsbase %rbp // preserved across call
+                        cld
+
+                        // ARG_1 = Exc_regs
+                        call    exc_handler_altstack
+
+                        wrgsbase %rbp
+                        LOAD_GPR
+                        add     $(2 * PTR_SIZE), %rsp
+                        iretq
+
+EXCEPTION               0x0,    IDT_MODE_DPL0
+EXCEPTION               0x1,    IDT_MODE_DPL0
+EXCEPTION               0x2,    IDT_MODE_DPL0_ALTSTACK
+EXCEPTION               0x3,    IDT_MODE_DPL3
+EXCEPTION               0x4,    IDT_MODE_DPL3
+EXCEPTION               0x5,    IDT_MODE_DPL0
+EXCEPTION               0x6,    IDT_MODE_DPL0
+EXCEPTION               0x7,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0x8,    IDT_MODE_DPL0_ALTSTACK
+EXCEPTION               0x9,    IDT_MODE_DPL0 // Unused
+EXCEPTION_ERROR         0xa,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xb,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xc,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xd,    IDT_MODE_DPL0
+EXCEPTION_ERROR         0xe,    IDT_MODE_DPL0
+EXCEPTION               0xf,    IDT_MODE_DPL0 // Unused
+EXCEPTION               0x10,   IDT_MODE_DPL0
+EXCEPTION_ERROR         0x11,   IDT_MODE_DPL0
+EXCEPTION               0x12,   IDT_MODE_DPL0
+EXCEPTION               0x13,   IDT_MODE_DPL0
+
+/*
+ * Reserved Exception Entries
+ */
+.set e,0x14
 .rept                   NUM_EXC - 0x14
-TASKGATE
+EXCEPTION               e,      IDT_MODE_DPL0
+ .set                   e,      e+1
 .endr
 
 /*
@@ -117,7 +153,7 @@ TASKGATE
  */
 .set                    VEC, NUM_EXC
 .rept                   NUM_USER_VECTORS
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_user_vector
 .set                    VEC, VEC + 1
@@ -133,7 +169,7 @@ entry_user_vector:      push    $0
  * LVT Entries
  */
 .rept                   NUM_LVT
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_lvt
 .set                    VEC, VEC + 1
@@ -149,7 +185,7 @@ entry_lvt:              push    $0
  * MSI Entries
  */
 .rept                   NUM_MSI
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_msi
 .set                    VEC, VEC + 1
@@ -165,7 +201,7 @@ entry_msi:              push    $0
  * IPI Entries
  */
 .rept                   NUM_IPI
-INTRGATE                0
+INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_ipi
 .set                    VEC, VEC + 1

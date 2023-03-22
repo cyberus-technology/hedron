@@ -28,13 +28,11 @@
 // clang-format on
 
 #define ARCH "x86_64"
-#define WORD .quad
 #define PTR_SIZE 8
 #define ELF_PHDR Ph64
 #define ELF_CLASS 2
 #define ELF_MACHINE 62
 #define PTE_BPL 9
-#define PTE_LEV 4
 #define ARG_IP rcx
 #define ARG_SP r11
 #define ARG_1 rdi

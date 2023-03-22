@@ -148,9 +148,15 @@ static_assert(OFFSETOF(Per_cpu, self) == STACK_SIZE,
 static_assert(OFFSETOF(Per_cpu, sys_entry_stack) == STACK_SIZE + 8,
               "This offset is used in assembly, grep Per_cpu::sys_entry_stack to find them");
 
+// The alternative exception handling stack.
+struct alignas(PAGE_SIZE) Alt_stack {
+    char stack[STACK_SIZE];
+};
+
 class Cpulocal
 {
     static Per_cpu cpu[NUM_CPU];
+    static Alt_stack altstack[NUM_CPU];
 
 public:
     static Per_cpu& get()
@@ -161,6 +167,9 @@ public:
     }
 
     static Per_cpu& get_remote(unsigned cpu_id);
+
+    // Return the stack pointer to the alternate stack.
+    static mword alt_stack_pointer(unsigned cpu_id);
 
     // Set up CPU local memory for the current CPU. Returns the stack pointer.
     static mword setup_cpulocal() asm("setup_cpulocal");
@@ -175,6 +184,12 @@ public:
     //
     // This function can be slow. Don't use it in performance-critical code.
     static bool is_initialized();
+
+    // Restores GS base in case its content is unknown.
+    //
+    // This function makes no attempt at saving the GS base and the caller is responsible for that, if it
+    // needs to be restored later.
+    static void restore_for_nmi();
 
     template <typename T, size_t OFFSET> static T get_field()
     {
