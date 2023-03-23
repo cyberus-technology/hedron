@@ -31,19 +31,11 @@ class Bootstrap
 
     static void release_next_cpu() { Atomic::store(boot_lock, static_cast<mword>(1)); }
 
-    /// A counter to implement the CPU boot barrier.
-    static inline mword barrier;
+    /// A counter to implement the CPU boot barrier. Counts how many CPUs have reached the barrier.
+    static inline mword barrier asm("boot_barrier");
 
     /// Spin until all processors have reached this code.
     static void wait_for_all_cpus();
-
-    /// Reset the boot synchronization logic for another initialization
-    /// pass.
-    static void rearm()
-    {
-        barrier = 0;
-        boot_lock = 0;
-    }
 
     /// Create the idle EC.
     static void create_idle_ec();

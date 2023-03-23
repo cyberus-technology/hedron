@@ -65,10 +65,6 @@ void Bootstrap::bootstrap()
         // clobbered for booting APs.
         Lapic::restore_low_memory();
 
-        // Reset the spinlock and barrier we use to synchronize CPUs on
-        // bootup. This is to prepare for the next suspend/resume cycle.
-        rearm();
-
         if (is_initial_boot) {
             Hip::finalize();
             create_roottask();
@@ -80,8 +76,13 @@ void Bootstrap::bootstrap()
 
 void Bootstrap::wait_for_all_cpus()
 {
-    for (Atomic::add(barrier, 1UL); Atomic::load(barrier) != Cpu::online; relax())
-        ;
+    // Announce that we entered the barrier.
+    Atomic::add(barrier, 1UL);
+
+    // Wait for everyone else to arrive.
+    while (Atomic::load(barrier) != Cpu::online) {
+        relax();
+    }
 }
 
 void Bootstrap::create_idle_ec()
