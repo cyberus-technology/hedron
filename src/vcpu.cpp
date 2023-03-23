@@ -440,9 +440,11 @@ void Vcpu::handle_extint()
 
 void Vcpu::return_to_vmm(Sys_regs::Status status)
 {
-    // We want to transfer the whole state, thus we set all MTD bits except for TLB and FPU.
-    // (Utcb::load_vmx doesn't use Mtd::TLB and we already saved the FPU)
-    const Mtd mtd{0x1dfffffful};
+    // We want to transfer the whole state, except
+    // - the EOI_EXIT_BITMAP and the TPR_THRESHOLD, because the hardware does not modify it
+    // - Mtd::TLB, because Utcb::load_vmx does not use it
+    // - Mtd::FPU, because we already saved the FPU
+    const Mtd mtd{~0UL & ~(Mtd::EOI | Mtd::TPR | Mtd::TLB | Mtd::FPU)};
 
     // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
     // we don't have to put anything into the UTCB.
