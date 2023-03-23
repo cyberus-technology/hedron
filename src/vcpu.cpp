@@ -444,7 +444,17 @@ void Vcpu::return_to_vmm(Sys_regs::Status status)
     // - the EOI_EXIT_BITMAP and the TPR_THRESHOLD, because the hardware does not modify it
     // - Mtd::TLB, because Utcb::load_vmx does not use it
     // - Mtd::FPU, because we already saved the FPU
-    const Mtd mtd{~0UL & ~(Mtd::EOI | Mtd::TPR | Mtd::TLB | Mtd::FPU)};
+    Mtd mtd{~0UL & ~(Mtd::EOI | Mtd::TPR | Mtd::TLB | Mtd::FPU)};
+
+    // We only transfer the Guest interrupt status (GUEST_INTR_STS) if the "virtual-interrupt delivery" field
+    // of the VM-execution control is set. This also prevents reading these fields on CPUs where they don't
+    // exist. The CPU handles reading non-existent fields gracefully, but it is a performance issue.
+    const bool vint_delivery_enabled{(utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_SECONDARY) and
+                                     (utcb()->ctrl[1] & Vmcs::Ctrl1::CPU_VINT_DELIVERY)};
+
+    if (not vint_delivery_enabled) {
+        mtd.val &= ~Mtd::VINTR;
+    }
 
     // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
     // we don't have to put anything into the UTCB.
