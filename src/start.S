@@ -115,6 +115,8 @@ __boot_header_mbi2_e:
 __boot_gdt:             .word   0
                         .word   __boot_gdt__ - __boot_gdt - 1
                         .long   __boot_gdt
+                        .quad   0
+                        .quad   0
                         .quad   0x00a09b0000000000
                         .quad   0x00a0930000000000
                         .quad   0x00a0fb0000000000
