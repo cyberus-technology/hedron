@@ -286,6 +286,7 @@ public:
         CPU_EPT = 1ul << 1,
         CPU_VPID = 1ul << 5,
         CPU_URG = 1ul << 7,
+        CPU_VINT_DELIVERY = 1ul << 9,
     };
 
     enum Reason
