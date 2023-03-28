@@ -36,3 +36,42 @@ void Ec::handle_vmx()
     assert(current()->vcpu != nullptr);
     current()->vcpu->handle_vmx();
 }
+
+Vcpu_acquire_result Ec::try_acquire_vcpu(Vcpu* vcpu)
+{
+    assert(Ec::current()->vcpu == nullptr);
+
+    auto result{vcpu->try_acquire()};
+    if (result.is_ok()) {
+        Ec::current()->vcpu.reset(vcpu);
+    }
+    return result;
+}
+
+void Ec::release_vcpu()
+{
+    assert(Ec::current()->vcpu != nullptr);
+
+    Ec::current()->vcpu->release(); // Release the ownership of the vCPU.
+    Ec::current()->vcpu.release();  // Release the pointer to the vCPU.
+}
+
+void Ec::run_vcpu(Mtd mtd)
+{
+    assert(Ec::current()->vcpu != nullptr);
+
+    Ec::current()->vcpu->mtd(mtd);
+    resume_vcpu();
+}
+
+void Ec::resume_vcpu()
+{
+    assert(Ec::current()->vcpu != nullptr);
+
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
+    if (EXPECT_FALSE(hzd)) {
+        handle_hazard(hzd, resume_vcpu);
+    }
+
+    Ec::current()->vcpu->run();
+}
