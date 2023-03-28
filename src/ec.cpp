@@ -87,14 +87,7 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
 Ec::~Ec()
 {
     pre_free(this);
-
-    if (is_vcpu()) {
-        if (Hip::feature() & Hip::FEAT_VMX) {
-            delete regs.vmcs;
-        }
-    } else {
-        assert(not vlapic);
-    }
+    assert(not vlapic);
 }
 
 void Ec::handle_hazard(mword hzd, void (*func)())
