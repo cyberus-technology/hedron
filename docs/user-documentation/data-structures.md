@@ -236,8 +236,7 @@ describe how capabilities are be transferred. It is used in the
 
 ## User Thread Control Block (UTCB)
 
-UTCBs belong to Execution Contexts. Each EC representing an ordinary
-thread (as opposed to a vCPU) always has an associated UTCB. It is
+UTCBs belong to Execution Contexts. Each EC has an associated UTCB. It is
 used to send and receive message data and architectural state via IPC.
 
 The UTCB is 4KiB in size. It's detailed layout is given in
@@ -264,9 +263,8 @@ timeout related spurious VM exit which can be ignored.
 
 ## Virtual LAPIC (vLAPIC) Page
 
-vLAPIC pages belong to Execution Contexts. A vCPU may have exactly one
-vLAPIC page. A vCPU never has an UTCB. See `create_ec` for the
-creation of vCPUs.
+vLAPIC pages belong to vCPUs. A vCPU has exactly one
+vLAPIC page.
 
 A vLAPIC page is exactly 4KiB in size. The content of the vLAPIC page
 is given by the Intel Architecture. The Intel Software Development
@@ -277,8 +275,7 @@ documentation, this page is called "virtual-APIC page".
 ## APIC Access Page
 
 The APIC Access Page is a page of memory that is used to mark the
-location of the Virtual LAPIC in a VM. Use of the APIC Access Page can
-be controlled on a per-vCPU basis (see `create_ec`).
+location of the Virtual LAPIC in a VM. All vCPUs use the APIC Access Page.
 
 The Intel Software Development Manual Vol. 3 gives further information
 on how the APIC Access Page changes the operation of Intel VT in the
