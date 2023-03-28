@@ -112,12 +112,6 @@ private:
     static bool handle_exc_gp(Exc_regs*);
     static bool handle_exc_pf(Exc_regs*);
 
-    [[noreturn]] static inline void vmx_exception();
-
-    [[noreturn]] static inline void vmx_extint();
-
-    [[noreturn]] static inline void vmx_invlpg();
-
     // Try to fixup a #GP in the kernel. See FIXUP_CALL for when this may be
     // appropriate.
     //
