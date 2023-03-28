@@ -220,7 +220,7 @@ bool Utcb::load_vmx(Cpu_regs* regs)
     }
 
     if (m & Mtd::INJ) {
-        if (regs->dst_portal == Vmcs::VMX_FAIL_STATE || regs->dst_portal == VMI_RECALL) {
+        if (regs->dst_portal == Vmcs::VMX_FAIL_STATE || regs->dst_portal == Vmcs::VMX_POKED) {
             intr_info = static_cast<uint32>(Vmcs::read(Vmcs::ENT_INTR_INFO));
             intr_error = static_cast<uint32>(Vmcs::read(Vmcs::ENT_INTR_ERROR));
         } else {

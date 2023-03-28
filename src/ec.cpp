@@ -53,7 +53,6 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
 {
     assert(u < USER_ADDR);
     assert((u & PAGE_MASK) == 0);
-    assert(not(creation_flags & CREATE_VCPU));
 
     // Make sure we consider the right CPUs for TLB shootdown
     pd->Space_mem::init(c);
@@ -84,11 +83,7 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
 }
 
 // De-constructor
-Ec::~Ec()
-{
-    pre_free(this);
-    assert(not vlapic);
-}
+Ec::~Ec() { pre_free(this); }
 
 void Ec::handle_hazard(mword hzd, void (*func)())
 {
@@ -356,12 +351,8 @@ bool Ec::fixup(Exc_regs* regs)
 
 void Ec::die(char const* reason, Exc_regs* r)
 {
-    if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
-        trace(0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)", current(),
-              Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
-    } else
-        trace(0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)", current(), Sc::current(),
-              r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
+    trace(0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)", current(), Sc::current(), r->vec,
+          r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
 
     Ec* ec = current()->rcap;
 
