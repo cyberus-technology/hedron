@@ -372,8 +372,6 @@ public:
 
     [[noreturn]] HOT static void ret_user_iret() asm("ret_user_iret");
 
-    [[noreturn]] static void ret_user_vmresume();
-
     [[noreturn]] static void sys_finish(Sys_regs::Status status, bool clear_timeout = false);
     [[noreturn]] static void sys_finish(Result_void<Sys_regs::Status> result);
 

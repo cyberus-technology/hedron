@@ -161,8 +161,6 @@ void Ec::recv_kern()
 
     if (ec->cont == ret_user_iret)
         fpu = current()->utcb->load_exc(&ec->regs);
-    else if (ec->cont == ret_user_vmresume)
-        fpu = current()->utcb->load_vmx(&ec->regs);
 
     if (EXPECT_FALSE(fpu))
         ec->transfer_fpu(current());
@@ -234,8 +232,6 @@ void Ec::sys_reply()
             src->save(ec->utcb.get());
         else if (ec->cont == ret_user_iret)
             fpu = src->save_exc(&ec->regs);
-        else if (ec->cont == ret_user_vmresume)
-            fpu = src->save_vmx(&ec->regs);
 
         if (EXPECT_FALSE(fpu))
             current()->transfer_fpu(ec);
@@ -1212,5 +1208,4 @@ void Ec::syscall_handler()
 }
 
 template void Ec::sys_finish<Sys_regs::COM_ABT>();
-template void Ec::send_msg<Ec::ret_user_vmresume>();
 template void Ec::send_msg<Ec::ret_user_iret>();

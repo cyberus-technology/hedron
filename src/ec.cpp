@@ -103,11 +103,6 @@ void Ec::handle_hazard(mword hzd, void (*func)())
     if (hzd & HZD_RECALL) {
         current()->regs.clr_hazard(HZD_RECALL);
 
-        if (func == ret_user_vmresume) {
-            current()->regs.dst_portal = VMI_RECALL;
-            send_msg<ret_user_vmresume>();
-        }
-
         if (func == ret_user_sysexit)
             current()->redirect_to_iret();
 
@@ -219,77 +214,6 @@ void Ec::ret_user_iret()
                  :
                  : [regs] "m"(current()->regs), [vec_size] "i"(2 * PTR_SIZE)
                  : "memory");
-
-    UNREACHED;
-}
-
-void Ec::ret_user_vmresume()
-{
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd))
-        handle_hazard(hzd, ret_user_vmresume);
-
-    auto const& regs = current()->regs;
-
-    regs.vmcs->make_current();
-
-    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
-        Pd::current()->stale_guest_tlb.clr(Cpu::id());
-
-        // We have to use an INVEPT here as opposed to INVVPID, because the
-        // paging structures might have changed and INVVPID does not flush
-        // guest-physical mappings.
-        Pd::current()->ept.invalidate();
-    }
-
-    if (EXPECT_FALSE(get_cr2() != regs.cr2)) {
-        set_cr2(regs.cr2);
-    }
-
-    if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
-        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", regs.xcr0);
-
-        // Make it look like a normal VM entry failure due to invalid guest state. The VMM receives this the
-        // usual way.
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
-
-        asm volatile("jmp entry_vmx_failure");
-        UNREACHED;
-    }
-
-    // If we knew for sure that SPEC_CTRL is available, we could load it via the
-    // MSR area (guest_msr_area). The problem is that older CPUs may boot with a
-    // microcode that doesn't expose SPEC_CTRL. It only becomes available once
-    // microcode is updated. So we manually context switch it instead.
-    //
-    // Another complication is that userspace may set invalid bits and we don't
-    // have the knowledge to sanitize the value. To avoid dying with a #GP in
-    // the kernel, we just handle it and carry on.
-    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
-        Msr::write_safe(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
-    }
-
-    // clang-format off
-    asm volatile ("lea %[regs], %%rsp;"
-                  EXPAND (LOAD_GPR)
-                  "vmresume;"
-                  "vmlaunch;"
-
-                  // If we return from vmlaunch, we have an VM entry
-                  // failure. Deflect this to the normal exit handling.
-
-                  "mov %[exi_reason], %%ecx;"
-                  "mov %[fail_vmentry], %%eax;"
-                  "vmwrite %%rax, %%rcx;"
-
-                  "jmp entry_vmx_failure;"
-
-                  :
-                  : [regs] "m" (regs),
-                    [exi_reason] "i" (Vmcs::EXI_REASON),
-                    [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
-                  : "memory");
-    // clang-format on
 
     UNREACHED;
 }
