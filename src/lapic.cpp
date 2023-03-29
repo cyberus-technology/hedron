@@ -181,6 +181,8 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
 }
 
+void Lapic::send_nmi(unsigned cpu) { send_ipi(cpu, 0, Delivery_mode::DLV_NMI); }
+
 void Lapic::send_self_ipi(unsigned vector)
 {
     send_ipi(0 /* unused */, vector, Delivery_mode::DLV_FIXED, Shorthand::DSH_SELF);
