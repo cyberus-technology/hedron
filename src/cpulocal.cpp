@@ -92,3 +92,27 @@ void Cpulocal::restore_for_nmi()
         panic("Failed to find CPU-local memory");
     }
 }
+
+bool Cpulocal::has_valid_stack()
+{
+    char* rsp;
+    asm volatile("mov %%rsp, %0" : "=rm"(rsp));
+
+    auto in_stack = [rsp](char(&stack)[STACK_SIZE]) -> bool {
+        return rsp > &stack[0] and rsp <= &stack[STACK_SIZE];
+    };
+
+    // If CPU-local memory is not initialized, we can not check whether the stack pointer is in the correct
+    // stack, but at least we see whether it is in any stack.
+    if (Cpulocal::is_initialized()) {
+        return in_stack(Cpulocal::get().stack);
+    } else {
+        for (auto& cpulocal : Cpulocal::cpu) {
+            if (in_stack(cpulocal.stack)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
