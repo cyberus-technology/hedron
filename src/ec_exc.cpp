@@ -87,7 +87,9 @@ bool Ec::handle_exc_pf(Exc_regs* r)
 
 void Ec::handle_exc(Exc_regs* r)
 {
-    assert(r->vec == r->dst_portal);
+    assert_slow(Cpulocal::is_initialized());
+    assert_slow(Cpulocal::has_valid_stack());
+    assert_slow(r->vec == r->dst_portal);
 
     switch (r->vec) {
 
