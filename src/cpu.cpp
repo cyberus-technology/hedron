@@ -258,11 +258,6 @@ Cpu_info Cpu::init()
         cr4 |= Cpu::CR4_SMAP;
     }
 
-    if (!feature(FEAT_FSGSBASE)) {
-        panic("Need FSGSBASE-capable CPU");
-    }
-    cr4 |= Cpu::CR4_FSGSBASE;
-
     set_cr4(cr4);
 
     Vmcs::init();

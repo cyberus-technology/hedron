@@ -60,7 +60,7 @@ mword Cpulocal::setup_cpulocal()
     Hpt::unmap_kernel_page(altstack[*opt_cpu_id].stack);
 
     mword const gs_base{reinterpret_cast<mword>(&local.self)};
-    Msr::write(Msr::IA32_GS_BASE, gs_base);
+    wrgsbase(gs_base);
     Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
@@ -73,12 +73,12 @@ void Cpulocal::prevent_accidental_access()
     // cause a fault.
     //
     // We can't program a non-canonical address, because the CPU would give us a #GP while writing the MSR.
-    Msr::write(Msr::IA32_GS_BASE, CANON_BOUND - 1);
+    wrgsbase(CANON_BOUND - 1);
 }
 
 bool Cpulocal::is_initialized()
 {
-    uint64 const gs_base{Msr::read(Msr::IA32_GS_BASE)};
+    uint64 const gs_base{rdgsbase()};
 
     return (gs_base >= reinterpret_cast<mword>(&cpu[0])) and
            (gs_base < reinterpret_cast<mword>(&cpu[array_size(cpu)]));

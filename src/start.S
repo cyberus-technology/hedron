@@ -41,6 +41,7 @@
 #define CR4_PGE (1 << 7)
 #define CR4_OSFXSR (1 << 9)
 #define CR4_OSXMMEXCPT (1 << 10)
+#define CR4_FSGSBASE (1 << 16)
 
 #define CR0_PE (1 << 0)
 #define CR0_MP (1 << 1)
@@ -149,7 +150,7 @@ __boot_gdt__:
                         or      $(IA32_EFER_SYSCALL | IA32_EFER_LME | IA32_EFER_NXE), %eax
                         wrmsr
 
-                        mov     $(CR4_PAE | CR4_PGE | CR4_OSFXSR | CR4_OSXMMEXCPT), %edx
+                        mov     $(CR4_PAE | CR4_PGE | CR4_OSFXSR | CR4_OSXMMEXCPT | CR4_FSGSBASE), %edx
                         mov     %edi, %eax /* restore - used by multiboot */
                         mov     %edx, %cr4
 
@@ -215,12 +216,22 @@ __start_bsp:
                         mov     %eax, %esi
                         mov     %ebx, %edi
 
+                        mov     $0x00000007, %eax
+                        xor     %ecx, %ecx
+                        cpuid
+
+                        /* Is FSGSBASE available? */
+                        bt      $0, %ebx
+                        jc      .fsgsbase_ok
+                        ud2a
+.fsgsbase_ok:
+
                         mov     $0x80000001, %eax
                         cpuid
 
                         /* Is NX available? */
-                        bt $20, %edx
-                        jc .nx_ok
+                        bt      $20, %edx
+                        jc      .nx_ok
                         ud2a
 .nx_ok:
 
