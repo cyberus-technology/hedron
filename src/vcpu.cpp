@@ -220,7 +220,7 @@ void Vcpu::run()
             // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the
             // value of regs.dst_poral. Thus we put VMI_RECALL into regs.dst_portal to make sure that we do
             // not leak the host interrupt info into the VMM.
-            regs.dst_portal = VMI_RECALL;
+            regs.dst_portal = Vmcs::VMX_POKED;
 
             exit_reason_shadow = Vmcs::VMX_POKED;
             return_to_vmm(Sys_regs::SUCCESS);

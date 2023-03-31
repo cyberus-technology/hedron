@@ -59,147 +59,31 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
 
     regs.vmcs = nullptr;
 
-    if (not(creation_flags & CREATE_VCPU)) {
-        if (glb) {
-            regs.cs = SEL_USER_CODE;
-            regs.ss = SEL_USER_DATA;
-            regs.rfl = Cpu::EFL_IF;
-            regs.rsp = s;
-        } else
-            regs.set_sp(s);
+    if (glb) {
+        regs.cs = SEL_USER_CODE;
+        regs.ss = SEL_USER_DATA;
+        regs.rfl = Cpu::EFL_IF;
+        regs.rsp = s;
+    } else
+        regs.set_sp(s);
 
-        utcb = make_unique<Utcb>();
+    utcb = make_unique<Utcb>();
 
-        user_utcb = u;
+    user_utcb = u;
 
-        if (user_utcb) {
-            pd_user_page->Space_mem::insert(
-                u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                Buddy::ptr_to_phys(utcb.get()));
-        }
-
-        regs.dst_portal = EXC_STARTUP;
-
-        trace(TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
-
-    } else {
-        regs.dst_portal = VMI_STARTUP;
-        regs.xcr0 = Cpu::XCR0_X87;
-        regs.spec_ctrl = 0;
-
-        if (Hip::feature() & Hip::FEAT_VMX) {
-            mword host_cr3 = pd->hpt.root() | (Cpu::feature(Cpu::FEAT_PCID) ? pd->did : 0);
-
-            regs.vmcs = new Vmcs(reinterpret_cast<mword>(sys_regs() + 1), pd->Space_pio::walk(), host_cr3,
-                                 pd->ept, c);
-
-            regs.nst_ctrl<Vmcs>();
-
-            /* Host MSRs are restored in the exit path. */
-            Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);
-            Vmcs::write(Vmcs::EXI_MSR_LD_CNT, 0);
-
-            /* allocate and register the guest MSR area */
-            mword guest_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
-            Vmcs::write(Vmcs::ENT_MSR_LD_ADDR, guest_msr_area_phys);
-            Vmcs::write(Vmcs::ENT_MSR_LD_CNT, Msr_area::MSR_COUNT);
-            Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
-            Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
-
-            /* Allocate and configure a default sane MSR bitmap */
-            msr_bitmap = make_unique<Vmx_msr_bitmap>();
-
-            static const Msr::Register guest_accessible_msrs[] = {
-                Msr::Register::IA32_FS_BASE,
-                Msr::Register::IA32_GS_BASE,
-                Msr::Register::IA32_KERNEL_GS_BASE,
-                Msr::Register::IA32_TSC_AUX,
-
-                // This is a read-only MSR that indicates which CPU
-                // vulnerability mitigations are not required.
-                //
-                // This register should be configurable by userspace. See #124.
-                Msr::Register::IA32_ARCH_CAP,
-
-                // This is a read-write register that toggles
-                // speculation-related features on the current hyperthread.
-                //
-                // This register is context-switched. See vmresume for why this
-                // doesn't happen via guest_msr_area.
-                Msr::Register::IA32_SPEC_CTRL,
-
-                // This is a write-only MSR without state that can be used to
-                // issue commands to the branch predictor. So far this is used
-                // to trigger barriers for indirect branch prediction (see
-                // IBPB).
-                Msr::Register::IA32_PRED_CMD,
-
-                // This is a write-only MSR without state that can be used to
-                // invalidate CPU structures. This is (so far) only used to
-                // flush the L1D cache.
-                Msr::Register::IA32_FLUSH_CMD,
-            };
-
-            static const Msr::Register passthrough_guest_accessible_msrs[] = {
-                // APERF and MPERF can be used by the guest to compute the average
-                // effective cpu frequency between the last mwait and the next mwait.
-                // See SDM 15.5.5 MPERF and APERF Under HDC.
-                Msr::Register::IA32_APERF,
-                Msr::Register::IA32_MPERF,
-            };
-
-            for (auto msr : guest_accessible_msrs) {
-                msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
-            }
-
-            if (pd->is_passthrough) {
-                for (auto msr : passthrough_guest_accessible_msrs) {
-                    msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
-                }
-            }
-
-            Vmcs::write(Vmcs::MSR_BITMAP, msr_bitmap->phys_addr());
-
-            if (u) {
-                /* Allocate and register the virtual LAPIC page and map it into user space. */
-                user_vlapic = u;
-                vlapic = make_unique<Vlapic>();
-
-                mword vlapic_page_p = Buddy::ptr_to_phys(vlapic.get());
-
-                Vmcs::write(Vmcs::APIC_VIRT_ADDR, vlapic_page_p);
-                pd_user_page->Space_mem::insert(
-                    u, 0, Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
-                    vlapic_page_p);
-
-                if (creation_flags & USE_APIC_ACCESS_PAGE) {
-                    Vmcs::write(Vmcs::APIC_ACCS_ADDR, Buddy::ptr_to_phys(pd->get_access_page()));
-                }
-            }
-
-            regs.vmcs->clear();
-            cont = send_msg<ret_user_vmresume>;
-
-            trace(TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VLAPIC:%lx)", this, p, regs.vmcs, u);
-        }
+    if (user_utcb) {
+        pd_user_page->Space_mem::insert(u, 0,
+                                        Hpt::PTE_NODELEG | Hpt::PTE_NX | Hpt::PTE_U | Hpt::PTE_W | Hpt::PTE_P,
+                                        Buddy::ptr_to_phys(utcb.get()));
     }
 
-    assert(is_vcpu() == !!(creation_flags & CREATE_VCPU));
+    regs.dst_portal = EXC_STARTUP;
+
+    trace(TRACE_SYSCALL, "EC:%p created (PD:%p CPU:%#x UTCB:%#lx ESP:%lx EVT:%#x)", this, p, c, u, s, e);
 }
 
 // De-constructor
-Ec::~Ec()
-{
-    pre_free(this);
-
-    if (is_vcpu()) {
-        if (Hip::feature() & Hip::FEAT_VMX) {
-            delete regs.vmcs;
-        }
-    } else {
-        assert(not vlapic);
-    }
-}
+Ec::~Ec() { pre_free(this); }
 
 void Ec::handle_hazard(mword hzd, void (*func)())
 {
@@ -213,11 +97,6 @@ void Ec::handle_hazard(mword hzd, void (*func)())
 
     if (hzd & HZD_RECALL) {
         current()->regs.clr_hazard(HZD_RECALL);
-
-        if (func == ret_user_vmresume) {
-            current()->regs.dst_portal = VMI_RECALL;
-            send_msg<ret_user_vmresume>();
-        }
 
         if (func == ret_user_sysexit)
             current()->redirect_to_iret();
@@ -334,116 +213,6 @@ void Ec::ret_user_iret()
     UNREACHED;
 }
 
-void Ec::ret_user_vmresume()
-{
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd))
-        handle_hazard(hzd, ret_user_vmresume);
-
-    auto const& regs = current()->regs;
-
-    regs.vmcs->make_current();
-
-    if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
-        Pd::current()->stale_guest_tlb.clr(Cpu::id());
-
-        // We have to use an INVEPT here as opposed to INVVPID, because the
-        // paging structures might have changed and INVVPID does not flush
-        // guest-physical mappings.
-        Pd::current()->ept.invalidate();
-    }
-
-    if (EXPECT_FALSE(get_cr2() != regs.cr2)) {
-        set_cr2(regs.cr2);
-    }
-
-    if (EXPECT_FALSE(not Fpu::load_xcr0(regs.xcr0))) {
-        trace(TRACE_ERROR, "Refusing VM entry due to invalid XCR0: %#llx", regs.xcr0);
-
-        // Make it look like a normal VM entry failure due to invalid guest state. The VMM receives this the
-        // usual way.
-        Vmcs::write(Vmcs::EXI_REASON, Vmcs::VMX_FAIL_STATE | Vmcs::VMX_ENTRY_FAILURE);
-
-        asm volatile("jmp entry_vmx_failure");
-        UNREACHED;
-    }
-
-    // If we knew for sure that SPEC_CTRL is available, we could load it via the
-    // MSR area (guest_msr_area). The problem is that older CPUs may boot with a
-    // microcode that doesn't expose SPEC_CTRL. It only becomes available once
-    // microcode is updated. So we manually context switch it instead.
-    //
-    // Another complication is that userspace may set invalid bits and we don't
-    // have the knowledge to sanitize the value. To avoid dying with a #GP in
-    // the kernel, we just handle it and carry on.
-    if (EXPECT_TRUE(Cpu::feature(Cpu::FEAT_IA32_SPEC_CTRL)) and regs.spec_ctrl != 0) {
-        Msr::write_safe(Msr::IA32_SPEC_CTRL, regs.spec_ctrl);
-    }
-
-    // clang-format off
-    asm volatile ("lea %[regs], %%rsp;"
-                  EXPAND (LOAD_GPR)
-                  "vmresume;"
-                  "vmlaunch;"
-
-                  // If we return from vmlaunch, we have an VM entry
-                  // failure. Deflect this to the normal exit handling.
-
-                  "mov %[exi_reason], %%ecx;"
-                  "mov %[fail_vmentry], %%eax;"
-                  "vmwrite %%rax, %%rcx;"
-
-                  "jmp entry_vmx_failure;"
-
-                  :
-                  : [regs] "m" (regs),
-                    [exi_reason] "i" (Vmcs::EXI_REASON),
-                    [fail_vmentry] "i" (Vmcs::VMX_FAIL_VMENTRY)
-                  : "memory");
-    // clang-format on
-
-    UNREACHED;
-}
-
-Vcpu_acquire_result Ec::try_acquire_vcpu(Vcpu* vcpu)
-{
-    assert(Ec::current()->vcpu == nullptr);
-
-    auto result{vcpu->try_acquire()};
-    if (result.is_ok()) {
-        Ec::current()->vcpu.reset(vcpu);
-    }
-    return result;
-}
-
-void Ec::release_vcpu()
-{
-    assert(Ec::current()->vcpu != nullptr);
-
-    Ec::current()->vcpu->release(); // Release the ownership of the vCPU.
-    Ec::current()->vcpu.release();  // Release the pointer to the vCPU.
-}
-
-void Ec::run_vcpu(Mtd mtd)
-{
-    assert(Ec::current()->vcpu != nullptr);
-
-    Ec::current()->vcpu->mtd(mtd);
-    resume_vcpu();
-}
-
-void Ec::resume_vcpu()
-{
-    assert(Ec::current()->vcpu != nullptr);
-
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd)) {
-        handle_hazard(hzd, resume_vcpu);
-    }
-
-    Ec::current()->vcpu->run();
-}
-
 void Ec::idle()
 {
     for (;;) {
@@ -543,12 +312,8 @@ bool Ec::fixup(Exc_regs* regs)
 
 void Ec::die(char const* reason, Exc_regs* r)
 {
-    if (not current()->is_vcpu() || current()->pd == &Pd::kern) {
-        trace(0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)", current(),
-              Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, reason);
-    } else
-        trace(0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)", current(), Sc::current(),
-              r->vec, r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
+    trace(0, "Killed EC:%p SC:%p V:%#lx CR0:%#lx CR3:%#lx CR4:%#lx (%s)", current(), Sc::current(), r->vec,
+          r->cr0_shadow, r->cr3_shadow, r->cr4_shadow, reason);
 
     Ec* ec = current()->rcap;
 

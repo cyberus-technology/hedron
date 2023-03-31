@@ -6,6 +6,10 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 10.0
+- **Changed** `HC_CREATE_EC` now cannot be used to create vCPU-ECs anymore. The `vCPU` and the `Use APIC Access Page`
+  bits of the `HC_CREATE_EC` system call must be zero now, otherwise Hedron will return with `BAD_PAR`.
+
 ## API Version 9.0
 - **Changed** `HC_CREATE_VCPU` now takes an additional CPU parameter that indicates on which physical CPU the vCPU will
   run. Previously, the current CPU was assumed.

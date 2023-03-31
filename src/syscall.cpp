@@ -161,8 +161,6 @@ void Ec::recv_kern()
 
     if (ec->cont == ret_user_iret)
         fpu = current()->utcb->load_exc(&ec->regs);
-    else if (ec->cont == ret_user_vmresume)
-        fpu = current()->utcb->load_vmx(&ec->regs);
 
     if (EXPECT_FALSE(fpu))
         ec->transfer_fpu(current());
@@ -234,8 +232,6 @@ void Ec::sys_reply()
             src->save(ec->utcb.get());
         else if (ec->cont == ret_user_iret)
             fpu = src->save_exc(&ec->regs);
-        else if (ec->cont == ret_user_vmresume)
-            fpu = src->save_vmx(&ec->regs);
 
         if (EXPECT_FALSE(fpu))
             current()->transfer_fpu(ec);
@@ -285,11 +281,6 @@ void Ec::sys_create_ec()
         sys_finish<Sys_regs::BAD_CPU>();
     }
 
-    if (EXPECT_FALSE(r->is_vcpu() && !(Hip::feature() & Hip::FEAT_VMX))) {
-        trace(TRACE_ERROR, "%s: VCPUs not supported", __func__);
-        sys_finish<Sys_regs::BAD_FTR>();
-    }
-
     Pd* pd = capability_cast<Pd>(Space_obj::lookup(r->pd()), Pd::PERM_OBJ_CREATION);
 
     if (EXPECT_FALSE(not pd)) {
@@ -302,12 +293,17 @@ void Ec::sys_create_ec()
         sys_finish<Sys_regs::BAD_PAR>();
     }
 
+    // ARG1[10:9] (flags()[2:1]) are ignored and must be set to zero to be able to re-use these flags later
+    // without a breaking change.
+    if (EXPECT_FALSE((r->flags() & 0b0110) != 0)) {
+        trace(TRACE_ERROR, "%s: ARG1[10:9] must be zero!", __func__);
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
     Ec* ec = new Ec(Pd::current(), r->sel(), pd,
                     r->flags() & 1 ? static_cast<void (*)()>(send_msg<ret_user_iret>) : nullptr, r->cpu(),
                     r->evt(), r->user_page(), r->esp(),
-                    (r->is_vcpu() ? Ec::CREATE_VCPU : 0) |
-                        (r->use_apic_access_page() ? Ec::USE_APIC_ACCESS_PAGE : 0) |
-                        (r->map_user_page_in_owner() ? Ec::MAP_USER_PAGE_IN_OWNER : 0));
+                    (r->map_user_page_in_owner() ? Ec::MAP_USER_PAGE_IN_OWNER : 0));
 
     if (!Space_obj::insert_root(ec)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
@@ -1212,5 +1208,4 @@ void Ec::syscall_handler()
 }
 
 template void Ec::sys_finish<Sys_regs::COM_ABT>();
-template void Ec::send_msg<Ec::ret_user_vmresume>();
 template void Ec::send_msg<Ec::ret_user_iret>();

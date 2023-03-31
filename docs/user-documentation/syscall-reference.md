@@ -41,27 +41,22 @@ returns from its `call` system call instead.
 `create_ec` creates an EC kernel object and a capability pointing to
 the newly created kernel object.
 
-An EC can be either a normal host EC or a virtual CPU. It does not
-come with scheduling time allocated to it. ECs need scheduling
+An EC does not come with scheduling time allocated to it. ECs need scheduling
 contexts (SCs) to be scheduled and thus executed.
 
 ECs can be either _global_ or _local_. A global EC can have a
 dedicated scheduling context (SC) bound to it. When this SC is
-scheduled the EC runs. Global ECs can be both, normal host ECs and
-vCPUs. A normal EC bound to an SC builds what is commonly known as a
-thread.
+scheduled the EC runs. An EC bound to an SC builds what is commonly
+known as a thread.
 
-Local ECs can only be normal ECs and not vCPUs. They cannot have SCs
-bound to them and are used for portal handlers. These handlers never
-execute with their own SC, but borrow the scheduling context from the
-caller.
+Local ECs cannot have SCs bound to them and are used for portal handlers. These
+handlers never execute with their own SC, but borrow the scheduling context
+from the caller.
 
-Each EC has an _event base_. This event base is an offset into the
-capability space of the PD the EC belongs to. Exceptions (for normal
-ECs) and VM exits (for vCPUs) are sent as messages to the portal index
-that results from adding the event reason to the event base. For vCPUs
-the event reason are VM exit reasons, for normal ECs the reasons are
-exception numbers.
+Each EC has an _event base_. This event base is an offset into the capability
+space of the PD the EC belongs to. Exceptions are sent as messages to the
+portal index that results from adding the event reason (the exception number)
+to the event base.
 
 ### In
 
@@ -69,14 +64,13 @@ exception numbers.
 |-------------|-----------------------|-------------------------------------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number    | Needs to be `HC_CREATE_EC`.                                                                                 |
 | ARG1[8]     | Global EC             | If set, create a global EC, otherwise a local EC.                                                           |
-| ARG1[9]     | vCPU                  | If set, a vCPU is constructed, otherwise a normal EC.                                                       |
-| ARG1[10]    | Use APIC Access Page  | Whether a vCPU should respect the APIC Access Page. Ignored for non-vCPUs or if no vLAPIC page is created.  |
-| ARG1[11]    | User Page Destination | If 0, the UTCB / vLAPIC page will be mapped in the parent PD, otherwise it's mapped in the current PD.      |
+| ARG1[10:9]  | Ignored               | Must be zero.                                                                                               |
+| ARG1[11]    | User Page Destination | If 0, the UTCB will be mapped in the parent PD, otherwise it's mapped in the current PD.                    |
 | ARG1[63:12] | Destination Selector  | A capability selector in the current PD that will point to the newly created EC.                            |
 | ARG2        | Parent PD             | A capability selector to a PD domain in which the new EC will execute in.                                   |
 | ARG3[11:0]  | CPU number            | Number between 0..MAX (depends on implementation, see `config.hpp`) *Note: ECs are CPU-local.*              |
-| ARG3[63:12] | UTCB / vLAPIC Page    | A page number where the UTCB / vLAPIC page will be created. Page 0 means no vLAPIC page or UTCB is created. |
-| ARG4        | Stack Pointer         | The initial stack pointer for normal ECs. Ignored for vCPUs.                                                |
+| ARG3[63:12] | UTCB Page             | A page number where the UTCB will be created. Page 0 means no UTCB is created.                              |
+| ARG4        | Stack Pointer         | The initial stack pointer.                                                                                  |
 | ARG5        | Event Base            | The Event Base of the newly created EC.                                                                     |
 
 ### Out
@@ -114,9 +108,6 @@ See the specific `ec_ctrl` sub-operation.
 recall exception handler via its recall exception portal as soon as
 possible. ECs can be recalled from any CPU, not only the CPU on which
 they are scheduled to run.
-
-The common use case for recall is to force a vCPU into its `RECALL`
-handler to be able to inject interrupts into a virtual machine.
 
 ### In
 

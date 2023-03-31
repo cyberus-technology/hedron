@@ -49,12 +49,6 @@
 // Recall exception index for global ECs.
 #define EXC_RECALL (NUM_EXC - 1)
 
-// Startup exception index for vCPUs. vCPUs receive this exception the first
-// time a scheduling context is bound to them.
-#define VMI_STARTUP (NUM_VMI - 2)
-// Recall exception index for vCPUs.
-#define VMI_RECALL (NUM_VMI - 1)
-
 class Utcb;
 
 class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queue<Sc>
@@ -67,9 +61,6 @@ private:
     Ec* rcap{nullptr};
 
     Unique_ptr<Utcb> utcb;
-    Unique_ptr<Vlapic> vlapic;
-
-    Unique_ptr<Vmx_msr_bitmap> msr_bitmap;
 
     // The protection domain the EC will run in.
     Refptr<Pd> pd;
@@ -93,9 +84,6 @@ private:
     // Virtual Address of the UTCB in userspace.
     mword user_utcb{0};
 
-    // Virtual Address of the vLAPIC page in userspace.
-    mword user_vlapic{0};
-
     Fpu fpu;
 
     // Ec::run_vcpu needs a way to find the right vcpu when the continuation points to it. Having a cpu-local
@@ -111,12 +99,6 @@ private:
 
     static bool handle_exc_gp(Exc_regs*);
     static bool handle_exc_pf(Exc_regs*);
-
-    [[noreturn]] static inline void vmx_exception();
-
-    [[noreturn]] static inline void vmx_extint();
-
-    [[noreturn]] static inline void vmx_invlpg();
 
     // Try to fixup a #GP in the kernel. See FIXUP_CALL for when this may be
     // appropriate.
@@ -138,16 +120,9 @@ private:
             e->pd_user_page->Space_mem::insert(e->user_utcb, 0, 0, 0);
             e->user_utcb = 0;
         }
-
-        if (e->user_vlapic) {
-            e->pd_user_page->Space_mem::insert(e->user_vlapic, 0, 0, 0);
-            e->user_vlapic = 0;
-        }
     }
 
     inline bool is_idle_ec() const { return cont == idle; }
-
-    inline bool is_vcpu() const { return not utcb; }
 
     static void free(Rcu_elem* a)
     {
@@ -217,8 +192,6 @@ public:
 
     enum ec_creation_flags
     {
-        CREATE_VCPU = 1 << 0,
-        USE_APIC_ACCESS_PAGE = 1 << 1,
         MAP_USER_PAGE_IN_OWNER = 1 << 2,
     };
 
@@ -377,8 +350,6 @@ public:
     [[noreturn]] HOT static void ret_user_sysexit();
 
     [[noreturn]] HOT static void ret_user_iret() asm("ret_user_iret");
-
-    [[noreturn]] static void ret_user_vmresume();
 
     [[noreturn]] static void sys_finish(Sys_regs::Status status, bool clear_timeout = false);
     [[noreturn]] static void sys_finish(Result_void<Sys_regs::Status> result);
