@@ -2,9 +2,9 @@
 
 ## call
 
-Performs an IPC call to a PT. Because a PT is permanently bound to an EC, 
-and ECs belongs to specific CPUs, the PT must be bound to the same CPU 
-as the caller. All data is transferred via the UTCB. The SC is donated to 
+Performs an IPC call to a PT. Because a PT is permanently bound to an EC,
+and ECs belongs to specific CPUs, the PT must be bound to the same CPU
+as the caller. All data is transferred via the UTCB. The SC is donated to
 the callee. Thus, the complete time it takes to handle the call is accounted
 to the caller until the callee replies.
 
@@ -25,7 +25,7 @@ to the caller until the callee replies.
 ## reply
 
 Replies to a PT call by sending data via the UTCB of the callee local EC to the UTCB of the caller EC.
-Only makes sense in portal handlers, such as exception handlers or other application-specific 
+Only makes sense in portal handlers, such as exception handlers or other application-specific
 IPC endpoints. It's undefined behaviour, if you execute this syscall in a global EC. Reply must be called, after
 the promised functionality of the portal was fulfilled. This system call does not return. The caller
 returns from its `call` system call instead.
