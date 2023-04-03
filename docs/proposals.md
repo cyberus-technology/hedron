@@ -15,7 +15,7 @@ passes interrupts through. This creates a performance and
 compatibility problem.
 
 As an alternative, we plan to remove interrupt handling from Hedron
-and let the Passthrough VM handle interrupts directy.
+and let the passthrough VM handle interrupts directly.
 
 ### High-Level Impact
 
@@ -25,6 +25,7 @@ Hedron will start to use NMIs. NMIs will be used to:
 
 - implement remote TLB shootdowns (now `VEC_IPI_RKE`),
 - implement vCPU poke (now `VEC_IPI_RKE`),
+- implement EC recall (now `VEC_IPI_RKE`),
 - accelerate RCU for idles cores (now `VEC_IPI_IDL`),
 - enqueue SCs on remote cores (now `VEC_IPI_RRQ`),
 - park cores during suspend (now `VEC_IPI_PRK`).
@@ -53,7 +54,7 @@ SC and schedules the next unblocked global EC.
 
 #### Removed Syscall: `irq_ctrl_*`
 
-This family of system calls will be removed. The passthrough VMM has
+This family of system calls will be removed. The passthrough VM has
 access to the Local APIC itself.
 
 While Hedron executes host code, interrupts will be disabled (`RFLAGS.IF == 0`).
@@ -62,12 +63,6 @@ While Hedron executes host code, interrupts will be disabled (`RFLAGS.IF == 0`).
 
 The timeout parameters will be removed. Semaphores will not have
 timeouts anymore.
-
-#### Removed Syscall: `ec_ctrl_recall`
-
-This system call will be removed. While this system call could be
-implemented, its functionality is currently unused and we see no
-usecase.
 
 #### Changed Syscall: `pd_ctrl_delegate` and IPC mappings
 
@@ -85,7 +80,7 @@ the passthrough VM is executed.
 
 ### Changes to the HIP
 
-Hedron will stop reporting the following information in the HIP:
+We will remove the following information in the HIP:
 
 - the IOMMU feature bit,
 - any IOAPIC information,
