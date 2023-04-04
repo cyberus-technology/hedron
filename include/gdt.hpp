@@ -60,6 +60,14 @@ public:
         asm volatile("lgdt %0" : : "m"(desc));
     }
 
+    // Return the content of the GDTR.
+    static inline Pseudo_descriptor store()
+    {
+        Pseudo_descriptor desc{0, 0};
+        asm volatile("sgdt %0" : "=m"(desc));
+        return desc;
+    }
+
     // Load only the kernel part of the GDT into the GDTR.
     static inline void load_kernel_only()
     {
