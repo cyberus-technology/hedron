@@ -72,6 +72,9 @@
 // Vcpu::handle_vmx.
 #define SEL_MAX 0x10000
 
+// This constant marks the end of the kernel part of the GDT.
+#define SEL_KERN (SEL_KERN_DATA + 8)
+
 #ifdef __cplusplus
 static_assert(SEL_USER_CODE_L < SEL_MAX, "Too many CPUs to fit TSS descriptors into GDT");
 #endif
