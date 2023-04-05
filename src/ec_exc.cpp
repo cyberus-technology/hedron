@@ -264,6 +264,14 @@ void Ec::handle_exc_altstack(Exc_regs* r)
                          :
                          : "m"(iret_frame[0])
                          : "memory");
+        } else {
+            // We interrupted the kernel. The next exit to userspace needs to fault so we can check hazards.
+
+            // IRET to userspace faults when the userspace code selector is beyond the GDT limit.
+            Gdt::load_kernel_only();
+
+            // We return to the kernel.
+            wrgsbase(old_gs_base);
         }
         break;
 
