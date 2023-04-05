@@ -185,23 +185,47 @@ void Ec::ret_user_iret()
 
     assert_slow(Pd::is_pcid_valid());
 
-    asm volatile("lea %[regs], %%rsp\n"
+    // We cannot switch the stack here, because iret might fault and we will receive this exception with the
+    // stack pointer pointing into the heap.
 
-                 // Load all general-purpose registers now that RSP points at
-                 // the beginning of an Exc_regs structure.
-                 EXPAND(LOAD_GPR)
+    asm volatile(
 
-                 // At this point, RSP points to `err` in Exc_regs. We need to
-                 // skip the unused vector and error code.
-                 "add %[vec_size], %%rsp\n"
+        // We need to reset the stack, because otherwise subsequent NMIs might make us fault on iret
+        // again and we have unbounded stack growth.
+        "mov %%gs:0, %%rsp\n"
 
-                 // Now RSP points to RIP in Exc_regs. This is a normal IRET
-                 // frame.
-                 "swapgs\n"
-                 "iretq\n"
-                 :
-                 : [regs] "m"(current()->regs), [vec_size] "i"(2 * PTR_SIZE)
-                 : "memory");
+        "mov (0 * 8)(%%rax), %%r15\n"
+        "mov (1 * 8)(%%rax), %%r14\n"
+        "mov (2 * 8)(%%rax), %%r13\n"
+        "mov (3 * 8)(%%rax), %%r12\n"
+
+        "mov (4 * 8)(%%rax), %%r11\n"
+        "mov (5 * 8)(%%rax), %%r10\n"
+        "mov (6 * 8)(%%rax), %%r9\n"
+        "mov (7 * 8)(%%rax), %%r8\n"
+
+        "mov (8 * 8)(%%rax), %%rdi\n"
+        "mov (9 * 8)(%%rax), %%rsi\n"
+        "mov (10 * 8)(%%rax), %%rbp\n"
+
+        "mov (12 * 8)(%%rax), %%rbx\n"
+        "mov (13 * 8)(%%rax), %%rdx\n"
+        "mov (14 * 8)(%%rax), %%rcx\n"
+
+        "push (22 * 8)(%%rax)\n" // ss
+        "push (21 * 8)(%%rax)\n" // rsp
+        "push (20 * 8)(%%rax)\n" // rfl
+        "push (19 * 8)(%%rax)\n" // cs
+        "push (18 * 8)(%%rax)\n" // rip
+
+        "mov (15 * 8)(%%rax), %%rax\n"
+
+        // RSP points to RIP in Exc_regs. This is a normal IRET frame.
+        "swapgs\n"
+        "iretq\n"
+        :
+        : "a"(&current()->regs)
+        : "memory");
 
     UNREACHED;
 }
