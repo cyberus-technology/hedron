@@ -86,6 +86,17 @@ bool Ec::handle_exc_pf(Exc_regs* r)
     die("#PF (kernel)", r);
 }
 
+void Ec::fixup_nmi_user_trap()
+{
+    // We recognized the NMI and don't need to trap on the next exit to user space unless we get another NMI.
+
+    // Restore the whole GDT so IRET can return to user space.
+    Gdt::load();
+
+    // Restore HOST_SEL_CS to be able to call VMRESUME.
+    Vmcs::write(Vmcs::HOST_SEL_CS, SEL_KERN_CODE);
+}
+
 void Ec::do_early_nmi_work()
 {
     // This function is called in the NMI handler (and maybe also somewhere else) and thus there are certain
@@ -143,24 +154,46 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
     assert((not synthetic_gp) or r->cs == SEL_USER_CODE);
     assert(not(synthetic_gp and r->cs == SEL_KERN_CODE));
 
+    // The exception occured when we tried to execute an IRET.
+    const bool exc_on_iret_to_user{r->cs == SEL_KERN_CODE and static_cast<int64>(r->rip) < 0 and
+                                   *reinterpret_cast<uint16*>(r->rip) == 0xcf48};
+
+    // TODO: This needs a better check so we don't have to read code.
+    if (exc_on_iret_to_user) {
+        // ret_user_iret does a swapgs before executing the IRET. Thus here we have to swapgs again in
+        // order to handle the deferred work.
+        swapgs();
+
+        // Fix our state so we are able to return to user space.
+        fixup_nmi_user_trap();
+    }
+
+    assert(Cpulocal::is_initialized());
+    assert(Cpulocal::has_valid_stack());
+
     // At this point, it is safe again to interact with the rest of the kernel, because we restored CPU-local
     // memory.
 
-    if (not synthetic_gp) {
+    if (not(exc_on_iret_to_user or synthetic_gp)) {
         return;
     }
 
     // We have deferred work from an earlier NMI.
     do_deferred_nmi_work();
 
-    // Call Ec::ret_user_iret, which handles the hazards and returns to user space.
+    // If we interrupted the kernel, the RIP for this #GP points to the IRET instruction after any
+    // swapgs. When we return to that iret, we would have to swapgs again to return GS_BASE and
+    // KERNEL_GS_BASE to its intended values.
+    //
+    // It's easier to call ret_user_iret, because this also does the hazard checking that we want.
     Ec::ret_user_iret();
 }
 
 void Ec::handle_exc(Exc_regs* r)
 {
-    // Handle any deffered NMI work by calling maybe_handle_deferred_nmi_work. This function will not return
-    // when the reason for the exception was pending work from the NMI.
+    // WARNING: When we enter here, it is NOT SAFE to use CPU-local memory until we handled any deferred NMI
+    // work by calling maybe_handle_deferred_nmi_work. This function will not return when the reason for the
+    // exception was pending work from the NMI.
     maybe_handle_deferred_nmi_work(r);
 
     // If we get here, CPU-local memory is initialized and kernel data structures can be accessed.
