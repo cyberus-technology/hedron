@@ -134,7 +134,9 @@ void Ec::handle_exc_altstack(Exc_regs* r)
 {
     // When we enter here, the GS base and KERNEL_GS_BASE MSR are not set up for kernel use. We restore GS
     // base and leave KERNEL_GS_BASE as is.
-    //
+
+    const mword old_gs_base{rdgsbase()};
+
     // This means we can use CPU-local variables, but not exit from this handler via any path that expects
     // SWAPGS to work. Also the register state has only been saved on the current stack. This means any return
     // from this interrupt must happen via a return from this function.
@@ -146,7 +148,62 @@ void Ec::handle_exc_altstack(Exc_regs* r)
 
     switch (r->vec) {
     case Cpu::EXC_NMI:
-        panic("Received Non-Maskable Interrupt (NMI) on CPU %u at RIP %#lx", Cpu::id(), r->rip);
+
+        do_early_nmi_work();
+        if (r->user() /* from userspace */) {
+            // Cpulocal::restore_for_nmi has changed GS_BASE, thus we have to restore the old_gs_base and then
+            // call swapgs() to make GS_BASE/GS_BASE_KERNEL look like the kernel.
+            wrgsbase(old_gs_base);
+            swapgs();
+
+            // We came from user space, thus the whole GDT must be loaded.
+            assert_slow(Gdt::store().limit == Gdt::limit());
+
+            // We are about to generate a synthetic #GP.
+
+            mword kern_entry_rsp{Tss::local().sp0};
+            auto* stack_ptr{reinterpret_cast<Exc_regs*>(kern_entry_rsp)};
+
+            // This is the stack frame that the CPU would have pushed for a normal entry into the kernel.
+            stack_ptr->ss = r->ss;
+            stack_ptr->rsp = r->rsp;
+            stack_ptr->rfl = r->rfl;
+            stack_ptr->cs = r->cs;
+            stack_ptr->rip = r->rip;
+            stack_ptr->vec = Cpu::EXC_GP;
+            stack_ptr->err = NMI_SYNTH_GP_VEC;
+
+            stack_ptr->rax = r->rax;
+            stack_ptr->rcx = r->rcx;
+            stack_ptr->rdx = r->rdx;
+            stack_ptr->rbx = r->rbx;
+            stack_ptr->rsp = r->rsp;
+            stack_ptr->rbp = r->rbp;
+            stack_ptr->rsi = r->rsi;
+            stack_ptr->rdi = r->rdi;
+            stack_ptr->r8 = r->r8;
+            stack_ptr->r9 = r->r9;
+            stack_ptr->r10 = r->r10;
+            stack_ptr->r11 = r->r11;
+            stack_ptr->r12 = r->r12;
+            stack_ptr->r13 = r->r13;
+            stack_ptr->r14 = r->r14;
+            stack_ptr->r15 = r->r15;
+
+            // This is the stack frame we construct for iret.
+            mword iret_frame[5];
+            iret_frame[0] = reinterpret_cast<mword>(entry_from_nmi); // rip
+            iret_frame[1] = SEL_KERN_CODE;                           // cs
+            iret_frame[2] = 0x2;                                     // rflags
+            iret_frame[3] = reinterpret_cast<mword>(stack_ptr);      // rsp
+            iret_frame[4] = SEL_KERN_DATA;                           // ss
+
+            asm volatile("lea %0, %%rsp;"
+                         "iretq;"
+                         :
+                         : "m"(iret_frame[0])
+                         : "memory");
+        }
         break;
 
     case Cpu::EXC_DF:
