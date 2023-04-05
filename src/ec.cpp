@@ -122,6 +122,19 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
+    // TODO Instead of exiting via sysret, which should trap due to the NMI handler, we just redirect
+    // everything to iret.
+    //
+    // TODO Find out why redirect_to_iret does not need to set RFLAGS and CS/DS.
+    Exc_regs& regs = current()->regs;
+    regs.rsp = regs.r11;
+    regs.rfl = 0x200;
+    regs.rip = regs.rcx;
+    regs.cs = SEL_USER_CODE;
+    regs.ss = SEL_USER_DATA;
+    ret_user_iret();
+
+    // TODO This is not reached right now.
     assert_slow(Pd::is_pcid_valid());
 
     // clang-format off
