@@ -101,8 +101,69 @@ void Ec::do_early_nmi_work()
     Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
 }
 
+void Ec::do_deferred_nmi_work()
+{
+    // Here we are doing the work that we cannot unconditionally do inside the NMI handler. This function
+    // should only be called by
+    // - the NMI handler, if we were running in user space while receiving the NMI
+    // - Ec::maybe_handle_deferred_nmi_work, which is called if we received an exception that may be caused by
+    // the NMI handler
+    // - Vcpu::handle_exception, if a VM exit was caused by an NMI
+    //
+    // All these cases have in common that we know that we are not holding any locks or that we interrupted
+    // the kernel while manipulating some data structures and thus most actions are safe.
+    //
+    // We have to keep in mind though that we may not run on the normal kernel stack, but on the NMI stack.
+    //
+    // The caller of this function has to make sure that we can access CPU-local data.
+
+    assert_slow(Cpulocal::is_initialized());
+    assert_slow(Cpulocal::has_valid_stack());
+
+    // Handle a stale TLB.
+    if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
+        Pd::current()->Space_mem::stale_host_tlb.clr(Cpu::id());
+        Hpt::flush();
+    }
+}
+
+void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
+{
+    if (EXPECT_TRUE(r->vec != Cpu::EXC_GP)) {
+        // To handle an NMI we always generate a #GP, thus if we are currently not handling a #GP, we can
+        // return.
+        return;
+    }
+
+    // The NMI handler has synthesized a #GP. This happens when the NMI would have returned to user space
+    // directly.
+    const bool synthetic_gp{r->err == NMI_SYNTH_GP_VEC};
+
+    // The NMI handler should only synthesize a #GP if the NMI occured while the CPU is in user space.
+    assert((not synthetic_gp) or r->cs == SEL_USER_CODE);
+    assert(not(synthetic_gp and r->cs == SEL_KERN_CODE));
+
+    // At this point, it is safe again to interact with the rest of the kernel, because we restored CPU-local
+    // memory.
+
+    if (not synthetic_gp) {
+        return;
+    }
+
+    // We have deferred work from an earlier NMI.
+    do_deferred_nmi_work();
+
+    // Call Ec::ret_user_iret, which handles the hazards and returns to user space.
+    Ec::ret_user_iret();
+}
+
 void Ec::handle_exc(Exc_regs* r)
 {
+    // Handle any deffered NMI work by calling maybe_handle_deferred_nmi_work. This function will not return
+    // when the reason for the exception was pending work from the NMI.
+    maybe_handle_deferred_nmi_work(r);
+
+    // If we get here, CPU-local memory is initialized and kernel data structures can be accessed.
     assert_slow(Cpulocal::is_initialized());
     assert_slow(Cpulocal::has_valid_stack());
     assert_slow(r->vec == r->dst_portal);

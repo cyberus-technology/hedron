@@ -101,6 +101,13 @@ private:
     // Do the NMI work that can be done inside the NMI handler.
     static void do_early_nmi_work();
 
+    // Check if an exception is due to an earlier NMI and if yes, restore a good state and handle the deferred
+    // work.
+    static void maybe_handle_deferred_nmi_work(Exc_regs*);
+
+    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3.
+    static void do_deferred_nmi_work();
+
     static void handle_exc(Exc_regs*) asm("exc_handler");
     static void handle_exc_altstack(Exc_regs*) asm("exc_handler_altstack");
 
