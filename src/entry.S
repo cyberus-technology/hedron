@@ -57,7 +57,7 @@ handlers:
                         cld
 
                         // If CS[1:0] != 0, we come from userspace.
-                        testb   $0x3, OFS_CS(%rsp)
+                        testb   $RPL_MASK, OFS_CS(%rsp)
                         jz      1f
                         swapgs
                         RESTORE_STACK

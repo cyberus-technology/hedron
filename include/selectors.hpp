@@ -28,6 +28,9 @@
 // The size of a TSS descriptor.
 #define TSS_DESC_SIZE (2 * DESC_SIZE)
 
+// The lower two bits of a segment selector are the requested privilege level (RPL)
+#define RPL_MASK 0x3
+
 // Marks a segment selector for a userspace segment.
 #define SEL_RPL3 0x3
 
