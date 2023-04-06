@@ -58,6 +58,9 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
 {
     friend class Queue<Ec>;
 
+    // Needs access to NMI handling functions.
+    friend class Vcpu;
+
 private:
     void (*cont)() ALIGNED(16);
     Cpu_regs regs;

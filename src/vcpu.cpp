@@ -362,6 +362,10 @@ void Vcpu::handle_vmx()
 
     // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
     switch (exit_reason() & 0xffff) {
+    case Vmcs::VMX_FAIL_STATE:
+    case Vmcs::VMX_FAIL_VMENTRY: // We end up here, because the host state checks fail.
+        maybe_handle_invalid_guest_state();
+        break;
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_EXTINT:
@@ -437,6 +441,19 @@ void Vcpu::handle_extint()
     } else if (intr_vect >= VEC_USER) {
         Locked_vector_info::handle_user_interrupt(intr_vect);
     }
+
+    continue_running();
+}
+
+void Vcpu::maybe_handle_invalid_guest_state()
+{
+    if (Vmcs::read(Vmcs::HOST_SEL_CS) != 0) {
+        return;
+    }
+
+    // The invalid guest state was provoked by the NMI handler.
+    Ec::do_deferred_nmi_work();
+    Ec::fixup_nmi_user_trap();
 
     continue_running();
 }
