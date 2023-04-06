@@ -303,6 +303,11 @@ void Ec::handle_exc_altstack(Exc_regs* r)
             // IRET to userspace faults when the userspace code selector is beyond the GDT limit.
             Gdt::load_kernel_only();
 
+            // A null selector in CS will cause a VM entry failure.
+            if (Cpu::feature(Cpu::FEAT_VMX) and Vmcs::current()) {
+                Vmcs::write(Vmcs::HOST_SEL_CS, 0);
+            }
+
             // We return to the kernel.
             wrgsbase(old_gs_base);
         }
