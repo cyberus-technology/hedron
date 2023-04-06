@@ -419,9 +419,9 @@ void Vcpu::handle_exception()
     const unsigned intr_type = (intr_info >> 8) & 0x7;
 
     if (intr_vect == 2u and intr_type == 2u) {
-        // The VM exit was caused by a NMI. Hedron currently can't handle this (see hedron#52), thus to make
-        // this obvious we just die here.
-        Ec::die("A VM exit that was caused by a NMI occured.");
+        Ec::do_early_nmi_work();
+        Ec::do_deferred_nmi_work();
+        continue_running();
     }
 
     return_to_vmm(Sys_regs::SUCCESS);
