@@ -114,11 +114,6 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         current()->regs.dst_portal = Cpu::EXC_DB;
         send_msg<ret_user_iret>();
     }
-
-    if (hzd & HZD_DS_ES) {
-        Cpu::hazard() &= ~HZD_DS_ES;
-        asm volatile("mov %0, %%ds; mov %0, %%es" : : "r"(SEL_USER_DATA));
-    }
 }
 
 void Ec::ret_user_sysexit()
