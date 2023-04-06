@@ -195,6 +195,12 @@ void Cpu::setup_msrs()
 
     Msr::write(Msr::IA32_STAR, static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE)
                                                                              << 32);
+
+    // Given what we program into IA32_STAR above, we need to uphold the following invariants:
+    static_assert(SEL_USER_CODE + 8 == SEL_USER_DATA);
+    static_assert(SEL_USER_CODE + 16 == SEL_USER_CODE_L);
+    static_assert(SEL_KERN_CODE + 8 == SEL_KERN_DATA);
+
     Msr::write(Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
 
     // RFLAGS bits TF, NT, DF, and IF need to be disabled when entering the kernel. Clearing everything else
@@ -257,11 +263,6 @@ Cpu_info Cpu::init()
     if (feature(FEAT_SMAP)) {
         cr4 |= Cpu::CR4_SMAP;
     }
-
-    if (!feature(FEAT_FSGSBASE)) {
-        panic("Need FSGSBASE-capable CPU");
-    }
-    cr4 |= Cpu::CR4_FSGSBASE;
 
     set_cr4(cr4);
 

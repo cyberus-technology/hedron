@@ -266,7 +266,12 @@ public:
     static inline void set_irt(uint16 i, unsigned rid, unsigned cpu, unsigned vec, unsigned trg)
     {
         assert(i < (1 << Dmar_irt::NUM_ENTRIES_ORDER));
-        irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | vec << 16 | trg << 4 | 1);
+
+        // This line triggers a clang-tidy false positive.
+        //
+        // https://github.com/llvm/llvm-project/issues/56253
+        irt[i].set(1ULL << 18 | rid, static_cast<uint64>(cpu) << 40 | static_cast<uint64>(vec) << 16 |
+                                         static_cast<uint64>(trg) << 4 | 1); // NOLINT
     }
 
     static inline void clear_irt(uint16 i)

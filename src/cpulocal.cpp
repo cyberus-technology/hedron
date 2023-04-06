@@ -60,7 +60,7 @@ mword Cpulocal::setup_cpulocal()
     Hpt::unmap_kernel_page(altstack[*opt_cpu_id].stack);
 
     mword const gs_base{reinterpret_cast<mword>(&local.self)};
-    Msr::write(Msr::IA32_GS_BASE, gs_base);
+    wrgsbase(gs_base);
     Msr::write(Msr::IA32_KERNEL_GS_BASE, 0);
 
     return gs_base;
@@ -73,12 +73,12 @@ void Cpulocal::prevent_accidental_access()
     // cause a fault.
     //
     // We can't program a non-canonical address, because the CPU would give us a #GP while writing the MSR.
-    Msr::write(Msr::IA32_GS_BASE, CANON_BOUND - 1);
+    wrgsbase(CANON_BOUND - 1);
 }
 
 bool Cpulocal::is_initialized()
 {
-    uint64 const gs_base{Msr::read(Msr::IA32_GS_BASE)};
+    uint64 const gs_base{rdgsbase()};
 
     return (gs_base >= reinterpret_cast<mword>(&cpu[0])) and
            (gs_base < reinterpret_cast<mword>(&cpu[array_size(cpu)]));
@@ -90,5 +90,29 @@ void Cpulocal::restore_for_nmi()
         wrgsbase(reinterpret_cast<mword>(&Cpulocal::cpu[*opt_cpu_id].self));
     } else {
         panic("Failed to find CPU-local memory");
+    }
+}
+
+bool Cpulocal::has_valid_stack()
+{
+    char* rsp;
+    asm volatile("mov %%rsp, %0" : "=rm"(rsp));
+
+    auto in_stack = [rsp](char(&stack)[STACK_SIZE]) -> bool {
+        return rsp > &stack[0] and rsp <= &stack[STACK_SIZE];
+    };
+
+    // If CPU-local memory is not initialized, we can not check whether the stack pointer is in the correct
+    // stack, but at least we see whether it is in any stack.
+    if (Cpulocal::is_initialized()) {
+        return in_stack(Cpulocal::get().stack);
+    } else {
+        for (auto& cpulocal : Cpulocal::cpu) {
+            if (in_stack(cpulocal.stack)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

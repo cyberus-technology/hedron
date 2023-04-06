@@ -191,6 +191,16 @@ public:
     // needs to be restored later.
     static void restore_for_nmi();
 
+    // Checks whether we currently run on a valid stack.
+    //
+    // This is useful for assertions:
+    //
+    // assert_slow(Cpulocal::has_valid_stack());
+    //
+    // Don't call this function when you know that GS base is not valid. While the function tries to handle
+    // this case, it might be a denial-of-service risk if the GS base value is user controlled.
+    static bool has_valid_stack();
+
     template <typename T, size_t OFFSET> static T get_field()
     {
         T res;

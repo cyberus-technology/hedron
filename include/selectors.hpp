@@ -21,10 +21,10 @@
 #pragma once
 
 #define SEL_NULL_DESC 0x0
-#define SEL_KERN_CODE 0x8
-#define SEL_KERN_DATA 0x10
-#define SEL_USER_CODE 0x1b
-#define SEL_USER_DATA 0x23
-#define SEL_USER_CODE_L 0x2b
-#define SEL_TSS_RUN 0x30
-#define SEL_MAX 0x50
+#define SEL_TSS_RUN 0x8
+#define SEL_KERN_CODE 0x18
+#define SEL_KERN_DATA 0x20
+#define SEL_USER_CODE 0x2b
+#define SEL_USER_DATA 0x33
+#define SEL_USER_CODE_L 0x3b
+#define SEL_MAX 0x40
