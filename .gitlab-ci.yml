@@ -22,7 +22,7 @@ stages:
 
 .in_latest_fedora:
   # See #242.
-  image: fedora:36
+  image: fedora:37
 
 .with_fedora_builddeps:
   before_script:
