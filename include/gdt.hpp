@@ -58,5 +58,12 @@ public:
         asm volatile("lgdt %0" : : "m"(desc));
     }
 
-    static inline void unbusy_tss() { gdt(SEL_TSS_RUN).val[1] &= ~0x200; }
+    // Returns the TSS selector for the given CPU.
+    static uint16 remote_tss_selector(unsigned cpu);
+
+    // Returns the TSS selector for the current CPU.
+    static uint16 local_tss_selector();
+
+    // Clears the busy bit in the TSS descriptor of the current CPU.
+    static void unbusy_tss();
 };

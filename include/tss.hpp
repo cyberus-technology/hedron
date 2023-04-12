@@ -44,6 +44,5 @@ public:
 
     static void setup();
     static void build();
-
-    static inline void load() { asm volatile("ltr %w0" : : "rm"(SEL_TSS_RUN)); }
+    static void load();
 };

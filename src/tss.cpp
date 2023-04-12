@@ -59,3 +59,5 @@ void Tss::build()
 
     tss.iobm = static_cast<uint16>(SPC_LOCAL_IOP - reinterpret_cast<mword>(&tss));
 }
+
+void Tss::load() { asm volatile("ltr %w0" : : "rm"(Gdt::local_tss_selector())); }

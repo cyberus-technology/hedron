@@ -19,6 +19,7 @@
  */
 
 #include "gdt.hpp"
+#include "cpu.hpp"
 #include "cpulocal.hpp"
 #include "memory.hpp"
 #include "tss.hpp"
@@ -34,7 +35,13 @@ void Gdt::build()
     gdt(SEL_USER_DATA).set32(DATA_RWA, PAGES, BIT_16, true, 3, 0, ~0ul);
     gdt(SEL_USER_CODE_L).set32(CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
 
-    gdt(SEL_TSS_RUN)
+    gdt(local_tss_selector())
         .set64(SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::local()),
                SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::local()));
 }
+
+uint16 Gdt::remote_tss_selector(unsigned cpu) { return static_cast<uint16>(SEL_TSS_CPU0 + cpu * 0x10); }
+
+uint16 Gdt::local_tss_selector() { return remote_tss_selector(Cpu::id()); }
+
+void Gdt::unbusy_tss() { gdt(local_tss_selector()).val[1] &= ~0x200; }
