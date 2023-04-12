@@ -1,5 +1,110 @@
 # Proposals
 
+## Hedron without Interrupts
+
+This document outlines the API changes necessary to run Hedron without
+claiming the Local APIC. The intended audience are developers of
+Hedron and the corresponding passthrough VMM.
+
+### Problem Statement
+
+In our current usecase, it is mostly a liability when Hedron claims
+the interrupt controllers. The passthrough VMM must virtualizate the
+Local APIC and all MSI sources (PCI devices, HPET) even though it just
+passes interrupts through. This creates a performance and
+compatibility problem.
+
+As an alternative, we plan to remove interrupt handling from Hedron
+and let the passthrough VM handle interrupts directly.
+
+### High-Level Impact
+
+The high-level impact of this change is that Hedron will not be able
+to receive (normal maskable) interrupts anymore. For its own purposes,
+Hedron will start to use NMIs. NMIs will be used to:
+
+- implement remote TLB shootdowns (now `VEC_IPI_RKE`),
+- implement vCPU poke (now `VEC_IPI_RKE`),
+- implement EC recall (now `VEC_IPI_RKE`),
+- accelerate RCU for idles cores (now `VEC_IPI_IDL`),
+- enqueue SCs on remote cores (now `VEC_IPI_RRQ`),
+- park cores during suspend (now `VEC_IPI_PRK`).
+
+All of the functionality continue to work as is, just with higher overhead.
+
+Hedron will not be able to drive a timer anymore. This means that
+preemptive scheduling is not possible. All time slices will be
+effectively infinite.
+
+The passthrough VMM is now in complete control of PCI and IOMMU and is
+expected to pass access directly to the passthrough VM. The respective
+IOMMU code will be removed from Hedron. It's up to the passthrough VMM
+to enforce any DMA restrictions.
+
+### Changes to the System Call API
+
+#### Changed Syscall: `create_sc`
+
+The time quantum parameter will be removed. SCs will have infinite time quantums.
+
+#### New Syscall: `ec_ctrl_yield_current`
+
+The new system call yields the time slice of the currently executing
+SC and schedules the next unblocked global EC.
+
+#### Removed Syscall: `irq_ctrl_*`
+
+This family of system calls will be removed. The passthrough VM has
+access to the Local APIC itself.
+
+While Hedron executes host code, interrupts will be disabled (`RFLAGS.IF == 0`).
+
+#### Changed Syscall: `sm_ctrl_down`
+
+The timeout parameters will be removed. Semaphores will not have
+timeouts anymore.
+
+#### Changed Syscall: `pd_ctrl_delegate` and IPC mappings
+
+Hedron will not handle device memory mappings any more. The `Device`
+delegate flag will be removed.
+
+### Changes to Guest Execution
+
+For the passthrough VM, external interrupt exiting is not enabled. Any
+pending interrupt will be delivered directly to the passthrough VM.
+
+For other VMs, external interrupts exit, but the interrupt is not
+acknowledged. This means that pending interrupts will be delivered when
+the passthrough VM is executed.
+
+### Changes to the HIP
+
+We will remove the following information in the HIP:
+
+- the IOMMU feature bit,
+- any IOAPIC information,
+- `num_user_vectors`,
+- `pci_bus_start`,
+- MCFG region information,
+- DMAR table information,
+- HPET information,
+- BSP LAPIC information (the LAPIC will unconditionally be enabled).
+
+### Issues
+
+Hedron will use the ICR to send NMIs. In xAPIC mode, Hedron will
+restore `ICR_HIGH` to its previous value. The `ICR_LOW` value will be
+clobbered. This should be harmless. If the passthrough VMM can
+guarantee that the passthrough VM never exits between writing
+`ICR_HIGH` and `ICR_LOW`, Hedron would not need to restore
+`ICR_LOW`. In x2APIC mode, Hedron will clobber the full `ICR`.
+
+Hedron needs to know whether the platform operates in xAPIC or x2APIC
+mode to be able send NMIs. Checking this before sending NMI may be
+wasteful. Resolving this will be part of enabling x2APIC support
+([#212](https://gitlab.vpn.cyberus-technology.de/supernova-core/hedron/-/issues/212)).
+
 ## Flexible Heap Size for Hedron
 
 This document outlines a design proposal for the Hedron heap. Hedron

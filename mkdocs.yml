@@ -10,7 +10,6 @@ nav:
   - Developer Documentation:
     - Implementation Details: implementation.md
     - Design Proposals: proposals.md
-    - Upcoming Changes: upcoming.md
 
 theme:
   name: material
