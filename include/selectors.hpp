@@ -27,4 +27,7 @@
 #define SEL_USER_CODE 0x2b
 #define SEL_USER_DATA 0x33
 #define SEL_USER_CODE_L 0x3b
-#define SEL_MAX 0x40
+
+// Using this particular value is an optimization for the Intel VT exit handling. See the VM exit code in
+// Vcpu::handle_vmx.
+#define SEL_MAX 0x10000
