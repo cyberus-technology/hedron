@@ -45,7 +45,7 @@ let
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
   buildConfs = pkgs.lib.cartesianProductOfSets {
-    cc = attrsToList { inherit (pkgs) clang_14 gcc10 gcc11 gcc12; };
+    cc = attrsToList { inherit (pkgs) clang_15 gcc10 gcc11 gcc12; };
     buildType = [ "Debug" "Release" ];
   };
 
@@ -94,7 +94,7 @@ in
 
     stylecheck = pkgs.callPackage ./stylecheck.nix { };
     clang-tidy = pkgs.callPackage ./clang-tidy.nix {
-      hedron = hedronBuildSet.clang_14-debug;
+      hedron = hedronBuildSet.clang_15-debug;
     };
 
     integration-test = testBuilds;
