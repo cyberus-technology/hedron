@@ -22,8 +22,6 @@
 #include "cmdline.hpp"
 #include "pd.hpp"
 
-INIT_PRIORITY(PRIO_CONSOLE) Console_vga Console_vga::con;
-
 Console_vga::Console_vga() : num(25), row(0), col(0)
 {
     if (Cmdline::novga)

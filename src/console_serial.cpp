@@ -24,8 +24,6 @@
 #include "initprio.hpp"
 #include "x86.hpp"
 
-INIT_PRIORITY(PRIO_CONSOLE) Console_serial Console_serial::con;
-
 Console_serial::Console_serial()
 {
     if (!Cmdline::serial)
