@@ -78,7 +78,7 @@ Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(
 
     write(HOST_BASE_GS, reinterpret_cast<mword>(&Cpulocal::get_remote(cpu).self));
     write(HOST_BASE_TR, reinterpret_cast<mword>(&Tss::remote(cpu)));
-    write(HOST_BASE_GDTR, reinterpret_cast<mword>(&Cpulocal::get_remote(cpu).gdt));
+    write(HOST_BASE_GDTR, reinterpret_cast<mword>(&Gdt::gdt(0)));
     write(HOST_BASE_IDTR, reinterpret_cast<mword>(Idt::idt));
 
     write(HOST_SYSENTER_CS, SEL_KERN_CODE);

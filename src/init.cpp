@@ -97,6 +97,7 @@ extern "C" void init(mword magic, mword mbi)
         });
     }
 
+    Gdt::build();
     Idt::build();
     Acpi::setup();
     Tss::setup();

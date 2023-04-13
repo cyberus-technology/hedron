@@ -44,10 +44,11 @@ private:
         (this + 1)->val[1] = 0;
     }
 
-public:
     using Gdt_array = Gdt[SEL_MAX >> 3];
-    static Gdt& gdt(uint32 sel);
+    static Gdt_array global_gdt;
 
+public:
+    static Gdt& gdt(uint32 sel);
     static void build();
 
     static constexpr size_t limit() { return sizeof(Gdt_array) - 1; }

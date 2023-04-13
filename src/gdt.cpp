@@ -24,7 +24,9 @@
 #include "memory.hpp"
 #include "tss.hpp"
 
-Gdt& Gdt::gdt(uint32 sel) { return Cpulocal::get().gdt[sel >> 3]; }
+Gdt::Gdt_array Gdt::global_gdt;
+
+Gdt& Gdt::gdt(uint32 sel) { return global_gdt[sel >> 3]; }
 
 void Gdt::build()
 {
@@ -35,9 +37,12 @@ void Gdt::build()
     gdt(SEL_USER_DATA).set32(DATA_RWA, PAGES, BIT_16, true, 3, 0, ~0ul);
     gdt(SEL_USER_CODE_L).set32(CODE_XRA, PAGES, BIT_16, true, 3, 0, ~0ul);
 
-    gdt(local_tss_selector())
-        .set64(SYS_TSS, BYTES, BIT_16, false, 0, reinterpret_cast<mword>(&Tss::local()),
-               SPC_LOCAL_IOP_E - reinterpret_cast<mword>(&Tss::local()));
+    for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
+        mword const tss_addr{reinterpret_cast<mword>(&Tss::remote(cpu))};
+
+        gdt(remote_tss_selector(cpu))
+            .set64(SYS_TSS, BYTES, BIT_16, false, 0, tss_addr, SPC_LOCAL_IOP_E - tss_addr);
+    }
 }
 
 uint16 Gdt::remote_tss_selector(unsigned cpu) { return static_cast<uint16>(SEL_TSS_CPU0 + cpu * 0x10); }
