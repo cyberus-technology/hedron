@@ -118,8 +118,7 @@ void Ec::handle_hazard(mword hzd, void (*func)())
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) &
-                (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
@@ -180,7 +179,6 @@ void Ec::return_to_user()
 
 void Ec::ret_user_iret()
 {
-    // No need to check HZD_DS_ES because IRET will reload both anyway
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);
