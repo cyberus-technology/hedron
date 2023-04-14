@@ -23,6 +23,7 @@
 
 #include "ec.hpp"
 #include "elf.hpp"
+#include "extern.hpp"
 #include "hip.hpp"
 #include "kp.hpp"
 #include "rcu.hpp"
@@ -251,7 +252,13 @@ void Ec::idle()
         if (EXPECT_FALSE(hzd))
             handle_hazard(hzd, idle);
 
-        asm volatile("sti; hlt; cli" : : : "memory");
+        asm volatile(".globl idle_hlt\n"
+                     "sti\n"
+                     "idle_hlt: hlt\n"
+                     "cli\n"
+                     :
+                     :
+                     : "memory");
     }
 }
 

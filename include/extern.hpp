@@ -56,3 +56,7 @@ extern "C" char __start_cpu_end[];
 extern "C" uint32 const __start_cpu_patch_jmp_dst;
 extern "C" uint32 const __start_cpu_patch_rel[];
 extern "C" uint32 const __start_cpu_patch_rel_end[];
+
+// There is a label before the "hlt" in our idle handler. Check the NMI handling in Ec::handle_exc_altstack to
+// see why we need it.
+extern "C" uint8 idle_hlt;
