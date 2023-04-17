@@ -92,6 +92,9 @@ private:
 
     static Slab_cache cache;
 
+    // Do the NMI work that can be done inside the NMI handler.
+    static void do_early_nmi_work();
+
     static void handle_exc(Exc_regs*) asm("exc_handler");
     [[noreturn]] static void handle_exc_altstack(Exc_regs*) asm("exc_handler_altstack");
 

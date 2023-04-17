@@ -19,6 +19,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "counter.hpp"
 #include "ec.hpp"
 #include "gdt.hpp"
 #include "mca.hpp"
@@ -83,6 +84,21 @@ bool Ec::handle_exc_pf(Exc_regs* r)
     }
 
     die("#PF (kernel)", r);
+}
+
+void Ec::do_early_nmi_work()
+{
+    // This function is called in the NMI handler (and maybe also somewhere else) and thus there are certain
+    // things that must not be done in this function:
+    //   - we must not access any locks or mutexes
+    //   - we must not access any kernel data structures that are not atomically updated
+    //
+    // Keep in mind that NMIs may interrupt the kernel code at an arbitrary position. You can find my
+    // information about the NMI handling in Ec::handle_exc_altstack.
+
+    // Tell the shootdown code that we received the interrupt. We have to get to the actual shootdown
+    // before we execute any user/guest code, but we can already acknowledge the shootdown.
+    Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
 }
 
 void Ec::handle_exc(Exc_regs* r)
