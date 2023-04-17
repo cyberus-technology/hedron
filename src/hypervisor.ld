@@ -92,8 +92,6 @@ SECTIONS
 
     .init_array : AT (VIRT_TO_PHYS_NORELOC(ADDR (.init_array)))
     {
-        PROVIDE (CTORS_C = .);
-        KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.65534) SORT_BY_INIT_PRIORITY(.ctors.00001)))
         PROVIDE (CTORS_G = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array .ctors))

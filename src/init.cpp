@@ -24,6 +24,7 @@
 #include "acpi_rsdp.hpp"
 #include "cmdline.hpp"
 #include "compiler.hpp"
+#include "console_serial.hpp"
 #include "console_vga.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
@@ -73,8 +74,9 @@ extern "C" void init(mword magic, mword mbi)
         });
     }
 
-    for (void (**func)() = &CTORS_C; func != &CTORS_G; (*func++)())
-        ;
+    // These constructors need access to the configuration from the command line.
+    static Console_serial con_serial;
+    static Console_vga con_vga;
 
     // Now we're ready to talk to the world
     Console::print("\fHedron Hypervisor (Cyberus-%07lx "

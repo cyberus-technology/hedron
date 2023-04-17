@@ -37,7 +37,6 @@ extern char LOAD_END;
 extern mword FIXUP_S;
 extern mword FIXUP_E;
 
-extern void (*CTORS_C)();
 extern void (*CTORS_G)();
 extern void (*CTORS_E)();
 
