@@ -45,7 +45,10 @@ void Gdt::build()
     }
 }
 
-uint16 Gdt::remote_tss_selector(unsigned cpu) { return static_cast<uint16>(SEL_TSS_CPU0 + cpu * 0x10); }
+uint16 Gdt::remote_tss_selector(unsigned cpu)
+{
+    return static_cast<uint16>(SEL_TSS_CPU0 + cpu * TSS_DESC_SIZE);
+}
 
 uint16 Gdt::local_tss_selector() { return remote_tss_selector(Cpu::id()); }
 
