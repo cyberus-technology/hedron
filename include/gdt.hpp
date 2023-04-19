@@ -44,17 +44,27 @@ private:
         (this + 1)->val[1] = 0;
     }
 
-public:
     using Gdt_array = Gdt[SEL_MAX >> 3];
-    static Gdt& gdt(uint32 sel);
+    static Gdt_array global_gdt;
 
+public:
+    static Gdt& gdt(uint32 sel);
     static void build();
+
+    static constexpr size_t limit() { return sizeof(Gdt_array) - 1; }
 
     static inline void load()
     {
-        Pseudo_descriptor desc{sizeof(Gdt_array) - 1, reinterpret_cast<mword>(&gdt(0))};
+        Pseudo_descriptor desc{limit(), reinterpret_cast<mword>(&gdt(0))};
         asm volatile("lgdt %0" : : "m"(desc));
     }
 
-    static inline void unbusy_tss() { gdt(SEL_TSS_RUN).val[1] &= ~0x200; }
+    // Returns the TSS selector for the given CPU.
+    static uint16 remote_tss_selector(unsigned cpu);
+
+    // Returns the TSS selector for the current CPU.
+    static uint16 local_tss_selector();
+
+    // Clears the busy bit in the TSS descriptor of the current CPU.
+    static void unbusy_tss();
 };

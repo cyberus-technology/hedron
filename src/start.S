@@ -111,13 +111,18 @@ __boot_header_mbi2_e:
 
 /*
  * Global Descriptor Table (GDT)
+ *
+ * This GDT must match the one built in gdt.cpp, because we use the same selectors during the
+ * boot process.
  */
 .align                  8, 0x90
 __boot_gdt:             .word   0
                         .word   __boot_gdt__ - __boot_gdt - 1
                         .long   __boot_gdt
+.rept                   NUM_CPU
                         .quad   0
                         .quad   0
+.endr
                         .quad   0x00a09b0000000000
                         .quad   0x00a0930000000000
                         .quad   0x00a0fb0000000000

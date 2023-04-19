@@ -225,13 +225,11 @@ Cpu_info Cpu::init()
     // initializations and probes, but for now it seems less error-prone to just
     // rediscover everything.
 
-    // If we ever remove the Gdt rebuild from the resume path, we shouldn't
-    // forget to unbusy the TSS. Otherwise, Tss:load() will crash.
-    Gdt::build();
     Tss::build();
-
-    // Initialize exception handling
     Gdt::load();
+
+    // The TSS might be busy on the resume path.
+    Gdt::unbusy_tss();
     Tss::load();
     Idt::load();
 

@@ -345,6 +345,9 @@ void Vcpu::handle_vmx()
         }
     }
 
+    // The VM exit forces the GDT limit to 0xFFFF. We need to make sure this matches our GDT.
+    static_assert(Gdt::limit() == 0xffff);
+
     // Restore XCR0 before context switching the FPU, to use our own value instead of the guest's.
     Fpu::restore_xcr0();
 
