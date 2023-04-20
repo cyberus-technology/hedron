@@ -96,26 +96,6 @@ entry_exc_error:        SAVE_STATE
                         call    exc_handler
                         jmp     ret_from_interrupt
 
-/* Enter the exception handler from the NMI handler.
- *
- * We take this path if we got an NMI while being in user space. The NMI
- * handler generates a synthetic #GP because we handle the reason for the NMI
- * inside our #GP exception handler.
- */
-.globl entry_from_nmi
-entry_from_nmi:
-                        mov     %rsp, %rbx
-                        cld
-
-                        movq    $0, OFS_CR2 (%rbx)
-
-                        // The NMI handler fixed GS base.
-                        RESTORE_STACK
-
-                        mov     %rbx, %ARG_1
-                        call    exc_handler
-                        jmp     ret_from_interrupt
-
 /*
  * Alternate Stack Exception Entries
  *

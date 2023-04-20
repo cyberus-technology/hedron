@@ -130,7 +130,6 @@ void Ec::do_deferred_nmi_work()
     // The caller of this function has to make sure that we can access CPU-local data.
 
     assert_slow(Cpulocal::is_initialized());
-    assert_slow(Cpulocal::has_valid_stack());
 
     // Handle a stale TLB.
     if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
@@ -146,14 +145,6 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
         // return.
         return;
     }
-
-    // The NMI handler has synthesized a #GP. This happens when the NMI would have returned to user space
-    // directly.
-    const bool synthetic_gp{r->err == NMI_SYNTH_GP_VEC};
-
-    // The NMI handler should only synthesize a #GP if the NMI occured while the CPU is in user space.
-    assert((not synthetic_gp) or r->cs == SEL_USER_CODE);
-    assert(not(synthetic_gp and r->cs == SEL_KERN_CODE));
 
     // The exception occured when we tried to execute an IRET.
     const bool exc_on_iret_to_user{r->cs == SEL_KERN_CODE and static_cast<int64>(r->rip) < 0 and
@@ -175,7 +166,7 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
     // At this point, it is safe again to interact with the rest of the kernel, because we restored CPU-local
     // memory.
 
-    if (not(exc_on_iret_to_user or synthetic_gp)) {
+    if (not exc_on_iret_to_user) {
         return;
     }
 
@@ -254,50 +245,15 @@ void Ec::handle_exc_altstack(Exc_regs* r)
             // We came from user space, thus the whole GDT must be loaded.
             assert_slow(Gdt::store().limit == Gdt::limit());
 
-            // We are about to generate a synthetic #GP.
+            // At this point the GS base must have the correct value. Otherwise do_deferred_nmi_work can't do
+            // its work.
+            assert_slow(Cpulocal::is_initialized());
 
-            mword kern_entry_rsp{Tss::local().sp0};
-            auto* stack_ptr{reinterpret_cast<Exc_regs*>(kern_entry_rsp)};
+            // We came from user space, thus we can do the deferred work here.
+            do_deferred_nmi_work();
 
-            // This is the stack frame that the CPU would have pushed for a normal entry into the kernel.
-            stack_ptr->ss = r->ss;
-            stack_ptr->rsp = r->rsp;
-            stack_ptr->rfl = r->rfl;
-            stack_ptr->cs = r->cs;
-            stack_ptr->rip = r->rip;
-            stack_ptr->vec = Cpu::EXC_GP;
-            stack_ptr->err = NMI_SYNTH_GP_VEC;
-
-            stack_ptr->rax = r->rax;
-            stack_ptr->rcx = r->rcx;
-            stack_ptr->rdx = r->rdx;
-            stack_ptr->rbx = r->rbx;
-            stack_ptr->rsp = r->rsp;
-            stack_ptr->rbp = r->rbp;
-            stack_ptr->rsi = r->rsi;
-            stack_ptr->rdi = r->rdi;
-            stack_ptr->r8 = r->r8;
-            stack_ptr->r9 = r->r9;
-            stack_ptr->r10 = r->r10;
-            stack_ptr->r11 = r->r11;
-            stack_ptr->r12 = r->r12;
-            stack_ptr->r13 = r->r13;
-            stack_ptr->r14 = r->r14;
-            stack_ptr->r15 = r->r15;
-
-            // This is the stack frame we construct for iret.
-            mword iret_frame[5];
-            iret_frame[0] = reinterpret_cast<mword>(entry_from_nmi); // rip
-            iret_frame[1] = SEL_KERN_CODE;                           // cs
-            iret_frame[2] = 0x2;                                     // rflags
-            iret_frame[3] = reinterpret_cast<mword>(stack_ptr);      // rsp
-            iret_frame[4] = SEL_KERN_DATA;                           // ss
-
-            asm volatile("lea %0, %%rsp;"
-                         "iretq;"
-                         :
-                         : "m"(iret_frame[0])
-                         : "memory");
+            // We will go back to user space, thus we have to swapgs again.
+            swapgs();
         } else {
             // We interrupted the kernel. The next exit to userspace needs to fault so we can check hazards.
 
