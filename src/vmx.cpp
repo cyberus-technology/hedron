@@ -61,8 +61,9 @@ Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(
 
     write(HOST_SEL_CS, SEL_KERN_CODE);
     write(HOST_SEL_SS, SEL_KERN_DATA);
-    write(HOST_SEL_DS, SEL_KERN_DATA);
-    write(HOST_SEL_ES, SEL_KERN_DATA);
+    write(HOST_SEL_DS, 0);
+    write(HOST_SEL_ES, 0);
+    write(HOST_SEL_FS, 0);
     write(HOST_SEL_TR, Gdt::local_tss_selector());
 
     write(HOST_PAT, Msr::read(Msr::IA32_CR_PAT));
