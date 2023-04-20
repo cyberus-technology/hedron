@@ -130,9 +130,9 @@ __boot_gdt:             .word   0
 __boot_gdt__:
 
 .macro                  INIT_STATE
-                        mov     $SEL_KERN_DATA, %ecx
+                        mov     $0, %ecx
                         mov     %ecx, %ss
-                        mov     $SEL_USER_DATA, %ecx
+                        mov     $0, %ecx
                         mov     %ecx, %ds
                         mov     %ecx, %es
                         mov     %ecx, %fs
