@@ -114,17 +114,11 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         current()->regs.dst_portal = Cpu::EXC_DB;
         send_msg<ret_user_iret>();
     }
-
-    if (hzd & HZD_DS_ES) {
-        Cpu::hazard() &= ~HZD_DS_ES;
-        asm volatile("mov %0, %%ds; mov %0, %%es" : : "r"(SEL_USER_DATA));
-    }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) &
-                (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_DS_ES | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
@@ -185,7 +179,6 @@ void Ec::return_to_user()
 
 void Ec::ret_user_iret()
 {
-    // No need to check HZD_DS_ES because IRET will reload both anyway
     mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);

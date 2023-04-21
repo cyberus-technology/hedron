@@ -90,6 +90,10 @@ RD_SPECIAL_REG(dr3)
 RD_SPECIAL_REG(dr6)
 RD_SPECIAL_REG(dr7)
 
+RD_SPECIAL_REG(ds);
+RD_SPECIAL_REG(es);
+RD_SPECIAL_REG(fs);
+
 #define WR_SPECIAL_REG(reg)                                                                                  \
     inline void CONCAT2(set_, reg)(mword val) { asm volatile("mov %0, %%" #reg ::"r"(val)); }
 

@@ -29,7 +29,11 @@
 
 void Ec::handle_vmx()
 {
-    Cpu::hazard() |= HZD_DS_ES | HZD_TR;
+    assert_slow(get_ds() == 0ul);
+    assert_slow(get_es() == 0ul);
+    assert_slow(get_fs() == 0ul);
+
+    Cpu::hazard() |= HZD_TR;
     Cpu::setup_msrs();
 
     // A VM exit occured. We pass the control flow to the vCPU object and let it handle the exit.
