@@ -204,6 +204,8 @@ void Ec::ret_user_iret()
 
     asm volatile(
 
+        ".globl iret_to_user\n"
+
         // We need to reset the stack, because otherwise subsequent NMIs might make us fault on iret
         // again and we have unbounded stack growth.
         "mov %%gs:0, %%rsp\n"
@@ -236,7 +238,7 @@ void Ec::ret_user_iret()
 
         // RSP points to RIP in Exc_regs. This is a normal IRET frame.
         "swapgs\n"
-        "iretq\n"
+        "iret_to_user: iretq\n"
         :
         : "a"(&current()->regs)
         : "memory");

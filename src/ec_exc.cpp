@@ -148,9 +148,8 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
 
     // The exception occured when we tried to execute an IRET.
     const bool exc_on_iret_to_user{r->cs == SEL_KERN_CODE and static_cast<int64>(r->rip) < 0 and
-                                   *reinterpret_cast<uint16*>(r->rip) == 0xcf48};
+                                   r->rip == reinterpret_cast<mword>(&iret_to_user)};
 
-    // TODO: This needs a better check so we don't have to read code.
     if (exc_on_iret_to_user) {
         // ret_user_iret does a swapgs before executing the IRET. Thus here we have to swapgs again in
         // order to handle the deferred work.

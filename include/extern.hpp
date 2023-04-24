@@ -60,3 +60,7 @@ extern "C" uint32 const __start_cpu_patch_rel_end[];
 // There is a label before the "hlt" in our idle handler. Check the NMI handling in Ec::handle_exc_altstack to
 // see why we need it.
 extern "C" uint8 idle_hlt;
+
+// There is a label before the "iretq" in Ec::ret_user_iret. Check Ec::maybe_handle_deferred_nmi_work to see
+// why we need it.
+extern "C" uint8 iret_to_user;
