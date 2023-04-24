@@ -100,16 +100,23 @@ void Ec::fixup_nmi_user_trap()
 
 void Ec::do_early_nmi_work()
 {
-    // This function is called in the NMI handler (and maybe also somewhere else) and thus there are certain
-    // things that must not be done in this function:
+    // This function is called in the NMI handler (Ec::handle_exception_altstack) and in
+    // Vcpu::handle_exception. As this function is an early part of the NMI handler and we do not know
+    // which code was executed when the NMI was received, there are certain things that must not be done in
+    // this function:
     //   - we must not access any locks or mutexes
     //   - we must not access any kernel data structures that are not atomically updated
     //
-    // Keep in mind that NMIs may interrupt the kernel code at an arbitrary position. You can find my
-    // information about the NMI handling in Ec::handle_exc_altstack.
+    // You can find more information about the NMI handling in Ec::handle_exc_altstack.
+    //
+    // Keep in mind that we may not run on the normal kernel stack, but on the NMI stack. Thus you have to
+    // return from this function without switching to another EC.
 
-    // Tell the shootdown code that we received the interrupt. We have to get to the actual shootdown
-    // before we execute any user/guest code, but we can already acknowledge the shootdown.
+    // The caller of this function has to make sure that we can access CPU-local data.
+    assert_slow(Cpulocal::is_initialized());
+
+    // Acknowledge the TLB invalidation request. We promise to flush the TLB before we execute any user/guest
+    // code.
     Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
 }
 
@@ -117,18 +124,18 @@ void Ec::do_deferred_nmi_work()
 {
     // Here we are doing the work that we cannot unconditionally do inside the NMI handler. This function
     // should only be called by
-    // - the NMI handler, if we were running in user space while receiving the NMI
-    // - Ec::maybe_handle_deferred_nmi_work, which is called if we received an exception that may be caused by
-    // the NMI handler
-    // - Vcpu::handle_exception, if a VM exit was caused by an NMI
+    //   - the NMI handler, if we were running in user space while receiving the NMI
+    //   - Ec::maybe_handle_deferred_nmi_work, which is called if we received an exception that may be caused
+    //     by the NMI handler
+    //   - Vcpu::handle_exception, if a VM exit was caused by an NMI
+    //   - Vcpu::handle_vmx, if the host state check failed during a vmresume
     //
-    // All these cases have in common that we know that we are not holding any locks or that we interrupted
-    // the kernel while manipulating some data structures and thus most actions are safe.
+    // You can find more information about the NMI handling in Ec::handle_exc_altstack.
     //
-    // We have to keep in mind though that we may not run on the normal kernel stack, but on the NMI stack.
-    //
-    // The caller of this function has to make sure that we can access CPU-local data.
+    // Keep in mind that we may not run on the normal kernel stack, but on the NMI stack. Thus you have to
+    // return from this function without switching to another EC.
 
+    // The caller of this function has to make sure that we can access CPU-local data.
     assert_slow(Cpulocal::is_initialized());
 
     // Handle a stale TLB.
@@ -232,16 +239,31 @@ void Ec::handle_exc_altstack(Exc_regs* r)
     Cpulocal::restore_for_nmi();
 
     switch (r->vec) {
-    case Cpu::EXC_NMI:
 
+    // NMI handling is inherently difficult because we may have interrupted the kernel or the user at an
+    // arbitrary position, and thus have to be cautious with the code we execute here.
+    //
+    // If we were in VMX non-root operation while receiving the NMI, we do not arrive here, because we
+    // receive a normal VM-exit in this case. See Vcpu::handle_exception to see how we handle NMIs in this
+    // case.
+    //
+    // If we receive an NMI while we were in VMX root operation, we arrive here. Ec::do_early_nmi_work
+    // does the work that we can safely do in the context of the NMI handler. After that, we have to take
+    // different code paths, depending on whether we were interrupted in user space or kernel space.
+    case Cpu::EXC_NMI:
         do_early_nmi_work();
+
+        // If we were interrupted in user space, we know that we do not hold any locks and we are not
+        // currently modifying any kernel data structure. Thus, after restoring our CPU-local memory, we
+        // can also do the deferred NMI work.
         if (r->user() /* from userspace */) {
+
             // Cpulocal::restore_for_nmi has changed GS_BASE, thus we have to restore the old_gs_base and then
             // call swapgs() to make GS_BASE/GS_BASE_KERNEL look like the kernel.
             wrgsbase(old_gs_base);
             swapgs();
 
-            // We came from user space, thus the whole GDT must be loaded.
+            // If this assertion triggers, we exited to user space although we tried to prevent exactly that.
             assert_slow(Gdt::store().limit == Gdt::limit());
 
             // At this point the GS base must have the correct value. Otherwise do_deferred_nmi_work can't do
@@ -253,8 +275,17 @@ void Ec::handle_exc_altstack(Exc_regs* r)
 
             // We will go back to user space, thus we have to swapgs again.
             swapgs();
-        } else {
-            // We interrupted the kernel. The next exit to userspace needs to fault so we can check hazards.
+        }
+
+        // If we interrupted the kernel we defer the NMI work until the next exit to user space, or until the
+        // next vmresume. To do that, we
+        //   - load only the kernel part of the GDT, that way iret to user space will generate a #GP. We
+        //     currently redirect Ec::ret_user_sysret to Ec::ret_user_iret, thus this also handles the
+        //     sysret. (Check Ec::handle_exc for more information)
+        //   - write a 0 into Vmcs::HOST_SEL_CS. This will make the host state checks during VM-entry
+        //     fail. (Check Vcpu::maybe_handle_invalid_guest_state for more information)
+        // That way we know that we do the deferred NMI work at safe places.
+        else {
 
             // If we receive the NMI while the RIP points to the 'hlt' in our idle handler, we have to bump
             // the RIP. Otherwise, the NMI destroys the sti-blocking and we could receive an interrupt between

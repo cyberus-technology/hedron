@@ -419,6 +419,8 @@ void Vcpu::handle_exception()
     const unsigned intr_type = (intr_info >> 8) & 0x7;
 
     if (intr_vect == 2u and intr_type == 2u) {
+        // We received an NMI while being in VMX non-root mode. We can safely do all NMI work here. Check
+        // Ec::handle_exc_altstack to learn more about our NMI handling.
         Ec::do_early_nmi_work();
         Ec::do_deferred_nmi_work();
         continue_running();
