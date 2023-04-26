@@ -276,22 +276,16 @@ public:
     static constexpr uint64_t all_rights{PTE_P | PTE_W | PTE_U};
 };
 
-class Fake_flush
-{
-public:
-    static void clflush(pointer, size_t){};
-};
-
-using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush,
-                                    Fake_page_alloc<>, Fake_deferred_cleanup, Fake_attr>;
+using Fake_hpt = Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_page_alloc<>,
+                                    Fake_deferred_cleanup, Fake_attr>;
 
 Fake_hpt::ord_t const twomb_order{PAGE_BITS + BITS_PER_LEVEL_64BIT};
 Fake_hpt::ord_t const onegb_order{PAGE_BITS + 2 * BITS_PER_LEVEL_64BIT};
 
 template <size_t ALLOC_PAGE_COUNT>
 using Memory_constrained_hpt =
-    Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_flush,
-                       Fake_page_alloc<ALLOC_PAGE_COUNT>, Fake_deferred_cleanup, Fake_attr>;
+    Generic_page_table<BITS_PER_LEVEL_64BIT, uint64_t, Fake_memory, Fake_page_alloc<ALLOC_PAGE_COUNT>,
+                       Fake_deferred_cleanup, Fake_attr>;
 
 // Given an iterator into the past of a page table, rewinds this
 // page table to that time in the past.
