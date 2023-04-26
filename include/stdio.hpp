@@ -43,7 +43,6 @@ int trace_id();
 enum
 {
     TRACE_CPU = 1UL << 0,
-    TRACE_IOMMU = 1UL << 1,
     TRACE_APIC = 1UL << 2,
     TRACE_VMX = 1UL << 4,
     TRACE_ACPI = 1UL << 8,
@@ -62,4 +61,4 @@ constexpr unsigned trace_mask =
 #ifdef DEBUG
     TRACE_VMX |
 #endif
-    TRACE_CPU | TRACE_IOMMU | TRACE_ERROR;
+    TRACE_CPU | TRACE_ERROR;
