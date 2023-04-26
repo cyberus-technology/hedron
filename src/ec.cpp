@@ -23,6 +23,7 @@
 
 #include "ec.hpp"
 #include "elf.hpp"
+#include "extern.hpp"
 #include "hip.hpp"
 #include "kp.hpp"
 #include "rcu.hpp"
@@ -112,6 +113,19 @@ void Ec::ret_user_sysexit()
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
+    // TODO Instead of exiting via sysret, which should trap due to the NMI handler, we just redirect
+    // everything to iret.
+    //
+    // TODO Find out why redirect_to_iret does not need to set RFLAGS and CS/DS.
+    Exc_regs& regs = current()->regs;
+    regs.rsp = regs.r11;
+    regs.rfl = 0x200;
+    regs.rip = regs.rcx;
+    regs.cs = SEL_USER_CODE;
+    regs.ss = SEL_USER_DATA;
+    ret_user_iret();
+
+    // TODO This is not reached right now.
     assert_slow(Pd::is_pcid_valid());
 
     // clang-format off
@@ -175,23 +189,49 @@ void Ec::ret_user_iret()
 
     assert_slow(Pd::is_pcid_valid());
 
-    asm volatile("lea %[regs], %%rsp\n"
+    // We cannot switch the stack here, because iret might fault and we will receive this exception with the
+    // stack pointer pointing into the heap.
 
-                 // Load all general-purpose registers now that RSP points at
-                 // the beginning of an Exc_regs structure.
-                 EXPAND(LOAD_GPR)
+    asm volatile(
 
-                 // At this point, RSP points to `err` in Exc_regs. We need to
-                 // skip the unused vector and error code.
-                 "add %[vec_size], %%rsp\n"
+        ".globl iret_to_user\n"
 
-                 // Now RSP points to RIP in Exc_regs. This is a normal IRET
-                 // frame.
-                 "swapgs\n"
-                 "iretq\n"
-                 :
-                 : [regs] "m"(current()->regs), [vec_size] "i"(2 * PTR_SIZE)
-                 : "memory");
+        // We need to reset the stack, because otherwise subsequent NMIs might make us fault on iret
+        // again and we have unbounded stack growth.
+        "mov %%gs:0, %%rsp\n"
+
+        "mov (0 * 8)(%%rax), %%r15\n"
+        "mov (1 * 8)(%%rax), %%r14\n"
+        "mov (2 * 8)(%%rax), %%r13\n"
+        "mov (3 * 8)(%%rax), %%r12\n"
+
+        "mov (4 * 8)(%%rax), %%r11\n"
+        "mov (5 * 8)(%%rax), %%r10\n"
+        "mov (6 * 8)(%%rax), %%r9\n"
+        "mov (7 * 8)(%%rax), %%r8\n"
+
+        "mov (8 * 8)(%%rax), %%rdi\n"
+        "mov (9 * 8)(%%rax), %%rsi\n"
+        "mov (10 * 8)(%%rax), %%rbp\n"
+
+        "mov (12 * 8)(%%rax), %%rbx\n"
+        "mov (13 * 8)(%%rax), %%rdx\n"
+        "mov (14 * 8)(%%rax), %%rcx\n"
+
+        "push (22 * 8)(%%rax)\n" // ss
+        "push (21 * 8)(%%rax)\n" // rsp
+        "push (20 * 8)(%%rax)\n" // rfl
+        "push (19 * 8)(%%rax)\n" // cs
+        "push (18 * 8)(%%rax)\n" // rip
+
+        "mov (15 * 8)(%%rax), %%rax\n"
+
+        // RSP points to RIP in Exc_regs. This is a normal IRET frame.
+        "swapgs\n"
+        "iret_to_user: iretq\n"
+        :
+        : "a"(&current()->regs)
+        : "memory");
 
     UNREACHED;
 }
@@ -204,7 +244,13 @@ void Ec::idle()
         if (EXPECT_FALSE(hzd))
             handle_hazard(hzd, idle);
 
-        asm volatile("sti; hlt; cli" : : : "memory");
+        asm volatile(".globl idle_hlt\n"
+                     "sti\n"
+                     "idle_hlt: hlt\n"
+                     "cli\n"
+                     :
+                     :
+                     : "memory");
     }
 }
 
@@ -295,8 +341,8 @@ bool Ec::fixup(Exc_regs* regs)
 
 void Ec::die(char const* reason, Exc_regs* r)
 {
-    trace(0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx (%s)", current(), Sc::current(),
-          r->vec, r->cs, r->rip, r->cr2, r->err, reason);
+    trace(0, "Killed EC:%p SC:%p V:%#lx CS:%#lx RIP:%#lx CR2:%#lx ERR:%#lx GS_BASE:%#llx (%s)", current(),
+          Sc::current(), r->vec, r->cs, r->rip, r->cr2, r->err, Msr::read(Msr::IA32_GS_BASE), reason);
 
     Ec* ec = current()->rcap;
 

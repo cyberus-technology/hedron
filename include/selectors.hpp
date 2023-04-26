@@ -28,6 +28,9 @@
 // The size of a TSS descriptor.
 #define TSS_DESC_SIZE (2 * DESC_SIZE)
 
+// The lower two bits of a segment selector are the requested privilege level (RPL)
+#define RPL_MASK 0x3
+
 // Marks a segment selector for a userspace segment.
 #define SEL_RPL3 0x3
 
@@ -71,6 +74,9 @@
 // Using this particular value is an optimization for the Intel VT exit handling. See the VM exit code in
 // Vcpu::handle_vmx.
 #define SEL_MAX 0x10000
+
+// This constant marks the end of the kernel part of the GDT.
+#define SEL_KERN (SEL_KERN_DATA + 8)
 
 #ifdef __cplusplus
 static_assert(SEL_USER_CODE_L < SEL_MAX, "Too many CPUs to fit TSS descriptors into GDT");

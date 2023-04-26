@@ -57,7 +57,7 @@ handlers:
                         cld
 
                         // If CS[1:0] != 0, we come from userspace.
-                        testb   $0x3, OFS_CS(%rsp)
+                        testb   $RPL_MASK, OFS_CS(%rsp)
                         jz      1f
                         swapgs
                         RESTORE_STACK
@@ -107,13 +107,11 @@ entry_exc_altstack:     push    $0
 entry_exc_error_altstack:
                         SAVE_GPR
                         mov     %rsp, %ARG_1
-                        rdgsbase %rbp // preserved across call
                         cld
 
                         // ARG_1 = Exc_regs
                         call    exc_handler_altstack
 
-                        wrgsbase %rbp
                         LOAD_GPR
                         add     $(2 * PTR_SIZE), %rsp
                         iretq

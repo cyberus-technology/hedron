@@ -162,6 +162,11 @@ private:
     // Handles a VM exit due to an extint.
     [[noreturn]] inline void handle_extint();
 
+    // Handles special cases for invalid guest state.
+    //
+    // If the invalid guest state was caused by the kernel itself, this function will not return.
+    void maybe_handle_invalid_guest_state();
+
     // The current values of debug registers DR0-3 and DR6 on this CPU. DR6 is stored at dr[4].
     //
     // These are the values that are in the registers right now. We cache them, because reading them is

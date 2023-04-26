@@ -362,6 +362,10 @@ void Vcpu::handle_vmx()
 
     // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
     switch (exit_reason() & 0xffff) {
+    case Vmcs::VMX_FAIL_STATE:
+    case Vmcs::VMX_FAIL_VMENTRY: // We end up here, because the host state checks fail.
+        maybe_handle_invalid_guest_state();
+        break;
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_EXTINT:
@@ -415,9 +419,11 @@ void Vcpu::handle_exception()
     const unsigned intr_type = (intr_info >> 8) & 0x7;
 
     if (intr_vect == 2u and intr_type == 2u) {
-        // The VM exit was caused by a NMI. Hedron currently can't handle this (see hedron#52), thus to make
-        // this obvious we just die here.
-        Ec::die("A VM exit that was caused by a NMI occured.");
+        // We received an NMI while being in VMX non-root mode. We can safely do all NMI work here. Check
+        // Ec::handle_exc_altstack to learn more about our NMI handling.
+        Ec::do_early_nmi_work();
+        Ec::do_deferred_nmi_work();
+        continue_running();
     }
 
     return_to_vmm(Sys_regs::SUCCESS);
@@ -437,6 +443,19 @@ void Vcpu::handle_extint()
     } else if (intr_vect >= VEC_USER) {
         Locked_vector_info::handle_user_interrupt(intr_vect);
     }
+
+    continue_running();
+}
+
+void Vcpu::maybe_handle_invalid_guest_state()
+{
+    if (Vmcs::read(Vmcs::HOST_SEL_CS) != 0) {
+        return;
+    }
+
+    // The invalid guest state was provoked by the NMI handler.
+    Ec::do_deferred_nmi_work();
+    Ec::fixup_nmi_user_trap();
 
     continue_running();
 }

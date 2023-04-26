@@ -37,13 +37,19 @@ private:
     // The number of leaf levels we support.
     static level_t supported_leaf_levels;
 
+    using Hpt_page_table::Hpt_page_table;
+
+public:
+    // Invalidate all TLB entries (except for global pages) associated with the PCID in the current CR3 if
+    // PCIDs are used, otherwise it invalidates all TLB entries. See Intel SDM Vol. 3 Chap. 4.10.4.1
+    // "Operations that Invalidate TLBs and Paging-Structure Caches" for more information.
     static void flush()
     {
         mword cr3;
         asm volatile("mov %%cr3, %0; mov %0, %%cr3" : "=&r"(cr3));
     }
 
-    /// Invalidate a single page in the current address space.
+    // Invalidate a single page in the current address space.
     static void flush_one_page(void* page)
     {
         // We add a memory clobber, because it is usually not desirable to reorder memory accesses beyond page
@@ -63,9 +69,6 @@ private:
         return (cr3 & ~PAGE_MASK) == root();
     }
 
-    using Hpt_page_table::Hpt_page_table;
-
-public:
     enum : mword
     {
         // The bitmask covers legal memory type values as we get them from
@@ -147,16 +150,16 @@ public:
     // The returned pointer is valid until the next remap call (on any core).
     static void* remap(Paddr phys, bool use_boot_hpt = true);
 
-    /// Unmap a page from the kernel address space.
-    ///
-    /// This function only allows to modify boot_hpt to keep the kernel address space identical everywhere.
-    /// The kernel portion of the address space is replicated from the boot_hpt into all other host page
-    /// tables. If we allow modifying other page tables beyond boot_hpt, we risk a non-uniform kernel address
-    /// space.
-    ///
-    /// This function also demands that boot_hpt is currently active. Because the boot_hpt is copied into
-    /// newly created address spaces, we have to make sure to only call it before new address spaces are
-    /// created. This time frame largely coincides with the time the boot_hpt is active.
+    // Unmap a page from the kernel address space.
+    //
+    // This function only allows to modify boot_hpt to keep the kernel address space identical everywhere.
+    // The kernel portion of the address space is replicated from the boot_hpt into all other host page
+    // tables. If we allow modifying other page tables beyond boot_hpt, we risk a non-uniform kernel address
+    // space.
+    //
+    // This function also demands that boot_hpt is currently active. Because the boot_hpt is copied into
+    // newly created address spaces, we have to make sure to only call it before new address spaces are
+    // created. This time frame largely coincides with the time the boot_hpt is active.
     static void unmap_kernel_page(void* kernel_page);
 
     // Atomically change a 4K page mapping to point to a new frame. Return

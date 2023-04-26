@@ -55,6 +55,9 @@ class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queu
 {
     friend class Queue<Ec>;
 
+    // Needs access to NMI handling functions.
+    friend class Vcpu;
+
 private:
     void (*cont)() ALIGNED(16);
     Cpu_regs regs;
@@ -92,8 +95,23 @@ private:
 
     static Slab_cache cache;
 
+    // If we received an NMI while we are in kernel space, the NMI handler will create a state in which we
+    // receive an exception if we try to return to user space. This function restores our state so we can
+    // return to user space.
+    static void fixup_nmi_user_trap();
+
+    // Do the NMI work that can be done inside the NMI handler.
+    static void do_early_nmi_work();
+
+    // Check if an exception is due to an earlier NMI and if yes, restore a good state and handle the deferred
+    // work.
+    static void maybe_handle_deferred_nmi_work(Exc_regs*);
+
+    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3.
+    static void do_deferred_nmi_work();
+
     static void handle_exc(Exc_regs*) asm("exc_handler");
-    [[noreturn]] static void handle_exc_altstack(Exc_regs*) asm("exc_handler_altstack");
+    static void handle_exc_altstack(Exc_regs*) asm("exc_handler_altstack");
 
     [[noreturn]] static void handle_vmx() asm("vmx_handler");
 

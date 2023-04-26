@@ -193,7 +193,7 @@ void Space_mem::shootdown()
         tlb_shootdown()[cpu] = Counter::remote_tlb_shootdown(cpu);
         stale_cpus[cpu] = true;
 
-        Lapic::send_ipi(cpu, VEC_IPI_RKE);
+        Lapic::send_nmi(cpu);
     }
 
     // We have to open interrupts here, because otherwise we could deadlock with other CPUs sending us IPIs

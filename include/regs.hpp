@@ -27,6 +27,7 @@
 #include "arch.hpp"
 #include "atomic.hpp"
 #include "hazards.hpp"
+#include "selectors.hpp"
 #include "types.hpp"
 
 class Vmcs;
@@ -185,7 +186,7 @@ private:
 public:
     template <typename T> void set_exc() const;
 
-    inline bool user() const { return cs & 3; }
+    inline bool user() const { return cs & RPL_MASK; }
 
     void vmx_set_cpu_ctrl0(mword);
     void vmx_set_cpu_ctrl1(mword);
