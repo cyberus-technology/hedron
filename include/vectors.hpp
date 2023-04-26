@@ -24,8 +24,7 @@
 #define VEC_USER (NUM_EXC)
 
 #define VEC_LVT (VEC_USER + NUM_USER_VECTORS)
-#define VEC_MSI (VEC_LVT + NUM_LVT)
-#define VEC_IPI (VEC_MSI + NUM_MSI)
+#define VEC_IPI (VEC_LVT + NUM_LVT)
 #define VEC_MAX (VEC_IPI + NUM_IPI)
 
 #define VEC_LVT_TIMER (VEC_LVT + 0)

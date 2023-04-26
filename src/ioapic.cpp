@@ -22,7 +22,6 @@
 
 #include "ioapic.hpp"
 #include "buddy.hpp"
-#include "dmar.hpp"
 #include "lock_guard.hpp"
 #include "pd.hpp"
 #include "stdio.hpp"
@@ -99,39 +98,8 @@ void Ioapic::set_irt_entry_compatibility(uint8 ioapic_pin, unsigned apic_id, uns
 {
     assert(ioapic_pin < pin_count());
     assert(vector >= 0x10 and vector <= 0xFE);
-    assert(not Dmar::ire());
 
     uint64 irt_entry{vector | static_cast<uint64>(apic_id) << IRT_DESTINATION_SHIFT};
-
-    if (active_low) {
-        irt_entry |= IRT_POLARITY_ACTIVE_LOW;
-    }
-
-    if (level) {
-        irt_entry |= IRT_TRIGGER_MODE_LEVEL;
-    }
-
-    Lock_guard<Spinlock> guard(lock);
-    set_irt_entry(ioapic_pin, irt_entry);
-}
-
-void Ioapic::set_irt_entry_remappable(uint8 ioapic_pin, uint16 iommu_irt_index, unsigned vector, bool level,
-                                      bool active_low)
-{
-    assert(Dmar::ire());
-    assert(ioapic_pin < pin_count());
-    assert(vector >= 0x10 and vector <= 0xFE);
-
-    // See Section 5.1.5.1 I/OxAPIC Programming in the Intel VT-d specification for information about how to
-    // program the IOAPIC IRTs.
-    //
-    // To handle level-triggered interrupts correctly, we must not set the Subhandle Valid (SHV) bit in the
-    // resulting MSI message. This allows us to configure trigger mode, polarity and the destination vector in
-    // the IOAPIC IRT. Programming these are necessary to make EOI broadcasts from the LAPIC work.
-
-    uint64 irt_entry{IRT_FORMAT_REMAPPABLE | vector |
-                     (static_cast<uint64>(iommu_irt_index & 0x7fff) << IRT_REMAPPABLE_HANDLE_0_14_SHIFT) |
-                     (static_cast<uint64>(iommu_irt_index >> 15) << IRT_REMAPPABLE_HANDLE_15_SHIFT)};
 
     if (active_low) {
         irt_entry |= IRT_POLARITY_ACTIVE_LOW;

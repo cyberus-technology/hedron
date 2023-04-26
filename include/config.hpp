@@ -46,7 +46,6 @@
 #define NUM_USER_VECTORS 192
 
 #define NUM_LVT 6
-#define NUM_MSI 1
 #define NUM_IPI 4
 #define NUM_PRIORITIES 128
 

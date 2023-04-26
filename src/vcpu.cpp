@@ -19,7 +19,6 @@
 
 #include "atomic.hpp"
 #include "cpu.hpp"
-#include "dmar.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
 #include "lapic.hpp"
@@ -436,8 +435,6 @@ void Vcpu::handle_extint()
 
     if (intr_vect >= VEC_IPI) {
         Lapic::ipi_vector(intr_vect);
-    } else if (intr_vect >= VEC_MSI) {
-        Dmar::vector(intr_vect);
     } else if (intr_vect >= VEC_LVT) {
         Lapic::lvt_vector(intr_vect);
     } else if (intr_vect >= VEC_USER) {

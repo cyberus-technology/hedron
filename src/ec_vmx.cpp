@@ -18,7 +18,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "dmar.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "vcpu.hpp"

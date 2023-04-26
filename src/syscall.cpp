@@ -26,7 +26,6 @@
 #include "syscall.hpp"
 #include "acpi.hpp"
 #include "cpu.hpp"
-#include "dmar.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
 #include "ioapic.hpp"
@@ -905,10 +904,6 @@ void Ec::sys_irq_ctrl_configure_vector()
 
     if (not sm and not kp) {
         new_vector_info = Vector_info::disabled();
-
-        if (Dmar::ire()) {
-            Dmar::clear_irt(Dmar::irt_index(r->cpu(), r->vector()));
-        }
     } else {
         if (EXPECT_FALSE(not sm)) {
             trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
@@ -955,16 +950,8 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
     uint32 const aid{Cpu::apic_id[r->cpu()]};
 
-    if (Dmar::ire()) {
-        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
-
-        Dmar::set_irt(irt_index, opt_ioapic->get_rid(), aid, VEC_USER + r->vector(), r->level());
-        opt_ioapic->set_irt_entry_remappable(r->ioapic_pin(), irt_index, VEC_USER + r->vector(), r->level(),
-                                             r->active_low());
-    } else {
-        opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
-                                                r->active_low());
-    }
+    opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
+                                            r->active_low());
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -979,8 +966,7 @@ void Ec::sys_irq_ctrl_mask_ioapic_pin()
     }
 
     // The user can unmask pins that have not been previously configured. This is benign, because in this
-    // case the IOAPIC RTEs are invalid and no interrupt will arive. Also when the IOMMU is enabled, there
-    // will not be an IOMMU RTE for the given pin.
+    // case the IOAPIC RTEs are invalid and no interrupt will arive.
     opt_ioapic->set_mask(r->ioapic_pin(), r->mask());
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -1004,17 +990,8 @@ void Ec::sys_irq_ctrl_assign_msi()
     uint32 msi_addr;
     uint32 msi_data;
 
-    if (Dmar::ire()) {
-        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
-
-        msi_addr = 0xfee00000 | (1U << 4) | ((0x7fff & irt_index) << 5) | ((irt_index >> 15) << 2);
-        msi_data = 0;
-
-        Dmar::set_irt(irt_index, rid, aid, VEC_USER + r->vector(), false /* edge */);
-    } else {
-        msi_addr = 0xfee00000 | (aid << 12);
-        msi_data = VEC_USER + r->vector();
-    }
+    msi_addr = 0xfee00000 | (aid << 12);
+    msi_data = VEC_USER + r->vector();
 
     r->set_msi(msi_addr, msi_data);
     sys_finish<Sys_regs::SUCCESS>();

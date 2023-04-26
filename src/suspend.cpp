@@ -19,7 +19,6 @@
 #include "acpi.hpp"
 #include "acpi_facs.hpp"
 #include "atomic.hpp"
-#include "dmar.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
@@ -98,8 +97,6 @@ void Suspend::resume_bsp()
     Acpi::set_facs(saved_facs);
 
     Ioapic::restore_all();
-
-    Dmar::enable();
 
     Atomic::store(Suspend::in_progress, false);
 }
