@@ -22,8 +22,8 @@
 
 #pragma once
 
-#include "list.hpp"
-#include "slab.hpp"
+#include "memory.hpp"
+#include "types.hpp"
 
 class Pci
 {
@@ -31,9 +31,9 @@ class Pci
     friend class Hip;
 
 private:
-    static unsigned bus_base;
-    static Paddr cfg_base;
-    static size_t cfg_size;
+    static inline unsigned bus_base;
+    static inline Paddr cfg_base;
+    static inline size_t cfg_size;
 
 public:
     static inline unsigned phys_to_rid(Paddr p)
