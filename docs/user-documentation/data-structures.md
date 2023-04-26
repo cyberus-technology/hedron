@@ -62,7 +62,7 @@ This section describes the features of the `api_flg` field in the HIP.
 | SVM    | 2     | The platform supports AMD Secure Virtual Machine, and the feature has been activated.       |
 | UEFI   | 3     | Hedron was booted via UEFI.                                                                 |
 
-**Note**: Support for AMD SVM has been removed. SVM support will not be reported
+**Note**: Support for AMD SVM and the IOMMU have been removed. Either of these features will never be reported
 by Hedron, even on a system supporting it.
 
 ## Capabilities
@@ -230,7 +230,7 @@ describe how capabilities are be transferred. It is used in the
 | `DLGFLAGS[7:1]`   | Reserved   | Must be `0`                                                                                                    |
 | `DLGFLAGS[8]`     | !Host      | Mapping needs to go into (0) / not into (1) host page table. Only valid for memory and I/O delegations.        |
 | `DLGFLAGS[9]`     | Guest      | Mapping needs to go into (1) / not into (0) guest page table / IO space. Valid for memory and I/O delegations. |
-| `DLGFLAGS[10]`    | Device     | Mapping needs to go into (1) / not into (0) device page table. Only valid for memory delegations.              |
+| `DLGFLAGS[10]`    | Ignored    | Should be zero for future compatibility.                                                                       |
 | `DLGFLAGS[11]`    | Hypervisor | Source is actually hypervisor PD. Only valid when used by the roottask, silently ignored otherwise.            |
 | `DLGFLAGS[63:12]` | Hotspot    | The hotspot used to disambiguate send and receive windows.                                                     |
 
