@@ -292,16 +292,6 @@ public:
     inline mword kp() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
 };
 
-class Sys_assign_pci : public Sys_regs
-{
-public:
-    inline unsigned long pd() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
-
-    inline mword dev() const { return ARG_2; }
-
-    inline mword hnt() const { return ARG_3; }
-};
-
 class Sys_machine_ctrl : public Sys_regs
 {
 public:

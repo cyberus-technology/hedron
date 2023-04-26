@@ -435,8 +435,6 @@ public:
 
     [[noreturn]] static void sys_vcpu_ctrl_poke();
 
-    [[noreturn]] static void sys_assign_pci();
-
     [[noreturn]] static void sys_machine_ctrl();
 
     [[noreturn]] static void sys_machine_ctrl_suspend();

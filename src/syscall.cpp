@@ -786,34 +786,6 @@ void Ec::sys_kp_ctrl()
     sys_finish<Sys_regs::BAD_PAR>();
 }
 
-void Ec::sys_assign_pci()
-{
-    Sys_assign_pci* r = static_cast<Sys_assign_pci*>(current()->sys_regs());
-    Pd* pd = capability_cast<Pd>(Space_obj::lookup(r->pd()));
-
-    if (EXPECT_FALSE(not pd)) {
-        trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    Paddr phys;
-    unsigned rid;
-    if (EXPECT_FALSE(!pd->Space_mem::lookup(r->dev(), &phys) || (rid = Pci::phys_to_rid(phys)) == ~0U)) {
-        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    Dmar* dmar = Pci::find_dmar(r->hnt());
-    if (EXPECT_FALSE(!dmar)) {
-        trace(TRACE_ERROR, "%s: Invalid Hint (%#lx)", __func__, r->hnt());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    dmar->assign(rid, pd);
-
-    sys_finish<Sys_regs::SUCCESS>();
-}
-
 void Ec::sys_machine_ctrl()
 {
     Sys_machine_ctrl* r = static_cast<Sys_machine_ctrl*>(current()->sys_regs());
@@ -1163,9 +1135,6 @@ void Ec::syscall_handler()
         sys_reply();
     case hypercall_id::HC_REVOKE:
         sys_revoke();
-
-    case hypercall_id::HC_ASSIGN_PCI:
-        sys_assign_pci();
 
     case hypercall_id::HC_CREATE_PD:
         sys_create_pd();
