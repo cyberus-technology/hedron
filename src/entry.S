@@ -257,3 +257,5 @@ entry_vmx:              SAVE_GPR
                         mov     %rax, OFS_CR2 (%rsp)
 entry_vmx_failure:      RESTORE_STACK
                         jmp     vmx_handler
+
+.section .note.GNU-stack,"",%progbits
