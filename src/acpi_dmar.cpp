@@ -87,7 +87,7 @@ void Acpi_rmrr::parse() const
 
 void Acpi_table_dmar::parse() const
 {
-    if (!Cmdline::iommu)
+    if (true)
         return;
 
     for (Acpi_remap const* r = remap;

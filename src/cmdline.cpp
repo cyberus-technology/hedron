@@ -23,8 +23,8 @@
 #include "string.hpp"
 
 struct Cmdline::param_map const Cmdline::map[] = {
-    {"iommu", &Cmdline::iommu},   {"serial", &Cmdline::serial}, {"nodl", &Cmdline::nodl},
-    {"nopcid", &Cmdline::nopcid}, {"novga", &Cmdline::novga},   {"novpid", &Cmdline::novpid},
+    {"serial", &Cmdline::serial}, {"nodl", &Cmdline::nodl},     {"nopcid", &Cmdline::nopcid},
+    {"novga", &Cmdline::novga},   {"novpid", &Cmdline::novpid},
 };
 
 char const* Cmdline::get_arg(char const** line, unsigned& len)
