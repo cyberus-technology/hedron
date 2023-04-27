@@ -22,7 +22,6 @@
  */
 
 #include "arch.hpp"
-#include "hazards.hpp"
 #include "idt_handlers.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
