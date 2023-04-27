@@ -52,24 +52,7 @@ void Ec::transfer_fpu(Ec* from_ec)
     load_fpu();
 }
 
-bool Ec::handle_exc_gp(Exc_regs* r)
-{
-    if (fixup(r)) {
-        return true;
-    }
-
-    if (Cpu::hazard() & HZD_TR) {
-        Cpu::hazard() &= ~HZD_TR;
-
-        // The VM exit has re-set the TR segment limit to 0x67. This breaks the
-        // IO permission bitmap. Restore the correct value.
-        Gdt::unbusy_tss();
-        Tss::load();
-        return true;
-    }
-
-    return false;
-}
+bool Ec::handle_exc_gp(Exc_regs* r) { return fixup(r); }
 
 bool Ec::handle_exc_pf(Exc_regs* r)
 {

@@ -19,5 +19,4 @@
 #pragma once
 
 #define HZD_SCHED 0x1
-#define HZD_TR 0x4
 #define HZD_RCU 0x8
