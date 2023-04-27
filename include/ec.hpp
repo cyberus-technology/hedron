@@ -122,8 +122,9 @@ private:
     // Returns true, if the #GP was handled and normal operation can resume.
     static bool fixup(Exc_regs* r);
 
-    NOINLINE
-    static void handle_hazard(mword, void (*)());
+    // Checks Cpu::hazard for any set hazards and handles them. If this leads to a reschedule, the current EC
+    // will continue to execute at the given continuation.
+    static void handle_hazards(void (*continuation)());
 
     static void pre_free(Rcu_elem* a)
     {

@@ -74,7 +74,7 @@ void Sc::ready_enqueue(uint64 t, bool inc_ref)
           prio > current()->prio ? "reschedule" : "");
 
     if (prio > current()->prio || (this != current() && prio == current()->prio && left))
-        Cpu::hazard() |= HZD_SCHED;
+        Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
 
     if (!left)
         left = budget;
@@ -113,8 +113,6 @@ void Sc::schedule(bool suspend)
 
     current()->time += t - current()->tsc;
     current()->left = d > t ? d - t : 0;
-
-    Cpu::hazard() &= ~HZD_SCHED;
 
     if (EXPECT_TRUE(!suspend))
         current()->ready_enqueue(t, false);
@@ -203,5 +201,5 @@ void Sc::rke_handler()
     // guest TLB invalidations unconditionally.
 
     if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id()))
-        Cpu::hazard() |= HZD_SCHED;
+        Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
 }

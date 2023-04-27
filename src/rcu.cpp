@@ -64,8 +64,6 @@ void Rcu::start_batch(State s)
 
 void Rcu::quiet()
 {
-    Cpu::hazard() &= ~HZD_RCU;
-
     if (Atomic::sub(count, 1UL) == 0)
         start_batch(RCU_CMP);
 }
@@ -74,7 +72,7 @@ void Rcu::update()
 {
     if (l_batch() != batch()) {
         l_batch() = batch();
-        Cpu::hazard() |= HZD_RCU;
+        Atomic::set_mask(Cpu::hazard(), HZD_RCU);
     }
 
     if (!curr().empty() && complete(c_batch()))

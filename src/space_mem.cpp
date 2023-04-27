@@ -168,7 +168,7 @@ void Space_mem::shootdown()
         // There is a special case for the current CPU. We don't need to send an IPI, because before user code
         // executes again, it will check its hazards and do the TLB flush then.
         if (Cpu::id() == cpu) {
-            Cpu::hazard() |= HZD_SCHED;
+            Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
             continue;
         }
 
