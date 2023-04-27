@@ -71,7 +71,7 @@ void Ec::resume_vcpu()
 {
     assert(Ec::current()->vcpu != nullptr);
 
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_TSC | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd)) {
         handle_hazard(hzd, resume_vcpu);
     }
