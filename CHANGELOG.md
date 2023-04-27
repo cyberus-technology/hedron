@@ -9,6 +9,7 @@ specified in `config.hpp / CFG_VER`.*
 ## API Version 11.0
 - **Removed** The `HC_ASSIGN_PCI` system call was removed. Hedron will never report the IOMMU feature flag anymore and
   will never drive the IOMMU even on systems that have one. The "iommu" command line parameter is ignored.
+- **Removed** The `HC_EC_CTRL_RECALL` system call was removed.
 
 ## API Version 10.0
 - **Changed** `HC_CREATE_EC` now cannot be used to create vCPU-ECs anymore. The `vCPU` and the `Use APIC Access Page`
