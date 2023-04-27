@@ -46,8 +46,6 @@
 // Startup exception index for global ECs. Global ECs (except roottask) receive this
 // exception the first time a scheduling context is bound to them.
 #define EXC_STARTUP (NUM_EXC - 2)
-// Recall exception index for global ECs.
-#define EXC_RECALL (NUM_EXC - 1)
 
 class Utcb;
 

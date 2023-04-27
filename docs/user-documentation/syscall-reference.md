@@ -85,9 +85,7 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 
 ### Sub-operations
 
-| *Constant*          | *Value* |
-|---------------------|---------|
-| `HC_EC_CTRL_RECALL` | 0       |
+There are currently no defined suboperations.
 
 ### In
 
@@ -101,27 +99,6 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 ### Out
 
 See the specific `ec_ctrl` sub-operation.
-
-## ec_ctrl_recall
-
-`ec_ctrl_recall` forces the given execution context to enter its
-recall exception handler via its recall exception portal as soon as
-possible. ECs can be recalled from any CPU, not only the CPU on which
-they are scheduled to run.
-
-### In
-
-| *Register*  | *Content*          | *Description*                                                 |
-|-------------|--------------------|---------------------------------------------------------------|
-| ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                     |
-| ARG1[9:8]   | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
-| ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC. |
-
-### Out
-
-| *Register* | *Content* | *Description*                                |
-|------------|-----------|----------------------------------------------|
-| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
 ## create_pd
 

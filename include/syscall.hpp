@@ -215,7 +215,7 @@ class Sys_ec_ctrl : public Sys_regs
 public:
     enum ctrl_op
     {
-        RECALL,
+        // Nothing here at the moment.
     };
 
     inline unsigned long ec() const { return ARG_1 >> ARG1_VALUE_SHIFT; }

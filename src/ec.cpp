@@ -95,21 +95,11 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         current()->cont = func;
         Sc::schedule();
     }
-
-    if (hzd & HZD_RECALL) {
-        current()->regs.clr_hazard(HZD_RECALL);
-
-        if (func == ret_user_sysexit)
-            current()->redirect_to_iret();
-
-        current()->regs.dst_portal = EXC_RECALL;
-        send_msg<ret_user_iret>();
-    }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
@@ -183,7 +173,7 @@ void Ec::return_to_user()
 
 void Ec::ret_user_iret()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);
 

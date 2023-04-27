@@ -645,24 +645,7 @@ void Ec::sys_ec_ctrl()
     Sys_ec_ctrl* r = static_cast<Sys_ec_ctrl*>(current()->sys_regs());
 
     switch (r->op()) {
-    case Sys_ec_ctrl::RECALL: {
-        Ec* ec = capability_cast<Ec>(Space_obj::lookup(r->ec()), Ec::PERM_EC_CTRL);
-
-        if (EXPECT_FALSE(not ec)) {
-            trace(TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        if (!(ec->regs.hazard() & HZD_RECALL)) {
-
-            ec->regs.set_hazard(HZD_RECALL);
-
-            if (Cpu::id() != ec->cpu && Ec::remote(ec->cpu) == ec)
-                Lapic::send_ipi(ec->cpu, VEC_IPI_RKE);
-        }
-        break;
-    }
-
+        // There is nothing here at the moment, but we might add ec_ctrl operations at a later time.
     default:
         sys_finish<Sys_regs::BAD_PAR>();
     }
