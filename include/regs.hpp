@@ -126,9 +126,7 @@ public:
             // See Ec::return_to_user for the path back.
         };
         struct {
-            union {
-                Vmcs* vmcs;
-            };
+            Vmcs* vmcs;
 
             // This member needs to have the same offset in the data
             // structure as vec above. The code uses them interchangeably.
