@@ -179,10 +179,16 @@ private:
         return Sc::ctr_link()--;
     }
 
+    // Modify the register state of the EC for exiting via iret.
+    //
+    // This function assumes that the EC entered via syscall.
     inline void redirect_to_iret()
     {
-        regs.rsp = regs.ARG_SP;
         regs.rip = regs.ARG_IP;
+        regs.cs = SEL_USER_CODE;
+        regs.rfl = 0x200;
+        regs.rsp = regs.ARG_SP;
+        regs.ss = SEL_USER_DATA;
     }
 
     void transfer_fpu(Ec*);
