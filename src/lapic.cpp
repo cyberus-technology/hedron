@@ -260,9 +260,6 @@ void Lapic::ipi_vector(unsigned vector)
     case VEC_IPI_RKE:
         Sc::rke_handler();
         break;
-    case VEC_IPI_PRK:
-        park_handler();
-        break;
     }
 
     eoi();
