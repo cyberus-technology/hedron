@@ -136,6 +136,7 @@ public:
     enum
     {
         EFL_CF = 1ul << 0,    // 0x1
+        EFL_MBS = 1ul << 1,   // 0x2 "must-be-set"
         EFL_PF = 1ul << 2,    // 0x4
         EFL_AF = 1ul << 4,    // 0x10
         EFL_ZF = 1ul << 6,    // 0x40

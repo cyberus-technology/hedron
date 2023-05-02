@@ -186,7 +186,7 @@ private:
     {
         regs.rip = regs.ARG_IP;
         regs.cs = SEL_USER_CODE;
-        regs.rfl = 0x200;
+        regs.rfl = Cpu::EFL_IF | Cpu::EFL_MBS;
         regs.rsp = regs.ARG_SP;
         regs.ss = SEL_USER_DATA;
     }
