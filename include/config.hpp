@@ -36,7 +36,7 @@
 /// is backwards compatible and requires a minor version bump.
 ///
 /// Do not forget to update the CHANGELOG.md in the repository.
-#define CFG_VER 10000
+#define CFG_VER 11000
 
 #define NUM_CPU 128
 #define NUM_EXC 32
@@ -46,7 +46,6 @@
 #define NUM_USER_VECTORS 192
 
 #define NUM_LVT 6
-#define NUM_MSI 1
 #define NUM_IPI 4
 #define NUM_PRIORITIES 128
 

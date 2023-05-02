@@ -180,22 +180,6 @@ entry_lvt:              push    $0
                         jmp     ret_from_interrupt
 
 /*
- * MSI Entries
- */
-.rept                   NUM_MSI
-INTRGATE                IDT_MODE_DPL0
-                        push    $VEC
-                        jmp     entry_msi
-.set                    VEC, VEC + 1
-.endr
-
-entry_msi:              push    $0
-                        SAVE_STATE
-                        mov     OFS_VEC (%rbx), %ARG_1
-                        call    msi_vector
-                        jmp     ret_from_interrupt
-
-/*
  * IPI Entries
  */
 .rept                   NUM_IPI
@@ -257,3 +241,5 @@ entry_vmx:              SAVE_GPR
                         mov     %rax, OFS_CR2 (%rsp)
 entry_vmx_failure:      RESTORE_STACK
                         jmp     vmx_handler
+
+.section .note.GNU-stack,"",%progbits

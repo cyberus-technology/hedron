@@ -566,3 +566,5 @@ __start_cpu_patch_rel:
                         .long __patch_rel_jmp_dst     - __start_cpu
                         .long __patch_rel_gdt_addr    - __start_cpu
 __start_cpu_patch_rel_end:
+
+.section .note.GNU-stack,"",%progbits

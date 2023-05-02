@@ -95,34 +95,17 @@ void Ec::handle_hazard(mword hzd, void (*func)())
         current()->cont = func;
         Sc::schedule();
     }
-
-    if (hzd & HZD_RECALL) {
-        current()->regs.clr_hazard(HZD_RECALL);
-
-        if (func == ret_user_sysexit)
-            current()->redirect_to_iret();
-
-        current()->regs.dst_portal = EXC_RECALL;
-        send_msg<ret_user_iret>();
-    }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_sysexit);
 
     // TODO Instead of exiting via sysret, which should trap due to the NMI handler, we just redirect
     // everything to iret.
-    //
-    // TODO Find out why redirect_to_iret does not need to set RFLAGS and CS/DS.
-    Exc_regs& regs = current()->regs;
-    regs.rsp = regs.r11;
-    regs.rfl = 0x200;
-    regs.rip = regs.rcx;
-    regs.cs = SEL_USER_CODE;
-    regs.ss = SEL_USER_DATA;
+    current()->redirect_to_iret();
     ret_user_iret();
 
     // TODO This is not reached right now.
@@ -183,7 +166,7 @@ void Ec::return_to_user()
 
 void Ec::ret_user_iret()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd))
         handle_hazard(hzd, ret_user_iret);
 

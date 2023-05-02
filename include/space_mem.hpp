@@ -24,7 +24,6 @@
 #include "cpu.hpp"
 #include "cpuset.hpp"
 #include "delegate_result.hpp"
-#include "dpt.hpp"
 #include "ept.hpp"
 #include "hpt.hpp"
 #include "space.hpp"
@@ -36,8 +35,6 @@ class Space_mem
 
 public:
     Hpt hpt;
-
-    Dpt dpt;
 
     Ept ept;
 

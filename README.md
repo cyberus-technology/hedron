@@ -142,7 +142,6 @@ initrd tftp://${next-server}/roottask
 Hedron supports the following command-line parameters. They must be
 separated by spaces.
 
-- *iommu*	- Enables DMA and interrupt remapping.
 - *serial*	- Enables the hypervisor to drive the serial console.
 - *nopcid*	- Disables TLB tags for address spaces.
 - *novga*  	- Disables VGA console.

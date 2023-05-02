@@ -35,7 +35,6 @@ public:
     enum Subspace : mword
     {
         SUBSPACE_HOST = 1U << 0,
-        SUBSPACE_DEVICE = 1U << 1,
         SUBSPACE_GUEST = 1U << 2,
     };
 

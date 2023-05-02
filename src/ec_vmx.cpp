@@ -18,7 +18,6 @@
  * GNU General Public License version 2 for more details.
  */
 
-#include "dmar.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "vcpu.hpp"
@@ -72,7 +71,7 @@ void Ec::resume_vcpu()
 {
     assert(Ec::current()->vcpu != nullptr);
 
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RECALL | HZD_TSC | HZD_RCU | HZD_SCHED);
+    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
     if (EXPECT_FALSE(hzd)) {
         handle_hazard(hzd, resume_vcpu);
     }

@@ -26,7 +26,6 @@
 #include "syscall.hpp"
 #include "acpi.hpp"
 #include "cpu.hpp"
-#include "dmar.hpp"
 #include "hip.hpp"
 #include "hpet.hpp"
 #include "ioapic.hpp"
@@ -646,24 +645,7 @@ void Ec::sys_ec_ctrl()
     Sys_ec_ctrl* r = static_cast<Sys_ec_ctrl*>(current()->sys_regs());
 
     switch (r->op()) {
-    case Sys_ec_ctrl::RECALL: {
-        Ec* ec = capability_cast<Ec>(Space_obj::lookup(r->ec()), Ec::PERM_EC_CTRL);
-
-        if (EXPECT_FALSE(not ec)) {
-            trace(TRACE_ERROR, "%s: Bad EC CAP (%#lx)", __func__, r->ec());
-            sys_finish<Sys_regs::BAD_CAP>();
-        }
-
-        if (!(ec->regs.hazard() & HZD_RECALL)) {
-
-            ec->regs.set_hazard(HZD_RECALL);
-
-            if (Cpu::id() != ec->cpu && Ec::remote(ec->cpu) == ec)
-                Lapic::send_ipi(ec->cpu, VEC_IPI_RKE);
-        }
-        break;
-    }
-
+        // There is nothing here at the moment, but we might add ec_ctrl operations at a later time.
     default:
         sys_finish<Sys_regs::BAD_PAR>();
     }
@@ -786,34 +768,6 @@ void Ec::sys_kp_ctrl()
     sys_finish<Sys_regs::BAD_PAR>();
 }
 
-void Ec::sys_assign_pci()
-{
-    Sys_assign_pci* r = static_cast<Sys_assign_pci*>(current()->sys_regs());
-    Pd* pd = capability_cast<Pd>(Space_obj::lookup(r->pd()));
-
-    if (EXPECT_FALSE(not pd)) {
-        trace(TRACE_ERROR, "%s: Non-PD CAP (%#lx)", __func__, r->pd());
-        sys_finish<Sys_regs::BAD_CAP>();
-    }
-
-    Paddr phys;
-    unsigned rid;
-    if (EXPECT_FALSE(!pd->Space_mem::lookup(r->dev(), &phys) || (rid = Pci::phys_to_rid(phys)) == ~0U)) {
-        trace(TRACE_ERROR, "%s: Non-DEV CAP (%#lx)", __func__, r->dev());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    Dmar* dmar = Pci::find_dmar(r->hnt());
-    if (EXPECT_FALSE(!dmar)) {
-        trace(TRACE_ERROR, "%s: Invalid Hint (%#lx)", __func__, r->hnt());
-        sys_finish<Sys_regs::BAD_DEV>();
-    }
-
-    dmar->assign(rid, pd);
-
-    sys_finish<Sys_regs::SUCCESS>();
-}
-
 void Ec::sys_machine_ctrl()
 {
     Sys_machine_ctrl* r = static_cast<Sys_machine_ctrl*>(current()->sys_regs());
@@ -933,10 +887,6 @@ void Ec::sys_irq_ctrl_configure_vector()
 
     if (not sm and not kp) {
         new_vector_info = Vector_info::disabled();
-
-        if (Dmar::ire()) {
-            Dmar::clear_irt(Dmar::irt_index(r->cpu(), r->vector()));
-        }
     } else {
         if (EXPECT_FALSE(not sm)) {
             trace(TRACE_ERROR, "%s: Non-SM CAP (%#lx)", __func__, r->sm());
@@ -983,16 +933,8 @@ void Ec::sys_irq_ctrl_assign_ioapic_pin()
 
     uint32 const aid{Cpu::apic_id[r->cpu()]};
 
-    if (Dmar::ire()) {
-        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
-
-        Dmar::set_irt(irt_index, opt_ioapic->get_rid(), aid, VEC_USER + r->vector(), r->level());
-        opt_ioapic->set_irt_entry_remappable(r->ioapic_pin(), irt_index, VEC_USER + r->vector(), r->level(),
-                                             r->active_low());
-    } else {
-        opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
-                                                r->active_low());
-    }
+    opt_ioapic->set_irt_entry_compatibility(r->ioapic_pin(), aid, VEC_USER + r->vector(), r->level(),
+                                            r->active_low());
 
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -1007,8 +949,7 @@ void Ec::sys_irq_ctrl_mask_ioapic_pin()
     }
 
     // The user can unmask pins that have not been previously configured. This is benign, because in this
-    // case the IOAPIC RTEs are invalid and no interrupt will arive. Also when the IOMMU is enabled, there
-    // will not be an IOMMU RTE for the given pin.
+    // case the IOAPIC RTEs are invalid and no interrupt will arive.
     opt_ioapic->set_mask(r->ioapic_pin(), r->mask());
     sys_finish<Sys_regs::SUCCESS>();
 }
@@ -1032,17 +973,8 @@ void Ec::sys_irq_ctrl_assign_msi()
     uint32 msi_addr;
     uint32 msi_data;
 
-    if (Dmar::ire()) {
-        uint16 const irt_index{Dmar::irt_index(r->cpu(), r->vector())};
-
-        msi_addr = 0xfee00000 | (1U << 4) | ((0x7fff & irt_index) << 5) | ((irt_index >> 15) << 2);
-        msi_data = 0;
-
-        Dmar::set_irt(irt_index, rid, aid, VEC_USER + r->vector(), false /* edge */);
-    } else {
-        msi_addr = 0xfee00000 | (aid << 12);
-        msi_data = VEC_USER + r->vector();
-    }
+    msi_addr = 0xfee00000 | (aid << 12);
+    msi_data = VEC_USER + r->vector();
 
     r->set_msi(msi_addr, msi_data);
     sys_finish<Sys_regs::SUCCESS>();
@@ -1163,9 +1095,6 @@ void Ec::syscall_handler()
         sys_reply();
     case hypercall_id::HC_REVOKE:
         sys_revoke();
-
-    case hypercall_id::HC_ASSIGN_PCI:
-        sys_assign_pci();
 
     case hypercall_id::HC_CREATE_PD:
         sys_create_pd();

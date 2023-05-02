@@ -37,7 +37,6 @@ private:
     static char const* get_arg(char const**, unsigned&);
 
 public:
-    static inline bool iommu;
     static inline bool serial;
     static inline bool nodl;
     static inline bool nopcid;

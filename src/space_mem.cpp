@@ -19,7 +19,6 @@
  */
 
 #include "counter.hpp"
-#include "dmar.hpp"
 #include "hazards.hpp"
 #include "hip.hpp"
 #include "lapic.hpp"
@@ -82,9 +81,6 @@ Delegate_result_void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, m
     // mappings around, even if we only managed a partial page table update.
     Scope_guard g{[this, &cleanup, sub] {
         if (cleanup.need_tlb_flush()) {
-            if (sub & Space::SUBSPACE_DEVICE) {
-                Dmar::flush_all_contexts();
-            }
             if (sub & Space::SUBSPACE_GUEST) {
                 stale_guest_tlb.merge(cpus);
             }
@@ -116,17 +112,6 @@ Delegate_result_void Space_mem::delegate(Tlb_cleanup& cleanup, Space_mem* snd, m
             return Err(Delegate_error::invalid_mapping());
         }
 
-        if (sub & Space::SUBSPACE_DEVICE) {
-            // We would only want to call `cleanup.flush_tlb_later();` explicitly if the Caching Mode of the
-            // IOMMU is set to 1, which implies that even non-present and invalid mappings may be cached. For
-            // all other cases the generic_page_table code should already call `flush_tlb_later()` when
-            // necessary. We cannot easily access this information here, which is why we always explicitly
-            // kick off the flush.
-            cleanup.flush_tlb_later();
-
-            TRY_OR_RETURN(dpt.update(cleanup, Dpt::convert_mapping(target_mapping)));
-        }
-
         if (sub & Space::SUBSPACE_GUEST) {
             TRY_OR_RETURN(ept.update(cleanup, Ept::convert_mapping(target_mapping)));
         }
@@ -152,8 +137,7 @@ void Space_mem::revoke(Tlb_cleanup& cleanup, mword vaddr, mword ord, mword attr)
               vaddr, ord, attr);
     }
 
-    delegate(cleanup, this, vaddr, vaddr, ord, 0,
-             Space::SUBSPACE_HOST | Space::SUBSPACE_DEVICE | Space::SUBSPACE_GUEST)
+    delegate(cleanup, this, vaddr, vaddr, ord, 0, Space::SUBSPACE_HOST | Space::SUBSPACE_GUEST)
         .unwrap("Failed to revoke memory");
 }
 

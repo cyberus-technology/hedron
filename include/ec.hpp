@@ -46,8 +46,6 @@
 // Startup exception index for global ECs. Global ECs (except roottask) receive this
 // exception the first time a scheduling context is bound to them.
 #define EXC_STARTUP (NUM_EXC - 2)
-// Recall exception index for global ECs.
-#define EXC_RECALL (NUM_EXC - 1)
 
 class Utcb;
 
@@ -181,10 +179,16 @@ private:
         return Sc::ctr_link()--;
     }
 
+    // Modify the register state of the EC for exiting via iret.
+    //
+    // This function assumes that the EC entered via syscall.
     inline void redirect_to_iret()
     {
-        regs.rsp = regs.ARG_SP;
         regs.rip = regs.ARG_IP;
+        regs.cs = SEL_USER_CODE;
+        regs.rfl = Cpu::EFL_IF | Cpu::EFL_MBS;
+        regs.rsp = regs.ARG_SP;
+        regs.ss = SEL_USER_DATA;
     }
 
     void transfer_fpu(Ec*);
@@ -219,8 +223,6 @@ public:
     Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, mword s, int creation_flags);
 
     ~Ec();
-
-    inline void add_tsc_offset(uint64 tsc) { regs.add_tsc_offset(tsc); }
 
     inline bool blocked() const { return next || !cont; }
 
@@ -434,8 +436,6 @@ public:
     [[noreturn]] static void sys_vcpu_ctrl_run();
 
     [[noreturn]] static void sys_vcpu_ctrl_poke();
-
-    [[noreturn]] static void sys_assign_pci();
 
     [[noreturn]] static void sys_machine_ctrl();
 

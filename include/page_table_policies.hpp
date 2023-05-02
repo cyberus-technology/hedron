@@ -37,15 +37,3 @@ public:
     }
     static entry exchange(pointer ptr, entry desired) { return Atomic::exchange(*ptr, desired); }
 };
-
-class No_clflush_policy
-{
-public:
-    static void clflush([[maybe_unused]] void* p, [[maybe_unused]] size_t n) {}
-};
-
-class Clflush_policy
-{
-public:
-    static void clflush(void* p, size_t n) { ::clflush(p, n); }
-};

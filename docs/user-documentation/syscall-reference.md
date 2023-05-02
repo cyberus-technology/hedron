@@ -85,9 +85,7 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 
 ### Sub-operations
 
-| *Constant*          | *Value* |
-|---------------------|---------|
-| `HC_EC_CTRL_RECALL` | 0       |
+There are currently no defined suboperations.
 
 ### In
 
@@ -101,27 +99,6 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 ### Out
 
 See the specific `ec_ctrl` sub-operation.
-
-## ec_ctrl_recall
-
-`ec_ctrl_recall` forces the given execution context to enter its
-recall exception handler via its recall exception portal as soon as
-possible. ECs can be recalled from any CPU, not only the CPU on which
-they are scheduled to run.
-
-### In
-
-| *Register*  | *Content*          | *Description*                                                 |
-|-------------|--------------------|---------------------------------------------------------------|
-| ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                     |
-| ARG1[9:8]   | Sub-operation      | Needs to be `HC_EC_CTRL_RECALL`.                              |
-| ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC. |
-
-### Out
-
-| *Register* | *Content* | *Description*                                |
-|------------|-----------|----------------------------------------------|
-| OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
 ## create_pd
 
@@ -643,8 +620,7 @@ atomically clear any 1 bits before blocking on the semaphore again.
 Calling this system call with a null capability for both semaphore and
 kpage will unassign this interrupt. After this, userspace will not be
 informed about interrupts via the previously configured semaphore and
-kpage. The IOMMU Interrupt Remapping Table Entry for this interrupt
-will be cleared. In case of a pin-based (IOAPIC) interrupt the
+kpage. In case of a pin-based (IOAPIC) interrupt the
 interrupt will be masked at the IOAPIC.
 
 ### In
@@ -669,18 +645,13 @@ interrupt will be masked at the IOAPIC.
 ## `irq_ctrl_assign_ioapic_pin`
 
 This system call configures an IOAPIC pin to deliver interrupts to the
-given CPU and vector. If Hedron was booted with IOMMU support, the
-interrupt will be whitelisted in the IOMMU Interrupt Remapping Table.
+given CPU and vector.
 
 Only a single interrupt can be assigned to a single CPU and vector
 pair.  If another IOAPIC pin was previously configured as
 level-triggered and assigned to the given CPU and vector pair, it
 **must** be masked via `irq_ctrl_mask_ioapic_pin` to avoid interrupt
 storms.
-
-If Hedron was booted with IOMMU support and another IOAPIC pin or MSI
-was previously assigned to the given CPU and vector pair, its IOMMU
-Interrupt Remapping Table entry will be removed.
 
 When a level triggered interrupt arrives, the corresponding IOAPIC pin
 will be masked. To unmask this particular interrupt again, the pin
@@ -736,19 +707,9 @@ Configures an MSI to arrive at the given CPU and vector. This system
 call returns the MSI address/data pair that userspace must program
 into the corresponding device.
 
-If Hedron was booted with IOMMU support and another IOAPIC pin or MSI
-was previously assigned to the given CPU and vector pair, its IOMMU
-Interrupt Remapping Table entry will be removed.
-
 If a IOAPIC pin was previously configured as level-triggered and
 assigned to the given CPU and vector pair, it **must** be masked via
 `irq_ctrl_mask_ioapic_pin` to avoid interrupt storms.
-
-Hedron can not automatically clean up IOMMU Interrupt Remapping Table
-Entries for MSIs that are not used anymore. It is up to userspace to
-remove entries in the IOMMU using `irq_ctrl_configure_vector`. Failing
-to remove entries can result in PCI devices being able to trigger
-interrupts that they should not be able to.
 
 ### In
 

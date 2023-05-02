@@ -46,12 +46,11 @@
 // semantics for two concurrent updates to the page table are thus that in the
 // overlapping region, the updates may be arbitrarily interleaved.
 //
-template <int BITS_PER_LEVEL, typename ENTRY, typename MEMORY, typename CACHE_FLUSH, typename PAGE_ALLOC,
-          typename DEFERRED_CLEANUP, typename ATTR>
+template <int BITS_PER_LEVEL, typename ENTRY, typename MEMORY, typename PAGE_ALLOC, typename DEFERRED_CLEANUP,
+          typename ATTR>
 class Generic_page_table
 {
-    using this_t =
-        Generic_page_table<BITS_PER_LEVEL, ENTRY, MEMORY, CACHE_FLUSH, PAGE_ALLOC, DEFERRED_CLEANUP, ATTR>;
+    using this_t = Generic_page_table<BITS_PER_LEVEL, ENTRY, MEMORY, PAGE_ALLOC, DEFERRED_CLEANUP, ATTR>;
 
 public:
     using level_t = int;
@@ -120,7 +119,6 @@ public:
 private:
     MEMORY memory_;
     PAGE_ALLOC page_alloc_;
-    CACHE_FLUSH cache_flush_;
 
     // Valid page table levels range from 0 to max_levels_ - 1.
     level_t const max_levels_;
@@ -188,8 +186,6 @@ private:
 
             memory_.write(new_table + i, (superpage_pte & ~attr_mask) | offset);
         }
-
-        flush_cache_page(new_table);
     }
 
     // See the description of the public version of this function below.
@@ -240,8 +236,6 @@ private:
                 goto retry;
             }
 
-            flush_cache_entries(entry_p, 1);
-
             entry = new_entry;
             phys = new_phys;
         }
@@ -279,17 +273,6 @@ private:
         }
 
         cleanup_state.free_later(table);
-    }
-
-    // Cache flush a number of page table entries.
-    void flush_cache_entries(pte_pointer_t pte_p, size_t n)
-    {
-        cache_flush_.clflush(pte_p, n * sizeof(ENTRY));
-    }
-
-    void flush_cache_page(pte_pointer_t pte_p)
-    {
-        flush_cache_entries(pte_p, static_cast<size_t>(1) << BITS_PER_LEVEL);
     }
 
     // Recursively update page table structures with new mappings.
@@ -339,7 +322,6 @@ private:
                     auto const zero_page{
                         page_alloc_.alloc_zeroed_page().unwrap("Failed to allocate a new page table")};
                     pte_t const new_pte{page_alloc_.pointer_to_phys(zero_page) | ATTR::all_rights};
-                    flush_cache_page(zero_page);
 
                     if (not memory_.cmp_swap(pte_p, old_pte, new_pte)) {
                         page_alloc_.free_page(zero_page);
@@ -357,8 +339,6 @@ private:
                              sub_map);
             }
         }
-
-        flush_cache_entries(table + offset, static_cast<size_t>(1) << updated_order);
     }
 
 public:
@@ -509,8 +489,6 @@ public:
             old_pte = new_pte;
         }
 
-        flush_cache_entries(pte_p, 1);
-
         return old_pte & ~ATTR::mask;
     }
 
@@ -538,7 +516,6 @@ public:
         : Generic_page_table(max_levels, leaf_levels, {}, {})
     {
         root_ = page_alloc_.alloc_zeroed_page().unwrap("Failed to allocate page table root");
-        flush_cache_page(root_);
     }
 
     // The destructor assumes that the page table is not in use anymore and

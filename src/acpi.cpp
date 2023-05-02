@@ -19,7 +19,6 @@
  */
 
 #include "acpi.hpp"
-#include "acpi_dmar.hpp"
 #include "acpi_facs.hpp"
 #include "acpi_fadt.hpp"
 #include "acpi_hpet.hpp"
@@ -124,8 +123,6 @@ void Acpi::setup()
         static_cast<Acpi_table_madt*>(Hpt::remap(madt))->parse();
     if (mcfg)
         static_cast<Acpi_table_mcfg*>(Hpt::remap(mcfg))->parse();
-    if (dmar)
-        static_cast<Acpi_table_dmar*>(Hpt::remap(dmar))->parse();
 
     if (facs) {
         // Without TRACE_ACPI the trace call below doesn't touch its arguments.

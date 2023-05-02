@@ -23,8 +23,8 @@
 #include "tlb_cleanup.hpp"
 
 class Hpt;
-using Hpt_page_table = Generic_page_table<9, mword, Atomic_access_policy<>, No_clflush_policy,
-                                          Page_alloc_policy<>, Tlb_cleanup, Hpt>;
+using Hpt_page_table =
+    Generic_page_table<9, mword, Atomic_access_policy<>, Page_alloc_policy<>, Tlb_cleanup, Hpt>;
 
 // Host Page Table
 //
