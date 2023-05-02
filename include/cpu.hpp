@@ -166,7 +166,10 @@ public:
     static inline uint64 initial_tsc = 0;
 
     CPULOCAL_CONST_ACCESSOR(cpu, id);
-    CPULOCAL_ACCESSOR(cpu, hazard);
+    CPULOCAL_REMOTE_ACCESSOR(cpu, hazard);
+
+    // Access the hazards on a remote core. Has to be accessed using atomic ops!
+    static unsigned& hazard(unsigned cpu) { return remote_ref_hazard(cpu); }
 
     CPULOCAL_ACCESSOR(cpu, features);
     CPULOCAL_ACCESSOR(cpu, bsp);
