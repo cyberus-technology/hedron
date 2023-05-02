@@ -21,6 +21,7 @@
 inline constexpr unsigned HZD_SCHED{1u << 0};
 inline constexpr unsigned HZD_RCU{1u << 1};
 inline constexpr unsigned HZD_TLB{1u << 2}; // The TLB has to be flushed.
+inline constexpr unsigned HZD_PRK{1u << 3}; // The CPU should be parked (call Lapic::park_function).
 inline constexpr unsigned HZD_IDL{1u << 4}; // RCU acceleration.
 inline constexpr unsigned HZD_RRQ{1u << 5}; // There are SCs in the ready queue and Sc::ready_enqueue has
                                             // to be called.
