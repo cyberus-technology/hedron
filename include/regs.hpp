@@ -212,7 +212,6 @@ private:
     mword hzd;
 
 public:
-    uint64 tsc_offset;
     mword mtd;
     mword fs_base;
     mword gs_base;
@@ -222,6 +221,4 @@ public:
     inline void set_hazard(mword h) { Atomic::set_mask(hzd, h); }
 
     inline void clr_hazard(mword h) { Atomic::clr_mask(hzd, h); }
-
-    inline void add_tsc_offset(uint64 tsc) { tsc_offset += tsc; }
 };

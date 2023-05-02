@@ -224,8 +224,6 @@ public:
 
     ~Ec();
 
-    inline void add_tsc_offset(uint64 tsc) { regs.add_tsc_offset(tsc); }
-
     inline bool blocked() const { return next || !cont; }
 
     inline void set_timeout(uint64 t, Sm* s)

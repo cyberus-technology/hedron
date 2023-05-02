@@ -100,8 +100,6 @@ void Sc::ready_dequeue(uint64 t)
 
     trace(TRACE_SCHEDULE, "DEQ:%p (%llu) PRIO:%#x TOP:%#x", this, left, prio, prio_top());
 
-    ec->add_tsc_offset(tsc - t);
-
     tsc = t;
 }
 
