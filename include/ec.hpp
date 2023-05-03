@@ -105,7 +105,9 @@ private:
     // work.
     static void maybe_handle_deferred_nmi_work(Exc_regs*);
 
-    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3.
+    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3. This function
+    // should only be called in the `from user space`-part of the NMI handler. As soon as HZD_SCHED goes away,
+    // this function can be replaced with handle_hazards.
     static void do_deferred_nmi_work();
 
     static void handle_exc(Exc_regs*) asm("exc_handler");
