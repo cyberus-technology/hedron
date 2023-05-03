@@ -204,6 +204,14 @@ void Vcpu::run()
     assert(Atomic::load(owner) == Ec::current());
 
     vmcs->make_current();
+
+    // We check the hazards here again to avoid racyness due to our NMI handling. The following can happen:
+    // VMCS_1 is the current VMCS. We receive an NMI and VMCS_1 gets trashed. We reschedule and now VMCS_2 is
+    // made the current VMCS. We call vmresume without handling the NMI work.
+    // To avoid this we set a hazard on the remote CPU before sending an NMI. That way either the trashed VMCS
+    // or the hazard ensures that the NMI work gets done.
+    Ec::handle_hazards(Ec::resume_vcpu);
+
     exit_reason_shadow = Optional<uint32>{};
 
     if (EXPECT_FALSE(Atomic::load(poked))) {
@@ -421,7 +429,6 @@ void Vcpu::handle_exception()
         // We received an NMI while being in VMX non-root mode. We can safely do all NMI work here. Check
         // Ec::handle_exc_altstack to learn more about our NMI handling.
         Ec::do_early_nmi_work();
-        Ec::do_deferred_nmi_work();
         continue_running();
     }
 
@@ -451,7 +458,6 @@ void Vcpu::maybe_handle_invalid_guest_state()
     }
 
     // The invalid guest state was provoked by the NMI handler.
-    Ec::do_deferred_nmi_work();
     Ec::fixup_nmi_user_trap();
 
     continue_running();

@@ -159,8 +159,8 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
         return;
     }
 
-    // We have deferred work from an earlier NMI.
-    do_deferred_nmi_work();
+    // We don't have to do the deferred NMI work here, because ret_user_iret will handle all set hazards and
+    // thus also handle the NMI work.
 
     // If we interrupted the kernel, the RIP for this #GP points to the IRET instruction after any
     // swapgs. When we return to that iret, we would have to swapgs again to return GS_BASE and
