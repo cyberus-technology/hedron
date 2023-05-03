@@ -168,9 +168,12 @@ void Space_mem::shootdown()
         // There is a special case for the current CPU. We don't need to send an IPI, because before user code
         // executes again, it will check its hazards and do the TLB flush then.
         if (Cpu::id() == cpu) {
-            Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
+            Atomic::set_mask(Cpu::hazard(), HZD_TLB);
             continue;
         }
+
+        // Set HZD_TLB on the remote core.
+        Atomic::set_mask(Cpu::hazard(cpu), HZD_TLB);
 
         // Take a snapshot of the shootdown IPI counter from the remote CPU and remember that we have to wait
         // for this CPU to receive it. See the comment at the while loop below.

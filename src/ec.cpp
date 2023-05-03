@@ -98,6 +98,13 @@ void Ec::handle_hazards(void (*continuation)())
         Rcu::quiet();
     }
 
+    if (hzd & HZD_TLB) {
+        if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
+            Pd::current()->Space_mem::stale_host_tlb.clr(Cpu::id());
+            Hpt::flush();
+        }
+    }
+
     if (hzd & HZD_SCHED) {
         current()->cont = continuation;
         Sc::schedule();

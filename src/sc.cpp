@@ -201,5 +201,5 @@ void Sc::rke_handler()
     // guest TLB invalidations unconditionally.
 
     if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id()))
-        Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
+        Atomic::set_mask(Cpu::hazard(), HZD_TLB);
 }
