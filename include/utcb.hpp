@@ -122,9 +122,10 @@ private:
 
 public:
     WARN_UNUSED_RESULT bool load_exc(Cpu_regs*);
-    WARN_UNUSED_RESULT bool load_vmx(Cpu_regs*);
     WARN_UNUSED_RESULT bool save_exc(Cpu_regs*);
-    WARN_UNUSED_RESULT bool save_vmx(Cpu_regs*);
+
+    void load_vmx(Cpu_regs*);
+    void save_vmx(Cpu_regs*);
 
     inline mword ucnt() const { return static_cast<uint16>(items); }
     inline mword tcnt() const { return static_cast<uint16>(items >> 16); }

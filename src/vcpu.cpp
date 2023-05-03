@@ -249,9 +249,7 @@ void Vcpu::run()
 
     // This a workaround until hedron#252 is resolved.
     utcb()->mtd = regs.mtd;
-    // We always load the vCPUs FPU state in the VM entry path, thus we are not interested in the return
-    // value.
-    [[maybe_unused]] const bool fpu_needs_save{utcb()->save_vmx(&regs)};
+    utcb()->save_vmx(&regs);
     regs.mtd = 0;
     utcb()->mtd = 0;
 
@@ -485,8 +483,7 @@ void Vcpu::return_to_vmm(Sys_regs::Status status)
     // we don't have to put anything into the UTCB.
     regs.mtd = mtd.val;
 
-    // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
-    [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
+    utcb()->load_vmx(&regs);
     regs.mtd = 0;
     regs.dst_portal = 0;
 
