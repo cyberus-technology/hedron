@@ -190,7 +190,7 @@ void Vcpu::save_dr()
     // debugging functionality. That means, we don't have to restore any host values here, because they are
     // not used.
     //
-    // We read the debug regiters only once here and cache their values, because reading them is expensive.
+    // We read the debug registers only once here and cache their values, because reading them is expensive.
     host_dr[0] = regs.dr0 = get_dr0();
     host_dr[1] = regs.dr1 = get_dr1();
     host_dr[2] = regs.dr2 = get_dr2();
