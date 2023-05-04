@@ -231,16 +231,32 @@ void Ec::ret_user_iret()
 
 void Ec::idle()
 {
+    // The monitor and mwait instructions are part of the SSE3, which was introduced in 2004. Thus we can
+    // assume that we can use the instructions. Unfortunately, we cannot assert that it exists (by checking
+    // Cpu::feature(Cpu::Feature::FEAT_MONITOR)) because KVM does not advertise the bit to the guest. See
+    // https://elixir.bootlin.com/linux/v6.3.1/source/arch/x86/kvm/cpuid.c#L596 for reference.
+
     for (;;) {
         handle_hazards(idle);
 
-        asm volatile(".globl idle_hlt\n"
-                     "sti\n"
-                     "idle_hlt: hlt\n"
-                     "cli\n"
-                     :
-                     :
-                     : "memory");
+        asm volatile(
+            // Arm the monitor. The address in RAX will be monitored.
+            "lea %[hazards], %%rax\n"
+            "monitor\n"
+            // EAX contains a hint to mwait, thus we have to clear them.
+            "xor %%eax, %%eax\n"
+            // We have to check whether Cpu::hazards is still zero, because we may have received an NMI after
+            // checking the hazards and before arming the monitor
+            "cmpl $0, %[hazards]\n"
+            "jne 1f\n"
+            "sti\n"
+            "mwait\n"
+            "cli\n"
+            "1:\n"
+            :
+            // Monitor will cause a #GP if RCX != 0.
+            : "c"(0), [hazards] "m"(Cpu::hazard())
+            : "rax");
     }
 }
 
