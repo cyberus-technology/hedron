@@ -50,6 +50,7 @@ public:
         FEAT_MCA = 14,
         FEAT_ACPI = 22,
         FEAT_HTT = 28,
+        FEAT_MONITOR = 35,
         FEAT_VMX = 37,
         FEAT_PCID = 49,
         FEAT_TSC_DEADLINE = 56,
