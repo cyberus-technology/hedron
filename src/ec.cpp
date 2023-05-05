@@ -362,9 +362,3 @@ void Ec::die(char const* reason, Exc_regs* r)
 
     reply(dead);
 }
-
-void Ec::idl_handler()
-{
-    if (Ec::current()->cont == Ec::idle)
-        Rcu::update();
-}
