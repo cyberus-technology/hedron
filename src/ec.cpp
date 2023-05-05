@@ -94,7 +94,7 @@ void Ec::handle_hazards(void (*continuation)())
 
     const unsigned hzd{Atomic::exchange(Cpu::hazard(), 0u)};
 
-    if (hzd & HZD_RCU) {
+    if (hzd & HZD_RCU or (hzd & HZD_IDL and Ec::current()->is_idle_ec())) {
         Rcu::quiet();
     }
 
