@@ -86,22 +86,34 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
 // De-constructor
 Ec::~Ec() { pre_free(this); }
 
-void Ec::handle_hazard(mword hzd, void (*func)())
+void Ec::handle_hazards(void (*continuation)())
 {
-    if (hzd & HZD_RCU)
+    if (EXPECT_TRUE(Atomic::load(Cpu::hazard()) == 0u)) {
+        return;
+    }
+
+    const unsigned hzd{Atomic::exchange(Cpu::hazard(), 0u)};
+
+    if (hzd & HZD_RCU) {
         Rcu::quiet();
+    }
+
+    if (hzd & HZD_TLB) {
+        if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
+            Pd::current()->Space_mem::stale_host_tlb.clr(Cpu::id());
+            Hpt::flush();
+        }
+    }
 
     if (hzd & HZD_SCHED) {
-        current()->cont = func;
+        current()->cont = continuation;
         Sc::schedule();
     }
 }
 
 void Ec::ret_user_sysexit()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd))
-        handle_hazard(hzd, ret_user_sysexit);
+    handle_hazards(ret_user_sysexit);
 
     // TODO Instead of exiting via sysret, which should trap due to the NMI handler, we just redirect
     // everything to iret.
@@ -166,9 +178,7 @@ void Ec::return_to_user()
 
 void Ec::ret_user_iret()
 {
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd))
-        handle_hazard(hzd, ret_user_iret);
+    handle_hazards(ret_user_iret);
 
     assert_slow(Pd::is_pcid_valid());
 
@@ -222,10 +232,7 @@ void Ec::ret_user_iret()
 void Ec::idle()
 {
     for (;;) {
-
-        mword hzd = Cpu::hazard() & (HZD_RCU | HZD_SCHED);
-        if (EXPECT_FALSE(hzd))
-            handle_hazard(hzd, idle);
+        handle_hazards(idle);
 
         asm volatile(".globl idle_hlt\n"
                      "sti\n"

@@ -52,24 +52,7 @@ void Ec::transfer_fpu(Ec* from_ec)
     load_fpu();
 }
 
-bool Ec::handle_exc_gp(Exc_regs* r)
-{
-    if (fixup(r)) {
-        return true;
-    }
-
-    if (Cpu::hazard() & HZD_TR) {
-        Cpu::hazard() &= ~HZD_TR;
-
-        // The VM exit has re-set the TR segment limit to 0x67. This breaks the
-        // IO permission bitmap. Restore the correct value.
-        Gdt::unbusy_tss();
-        Tss::load();
-        return true;
-    }
-
-    return false;
-}
+bool Ec::handle_exc_gp(Exc_regs* r) { return fixup(r); }
 
 bool Ec::handle_exc_pf(Exc_regs* r)
 {
@@ -122,26 +105,24 @@ void Ec::do_early_nmi_work()
 
 void Ec::do_deferred_nmi_work()
 {
-    // Here we are doing the work that we cannot unconditionally do inside the NMI handler. This function
-    // should only be called by
-    //   - the NMI handler, if we were running in user space while receiving the NMI
-    //   - Ec::maybe_handle_deferred_nmi_work, which is called if we received an exception that may be caused
-    //     by the NMI handler
-    //   - Vcpu::handle_exception, if a VM exit was caused by an NMI
-    //   - Vcpu::handle_vmx, if the host state check failed during a vmresume
+    // This function does a subset of what Ec::handle_hazards does. In the future we will just call
+    // Ec::handle_hazards, but as long as this may reschedule we cannot do this here, because are running on
+    // the NMI stack.
+    //
+    // This function should only be called by the `from user space`-part of the NMI handler.
     //
     // You can find more information about the NMI handling in Ec::handle_exc_altstack.
-    //
-    // Keep in mind that we may not run on the normal kernel stack, but on the NMI stack. Thus you have to
-    // return from this function without switching to another EC.
 
     // The caller of this function has to make sure that we can access CPU-local data.
     assert_slow(Cpulocal::is_initialized());
 
     // Handle a stale TLB.
-    if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
-        Pd::current()->Space_mem::stale_host_tlb.clr(Cpu::id());
-        Hpt::flush();
+    if ((Atomic::load(Cpu::hazard()) & HZD_TLB) != 0) {
+        if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id())) {
+            Pd::current()->Space_mem::stale_host_tlb.clr(Cpu::id());
+            Hpt::flush();
+        }
+        Atomic::clr_mask(Cpu::hazard(), HZD_TLB);
     }
 }
 
@@ -176,8 +157,8 @@ void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
         return;
     }
 
-    // We have deferred work from an earlier NMI.
-    do_deferred_nmi_work();
+    // We don't have to do the deferred NMI work here, because ret_user_iret will handle all set hazards and
+    // thus also handle the NMI work.
 
     // If we interrupted the kernel, the RIP for this #GP points to the IRET instruction after any
     // swapgs. When we return to that iret, we would have to swapgs again to return GS_BASE and

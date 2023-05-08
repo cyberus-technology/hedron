@@ -18,6 +18,6 @@
 
 #pragma once
 
-#define HZD_SCHED 0x1
-#define HZD_TR 0x4
-#define HZD_RCU 0x8
+inline constexpr unsigned HZD_SCHED{1u << 0};
+inline constexpr unsigned HZD_RCU{1u << 1};
+inline constexpr unsigned HZD_TLB{1u << 2}; // The TLB has to be flushed.

@@ -64,7 +64,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
     unsigned cpu_id;
 
     // Any special conditions that need to be checked on kernel entry/exit
-    // paths. See hazards.hpp.
+    // paths. See hazards.hpp. Has to be accessed using atomic ops!
     unsigned cpu_hazard;
 
     // The current execution context.

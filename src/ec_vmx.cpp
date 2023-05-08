@@ -32,7 +32,11 @@ void Ec::handle_vmx()
     assert_slow(get_es() == 0ul);
     assert_slow(get_fs() == 0ul);
 
-    Cpu::hazard() |= HZD_TR;
+    // The VM exit has re-set the TR segment limit to 0x67. This breaks the
+    // IO permission bitmap. Restore the correct value.
+    Gdt::unbusy_tss();
+    Tss::load();
+
     Cpu::setup_msrs();
 
     // A VM exit occured. We pass the control flow to the vCPU object and let it handle the exit.
@@ -71,10 +75,7 @@ void Ec::resume_vcpu()
 {
     assert(Ec::current()->vcpu != nullptr);
 
-    mword hzd = (Cpu::hazard() | current()->regs.hazard()) & (HZD_RCU | HZD_SCHED);
-    if (EXPECT_FALSE(hzd)) {
-        handle_hazard(hzd, resume_vcpu);
-    }
+    handle_hazards(resume_vcpu);
 
     Ec::current()->vcpu->run();
 }

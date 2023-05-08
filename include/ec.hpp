@@ -105,7 +105,9 @@ private:
     // work.
     static void maybe_handle_deferred_nmi_work(Exc_regs*);
 
-    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3.
+    // Do the work that led to sending an NMI, e.g. invalidating the TLB by reloading the CR3. This function
+    // should only be called in the `from user space`-part of the NMI handler. As soon as HZD_SCHED goes away,
+    // this function can be replaced with handle_hazards.
     static void do_deferred_nmi_work();
 
     static void handle_exc(Exc_regs*) asm("exc_handler");
@@ -122,8 +124,9 @@ private:
     // Returns true, if the #GP was handled and normal operation can resume.
     static bool fixup(Exc_regs* r);
 
-    NOINLINE
-    static void handle_hazard(mword, void (*)());
+    // Checks Cpu::hazard for any set hazards and handles them. If this leads to a reschedule, the current EC
+    // will continue to execute at the given continuation.
+    static void handle_hazards(void (*continuation)());
 
     static void pre_free(Rcu_elem* a)
     {
