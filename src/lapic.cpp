@@ -250,9 +250,6 @@ void Lapic::park_handler()
 void Lapic::ipi_vector(unsigned vector)
 {
     switch (vector) {
-    case VEC_IPI_RRQ:
-        Sc::rrq_handler();
-        break;
     case VEC_IPI_RKE:
         Sc::rke_handler();
         break;
