@@ -105,6 +105,10 @@ void Ec::handle_hazards(void (*continuation)())
         }
     }
 
+    if (hzd & HZD_RRQ) {
+        Sc::rrq_handler();
+    }
+
     if (hzd & HZD_SCHED) {
         current()->cont = continuation;
         Sc::schedule();
