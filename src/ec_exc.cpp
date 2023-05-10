@@ -268,16 +268,6 @@ void Ec::handle_exc_altstack(Exc_regs* r)
         // That way we know that we do the deferred NMI work at safe places.
         else {
 
-            // If we receive the NMI while the RIP points to the 'hlt' in our idle handler, we have to bump
-            // the RIP. Otherwise, the NMI destroys the sti-blocking and we could receive an interrupt between
-            // the 'sti' and the 'hlt' and thus may go to sleep even though the interrupt would need
-            // processing.
-            const bool nmi_on_idle_hlt{r->cs == SEL_KERN_CODE and static_cast<int64>(r->rip) < 0 and
-                                       r->rip == reinterpret_cast<mword>(&idle_hlt)};
-            if (nmi_on_idle_hlt) {
-                r->rip += 1;
-            }
-
             // IRET to userspace faults when the userspace code selector is beyond the GDT limit.
             Gdt::load_kernel_only();
 
