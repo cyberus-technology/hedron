@@ -904,13 +904,11 @@ time. Attempts to run the same vCPU object concurrently or from
 different CPUs will fail.
 
 Before returning to the VMM, the hypervisor will transfer the whole vCPU state
-into the vCPU state page, except for
+into the vCPU state page, except for the following fields:
 
-- the `EOI_EXIT_BITMAP` and the `TPR_THRESHOLD` are never transferred, because
-  the hardware does not modify these fields
-- the Guest interrupt status (`GUEST_INTR_STS`) is only transferred if the
-  "virtual interrupt delivery" is enabled in the secondary Processor-Based
-  VM-Execution controls
+- `EOI_EXIT_BITMAP` and `TPR_THRESHOLD` (the CPU never modifies these fields),
+- `GUEST_INTR_STS` (if "virtual interrupt delivery" is disabled in the
+  secondary Processor-Based VM-Execution Controls).
 
 ### In
 
