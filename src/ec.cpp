@@ -26,6 +26,7 @@
 #include "extern.hpp"
 #include "hip.hpp"
 #include "kp.hpp"
+#include "lapic.hpp"
 #include "rcu.hpp"
 #include "sm.hpp"
 #include "stdio.hpp"
@@ -93,6 +94,12 @@ void Ec::handle_hazards(void (*continuation)())
     }
 
     const unsigned hzd{Atomic::exchange(Cpu::hazard(), 0u)};
+
+    if (hzd & HZD_PRK) {
+        assert_slow(Lapic::park_function != nullptr);
+        current()->cont = continuation;
+        Lapic::park_handler();
+    }
 
     if (hzd & HZD_RCU or (hzd & HZD_IDL and Ec::current()->is_idle_ec())) {
         Rcu::quiet();

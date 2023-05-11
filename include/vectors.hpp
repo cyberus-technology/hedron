@@ -34,4 +34,3 @@
 #define VEC_MSI_DMAR (VEC_MSI + 0)
 
 #define VEC_IPI_RKE (VEC_IPI + 1)
-#define VEC_IPI_PRK (VEC_IPI + 3)

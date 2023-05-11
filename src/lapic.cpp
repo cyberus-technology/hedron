@@ -196,7 +196,14 @@ void Lapic::park_all_but_self(park_fn fn)
     Atomic::store(park_function, fn);
     Atomic::store(cpu_park_count, Cpu::online - 1);
 
-    send_ipi(0, VEC_IPI_PRK, DLV_FIXED, DSH_EXC_SELF);
+    for (unsigned cpu{0u}; cpu < Cpu::online; cpu++) {
+        if (cpu == Cpu::id()) {
+            continue;
+        }
+
+        Atomic::set_mask(Cpu::hazard(cpu), HZD_PRK);
+        Lapic::send_nmi(cpu);
+    }
 
     while (Atomic::load(cpu_park_count) != 0) {
         relax();
@@ -252,9 +259,6 @@ void Lapic::ipi_vector(unsigned vector)
     switch (vector) {
     case VEC_IPI_RKE:
         Sc::rke_handler();
-        break;
-    case VEC_IPI_PRK:
-        park_handler();
         break;
     }
 

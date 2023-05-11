@@ -102,8 +102,6 @@ private:
 
     static inline void perfm_handler();
 
-    [[noreturn]] static inline void park_handler();
-
 public:
     static unsigned freq_tsc;
     static unsigned freq_bus;
@@ -120,6 +118,9 @@ public:
     ///
     /// \see park_all_but_self
     static inline park_fn park_function = nullptr;
+
+    // Prepares a CPU to be parked and parks it.
+    [[noreturn]] static void park_handler();
 
     static inline unsigned id() { return read(LAPIC_IDR) >> 24 & 0xff; }
 
