@@ -468,8 +468,6 @@ public:
 
     [[noreturn]] static void die(char const*, Exc_regs* = &current()->regs);
 
-    static void idl_handler();
-
     static inline void* operator new(size_t) { return cache.alloc(); }
 
     static inline void operator delete(void* ptr) { cache.free(ptr); }

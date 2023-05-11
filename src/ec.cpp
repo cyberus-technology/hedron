@@ -94,7 +94,7 @@ void Ec::handle_hazards(void (*continuation)())
 
     const unsigned hzd{Atomic::exchange(Cpu::hazard(), 0u)};
 
-    if (hzd & HZD_RCU) {
+    if (hzd & HZD_RCU or (hzd & HZD_IDL and Ec::current()->is_idle_ec())) {
         Rcu::quiet();
     }
 
@@ -361,10 +361,4 @@ void Ec::die(char const* reason, Exc_regs* r)
             ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
 
     reply(dead);
-}
-
-void Ec::idl_handler()
-{
-    if (Ec::current()->cont == Ec::idle)
-        Rcu::update();
 }

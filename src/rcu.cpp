@@ -92,7 +92,8 @@ void Rcu::update()
             if (!Hip::cpu_online(cpu) || Cpu::id() == cpu)
                 continue;
 
-            Lapic::send_ipi(cpu, VEC_IPI_IDL);
+            Atomic::set_mask(Cpu::hazard(cpu), HZD_IDL);
+            Lapic::send_nmi(cpu);
         }
 
     if (!done().empty())
