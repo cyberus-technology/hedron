@@ -73,8 +73,9 @@ void Sc::ready_enqueue(uint64 t, bool inc_ref)
     trace(TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top(),
           prio > current()->prio ? "reschedule" : "");
 
-    if (prio > current()->prio || (this != current() && prio == current()->prio && left))
+    if (prio > current()->prio) {
         Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
+    }
 
     if (!left)
         left = budget;
