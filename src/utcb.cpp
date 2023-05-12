@@ -120,7 +120,7 @@ bool Utcb::save_exc(Cpu_regs* regs)
     return mtd & Mtd::FPU;
 }
 
-bool Utcb::load_vmx(Cpu_regs* regs)
+void Utcb::load_vmx(Cpu_regs* regs)
 {
     mword m = regs->mtd;
 
@@ -288,15 +288,12 @@ bool Utcb::load_vmx(Cpu_regs* regs)
     barrier();
     mtd = m;
     items = sizeof(Utcb_data) / sizeof(mword);
-
-    return m & Mtd::FPU;
 }
 
-bool Utcb::save_vmx(Cpu_regs* regs)
+void Utcb::save_vmx(Cpu_regs* regs)
 {
     if (mtd == 0) {
-        // Mtd is 0, thus mtd & Mtd::FPU is zero too.
-        return false;
+        return;
     }
 
     if (mtd & Mtd::GPR_ACDB) {
@@ -497,6 +494,4 @@ bool Utcb::save_vmx(Cpu_regs* regs)
     if (mtd & Mtd::VINTR) {
         Vmcs::write(Vmcs::GUEST_INTR_STS, vintr_status);
     }
-
-    return mtd & Mtd::FPU;
 }

@@ -190,12 +190,29 @@ void Vcpu::save_dr()
     // debugging functionality. That means, we don't have to restore any host values here, because they are
     // not used.
     //
-    // We read the debug regiters only once here and cache their values, because reading them is expensive.
+    // We read the debug registers only once here and cache their values, because reading them is expensive.
     host_dr[0] = regs.dr0 = get_dr0();
     host_dr[1] = regs.dr1 = get_dr1();
     host_dr[2] = regs.dr2 = get_dr2();
     host_dr[3] = regs.dr3 = get_dr3();
     host_dr[4] = regs.dr6 = get_dr6();
+}
+
+bool Vcpu::injecting_event()
+{
+    // The intr_info field is only valid inbound from userspace. But on the way to userspace we clear mtd and
+    // won't read it.
+    return (utcb()->mtd & Mtd::INJ) and (utcb()->intr_info & Vmcs::EVENT_VALID);
+}
+
+void Vcpu::synthesize_poked_exit()
+{
+    // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the value of
+    // regs.dst_poral. To avoid leaking the host interrupt info into the VMM, we need to tell it that we were
+    // poked.
+    regs.dst_portal = Vmcs::VMX_POKED;
+
+    exit_reason_shadow = Vmcs::VMX_POKED;
 }
 
 void Vcpu::run()
@@ -213,28 +230,28 @@ void Vcpu::run()
     Ec::handle_hazards(Ec::resume_vcpu);
 
     exit_reason_shadow = Optional<uint32>{};
+    has_pending_mtf_trap = false;
 
     if (EXPECT_FALSE(Atomic::load(poked))) {
         // Someone poked this vCPU, this means that this vCPU must return to user space as soon as possible.
         //
-        // If we haven't entered the vCPU at least once since the last call to run_vcpu, we must enter it
-        // now and make sure that we immediately return. We do this to update all modified vCPU state and
-        // inject all pending events.
+        // If we haven't entered the vCPU at least once since the last call to run_vcpu and we have events to
+        // inject, we must enter it now and make sure that we immediately return. Otherwise, the injected
+        // event will be lost.
         //
-        // If we already entered the vCPU at least once, we can just return to the VMM. As the exit reason we
-        // use `VMX_POKED`.
-        if (has_entered) {
-            // Utcb::load_vmx puts different values into the intr_info and intr_error field, depending on the
-            // value of regs.dst_poral. Thus we put VMI_RECALL into regs.dst_portal to make sure that we do
-            // not leak the host interrupt info into the VMM.
-            regs.dst_portal = Vmcs::VMX_POKED;
+        // If we already entered the vCPU at least once or there is nothing to inject (and thus nothing to
+        // lose), we can just return to the VMM with the `VMX_POKED` exit reason.
+        if (has_entered or not injecting_event()) {
+            // When we come here, because we entered before, we can't be injecting an event anymore.
+            assert_slow(not injecting_event());
 
-            exit_reason_shadow = Vmcs::VMX_POKED;
+            synthesize_poked_exit();
             return_to_vmm(Sys_regs::SUCCESS);
         }
 
-        // We send ourselves an IPI to make the guest exit immediately (or very soon).
-        Lapic::send_self_ipi(VEC_IPI_RKE);
+        // We turn on the monitor trap flag to make the guest exit immediately after any pending event
+        // injection.
+        has_pending_mtf_trap = true;
     }
 
     has_entered = true;
@@ -249,11 +266,15 @@ void Vcpu::run()
 
     // This a workaround until hedron#252 is resolved.
     utcb()->mtd = regs.mtd;
-    // We always load the vCPUs FPU state in the VM entry path, thus we are not interested in the return
-    // value.
-    [[maybe_unused]] const bool fpu_needs_save{utcb()->save_vmx(&regs)};
+    utcb()->save_vmx(&regs);
     regs.mtd = 0;
     utcb()->mtd = 0;
+
+    // We have to do this after loading the state above, so it's not overwritten. We also don't want to modify
+    // the value in the vCPU state page so we can roll back to the value that userspace intended.
+    if (EXPECT_FALSE(has_pending_mtf_trap)) {
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0] | Vmcs::Ctrl0::CPU_MTF);
+    }
 
     // Invalidate stale guest TLB entries if necessary.
     if (EXPECT_FALSE(Pd::current()->stale_guest_tlb.chk(Cpu::id()))) {
@@ -367,8 +388,23 @@ void Vcpu::handle_vmx()
 
     save_dr();
 
+    uint16 basic_exit_reason{static_cast<uint16>(exit_reason() & 0xffff)};
+
+    if (EXPECT_FALSE(has_pending_mtf_trap)
+        // If userspace had MTF enabled, we should not hide the exit from it.
+        and ((utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_MTF) == 0)) {
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0]);
+
+        // Even when we enable MTF, we might get different exits due to event injection failures. We only want
+        // to hide our MTF exit, because it is an implementation detail of how poke currently works.
+        if (basic_exit_reason == Vmcs::VMX_MTF) {
+            synthesize_poked_exit();
+        }
+    }
+    has_pending_mtf_trap = false;
+
     // We only care for the basic exit reason here, i.e. the first 16 bits of the exit reason.
-    switch (exit_reason() & 0xffff) {
+    switch (basic_exit_reason) {
     case Vmcs::VMX_FAIL_STATE:
     case Vmcs::VMX_FAIL_VMENTRY: // We end up here, because the host state checks fail.
         maybe_handle_invalid_guest_state();
@@ -465,34 +501,38 @@ void Vcpu::maybe_handle_invalid_guest_state()
 
 void Vcpu::return_to_vmm(Sys_regs::Status status)
 {
-    // We want to transfer the whole state, except
-    // - the EOI_EXIT_BITMAP and the TPR_THRESHOLD, because the hardware does not modify it
-    // - Mtd::TLB, because Utcb::load_vmx does not use it
-    // - Mtd::FPU, because we already saved the FPU
-    Mtd mtd{~0UL & ~(Mtd::EOI | Mtd::TPR | Mtd::TLB | Mtd::FPU)};
+    // We only want to write out the vCPU state to the state page when we actually entered the
+    // guest. Otherwise, the state in the VMCS is stale and we would clobber the state page.
+    if (has_entered) {
+        // We want to transfer the whole state, except
+        // - the EOI_EXIT_BITMAP and the TPR_THRESHOLD, because the hardware does not modify it
+        // - Mtd::TLB, because Utcb::load_vmx does not use it
+        // - Mtd::FPU, because we already saved the FPU
+        Mtd mtd{~0UL & ~(Mtd::EOI | Mtd::TPR | Mtd::TLB | Mtd::FPU)};
 
-    // We only transfer the Guest interrupt status (GUEST_INTR_STS) if the "virtual-interrupt delivery" field
-    // of the VM-execution control is set. This also prevents reading these fields on CPUs where they don't
-    // exist. The CPU handles reading non-existent fields gracefully, but it is a performance issue.
-    const bool vint_delivery_enabled{(utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_SECONDARY) and
-                                     (utcb()->ctrl[1] & Vmcs::Ctrl1::CPU_VINT_DELIVERY)};
+        // We only transfer the Guest interrupt status (GUEST_INTR_STS) if the "virtual-interrupt delivery"
+        // field of the VM-execution control is set. This also prevents reading these fields on CPUs where
+        // they don't exist. The CPU handles reading non-existent fields gracefully, but it is a performance
+        // issue.
+        const bool vint_delivery_enabled{(utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_SECONDARY) and
+                                         (utcb()->ctrl[1] & Vmcs::Ctrl1::CPU_VINT_DELIVERY)};
 
-    if (not vint_delivery_enabled) {
-        mtd.val &= ~Mtd::VINTR;
+        if (not vint_delivery_enabled) {
+            mtd.val &= ~Mtd::VINTR;
+        }
+
+        // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this
+        // time we don't have to put anything into the UTCB.
+        regs.mtd = mtd.val;
+
+        utcb()->load_vmx(&regs);
+        regs.mtd = 0;
+        regs.dst_portal = 0;
+
+        has_entered = false;
     }
 
-    // Utcb::load_vmx uses the Mtd bits of the given regs to determine which state to transfer, thus this time
-    // we don't have to put anything into the UTCB.
-    regs.mtd = mtd.val;
-
-    // We always save the vCPUs FPU state in the VM exit path, thus we can ignore this return value.
-    [[maybe_unused]] const bool fpu_needs_save{utcb()->load_vmx(&regs)};
-    regs.mtd = 0;
-    regs.dst_portal = 0;
-
     utcb()->exit_reason = exit_reason();
-
-    has_entered = false;
 
     // We can unconditionally clear the poked flag here, because we are just about to return to the VMM.
     Atomic::store(poked, false);

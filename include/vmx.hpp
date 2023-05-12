@@ -277,6 +277,7 @@ public:
         CPU_NMI_WINDOW = 1ul << 22,
         CPU_IO = 1ul << 24,
         CPU_IO_BITMAP = 1ul << 25,
+        CPU_MTF = 1ul << 27,
         CPU_MSR_BITMAP = 1ul << 28,
         CPU_SECONDARY = 1ul << 31,
     };
@@ -352,6 +353,11 @@ public:
 
         // This bit is set when we never managed to enter the guest.
         VMX_ENTRY_FAILURE = 1U << 31,
+    };
+
+    enum Event_injection
+    {
+        EVENT_VALID = 1u << 31,
     };
 
     static inline void* operator new(size_t) { return Buddy::allocator.alloc(0, Buddy::FILL_0); }

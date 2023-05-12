@@ -124,6 +124,9 @@ private:
     // guarded by Vcpu::owner.
     bool has_entered{false};
 
+    // We force-enabled MTF for the vCPU, because we have a poke event pending.
+    bool has_pending_mtf_trap{false};
+
     // True if the vCPU has been poked and must return to user space as soon as possible.
     //
     // This bool must be accessed using atomic ops!
@@ -178,6 +181,12 @@ private:
 
     // Saves debug registers DR0-3 and DR6.
     void save_dr();
+
+    // Returns true when the vCPU state indicates that we try to inject an event.
+    bool injecting_event();
+
+    // Make sure the next exit is reported as VMX_POKED.
+    void synthesize_poked_exit();
 
 public:
     // Capability permission bitmask.
