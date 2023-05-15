@@ -89,10 +89,13 @@ public:
 
     void remote_enqueue(bool = true);
 
+    // Sets Sc::left to zero and then call Sc::schedule.
+    [[noreturn]] void yield();
+
     static void rrq_handler();
     static void rke_handler();
 
-    [[noreturn]] static void schedule(bool = false);
+    [[noreturn]] static void schedule(bool suspend = false, bool yield = false);
 
     static inline void* operator new(size_t) { return cache.alloc(); }
 
