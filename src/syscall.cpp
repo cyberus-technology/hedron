@@ -696,6 +696,10 @@ void Ec::sys_sm_ctrl()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
+    if (EXPECT_FALSE(r->time() != 0)) {
+        panic("Timeouts are not supported anymore.");
+    }
+
     switch (r->op()) {
 
     case Sys_sm_ctrl::Sm_operation::Up:

@@ -141,17 +141,6 @@ public:
 
     static inline void eoi() { write(LAPIC_EOI, 0); }
 
-    static inline void set_timer(uint64 tsc)
-    {
-        if (not use_tsc_timer) {
-            uint64 now = rdtsc();
-            uint32 icr;
-            write(LAPIC_TMR_ICR,
-                  tsc > now && (icr = static_cast<uint32>(tsc - now) / (freq_tsc / freq_bus)) > 0 ? icr : 1);
-        } else
-            Msr::write(Msr::IA32_TSC_DEADLINE, tsc);
-    }
-
     static inline unsigned get_timer() { return read(LAPIC_TMR_CCR); }
 
     // Configure the thermal interrupt as a fixed interrupt that is delivered as the given vector.
