@@ -88,6 +88,25 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
         msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
     }
 
+    static const Msr::Register passthrough_guest_accessible_msrs[] = {
+        // APERF and MPERF can be used by the guest to compute the average effective cpu frequency between the
+        // last mwait and the next mwait. See Intel SDM Vol. 3 Chap. 14.5.5 'MPERF and APERF Counters Under
+        // HDC'.
+        Msr::Register::IA32_APERF,
+        Msr::Register::IA32_MPERF,
+
+        Msr::Register::IA32_TSC_DEADLINE,
+
+        Msr::Register::IA32_APIC_BASE,
+    };
+
+    // Give access to additional MSRs to the control VM.
+    if (pd->is_passthrough) {
+        for (auto msr : passthrough_guest_accessible_msrs) {
+            msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+        }
+    }
+
     Vmcs::write(Vmcs::MSR_BITMAP, msr_bitmap->phys_addr());
 
     // Register the virtual LAPIC page.
