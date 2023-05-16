@@ -260,9 +260,7 @@ void Ec::idle()
             // checking the hazards and before arming the monitor
             "cmpl $0, %[hazards]\n"
             "jne 1f\n"
-            "sti\n"
             "mwait\n"
-            "cli\n"
             "1:\n"
             :
             // Monitor will cause a #GP if RCX != 0.

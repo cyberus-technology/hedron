@@ -183,10 +183,6 @@ void Space_mem::shootdown()
         Lapic::send_nmi(cpu);
     }
 
-    // We have to open interrupts here, because otherwise we could deadlock with other CPUs sending us IPIs
-    // and waiting for a result.
-    asm volatile("sti" : : : "memory");
-
     // Wait for IPIs to arrive.
     for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
         // Only CPUs to which we sent an IPI are interesting.
@@ -201,8 +197,6 @@ void Space_mem::shootdown()
             relax();
         }
     }
-
-    asm volatile("cli" : : : "memory");
 }
 
 static void map_typed_range(Hpt& hpt, Paddr start, Paddr end, Hpt::pte_t attr, unsigned t)
