@@ -32,7 +32,7 @@ Ioapic::Ioapic(Paddr paddr_, unsigned id_, unsigned gsi_base_)
     : paddr(uint32(paddr_)), reg_base((hwdev_addr -= PAGE_SIZE) | (paddr_ & PAGE_MASK)), gsi_base(gsi_base_),
       id(id_), rid(0)
 {
-    Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK);
+    Pd::kern->claim_mmio_page(reg_base, paddr_ & ~PAGE_MASK, false);
 
     uint32 const id_reg{read_id_reg()};
 

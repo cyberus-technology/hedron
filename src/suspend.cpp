@@ -48,7 +48,6 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     // (except via DMA).
 
     saved_facs = Acpi::get_facs();
-    Ioapic::save_all();
     Cpu::initial_tsc = rdtsc();
 
     // Prepare resume code. Need restore_low_memory later!
@@ -95,8 +94,6 @@ void Suspend::resume_bsp()
 
     Acpi::init();
     Acpi::set_facs(saved_facs);
-
-    Ioapic::restore_all();
 
     Atomic::store(Suspend::in_progress, false);
 }
