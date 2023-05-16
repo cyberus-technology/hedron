@@ -431,8 +431,6 @@ void Vcpu::handle_vmx()
         break;
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
-    case Vmcs::VMX_EXTINT:
-        handle_extint();
     case Vmcs::VMX_PREEMPT:
         // Whenever a preemption timer exit occurs we set the value to the
         // maximum possible. This allows to always keep the preemption
@@ -489,22 +487,6 @@ void Vcpu::handle_exception()
     }
 
     return_to_vmm(Sys_regs::SUCCESS);
-}
-
-void Vcpu::handle_extint()
-{
-    const mword intr_info{Vmcs::read(Vmcs::EXI_INTR_INFO)};
-    const unsigned intr_vect = intr_info & 0xff;
-
-    if (intr_vect >= VEC_IPI) {
-        Lapic::ipi_vector(intr_vect);
-    } else if (intr_vect >= VEC_LVT) {
-        Lapic::lvt_vector(intr_vect);
-    } else if (intr_vect >= VEC_USER) {
-        Locked_vector_info::handle_user_interrupt(intr_vect);
-    }
-
-    continue_running();
 }
 
 void Vcpu::maybe_handle_invalid_guest_state()
