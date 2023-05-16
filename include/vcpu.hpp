@@ -188,6 +188,9 @@ private:
     // Make sure the next exit is reported as VMX_POKED.
     void synthesize_poked_exit();
 
+    // Signals whether this vCPU is part of a passthrough VM.
+    const bool passthrough_vcpu;
+
 public:
     // Capability permission bitmask.
     enum

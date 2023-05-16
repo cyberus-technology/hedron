@@ -125,7 +125,7 @@ public:
     WARN_UNUSED_RESULT bool save_exc(Cpu_regs*);
 
     void load_vmx(Cpu_regs*);
-    void save_vmx(Cpu_regs*);
+    void save_vmx(Cpu_regs* regs, const bool passthrough_vcpu);
 
     inline mword ucnt() const { return static_cast<uint16>(items); }
     inline mword tcnt() const { return static_cast<uint16>(items >> 16); }

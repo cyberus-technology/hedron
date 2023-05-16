@@ -34,7 +34,8 @@ Slab_cache Vcpu::cache(sizeof(Vcpu), 32);
 Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     : Typed_kobject(static_cast<Space_obj*>(init_cfg.owner_pd), init_cfg.cap_selector, Vcpu::PERM_ALL, free),
       pd(init_cfg.owner_pd), kp_vcpu_state(init_cfg.kp_vcpu_state), kp_vlapic_page(init_cfg.kp_vlapic_page),
-      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(init_cfg.cpu), fpu(kp_fpu_state.get())
+      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(init_cfg.cpu), fpu(kp_fpu_state.get()),
+      passthrough_vcpu(pd->is_passthrough)
 {
     assert(Hip::feature() & Hip::FEAT_VMX);
 
@@ -43,7 +44,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     // - set the host CR3
 
     const mword io_bitmap{pd->Space_pio::walk()};
-    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, cpu_id);
+    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd, cpu_id);
 
     // We restore the host MSRs in the VM Exit path, thus the VM Exit shouldn't restore any MSRs
     Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);
@@ -101,7 +102,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     };
 
     // Give access to additional MSRs to the control VM.
-    if (pd->is_passthrough) {
+    if (passthrough_vcpu) {
         for (auto msr : passthrough_guest_accessible_msrs) {
             msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
         }
@@ -121,7 +122,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
 
     // TODO: We have to keep in mind that we, if we remove the line above, also have to look into this
     // function, as it will throw an assertion if we don't set the vmcs member. See hedron#252.
-    regs.nst_ctrl<Vmcs>();
+    regs.nst_ctrl<Vmcs>(passthrough_vcpu);
 
     vmcs->clear();
 }
@@ -285,14 +286,14 @@ void Vcpu::run()
 
     // This a workaround until hedron#252 is resolved.
     utcb()->mtd = regs.mtd;
-    utcb()->save_vmx(&regs);
+    utcb()->save_vmx(&regs, passthrough_vcpu);
     regs.mtd = 0;
     utcb()->mtd = 0;
 
     // We have to do this after loading the state above, so it's not overwritten. We also don't want to modify
     // the value in the vCPU state page so we can roll back to the value that userspace intended.
     if (EXPECT_FALSE(has_pending_mtf_trap)) {
-        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0] | Vmcs::Ctrl0::CPU_MTF);
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0] | Vmcs::Ctrl0::CPU_MTF, passthrough_vcpu);
     }
 
     // Invalidate stale guest TLB entries if necessary.
@@ -412,7 +413,7 @@ void Vcpu::handle_vmx()
     if (EXPECT_FALSE(has_pending_mtf_trap)
         // If userspace had MTF enabled, we should not hide the exit from it.
         and ((utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_MTF) == 0)) {
-        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0]);
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0], passthrough_vcpu);
 
         // Even when we enable MTF, we might get different exits due to event injection failures. We only want
         // to hide our MTF exit, because it is an implementation detail of how poke currently works.

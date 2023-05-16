@@ -29,19 +29,20 @@
 #include "idt.hpp"
 #include "math.hpp"
 #include "msr.hpp"
+#include "pd.hpp"
 #include "stdio.hpp"
 #include "tss.hpp"
 #include "vmx_preemption_timer.hpp"
 #include "x86.hpp"
 
-Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Ept const& ept, unsigned cpu) : rev(basic().revision)
+Vmcs::Vmcs(mword esp, mword bmp, mword cr3, Pd* pd, unsigned cpu) : rev(basic().revision)
 {
     make_current();
 
-    uint64 const eptp = ept.vmcs_eptp();
-    uint32 const pin = PIN_EXTINT | PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER;
-    uint32 const exi = EXI_INTA | EXI_SAVE_PREEMPT_TIMER | EXI_SAVE_DR | EXI_SAVE_EFER | EXI_LOAD_EFER |
-                       EXI_HOST_64 | EXI_SAVE_PAT | EXI_LOAD_PAT;
+    uint64 const eptp = pd->ept.vmcs_eptp();
+    uint32 const pin = PIN_NMI | PIN_VIRT_NMI | PIN_PREEMPT_TIMER | (pd->is_passthrough ? 0 : PIN_EXTINT);
+    uint32 const exi = EXI_SAVE_PREEMPT_TIMER | EXI_SAVE_DR | EXI_SAVE_EFER | EXI_LOAD_EFER | EXI_HOST_64 |
+                       EXI_SAVE_PAT | EXI_LOAD_PAT;
     uint32 const ent = ENT_LOAD_DR | ENT_LOAD_EFER | ENT_LOAD_PAT;
 
     write(PF_ERROR_MASK, 0);
@@ -157,7 +158,8 @@ void Vmcs::init()
 
     fix_cr0_clr() |= Cpu::CR0_CD | Cpu::CR0_NW;
 
-    ctrl_cpu()[0].set |= CPU_HLT | CPU_IO | CPU_SECONDARY;
+    ctrl_cpu()[0].set |= CPU_IO | CPU_SECONDARY;
+    ctrl_cpu()[0].non_passthrough_set = CPU_HLT;
     ctrl_cpu()[1].set |= CPU_VPID | CPU_URG;
 
     if (not ept_vpid().invept) {

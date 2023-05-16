@@ -364,7 +364,7 @@ public:
 
     static inline void operator delete(void* ptr) { Buddy::allocator.free(reinterpret_cast<mword>(ptr)); }
 
-    Vmcs(mword, mword, mword, Ept const&, unsigned);
+    Vmcs(mword, mword, mword, Pd*, unsigned);
 
     /// Construct a root VMCS.
     Vmcs() : rev(basic().revision) {}

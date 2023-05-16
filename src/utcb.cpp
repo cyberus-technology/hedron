@@ -290,7 +290,7 @@ void Utcb::load_vmx(Cpu_regs* regs)
     items = sizeof(Utcb_data) / sizeof(mword);
 }
 
-void Utcb::save_vmx(Cpu_regs* regs)
+void Utcb::save_vmx(Cpu_regs* regs, const bool passthrough_vcpu)
 {
     if (mtd == 0) {
         return;
@@ -409,8 +409,8 @@ void Utcb::save_vmx(Cpu_regs* regs)
     }
 
     if (mtd & Mtd::CTRL) {
-        regs->vmx_set_cpu_ctrl0(ctrl[0]);
-        regs->vmx_set_cpu_ctrl1(ctrl[1]);
+        regs->vmx_set_cpu_ctrl0(ctrl[0], passthrough_vcpu);
+        regs->vmx_set_cpu_ctrl1(ctrl[1], passthrough_vcpu);
         regs->exc_bitmap = exc_bitmap;
 
         Vmcs::fix_cr0_mon() = cr0_mon;
@@ -432,7 +432,7 @@ void Utcb::save_vmx(Cpu_regs* regs)
         else
             val &= ~Vmcs::CPU_NMI_WINDOW;
 
-        regs->vmx_set_cpu_ctrl0(val);
+        regs->vmx_set_cpu_ctrl0(val, passthrough_vcpu);
 
         Vmcs::write(Vmcs::ENT_INTR_INFO, intr_info & ~0x3000);
         Vmcs::write(Vmcs::ENT_INTR_ERROR, intr_error);
