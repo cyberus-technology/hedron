@@ -124,6 +124,16 @@ void Ec::do_deferred_nmi_work()
         }
         Atomic::clr_mask(Cpu::hazard(), HZD_TLB);
     }
+
+    if ((Atomic::load(Cpu::hazard()) & HZD_RCU) != 0) {
+        Rcu::quiet();
+        Atomic::clr_mask(Cpu::hazard(), HZD_RCU);
+    }
+
+    if ((Atomic::load(Cpu::hazard()) & HZD_RRQ) != 0) {
+        Sc::rrq_handler();
+        Atomic::clr_mask(Cpu::hazard(), HZD_RRQ);
+    }
 }
 
 void Ec::maybe_handle_deferred_nmi_work(Exc_regs* r)
