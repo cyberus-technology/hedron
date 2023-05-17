@@ -207,6 +207,5 @@ public:
     REGPARM(1)
     static void lvt_vector(unsigned) asm("lvt_vector");
 
-    REGPARM(1)
-    static void ipi_vector(unsigned) asm("ipi_vector");
+    [[noreturn]] REGPARM(1) static void ipi_vector(unsigned) asm("ipi_vector");
 };

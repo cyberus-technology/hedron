@@ -254,13 +254,4 @@ void Lapic::park_handler()
     shutdown();
 }
 
-void Lapic::ipi_vector(unsigned vector)
-{
-    switch (vector) {
-    case VEC_IPI_RKE:
-        Sc::rke_handler();
-        break;
-    }
-
-    eoi();
-}
+void Lapic::ipi_vector(unsigned) { panic("Handling IPIs is not supported anymore."); }

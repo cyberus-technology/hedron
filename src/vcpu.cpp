@@ -563,7 +563,7 @@ void Vcpu::poke()
 
     if (Cpu::id() != cpu_id and Ec::remote(cpu_id) == Atomic::load(owner)) {
         // The owner of this vCPU is currently executing on another CPU, i.e. the vCPU is currently
-        // executing. We send an IPI to force a VM exit.
-        Lapic::send_ipi(cpu_id, VEC_IPI_RKE);
+        // executing. We send an NMI to force a VM exit.
+        Lapic::send_nmi(cpu_id);
     }
 }
