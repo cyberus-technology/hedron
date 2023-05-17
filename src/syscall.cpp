@@ -837,6 +837,7 @@ void Ec::sys_machine_ctrl_update_microcode()
 
 void Ec::sys_irq_ctrl()
 {
+    sys_finish<Sys_regs::BAD_HYP>();
     Sys_irq_ctrl* r = static_cast<Sys_irq_ctrl*>(current()->sys_regs());
 
     if (EXPECT_FALSE(not Pd::current()->is_passthrough)) {
