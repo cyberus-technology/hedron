@@ -73,8 +73,9 @@ void Sc::ready_enqueue(uint64 t, bool inc_ref)
     trace(TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top(),
           prio > current()->prio ? "reschedule" : "");
 
-    if (prio > current()->prio || (this != current() && prio == current()->prio && left))
+    if (prio > current()->prio) {
         Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
+    }
 
     if (!left)
         left = budget;
@@ -103,7 +104,9 @@ void Sc::ready_dequeue(uint64 t)
     tsc = t;
 }
 
-void Sc::schedule(bool suspend)
+void Sc::yield() { Sc::schedule(false, true); }
+
+void Sc::schedule(bool suspend, bool yield)
 {
     assert(current());
     assert(suspend || !current()->prev);
@@ -112,7 +115,7 @@ void Sc::schedule(bool suspend)
     uint64 d = Timeout_budget::budget()->dequeue();
 
     current()->time += t - current()->tsc;
-    current()->left = d > t ? d - t : 0;
+    current()->left = not yield and d > t ? d - t : 0;
 
     if (EXPECT_TRUE(!suspend))
         current()->ready_enqueue(t, false);

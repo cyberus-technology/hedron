@@ -645,7 +645,10 @@ void Ec::sys_ec_ctrl()
     Sys_ec_ctrl* r = static_cast<Sys_ec_ctrl*>(current()->sys_regs());
 
     switch (r->op()) {
-        // There is nothing here at the moment, but we might add ec_ctrl operations at a later time.
+    case Sys_ec_ctrl::YIELD: {
+        Ec::current()->cont = Ec::ret_user_sysexit;
+        Sc::current()->yield();
+    }
     default:
         sys_finish<Sys_regs::BAD_PAR>();
     }

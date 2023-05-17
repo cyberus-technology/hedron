@@ -85,7 +85,9 @@ The `ec_ctrl` system call allows to interact with execution contexts.
 
 ### Sub-operations
 
-There are currently no defined suboperations.
+| *Constant*           | *Value* |
+|----------------------|---------|
+| `HC_EC_CTRL_YIELD`   | 1       |
 
 ### In
 
@@ -93,12 +95,30 @@ There are currently no defined suboperations.
 |-------------|--------------------|---------------------------------------------------------------------------------|
 | ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                                       |
 | ARG1[9:8]   | Sub-operation      | Needs to be one of `HC_EC_CTRL_*` to select one of the `ec_ctrl_*` calls below. |
-| ARG1[63:12] | EC Selector        | A capability selector in the current PD that points to an EC.                   |
 | ...         | ...                |                                                                                 |
 
 ### Out
 
 See the specific `ec_ctrl` sub-operation.
+
+## ec_ctrl_yield
+
+`ec_ctrl_yield` instructs the kernel to yield the current SC and schedule the
+next SC that is ready to run. The system call returns as soon as the calling
+SC is scheduled again.
+
+### In
+
+| *Register*  | *Content*          | *Description*                                                                   |
+|-------------|--------------------|---------------------------------------------------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_EC_CTRL`.                                                       |
+| ARG1[9:8]   | Sub-operation      | Needs to be one of `HC_EC_CTRL_YIELD`.                                          |
+
+### Out
+
+| *Register* | *Content* | *Description*           |
+|------------|-----------|-------------------------|
+| OUT1[7:0]  | Status    | See "Hypercall Status". |
 
 ## create_pd
 

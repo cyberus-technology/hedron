@@ -213,9 +213,9 @@ public:
 class Sys_ec_ctrl : public Sys_regs
 {
 public:
-    enum ctrl_op
+    enum ctrl_op : unsigned
     {
-        // Nothing here at the moment.
+        YIELD = 1,
     };
 
     inline unsigned long ec() const { return ARG_1 >> ARG1_VALUE_SHIFT; }
