@@ -175,6 +175,10 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
         panic("Hedron does not support sending IPIs anymore, except for delivery modes INIT, SIPI and NMI.");
     }
 
+    // We have to make sure that we do not trash anything that the guest already wrote into ICR_HI. Thus we
+    // unconditionally read ICR_HI here and write the read value back after sending our IPI.
+    const uint32 icr_hi_old{read(LAPIC_ICR_HI)};
+
     // Intel SDM Vol. 3 Chap. 10.6 - Issuing Interprocessor Interrupts
     // The destination shorthand can be used to send an IPI using a single write to the low doubleword of the
     // ICR, because it is used in place of the 8-bit destination field.
@@ -183,6 +187,8 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
         write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
     }
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
+
+    write(LAPIC_ICR_HI, icr_hi_old);
 }
 
 void Lapic::send_nmi(unsigned cpu) { send_ipi(cpu, 0, Delivery_mode::DLV_NMI); }
