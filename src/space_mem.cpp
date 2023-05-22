@@ -145,8 +145,8 @@ void Space_mem::shootdown()
 {
     Bitmap<uint32, NUM_CPU> stale_cpus{false};
 
-    // Collect all the TLB shootdown counters and send IPIs. These counters are increased by each CPU when it
-    // receives the IPI. See Sc::rke_handler for more details.
+    // Collect all the TLB shootdown counters and send NMIs. These counters are increased by each CPU when it
+    // receives the IPI. See Ec::do_early_nmi_work for more details.
     for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
         if (!Hip::cpu_online(cpu)) {
             continue;
@@ -159,7 +159,7 @@ void Space_mem::shootdown()
         // invalidate its TLB lazily when it is activated via Pd::make_current.
         Pd* pd = Pd::remote(cpu);
 
-        // We still send a shootdown IPI, if this PD that we find has stale TLBs on the given CPU. This
+        // We still send a shootdown NMI, if this PD that we find has stale TLBs on the given CPU. This
         // happens regardless of whether this is the intended PD. This is a left-over from the past, where
         // revoke could recursively unmap memory from multiple PDs.
         if (!pd->stale_host_tlb.chk(cpu) && !pd->stale_guest_tlb.chk(cpu))
@@ -172,27 +172,32 @@ void Space_mem::shootdown()
             continue;
         }
 
-        // Set HZD_TLB on the remote core.
-        Atomic::set_mask(Cpu::hazard(cpu), HZD_TLB);
+        // If the remote core already has HZD_TLB set, it will invalidate the TLB before returning to user
+        // space anyways and we do not have to send another NMI.
+        if ((Atomic::load(Cpu::hazard(cpu)) & HZD_TLB) != 0) {
+            continue;
+        }
 
-        // Take a snapshot of the shootdown IPI counter from the remote CPU and remember that we have to wait
+        // Take a snapshot of the shootdown NMI counter from the remote CPU and remember that we have to wait
         // for this CPU to receive it. See the comment at the while loop below.
         tlb_shootdown()[cpu] = Counter::remote_tlb_shootdown(cpu);
         stale_cpus[cpu] = true;
 
+        // Set HZD_TLB on the remote core and send an NMI.
+        Atomic::set_mask(Cpu::hazard(cpu), HZD_TLB);
         Lapic::send_nmi(cpu);
     }
 
-    // Wait for IPIs to arrive.
+    // Wait for NMIs to arrive.
     for (unsigned cpu = 0; cpu < NUM_CPU; cpu++) {
-        // Only CPUs to which we sent an IPI are interesting.
+        // Only CPUs to which we sent an NMI are interesting.
         if (!stale_cpus[cpu]) {
             continue;
         }
 
-        // Once the remote CPU has received the IPI, we will break out of this loop. It doesn't matter whether
-        // the remote CPU receives the IPI we sent or whether another CPU is doing a shootdown as well and its
-        // IPI arrived first. We only need the other CPU to go through Sc::rke_handler.
+        // Once the remote CPU has received the NMI, we will break out of this loop. It doesn't matter whether
+        // the remote CPU receives the NMI we sent or whether another CPU is doing a shootdown as well and its
+        // NMI arrived first. We only need the other CPU to go through Ec::do_early_nmi_work.
         while (Counter::remote_tlb_shootdown(cpu) == tlb_shootdown()[cpu]) {
             relax();
         }
