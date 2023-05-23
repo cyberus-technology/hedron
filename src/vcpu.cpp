@@ -502,6 +502,14 @@ void Vcpu::handle_exception()
     const unsigned intr_type = (intr_info >> 8) & 0x7;
 
     if (intr_vect == 2u and intr_type == 2u) {
+        // When a guest was running and we don't see any hazards, the NMI may have been sent by the
+        // passthrough guest. We don't do this when we receive the NMI in root mode, because it generates too
+        // many false positives in practice. The only goal is to satisfy the guest's NMI watchdog and hung
+        // task detection, so this should be good enough for the time being.
+        if (EXPECT_FALSE(Atomic::load(Cpu::hazard()) == 0)) {
+            Cpu::spurious_nmi();
+        }
+
         // We received an NMI while being in VMX non-root mode. We can safely do all NMI work here. Check
         // Ec::handle_exc_altstack to learn more about our NMI handling.
         Ec::do_early_nmi_work();

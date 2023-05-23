@@ -177,6 +177,7 @@ public:
     CPULOCAL_ACCESSOR(cpu, features);
     CPULOCAL_ACCESSOR(cpu, bsp);
     CPULOCAL_ACCESSOR(cpu, maxphyaddr_ord);
+    CPULOCAL_ACCESSOR(cpu, seen_spurious_nmi);
 
     static Cpu_info init();
 
@@ -211,4 +212,21 @@ public:
     static Optional<unsigned> find_by_apic_id(unsigned apic_id);
 
     static void setup_msrs();
+
+    // Called when a spurious NMI arrives.
+    static void spurious_nmi() { Atomic::store(Cpu::seen_spurious_nmi(), true); }
+
+    // Returns true when a spurious NMI was received on the current CPU.
+    WARN_UNUSED_RESULT static bool fetch_spurious_nmi()
+    {
+        auto& seen_nmi{Cpu::seen_spurious_nmi()};
+
+        if (EXPECT_FALSE(Atomic::load(seen_nmi))) {
+            // There is no need for an atomic exchange, because we will lose back-to-back NMI anyway.
+            Atomic::store(seen_nmi, false);
+            return true;
+        } else {
+            return false;
+        }
+    }
 };
