@@ -191,7 +191,14 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
     write(LAPIC_ICR_HI, icr_hi_old);
 }
 
-void Lapic::send_nmi(unsigned cpu) { send_ipi(cpu, 0, Delivery_mode::DLV_NMI); }
+bool Lapic::send_nmi(unsigned cpu)
+{
+    if (EXPECT_FALSE(Atomic::load(Cpu::block_nmis(cpu)))) {
+        return false;
+    }
+    send_ipi(cpu, 0, Delivery_mode::DLV_NMI);
+    return true;
+}
 
 void Lapic::send_self_ipi(unsigned vector)
 {

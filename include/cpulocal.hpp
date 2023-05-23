@@ -67,6 +67,9 @@ struct alignas(PAGE_SIZE) Per_cpu {
     // paths. See hazards.hpp. Has to be accessed using atomic ops!
     unsigned cpu_hazard;
 
+    // A CPU can set this to true to prevent other CPUs from sending NMIs.
+    bool cpu_block_nmis;
+
     // The current execution context.
     Ec* ec_current;
 

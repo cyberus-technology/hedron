@@ -242,6 +242,12 @@ void Vcpu::run()
 
     vmcs->make_current();
 
+    // If a vCPU is in wait for SIPI state, if will not receive NMIs. Thus the CPU will block NMIs in this
+    // case to signal that e.g. the TLB shootdown protocal should not wait for this CPU.
+    if (utcb()->actv_state == 3 /* wait for SIPI*/) {
+        Atomic::store(Cpu::block_nmis(), true);
+    }
+
     // We check the hazards here again to avoid racyness due to our NMI handling. The following can happen:
     // VMCS_1 is the current VMCS. We receive an NMI and VMCS_1 gets trashed. We reschedule and now VMCS_2 is
     // made the current VMCS. We call vmresume without handling the NMI work.
@@ -373,6 +379,9 @@ void Vcpu::handle_vmx()
 {
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
+
+    // Unblock NMIs if we blocked them due to entering the vCPU in wait for SIPI state.
+    Atomic::store(Cpu::block_nmis(), false);
 
     // To defend against Spectre v2 other kernels would stuff the return stack buffer (RSB) here to avoid the
     // guest injecting branch targets. This is not necessary for us, because we start from a fresh stack and

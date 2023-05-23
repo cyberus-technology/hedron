@@ -237,6 +237,7 @@ Cpu_info Cpu::init()
     Cpu_info const cpu_info{check_features()};
 
     Lapic::init();
+    Atomic::store(Cpu::block_nmis(), false);
 
     if (Cpu::bsp()) {
         Fpu::probe();

@@ -181,11 +181,10 @@ void Space_mem::shootdown()
         // Take a snapshot of the shootdown NMI counter from the remote CPU and remember that we have to wait
         // for this CPU to receive it. See the comment at the while loop below.
         tlb_shootdown()[cpu] = Counter::remote_tlb_shootdown(cpu);
-        stale_cpus[cpu] = true;
 
         // Set HZD_TLB on the remote core and send an NMI.
         Atomic::set_mask(Cpu::hazard(cpu), HZD_TLB);
-        Lapic::send_nmi(cpu);
+        stale_cpus[cpu] = Lapic::send_nmi(cpu);
     }
 
     // Wait for NMIs to arrive.
