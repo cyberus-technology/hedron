@@ -440,6 +440,12 @@ void Vcpu::handle_vmx()
         break;
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
+    case Vmcs::VMX_INIT:
+        // After sending the INIT-IPI, the guest will send the SIPI-IPI after 10ms. Thus to not loose any
+        // SIPIs, we handle the INIT exit here.
+        utcb()->actv_state = 3; // wait for SIPI state.
+        regs.mtd |= Mtd::STA;
+        continue_running();
     case Vmcs::VMX_PREEMPT:
         // Whenever a preemption timer exit occurs we set the value to the
         // maximum possible. This allows to always keep the preemption
