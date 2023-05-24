@@ -95,7 +95,6 @@ void Lapic::restore_low_memory()
 void Lapic::init()
 {
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
-
     Msr::write(Msr::IA32_APIC_BASE, apic_base | 0x800);
 
     assert_slow(Cpu::find_by_apic_id(id()) == Optional{Cpu::id()});
@@ -105,31 +104,6 @@ void Lapic::init()
         write(LAPIC_SVR, svr | 0x100);
 
     use_tsc_timer = Cpu::feature(Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
-
-    switch (lvt_max()) {
-    default:
-        // This vector can be enabled by user space using irq_ctrl_assign_lvt. We keep it masked until then.
-        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, 0, MASKED);
-        [[fallthrough]];
-    case 4:
-        set_lvt(LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
-        [[fallthrough]];
-    case 3:
-        set_lvt(LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
-        [[fallthrough]];
-    case 2:
-        set_lvt(LAPIC_LVT_LINT1, DLV_NMI, 0);
-        [[fallthrough]];
-    case 1:
-        set_lvt(LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
-        [[fallthrough]];
-    case 0:
-        set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
-        break;
-    }
-
-    write(LAPIC_TPR, 0x10);
-    write(LAPIC_TMR_DCR, 0xb);
 
     if ((Cpu::bsp() = apic_base & 0x100)) {
         uint32 const boot_addr = prepare_cpu_boot(cpu_boot_type::AP);
@@ -156,10 +130,6 @@ void Lapic::init()
         Acpi::delay(1);
         send_ipi(0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
-
-    set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, use_tsc_timer ? 2U << 17 : 0);
-
-    write(LAPIC_TMR_ICR, 0);
 
     trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x (%s Mode)", apic_base & ~PAGE_MASK, id(), version(),
           lvt_max(), freq_bus ? "OS" : "DL");
