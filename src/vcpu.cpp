@@ -244,7 +244,7 @@ void Vcpu::run()
     vmcs->make_current();
 
     // If a vCPU is in wait for SIPI state, if will not receive NMIs. Thus the CPU will block NMIs in this
-    // case to signal that e.g. the TLB shootdown protocal should not wait for this CPU.
+    // case to signal that e.g. the TLB shootdown protocol should not wait for this CPU.
     if (utcb()->actv_state == 3 /* wait for SIPI*/) {
         Atomic::store(Cpu::block_nmis(), true);
 
