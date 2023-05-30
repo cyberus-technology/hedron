@@ -697,7 +697,8 @@ void Ec::sys_sm_ctrl()
     }
 
     if (EXPECT_FALSE(r->time() != 0)) {
-        panic("Timeouts are not supported anymore.");
+        trace(TRACE_ERROR, "%s: Non-zero timeouts are not supported anymore", __func__);
+        sys_finish<Sys_regs::BAD_PAR>();
     }
 
     switch (r->op()) {
