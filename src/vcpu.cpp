@@ -18,6 +18,7 @@
 #include "vcpu.hpp"
 
 #include "atomic.hpp"
+#include "counter.hpp"
 #include "cpu.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
@@ -246,6 +247,11 @@ void Vcpu::run()
     // case to signal that e.g. the TLB shootdown protocal should not wait for this CPU.
     if (utcb()->actv_state == 3 /* wait for SIPI*/) {
         Atomic::store(Cpu::block_nmis(), true);
+
+        // Another CPU might have already sent an NMI before seeing that NMIs might not work anymore and we
+        // might receive it when we already entered the geust. We promise to look at hazards before returning
+        // to (host) userspace.
+        Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
     }
 
     // We check the hazards here again to avoid racyness due to our NMI handling. The following can happen:
