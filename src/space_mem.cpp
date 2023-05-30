@@ -198,7 +198,7 @@ void Space_mem::shootdown()
         // the remote CPU receives the NMI we sent or whether another CPU is doing a shootdown as well and its
         // NMI arrived first. We only need the other CPU to go through Ec::do_early_nmi_work.
         while (Counter::remote_tlb_shootdown(cpu) == tlb_shootdown()[cpu] and
-               not Atomic::load(Cpu::block_nmis())) {
+               not Atomic::load(Cpu::might_loose_nmis())) {
             relax();
         }
     }
