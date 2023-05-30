@@ -236,32 +236,37 @@ public:
         return Cpulocal::get().CPULOCAL_FIELD_NAME(prefix, field);                                           \
     }
 
-// Generate static methods to read or write a CPU-local variable from a local or
-// remote core.
+// Generate static methods to read or write a CPU-local variable from a local or remote core.
 //
 // This macro generates three methods:
 //
 // - A method with the name of field for CPU-local access (see CPULOCAL_ACCESSOR).
 //
-// - A method with the name remote_ref_<field> that returns a pointer to a
-//   CPU-local variable. The caller is responsible to ensure proper
-//   synchronization for the access to the returned reference.
+// - A method with the name remote_ref_<field> that returns a pointer to a CPU-local variable. The caller is
+//   responsible to ensure proper synchronization for the access to the returned reference.
 //
-// - A method with the name remote_load_<field> that does a
-//   sequentially-consistent load of the remote value.
+// - A method with the name remote_load_<field> that does a sequentially-consistent load of the remote value.
 //
-// Note: The templated definition of remote_load_<field> is necessary to make
-// the definition disappear, if it would be malformed (i.e. the type is not
-// compatible with Atomic::load).
+// - A method with the name remote_store_<field> that does a sequentially-consistent store of the remote
+//   value.
+//
+// Note: The templated definitions are necessary to make the definitions disappear, when they are malformed
+// (i.e. the type is not compatible with Atomic::load).
 #define CPULOCAL_REMOTE_ACCESSOR(prefix, field)                                                              \
     static auto remote_ref_##field(unsigned cpu)->CPULOCAL_TYPE(prefix, field)&                              \
     {                                                                                                        \
         return Cpulocal::get_remote(cpu).CPULOCAL_FIELD_NAME(prefix, field);                                 \
     }                                                                                                        \
                                                                                                              \
-    template <typename T = void> static auto remote_load_##field(unsigned cpu)->CPULOCAL_TYPE(prefix, field) \
+    template <typename T = void> static CPULOCAL_TYPE(prefix, field) remote_load_##field(unsigned cpu)       \
     {                                                                                                        \
         return Atomic::load(remote_ref_##field(cpu));                                                        \
+    }                                                                                                        \
+                                                                                                             \
+    template <typename T = void>                                                                             \
+    static void remote_store_##field(unsigned cpu, CPULOCAL_TYPE(prefix, field) new_value)                   \
+    {                                                                                                        \
+        Atomic::store(remote_ref_##field(cpu), new_value);                                                   \
     }                                                                                                        \
                                                                                                              \
     CPULOCAL_ACCESSOR(prefix, field)
