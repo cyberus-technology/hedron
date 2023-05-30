@@ -170,11 +170,6 @@ bool Lapic::send_nmi(unsigned cpu)
     return true;
 }
 
-void Lapic::send_self_ipi(unsigned vector)
-{
-    send_ipi(0 /* unused */, vector, Delivery_mode::DLV_FIXED, Shorthand::DSH_SELF);
-}
-
 void Lapic::park_all_but_self(park_fn fn)
 {
     assert(Atomic::load(cpu_park_count) == 0);

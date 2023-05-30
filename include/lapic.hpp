@@ -194,9 +194,6 @@ public:
     // send an NMI and return false. Otherwise returns true.
     static bool send_nmi(unsigned cpu);
 
-    // Send a self IPI with the given vector.
-    static void send_self_ipi(unsigned vector);
-
     // Stop all CPUs except the current one.
     //
     // Parked CPUs execute the passed function and all but the calling CPU
