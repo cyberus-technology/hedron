@@ -447,8 +447,9 @@ void Vcpu::handle_vmx()
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
     case Vmcs::VMX_INIT:
-        // After sending the INIT-IPI, the guest will send the SIPI-IPI after 10ms. Thus to not loose any
-        // SIPIs, we handle the INIT exit here.
+        // After sending the INIT-IPI, the guest will send the SIPI-IPI after 10ms. When the CPU is executing
+        // code in Hedron or host userspace, it is not in wait-for-SIPI state and the IPI will be lost.  To
+        // reduce the chance of this happening, we handle the INIT IPI here instead of userspace.
         utcb()->actv_state = 3; // wait for SIPI state.
         regs.mtd |= Mtd::STA;
         continue_running();
