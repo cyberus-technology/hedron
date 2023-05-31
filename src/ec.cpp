@@ -242,13 +242,17 @@ void Ec::ret_user_iret()
 
 void Ec::idle()
 {
-    // The monitor and mwait instructions are part of the SSE3, which was introduced in 2004. Thus we can
-    // assume that we can use the instructions. Unfortunately, we cannot assert that it exists (by checking
-    // Cpu::feature(Cpu::Feature::FEAT_MONITOR)) because KVM does not advertise the bit to the guest. See
-    // https://elixir.bootlin.com/linux/v6.3.1/source/arch/x86/kvm/cpuid.c#L596 for reference.
-
     for (;;) {
         handle_hazards(idle);
+
+        // In case the CPU doesn't support MONITOR/MWAIT, the idle loop is basically a busy loop. This is
+        // fine, because the passthrough VM is expected to the case where the system is idle.
+        //
+        // We only end up here on systems with broken MONITOR/MWAIT during bootup and due to lock contention .
+        if (EXPECT_FALSE(not Cpu::feature(Cpu::FEAT_MONITOR))) {
+            relax();
+            continue;
+        }
 
         asm volatile(
             // Arm the monitor. The address in RAX will be monitored.
