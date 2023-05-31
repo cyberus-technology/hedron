@@ -85,6 +85,8 @@ stages:
     - .build_variant_with_ninja
 
 .integration_test_variant:
+  tags:
+    - kvm
   stage: integration_test
   script:
     - ./test/integration/qemu-boot build/src/hypervisor.elf32
