@@ -847,15 +847,17 @@ Virtualization and Virtual Interrupts".
 This section describes the initial state of a vCPU:
 
 - **VMX-preemption timer value**. Set to the maximum value.
-- **Pin-Based VM-Execution Controls**. The following controls are enabled by
-  default and cannot be disabled by the VMM:
-    - External-interrupt exiting
+- **Pin-Based VM-Execution Controls**. The following controls are set as
+  follows and cannot be altered by the VMM:
+    - External-interrupt exiting (enabled for non-passthrough parent PDs,
+      otherwise disabled)
     - NMI exiting
     - Virtual NMIs
     - Activate VMX-preemption timer
-- **Processor-Based VM-Execution Controls**. The following controls are enabled
-  by default and cannot be disabled by the VMM:
-    - HLT exiting
+- **Processor-Based VM-Execution Controls**. The following controls are set as
+  follows and cannot be disabled by the VMM, but controls that are disabled by
+  default can be enabled:
+    - HLT exiting (enabled for non-passthrough parent PDs, otherwise disabled)
     - Unconditional I/O exiting
     - Activate secondary controls
     - Enable VPID (if available and not disabled using the `novpid` command-line
