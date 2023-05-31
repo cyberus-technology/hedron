@@ -161,6 +161,15 @@ Cpu_info Cpu::check_features()
         defeature(FEAT_PCID);
     }
 
+    // Goldmont has a bug where writes to monitored cache lines might not wake up MWAIT.
+    //
+    // See https://lkml.org/lkml/2016/7/6/469
+    if (EXPECT_FALSE(cpu_info.vendor == Cpu_vendor::INTEL and cpu_info.family == 6 and
+                     cpu_info.model == 0x5c)) {
+        trace(TRACE_CPU, "Disabling MONITOR/MWAIT due to CPU bug on Intel Goldmont platforms");
+        defeature(FEAT_MONITOR);
+    }
+
     return cpu_info;
 }
 
