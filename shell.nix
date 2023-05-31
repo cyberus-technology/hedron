@@ -28,5 +28,8 @@ pkgs.mkShell {
 
     # To modify cmake build variables with ccmake.
     pkgs.cmakeCurses
+
+    # Prevent that CLion IDE complains about a missing dependency.
+    pkgs.catch2
   ];
 }
