@@ -162,9 +162,6 @@ private:
     // Handles a VM exit due to an exception.
     [[noreturn]] inline void handle_exception();
 
-    // Handles a VM exit due to an extint.
-    [[noreturn]] inline void handle_extint();
-
     // Handles special cases for invalid guest state.
     //
     // If the invalid guest state was caused by the kernel itself, this function will not return.
@@ -187,6 +184,9 @@ private:
 
     // Make sure the next exit is reported as VMX_POKED.
     void synthesize_poked_exit();
+
+    // Signals whether this vCPU is part of a passthrough VM.
+    const bool passthrough_vcpu;
 
 public:
     // Capability permission bitmask.

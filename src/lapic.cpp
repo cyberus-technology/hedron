@@ -44,7 +44,7 @@ void Lapic::setup()
 {
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
 
-    Pd::kern->claim_mmio_page(CPU_LOCAL_APIC, apic_base & ~PAGE_MASK);
+    Pd::kern->claim_mmio_page(CPU_LOCAL_APIC, apic_base & ~PAGE_MASK, false);
 
     // We execute this code once on the BSP before we start to program the LAPIC. Rescue the LAPIC
     // configuration for potential use by a passthrough VMM.
@@ -95,7 +95,6 @@ void Lapic::restore_low_memory()
 void Lapic::init()
 {
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
-
     Msr::write(Msr::IA32_APIC_BASE, apic_base | 0x800);
 
     assert_slow(Cpu::find_by_apic_id(id()) == Optional{Cpu::id()});
@@ -105,31 +104,6 @@ void Lapic::init()
         write(LAPIC_SVR, svr | 0x100);
 
     use_tsc_timer = Cpu::feature(Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
-
-    switch (lvt_max()) {
-    default:
-        // This vector can be enabled by user space using irq_ctrl_assign_lvt. We keep it masked until then.
-        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, 0, MASKED);
-        [[fallthrough]];
-    case 4:
-        set_lvt(LAPIC_LVT_PERFM, DLV_FIXED, VEC_LVT_PERFM);
-        [[fallthrough]];
-    case 3:
-        set_lvt(LAPIC_LVT_ERROR, DLV_FIXED, VEC_LVT_ERROR);
-        [[fallthrough]];
-    case 2:
-        set_lvt(LAPIC_LVT_LINT1, DLV_NMI, 0);
-        [[fallthrough]];
-    case 1:
-        set_lvt(LAPIC_LVT_LINT0, DLV_EXTINT, 0, 1U << 16);
-        [[fallthrough]];
-    case 0:
-        set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, 0);
-        break;
-    }
-
-    write(LAPIC_TPR, 0x10);
-    write(LAPIC_TMR_DCR, 0xb);
 
     if ((Cpu::bsp() = apic_base & 0x100)) {
         uint32 const boot_addr = prepare_cpu_boot(cpu_boot_type::AP);
@@ -157,10 +131,6 @@ void Lapic::init()
         send_ipi(0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
-    set_lvt(LAPIC_LVT_TIMER, DLV_FIXED, VEC_LVT_TIMER, use_tsc_timer ? 2U << 17 : 0);
-
-    write(LAPIC_TMR_ICR, 0);
-
     trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x (%s Mode)", apic_base & ~PAGE_MASK, id(), version(),
           lvt_max(), freq_bus ? "OS" : "DL");
 }
@@ -171,6 +141,14 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
         relax();
     }
 
+    if (dlv != DLV_INIT and dlv != DLV_SIPI and dlv != DLV_NMI) {
+        panic("Hedron does not support sending IPIs anymore, except for delivery modes INIT, SIPI and NMI.");
+    }
+
+    // We have to make sure that we do not trash anything that the guest already wrote into ICR_HI. Thus we
+    // unconditionally read ICR_HI here and write the read value back after sending our IPI.
+    const uint32 icr_hi_old{read(LAPIC_ICR_HI)};
+
     // Intel SDM Vol. 3 Chap. 10.6 - Issuing Interprocessor Interrupts
     // The destination shorthand can be used to send an IPI using a single write to the low doubleword of the
     // ICR, because it is used in place of the 8-bit destination field.
@@ -179,13 +157,17 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
         write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
     }
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
+
+    write(LAPIC_ICR_HI, icr_hi_old);
 }
 
-void Lapic::send_nmi(unsigned cpu) { send_ipi(cpu, 0, Delivery_mode::DLV_NMI); }
-
-void Lapic::send_self_ipi(unsigned vector)
+bool Lapic::send_nmi(unsigned cpu)
 {
-    send_ipi(0 /* unused */, vector, Delivery_mode::DLV_FIXED, Shorthand::DSH_SELF);
+    if (EXPECT_FALSE(Cpu::remote_load_might_loose_nmis(cpu))) {
+        return false;
+    }
+    send_ipi(cpu, 0, Delivery_mode::DLV_NMI);
+    return true;
 }
 
 void Lapic::park_all_but_self(park_fn fn)
@@ -254,13 +236,4 @@ void Lapic::park_handler()
     shutdown();
 }
 
-void Lapic::ipi_vector(unsigned vector)
-{
-    switch (vector) {
-    case VEC_IPI_RKE:
-        Sc::rke_handler();
-        break;
-    }
-
-    eoi();
-}
+void Lapic::ipi_vector(unsigned) { panic("Handling IPIs is not supported anymore."); }

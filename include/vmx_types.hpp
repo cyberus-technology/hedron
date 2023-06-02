@@ -47,11 +47,14 @@ union vmx_ctrl_pin {
     };
 };
 
-union vmx_ctrl_cpu {
-    uint64 val;
-    struct {
-        uint32 set, clr;
+struct vmx_ctrl_cpu {
+    union {
+        uint64 val;
+        struct {
+            uint32 set, clr;
+        };
     };
+    uint32 non_passthrough_set{0};
 };
 
 union vmx_ctrl_exi {

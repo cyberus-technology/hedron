@@ -6,6 +6,16 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 12.0
+- **Breaking** Hedron and user space applications running in VMX root mode will no longer receive interrupts, except
+  for NMIs. This includes the following changes:
+  - **Removed** The `HC_IRQ_CTRL` and `HC_IRQ_CTRL_*` system calls do not work anymore and will return `BAD_HYP`.
+  - **Changed** Hedron cannot use any timers anymore, except for the VMX-Preemption timer. This also means that
+    preemptive scheduling will not work anymore.
+  - **Changed** The `HC_SM_CTRL_DOWN` system call cannot set a timeout anymore.
+  - **Changed** Hedron will handle vCPUs differently, depending on whether they belong to a passthrough PD or not.
+    Please check the documentation of the `HC_CREATE_VCPU` system call for more information.
+
 ## API Version 11.1
 - **New** We introduced the `HC_EC_CTRL_YIELD` system call which an EC can use to reschedule.
 

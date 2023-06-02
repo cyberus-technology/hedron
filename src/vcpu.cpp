@@ -18,6 +18,7 @@
 #include "vcpu.hpp"
 
 #include "atomic.hpp"
+#include "counter.hpp"
 #include "cpu.hpp"
 #include "ec.hpp"
 #include "hip.hpp"
@@ -34,7 +35,8 @@ Slab_cache Vcpu::cache(sizeof(Vcpu), 32);
 Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     : Typed_kobject(static_cast<Space_obj*>(init_cfg.owner_pd), init_cfg.cap_selector, Vcpu::PERM_ALL, free),
       pd(init_cfg.owner_pd), kp_vcpu_state(init_cfg.kp_vcpu_state), kp_vlapic_page(init_cfg.kp_vlapic_page),
-      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(init_cfg.cpu), fpu(kp_fpu_state.get())
+      kp_fpu_state(init_cfg.kp_fpu_state), cpu_id(init_cfg.cpu), fpu(kp_fpu_state.get()),
+      passthrough_vcpu(pd->is_passthrough)
 {
     assert(Hip::feature() & Hip::FEAT_VMX);
 
@@ -43,7 +45,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
     // - set the host CR3
 
     const mword io_bitmap{pd->Space_pio::walk()};
-    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd->ept, cpu_id);
+    vmcs = make_unique<Vmcs>(0, io_bitmap, 0, pd, cpu_id);
 
     // We restore the host MSRs in the VM Exit path, thus the VM Exit shouldn't restore any MSRs
     Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, 0);
@@ -88,6 +90,25 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
         msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
     }
 
+    static const Msr::Register passthrough_guest_accessible_msrs[] = {
+        // APERF and MPERF can be used by the guest to compute the average effective cpu frequency between the
+        // last mwait and the next mwait. See Intel SDM Vol. 3 Chap. 14.5.5 'MPERF and APERF Counters Under
+        // HDC'.
+        Msr::Register::IA32_APERF,
+        Msr::Register::IA32_MPERF,
+
+        Msr::Register::IA32_TSC_DEADLINE,
+
+        Msr::Register::IA32_APIC_BASE,
+    };
+
+    // Give access to additional MSRs to the control VM.
+    if (passthrough_vcpu) {
+        for (auto msr : passthrough_guest_accessible_msrs) {
+            msr_bitmap->set_exit(msr, Vmx_msr_bitmap::exit_setting::EXIT_NEVER);
+        }
+    }
+
     Vmcs::write(Vmcs::MSR_BITMAP, msr_bitmap->phys_addr());
 
     // Register the virtual LAPIC page.
@@ -102,7 +123,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
 
     // TODO: We have to keep in mind that we, if we remove the line above, also have to look into this
     // function, as it will throw an assertion if we don't set the vmcs member. See hedron#252.
-    regs.nst_ctrl<Vmcs>();
+    regs.nst_ctrl<Vmcs>(passthrough_vcpu);
 
     vmcs->clear();
 }
@@ -222,6 +243,17 @@ void Vcpu::run()
 
     vmcs->make_current();
 
+    // If a vCPU is in wait for SIPI state, if will not receive NMIs. Thus the CPU will block NMIs in this
+    // case to signal that e.g. the TLB shootdown protocol should not wait for this CPU.
+    if (utcb()->actv_state == 3 /* wait for SIPI*/) {
+        Atomic::store(Cpu::might_loose_nmis(), true);
+
+        // Another CPU might have already sent an NMI before seeing that NMIs might not work anymore and we
+        // might receive it when we already entered the geust. We promise to look at hazards before returning
+        // to (host) userspace.
+        Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
+    }
+
     // We check the hazards here again to avoid racyness due to our NMI handling. The following can happen:
     // VMCS_1 is the current VMCS. We receive an NMI and VMCS_1 gets trashed. We reschedule and now VMCS_2 is
     // made the current VMCS. We call vmresume without handling the NMI work.
@@ -266,14 +298,14 @@ void Vcpu::run()
 
     // This a workaround until hedron#252 is resolved.
     utcb()->mtd = regs.mtd;
-    utcb()->save_vmx(&regs);
+    utcb()->save_vmx(&regs, passthrough_vcpu);
     regs.mtd = 0;
     utcb()->mtd = 0;
 
     // We have to do this after loading the state above, so it's not overwritten. We also don't want to modify
     // the value in the vCPU state page so we can roll back to the value that userspace intended.
     if (EXPECT_FALSE(has_pending_mtf_trap)) {
-        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0] | Vmcs::Ctrl0::CPU_MTF);
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0] | Vmcs::Ctrl0::CPU_MTF, passthrough_vcpu);
     }
 
     // Invalidate stale guest TLB entries if necessary.
@@ -354,6 +386,9 @@ void Vcpu::handle_vmx()
     // As a precaution we check whether it is really the vCPUs owner that is currently executing.
     assert(Atomic::load(owner) == Ec::current());
 
+    // Unblock NMIs if we blocked them due to entering the vCPU in wait for SIPI state.
+    Atomic::store(Cpu::might_loose_nmis(), false);
+
     // To defend against Spectre v2 other kernels would stuff the return stack buffer (RSB) here to avoid the
     // guest injecting branch targets. This is not necessary for us, because we start from a fresh stack and
     // do not execute RET instructions without having a matching CALL.
@@ -393,7 +428,7 @@ void Vcpu::handle_vmx()
     if (EXPECT_FALSE(has_pending_mtf_trap)
         // If userspace had MTF enabled, we should not hide the exit from it.
         and ((utcb()->ctrl[0] & Vmcs::Ctrl0::CPU_MTF) == 0)) {
-        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0]);
+        regs.vmx_set_cpu_ctrl0(utcb()->ctrl[0], passthrough_vcpu);
 
         // Even when we enable MTF, we might get different exits due to event injection failures. We only want
         // to hide our MTF exit, because it is an implementation detail of how poke currently works.
@@ -411,8 +446,13 @@ void Vcpu::handle_vmx()
         break;
     case Vmcs::VMX_EXC_NMI:
         handle_exception();
-    case Vmcs::VMX_EXTINT:
-        handle_extint();
+    case Vmcs::VMX_INIT:
+        // After sending the INIT-IPI, the guest will send the SIPI-IPI after 10ms. When the CPU is executing
+        // code in Hedron or host userspace, it is not in wait-for-SIPI state and the IPI will be lost.  To
+        // reduce the chance of this happening, we handle the INIT IPI here instead of userspace.
+        utcb()->actv_state = 3; // wait for SIPI state.
+        regs.mtd |= Mtd::STA;
+        continue_running();
     case Vmcs::VMX_PREEMPT:
         // Whenever a preemption timer exit occurs we set the value to the
         // maximum possible. This allows to always keep the preemption
@@ -469,22 +509,6 @@ void Vcpu::handle_exception()
     }
 
     return_to_vmm(Sys_regs::SUCCESS);
-}
-
-void Vcpu::handle_extint()
-{
-    const mword intr_info{Vmcs::read(Vmcs::EXI_INTR_INFO)};
-    const unsigned intr_vect = intr_info & 0xff;
-
-    if (intr_vect >= VEC_IPI) {
-        Lapic::ipi_vector(intr_vect);
-    } else if (intr_vect >= VEC_LVT) {
-        Lapic::lvt_vector(intr_vect);
-    } else if (intr_vect >= VEC_USER) {
-        Locked_vector_info::handle_user_interrupt(intr_vect);
-    }
-
-    continue_running();
 }
 
 void Vcpu::maybe_handle_invalid_guest_state()
@@ -561,7 +585,7 @@ void Vcpu::poke()
 
     if (Cpu::id() != cpu_id and Ec::remote(cpu_id) == Atomic::load(owner)) {
         // The owner of this vCPU is currently executing on another CPU, i.e. the vCPU is currently
-        // executing. We send an IPI to force a VM exit.
-        Lapic::send_ipi(cpu_id, VEC_IPI_RKE);
+        // executing. We send an NMI to force a VM exit.
+        Lapic::send_nmi(cpu_id);
     }
 }

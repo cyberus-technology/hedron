@@ -110,9 +110,10 @@ template <typename T> void Exc_regs::set_exc() const
     set_cr_masks<T>();
 }
 
-void Exc_regs::vmx_set_cpu_ctrl0(mword val)
+void Exc_regs::vmx_set_cpu_ctrl0(mword val, const bool passthrough_vcpu)
 {
     val |= Vmcs::ctrl_cpu()[0].set;
+    val |= passthrough_vcpu ? 0 : Vmcs::ctrl_cpu()[0].non_passthrough_set;
     val &= Vmcs::ctrl_cpu()[0].clr;
 
     bool tpr_shadow_active = val & Vmcs::Ctrl0::CPU_TPR_SHADOW;
@@ -124,19 +125,20 @@ void Exc_regs::vmx_set_cpu_ctrl0(mword val)
     Vmcs::write(Vmcs::CPU_EXEC_CTRL0, val);
 }
 
-void Exc_regs::vmx_set_cpu_ctrl1(mword val)
+void Exc_regs::vmx_set_cpu_ctrl1(mword val, const bool passthrough_vcpu)
 {
     unsigned const msk = Vmcs::CPU_EPT;
 
     val |= msk;
 
     val |= Vmcs::ctrl_cpu()[1].set;
+    val |= passthrough_vcpu ? 0 : Vmcs::ctrl_cpu()[1].non_passthrough_set;
     val &= Vmcs::ctrl_cpu()[1].clr;
 
     Vmcs::write(Vmcs::CPU_EXEC_CTRL1, val);
 }
 
-template <> void Exc_regs::nst_ctrl<Vmcs>()
+template <> void Exc_regs::nst_ctrl<Vmcs>(const bool passthrough_vcpu)
 {
     assert(Vmcs::current() == vmcs);
 
@@ -147,8 +149,8 @@ template <> void Exc_regs::nst_ctrl<Vmcs>()
     set_cr3<Vmcs>(cr3);
     set_cr4<Vmcs>(cr4);
 
-    vmx_set_cpu_ctrl0(Vmcs::read(Vmcs::CPU_EXEC_CTRL0));
-    vmx_set_cpu_ctrl1(Vmcs::read(Vmcs::CPU_EXEC_CTRL1));
+    vmx_set_cpu_ctrl0(Vmcs::read(Vmcs::CPU_EXEC_CTRL0), passthrough_vcpu);
+    vmx_set_cpu_ctrl1(Vmcs::read(Vmcs::CPU_EXEC_CTRL1), passthrough_vcpu);
     set_exc<Vmcs>();
 }
 

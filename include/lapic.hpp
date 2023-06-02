@@ -141,17 +141,6 @@ public:
 
     static inline void eoi() { write(LAPIC_EOI, 0); }
 
-    static inline void set_timer(uint64 tsc)
-    {
-        if (not use_tsc_timer) {
-            uint64 now = rdtsc();
-            uint32 icr;
-            write(LAPIC_TMR_ICR,
-                  tsc > now && (icr = static_cast<uint32>(tsc - now) / (freq_tsc / freq_bus)) > 0 ? icr : 1);
-        } else
-            Msr::write(Msr::IA32_TSC_DEADLINE, tsc);
-    }
-
     static inline unsigned get_timer() { return read(LAPIC_TMR_CCR); }
 
     // Configure the thermal interrupt as a fixed interrupt that is delivered as the given vector.
@@ -201,11 +190,9 @@ public:
     // Send an IPI with the given vector to the given CPU.
     static void send_ipi(unsigned cpu, unsigned vector, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
 
-    // Send an NMI to the given CPU.
-    static void send_nmi(unsigned cpu);
-
-    // Send a self IPI with the given vector.
-    static void send_self_ipi(unsigned vector);
+    // Send an NMI to the given CPU. If the CPU has the might_loose_nmis flag set to true, this function will
+    // not send an NMI and return false. Otherwise returns true.
+    static bool send_nmi(unsigned cpu);
 
     // Stop all CPUs except the current one.
     //
@@ -218,6 +205,5 @@ public:
     REGPARM(1)
     static void lvt_vector(unsigned) asm("lvt_vector");
 
-    REGPARM(1)
-    static void ipi_vector(unsigned) asm("ipi_vector");
+    [[noreturn]] REGPARM(1) static void ipi_vector(unsigned) asm("ipi_vector");
 };

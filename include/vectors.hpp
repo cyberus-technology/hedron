@@ -32,5 +32,3 @@
 #define VEC_LVT_PERFM (VEC_LVT + 4)
 
 #define VEC_MSI_DMAR (VEC_MSI + 0)
-
-#define VEC_IPI_RKE (VEC_IPI + 1)

@@ -186,14 +186,14 @@ public:
 
     inline bool user() const { return cs & RPL_MASK; }
 
-    void vmx_set_cpu_ctrl0(mword);
-    void vmx_set_cpu_ctrl1(mword);
+    void vmx_set_cpu_ctrl0(mword val, const bool passthrough_vcpu);
+    void vmx_set_cpu_ctrl1(mword val, const bool passthrough_vcpu);
 
     mword vmx_read_gpr(unsigned);
 
     void vmx_write_gpr(unsigned, mword);
 
-    template <typename T> void nst_ctrl();
+    template <typename T> void nst_ctrl(const bool passthrough_vcpu);
 
     template <typename T> void tlb_flush(bool) const;
 

@@ -64,7 +64,7 @@ Ec::Ec(Pd* own, mword sel, Pd* p, void (*f)(), unsigned c, unsigned e, mword u, 
     if (glb) {
         regs.cs = SEL_USER_CODE;
         regs.ss = SEL_USER_DATA;
-        regs.rfl = Cpu::EFL_IF;
+        regs.rfl = Cpu::EFL_MBS;
         regs.rsp = s;
     } else
         regs.set_sp(s);
@@ -141,7 +141,7 @@ void Ec::ret_user_sysexit()
                   // Restore the user stack and RFLAGS. SYSRET loads RFLAGS from
                   // R11. See entry_sysenter.
                   "mov %%r11, %%rsp;"
-                  "mov $0x200, %%r11;"
+                  "mov $0, %%r11;"
 
                   "swapgs;"
 
@@ -260,9 +260,7 @@ void Ec::idle()
             // checking the hazards and before arming the monitor
             "cmpl $0, %[hazards]\n"
             "jne 1f\n"
-            "sti\n"
             "mwait\n"
-            "cli\n"
             "1:\n"
             :
             // Monitor will cause a #GP if RCX != 0.

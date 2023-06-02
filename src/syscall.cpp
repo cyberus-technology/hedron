@@ -696,6 +696,11 @@ void Ec::sys_sm_ctrl()
         sys_finish<Sys_regs::BAD_CAP>();
     }
 
+    if (EXPECT_FALSE(r->time() != 0)) {
+        trace(TRACE_ERROR, "%s: Non-zero timeouts are not supported anymore", __func__);
+        sys_finish<Sys_regs::BAD_PAR>();
+    }
+
     switch (r->op()) {
 
     case Sys_sm_ctrl::Sm_operation::Up:
@@ -833,6 +838,7 @@ void Ec::sys_machine_ctrl_update_microcode()
 
 void Ec::sys_irq_ctrl()
 {
+    sys_finish<Sys_regs::BAD_HYP>();
     Sys_irq_ctrl* r = static_cast<Sys_irq_ctrl*>(current()->sys_regs());
 
     if (EXPECT_FALSE(not Pd::current()->is_passthrough)) {

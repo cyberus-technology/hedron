@@ -455,22 +455,21 @@ Performs an "up" operation on the underlying semaphore.
 | OUT1[7:0]  | Status    | See "Hypercall Status".                      |
 
 ## sm_ctrl_down
-Performs a "down" operation on the underlying semaphore. The timeout parameter can be disabled
-by setting it to zero. Setting it to a value different from zero enables the usage of a semaphore
-as timer based on clock ticks.
+
+Performs a "down" operation on the underlying semaphore.
 
 ### In
 
-| *Register*  | *Content*                     | *Description*                         |
-|-------------|-------------------------------|---------------------------------------|
-| ARG1[7:0]   | System Call Number            | Needs to be `HC_SM_CTRL`.             |
-| ARG1[8:8]   | Sub-operation                 | Needs to be `SM_CTRL_DOWN`.           |
-| ARG1[11:9]  | Ignored                       | Should be set to zero.                |
-| ARG1[63:12] | SM selector                   | Capability selector of the semaphore. |
-| ARG2[31:0]  | TSC Deadline Timeout (Higher) | Higher 32-bits of the timeout.        |
-| ARG2[63:32] | Ignored                       | Should be set to zero.                |
-| ARG3[31:0]  | TSC Deadline Timeout (Lower)  | Lower 32-bits of the timeout.         |
-| ARG3[63:32] | Ignored                       | Should be set to zero.                |
+| *Register*  | *Content*          | *Description*                         |
+|-------------|--------------------|---------------------------------------|
+| ARG1[7:0]   | System Call Number | Needs to be `HC_SM_CTRL`.             |
+| ARG1[8:8]   | Sub-operation      | Needs to be `SM_CTRL_DOWN`.           |
+| ARG1[11:9]  | Ignored            | Should be set to zero.                |
+| ARG1[63:12] | SM selector        | Capability selector of the semaphore. |
+| ARG2[31:0]  | Reserved           | Must be zero.                         |
+| ARG2[63:32] | Ignored            | Should be set to zero.                |
+| ARG3[31:0]  | Reserved           | Must be zero                          |
+| ARG3[63:32] | Ignored            | Should be set to zero.                |
 
 ### Out
 
@@ -848,15 +847,17 @@ Virtualization and Virtual Interrupts".
 This section describes the initial state of a vCPU:
 
 - **VMX-preemption timer value**. Set to the maximum value.
-- **Pin-Based VM-Execution Controls**. The following controls are enabled by
-  default and cannot be disabled by the VMM:
-    - External-interrupt exiting
+- **Pin-Based VM-Execution Controls**. The following controls are set as
+  follows and cannot be altered by the VMM:
+    - External-interrupt exiting (enabled for non-passthrough parent PDs,
+      otherwise disabled)
     - NMI exiting
     - Virtual NMIs
     - Activate VMX-preemption timer
-- **Processor-Based VM-Execution Controls**. The following controls are enabled
-  by default and cannot be disabled by the VMM:
-    - HLT exiting
+- **Processor-Based VM-Execution Controls**. The following controls are set as
+  follows and cannot be disabled by the VMM, but controls that are disabled by
+  default can be enabled:
+    - HLT exiting (enabled for non-passthrough parent PDs, otherwise disabled)
     - Unconditional I/O exiting
     - Activate secondary controls
     - Enable VPID (if available and not disabled using the `novpid` command-line
