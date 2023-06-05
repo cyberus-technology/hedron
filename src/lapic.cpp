@@ -35,7 +35,6 @@
 
 unsigned Lapic::freq_tsc;
 unsigned Lapic::freq_bus;
-bool Lapic::use_tsc_timer{false};
 unsigned Lapic::cpu_park_count;
 
 static char __start_cpu_backup[128];
@@ -102,8 +101,6 @@ void Lapic::init()
     uint32 svr = read(LAPIC_SVR);
     if (!(svr & 0x100))
         write(LAPIC_SVR, svr | 0x100);
-
-    use_tsc_timer = Cpu::feature(Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
 
     if ((Cpu::bsp() = apic_base & 0x100)) {
         uint32 const boot_addr = prepare_cpu_boot(cpu_boot_type::AP);
@@ -194,40 +191,6 @@ void Lapic::park_all_but_self(park_fn fn)
     park_function();
 }
 
-void Lapic::perfm_handler() {}
-
-void Lapic::error_handler()
-{
-    write(LAPIC_ESR, 0);
-    write(LAPIC_ESR, 0);
-}
-
-void Lapic::timer_handler()
-{
-    bool expired = (use_tsc_timer ? Msr::read(Msr::IA32_TSC_DEADLINE) : read(LAPIC_TMR_CCR)) == 0;
-    if (expired)
-        Timeout::check();
-
-    Rcu::update();
-}
-
-void Lapic::lvt_vector(unsigned vector)
-{
-    switch (vector) {
-    case VEC_LVT_TIMER:
-        timer_handler();
-        break;
-    case VEC_LVT_ERROR:
-        error_handler();
-        break;
-    case VEC_LVT_PERFM:
-        perfm_handler();
-        break;
-    }
-
-    eoi();
-}
-
 void Lapic::park_handler()
 {
     park_function();
@@ -235,7 +198,5 @@ void Lapic::park_handler()
     Atomic::sub(cpu_park_count, 1U);
     shutdown();
 }
-
-void Lapic::ipi_vector(unsigned) { panic("Handling IPIs is not supported anymore."); }
 
 void Lapic::handle_interrupt(unsigned vector) { panic("Hedron received interrupt vector %u.", vector); }

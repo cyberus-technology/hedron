@@ -91,21 +91,9 @@ private:
         *reinterpret_cast<uint32 volatile*>(CPU_LOCAL_APIC + (reg << 4)) = val;
     }
 
-    static inline void set_lvt(Register reg, Delivery_mode dlv, unsigned vector, unsigned misc = 0)
-    {
-        write(reg, misc | dlv | vector);
-    }
-
-    static inline void timer_handler();
-
-    static inline void error_handler();
-
-    static inline void perfm_handler();
-
 public:
     static unsigned freq_tsc;
     static unsigned freq_bus;
-    static bool use_tsc_timer;
 
     // Number of CPUs that still need to be parked.
     //
@@ -138,31 +126,6 @@ public:
     static inline unsigned version() { return read(LAPIC_LVR) & 0xff; }
 
     static inline unsigned lvt_max() { return read(LAPIC_LVR) >> 16 & 0xff; }
-
-    static inline void eoi() { write(LAPIC_EOI, 0); }
-
-    static inline unsigned get_timer() { return read(LAPIC_TMR_CCR); }
-
-    // Configure the thermal interrupt as a fixed interrupt that is delivered as the given vector.
-    static inline void set_therm_vector(uint8 vec)
-    {
-        // The LAPIC considers smaller vectors illegal for fixed interrupts.
-        assert(vec >= 16);
-
-        set_lvt(LAPIC_LVT_THERM, DLV_FIXED, vec);
-    }
-
-    static inline void set_therm_mask(bool masked)
-    {
-        const uint32 old_lvt_therm = read(LAPIC_LVT_THERM);
-
-        if ((old_lvt_therm & 0xff) == 0) {
-            // The thermal interrupt hasn't been programmed yet. Ignore mask requests.
-            return;
-        }
-
-        write(LAPIC_LVT_THERM, (old_lvt_therm & ~MASKED) | (masked ? MASKED : 0));
-    }
 
     static void init();
 
@@ -201,11 +164,6 @@ public:
     //
     /// This function is not safe to be called concurrently.
     static void park_all_but_self(park_fn fn);
-
-    REGPARM(1)
-    static void lvt_vector(unsigned) asm("lvt_vector");
-
-    [[noreturn]] REGPARM(1) static void ipi_vector(unsigned) asm("ipi_vector");
 
     // This function is called if Hedron receives an interrupt. This should not happen, thus we handle it by
     // panicking.
