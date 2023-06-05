@@ -25,7 +25,6 @@
 #include "lapic.hpp"
 #include "space_obj.hpp"
 #include "stdio.hpp"
-#include "vector_info.hpp"
 #include "vectors.hpp"
 #include "vmx_preemption_timer.hpp"
 

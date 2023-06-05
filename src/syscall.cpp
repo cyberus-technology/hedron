@@ -39,7 +39,6 @@
 #include "suspend.hpp"
 #include "utcb.hpp"
 #include "vcpu.hpp"
-#include "vector_info.hpp"
 #include "vectors.hpp"
 
 void Ec::sys_finish(Sys_regs::Status status, bool clear_timeout)
