@@ -101,6 +101,6 @@ void Bootstrap::create_roottask()
 
     Ec* root_ec =
         new Ec(&root, NUM_EXC + 1, &root, Ec::root_invoke, Cpu::id(), 0, USER_ADDR - 2 * PAGE_SIZE, 0, 0);
-    Sc* root_sc = new Sc(&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio, Sc::default_quantum);
+    Sc* root_sc = new Sc(&root, NUM_EXC + 2, root_ec, Cpu::id(), Sc::default_prio);
     root_sc->remote_enqueue();
 }

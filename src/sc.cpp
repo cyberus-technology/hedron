@@ -19,6 +19,7 @@
  * GNU General Public License version 2 for more details.
  */
 
+#include "sc.hpp"
 #include "counter.hpp"
 #include "ec.hpp"
 #include "lapic.hpp"
@@ -31,17 +32,16 @@ Slab_cache Sc::cache(sizeof(Sc), 32);
 
 Sc::Sc(Pd* own, mword sel, Ec* e)
     : Typed_kobject(static_cast<Space_obj*>(own), sel, Sc::PERM_ALL, free), ec(e),
-      cpu(static_cast<unsigned>(sel)), prio(0), budget(us_as_ticks_in_freq(Lapic::freq_tsc, ONE_SEC_IN_US)),
-      left(0), prev(nullptr), next(nullptr)
+      cpu(static_cast<unsigned>(sel)), prio(0), prev(nullptr), next(nullptr)
 {
     trace(TRACE_SYSCALL, "SC:%p created (PD:%p Kernel)", this, own);
 }
 
-Sc::Sc(Pd* own, mword sel, Ec* e, unsigned c, unsigned p, unsigned q)
+Sc::Sc(Pd* own, mword sel, Ec* e, unsigned c, unsigned p)
     : Typed_kobject(static_cast<Space_obj*>(own), sel, Sc::PERM_ALL, free), ec(e), cpu(c), prio(p),
-      budget(us_as_ticks_in_freq(Lapic::freq_tsc, q)), left(0), prev(nullptr), next(nullptr)
+      prev(nullptr), next(nullptr)
 {
-    trace(TRACE_SYSCALL, "SC:%p created (EC:%p CPU:%#x P:%#x Q:%#x)", this, e, c, p, q);
+    trace(TRACE_SYSCALL, "SC:%p created (EC:%p CPU:%#x P:%#x)", this, e, c, p);
 }
 
 void Sc::ready_enqueue(uint64 t, bool inc_ref)
@@ -65,19 +65,14 @@ void Sc::ready_enqueue(uint64 t, bool inc_ref)
         next = list()[prio];
         prev = list()[prio]->prev;
         next->prev = prev->next = this;
-        if (left)
-            list()[prio] = this;
     }
 
-    trace(TRACE_SCHEDULE, "ENQ:%p (%llu) PRIO:%#x TOP:%#x %s", this, left, prio, prio_top(),
+    trace(TRACE_SCHEDULE, "ENQ:%p PRIO:%#x TOP:%#x %s", this, prio, prio_top(),
           prio > current()->prio ? "reschedule" : "");
 
     if (prio > current()->prio) {
         Atomic::set_mask(Cpu::hazard(), HZD_SCHED);
     }
-
-    if (!left)
-        left = budget;
 
     tsc = t;
 }
@@ -98,21 +93,18 @@ void Sc::ready_dequeue(uint64 t)
     while (!list()[prio_top()] && prio_top())
         prio_top()--;
 
-    trace(TRACE_SCHEDULE, "DEQ:%p (%llu) PRIO:%#x TOP:%#x", this, left, prio, prio_top());
+    trace(TRACE_SCHEDULE, "DEQ:%p PRIO:%#x TOP:%#x", this, prio, prio_top());
 
     tsc = t;
 }
 
-void Sc::yield() { Sc::schedule(false, true); }
-
-void Sc::schedule(bool suspend, [[maybe_unused]] bool yield)
+void Sc::schedule(bool suspend)
 {
     assert(current());
     assert(suspend || !current()->prev);
 
     const uint64 t = rdtsc();
     current()->time += t - current()->tsc;
-    current()->left = 0;
 
     if (EXPECT_TRUE(!suspend))
         current()->ready_enqueue(t, false);
@@ -177,28 +169,4 @@ void Sc::rrq_handler()
     }
 
     rq().queue = nullptr;
-}
-
-void Sc::rke_handler()
-{
-    // By increasing the TLB shootdown handler, we tell Space_mem::shootdown()
-    // that this CPU is going to perform any necessary TLB invalidations before
-    // returning to userspace.
-    //
-    // We increase the counter as early as possible to avoid making the
-    // shootdown loop wait for longer than needed.
-
-    Atomic::add(Counter::tlb_shootdown(), static_cast<uint16>(1));
-
-    // In case of host TLB invalidations, we need to enforce that we go through
-    // the scheduler, because there we call Pd::make_current, which performs the
-    // invalidation. Otherwise, we would re-enter userspace directly from the
-    // interrupt handler.
-    //
-    // For guest TLB invalidations, there is no need to go through the
-    // scheduler, because ret_user_vmresume will take care of
-    // guest TLB invalidations unconditionally.
-
-    if (Pd::current()->Space_mem::stale_host_tlb.chk(Cpu::id()))
-        Atomic::set_mask(Cpu::hazard(), HZD_TLB);
 }

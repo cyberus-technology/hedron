@@ -23,6 +23,8 @@
 
 #include "compiler.hpp"
 #include "cpulocal.hpp"
+#include "kobject.hpp"
+#include "queue.hpp"
 
 class Ec;
 
@@ -34,11 +36,9 @@ public:
     Refptr<Ec> const ec;
     unsigned const cpu;
     unsigned const prio;
-    uint64 const budget;
     uint64 time;
 
 private:
-    uint64 left;
     Sc *prev, *next;
     uint64 tsc;
 
@@ -76,10 +76,9 @@ public:
     CPULOCAL_ACCESSOR(sc, ctr_loop);
 
     static unsigned const default_prio = 1;
-    static unsigned const default_quantum = 10000;
 
     Sc(Pd*, mword, Ec*);
-    Sc(Pd*, mword, Ec*, unsigned, unsigned, unsigned);
+    Sc(Pd*, mword, Ec*, unsigned, unsigned);
 
     // Access the runqueue on a remote core.
     //
@@ -89,13 +88,9 @@ public:
 
     void remote_enqueue(bool = true);
 
-    // Sets Sc::left to zero and then call Sc::schedule.
-    [[noreturn]] void yield();
-
     static void rrq_handler();
-    static void rke_handler();
 
-    [[noreturn]] static void schedule(bool suspend = false, [[maybe_unused]] bool yield = false);
+    [[noreturn]] static void schedule(bool suspend = false);
 
     static inline void* operator new(size_t) { return cache.alloc(); }
 

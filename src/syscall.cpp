@@ -338,7 +338,7 @@ void Ec::sys_create_sc()
         sys_finish<Sys_regs::BAD_PAR>();
     }
 
-    Sc* sc = new Sc(Pd::current(), r->sel(), ec, ec->cpu, r->qpd().prio(), r->qpd().quantum());
+    Sc* sc = new Sc(Pd::current(), r->sel(), ec, ec->cpu, r->qpd().prio());
     if (!Space_obj::insert_root(sc)) {
         trace(TRACE_ERROR, "%s: Non-NULL CAP (%#lx)", __func__, r->sel());
         delete sc;
@@ -643,7 +643,7 @@ void Ec::sys_ec_ctrl()
     switch (r->op()) {
     case Sys_ec_ctrl::YIELD: {
         Ec::current()->cont = Ec::ret_user_sysexit;
-        Sc::current()->yield();
+        Sc::current()->schedule();
     }
     default:
         sys_finish<Sys_regs::BAD_PAR>();
