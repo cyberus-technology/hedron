@@ -27,7 +27,6 @@
 #include "lapic.hpp"
 #include "msr.hpp"
 #include "stdio.hpp"
-#include "timeout_budget.hpp"
 
 void Bootstrap::bootstrap()
 {
@@ -87,8 +86,6 @@ void Bootstrap::wait_for_all_cpus()
 
 void Bootstrap::create_idle_ec()
 {
-    Timeout_budget::init();
-
     Ec::idle_ec() = new Ec(Pd::current() = &Pd::kern, Cpu::id());
     Ec::current() = Ec::idle_ec();
 

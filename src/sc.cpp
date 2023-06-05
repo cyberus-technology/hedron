@@ -24,7 +24,6 @@
 #include "lapic.hpp"
 #include "stdio.hpp"
 #include "time.hpp"
-#include "timeout_budget.hpp"
 #include "vectors.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)
@@ -106,16 +105,14 @@ void Sc::ready_dequeue(uint64 t)
 
 void Sc::yield() { Sc::schedule(false, true); }
 
-void Sc::schedule(bool suspend, bool yield)
+void Sc::schedule(bool suspend, [[maybe_unused]] bool yield)
 {
     assert(current());
     assert(suspend || !current()->prev);
 
-    uint64 t = rdtsc();
-    uint64 d = Timeout_budget::budget()->dequeue();
-
+    const uint64 t = rdtsc();
     current()->time += t - current()->tsc;
-    current()->left = not yield and d > t ? d - t : 0;
+    current()->left = 0;
 
     if (EXPECT_TRUE(!suspend))
         current()->ready_enqueue(t, false);
@@ -124,8 +121,6 @@ void Sc::schedule(bool suspend, bool yield)
 
     Sc* sc = list()[prio_top()];
     assert(sc);
-
-    Timeout_budget::budget()->enqueue(t + sc->left);
 
     ctr_loop() = 0;
 

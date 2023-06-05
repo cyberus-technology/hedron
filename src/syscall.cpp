@@ -41,11 +41,8 @@
 #include "vcpu.hpp"
 #include "vectors.hpp"
 
-void Ec::sys_finish(Sys_regs::Status status, bool clear_timeout)
+void Ec::sys_finish(Sys_regs::Status status)
 {
-    if (EXPECT_FALSE(clear_timeout))
-        current()->clr_timeout();
-
     if (EXPECT_FALSE(current()->vcpu)) {
         // If there was a vCPU object associated to the current EC, we release our ownership of it and we
         // release the refptr.
@@ -196,7 +193,7 @@ void Ec::reply(void (*c)(), Sm* sm)
         Sc::schedule(true);
 
     if (sm)
-        sm->dn(false, 0, ec, clr);
+        sm->dn(false, ec, clr);
 
     if (!clr)
         Sc::current()->ec->activate();
@@ -707,8 +704,8 @@ void Ec::sys_sm_ctrl()
         break;
 
     case Sys_sm_ctrl::Sm_operation::Down:
-        current()->cont = Ec::sys_finish<Sys_regs::SUCCESS, true>;
-        sm->dn(r->zc(), r->time());
+        current()->cont = Ec::sys_finish<Sys_regs::SUCCESS>;
+        sm->dn(r->zc());
         break;
     }
 

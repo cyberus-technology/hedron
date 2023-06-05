@@ -30,7 +30,6 @@
 #include "msr.hpp"
 #include "rcu.hpp"
 #include "stdio.hpp"
-#include "timeout.hpp"
 #include "vectors.hpp"
 
 unsigned Lapic::freq_tsc;

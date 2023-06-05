@@ -22,8 +22,7 @@ add_executable(hypervisor
   mca.cpp mdb.cpp memory.cpp msr.cpp mtrr.cpp panic.cpp pd.cpp pt.cpp
   rcu.cpp regs.cpp sc.cpp slab.cpp sm.cpp space.cpp
   space_mem.cpp space_obj.cpp space_pio.cpp stdio.cpp string.cpp suspend.cpp
-  syscall.cpp timeout_budget.cpp timeout.cpp timeout_hypercall.cpp
-  tss.cpp utcb.cpp vcpu.cpp vlapic.cpp vmx.cpp
+  syscall.cpp tss.cpp utcb.cpp vcpu.cpp vlapic.cpp vmx.cpp
   )
 
 add_custom_command(

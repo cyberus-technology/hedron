@@ -95,7 +95,7 @@ public:
     static void rrq_handler();
     static void rke_handler();
 
-    [[noreturn]] static void schedule(bool suspend = false, bool yield = false);
+    [[noreturn]] static void schedule(bool suspend = false, [[maybe_unused]] bool yield = false);
 
     static inline void* operator new(size_t) { return cache.alloc(); }
 
