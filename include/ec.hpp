@@ -446,20 +446,6 @@ public:
 
     [[noreturn]] static void sys_machine_ctrl_update_microcode();
 
-    [[noreturn]] static void sys_irq_ctrl();
-
-    [[noreturn]] static void sys_irq_ctrl_configure_vector();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_ioapic_pin();
-
-    [[noreturn]] static void sys_irq_ctrl_mask_ioapic_pin();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_msi();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_lvt();
-
-    [[noreturn]] static void sys_irq_ctrl_mask_lvt();
-
     [[noreturn]] static void root_invoke();
 
     template <bool> static Delegate_result_void delegate();
