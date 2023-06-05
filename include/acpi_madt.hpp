@@ -117,8 +117,6 @@ public:
     uint32 flags;
     Acpi_apic apic[];
 
-    static inline bool pic_present = false;
-
     void parse() const;
 };
 

@@ -32,8 +32,6 @@ void Acpi_table_madt::parse() const
 {
     parse_entry(Acpi_apic::LAPIC, &parse_lapic);
     parse_entry(Acpi_apic::IOAPIC, &parse_ioapic);
-
-    pic_present = !!(flags & 1);
 }
 
 void Acpi_table_madt::parse_entry(Acpi_apic::Type type, void (*handler)(Acpi_apic const*)) const

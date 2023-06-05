@@ -27,7 +27,6 @@
 #include "acpi_rsdt.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
-#include "pic.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
 
@@ -139,10 +138,6 @@ void Acpi::init()
 {
     if (fadt) {
         Acpi_table_fadt::init(static_cast<Acpi_table_fadt*>(Hpt::remap(fadt)));
-    }
-
-    if (Acpi_table_madt::pic_present) {
-        Pic::init();
     }
 
     write(PM1_ENA, 0);
