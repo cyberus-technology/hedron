@@ -27,7 +27,6 @@
 #include "acpi_rsdp.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
-#include "hpet.hpp"
 #include "hpt.hpp"
 #include "ioapic.hpp"
 #include "lapic.hpp"
@@ -98,6 +97,8 @@ void Hip::build(mword magic, mword addr)
     add_mhv(mem);
 
     h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
+
+    h->hip_base = ~0ull;
 }
 
 void Hip::build_mbi1(Hip_mem*& mem, mword addr)
@@ -210,7 +211,6 @@ void Hip::finalize()
     h->mcfg_size = Pci::cfg_size;
 
     h->dmar_table = Acpi::dmar;
-    h->hpet_base = Hpet::list == nullptr ? 0 : Hpet::list->phys;
 
     // Userspace needs to read the table's signature to figure out what it got.
     h->xsdt_rdst_table = Acpi::xsdt ? Acpi::xsdt : Acpi::rsdt;

@@ -124,7 +124,7 @@ private:
     uint64 mcfg_size;
 
     uint64 dmar_table;
-    uint64 hpet_base;
+    uint64 hip_base; // Deprecated and will soon be removed.
 
     uint64 cap_vmx_sec_exec;
 
