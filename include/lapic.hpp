@@ -206,4 +206,8 @@ public:
     static void lvt_vector(unsigned) asm("lvt_vector");
 
     [[noreturn]] REGPARM(1) static void ipi_vector(unsigned) asm("ipi_vector");
+
+    // This function is called if Hedron receives an interrupt. This should not happen, thus we handle it by
+    // panicking.
+    [[noreturn]] REGPARM(1) static void handle_interrupt(unsigned vector) asm("handle_interrupt");
 };

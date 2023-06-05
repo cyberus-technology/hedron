@@ -237,3 +237,5 @@ void Lapic::park_handler()
 }
 
 void Lapic::ipi_vector(unsigned) { panic("Handling IPIs is not supported anymore."); }
+
+void Lapic::handle_interrupt(unsigned vector) { panic("Hedron received interrupt vector %u.", vector); }

@@ -152,15 +152,9 @@ EXCEPTION               e,      IDT_MODE_DPL0
 .rept                   NUM_USER_VECTORS
 INTRGATE                IDT_MODE_DPL0
                         push    $VEC
-                        jmp     entry_user_vector
+                        jmp     entry_interrupt
 .set                    VEC, VEC + 1
 .endr
-
-entry_user_vector:      push    $0
-                        SAVE_STATE
-                        mov     OFS_VEC (%rbx), %ARG_1
-                        call    handle_user_interrupt
-                        jmp     ret_from_interrupt
 
 /*
  * LVT Entries
@@ -168,15 +162,9 @@ entry_user_vector:      push    $0
 .rept                   NUM_LVT
 INTRGATE                IDT_MODE_DPL0
                         push    $VEC
-                        jmp     entry_lvt
+                        jmp     entry_interrupt
 .set                    VEC, VEC + 1
 .endr
-
-entry_lvt:              push    $0
-                        SAVE_STATE
-                        mov     OFS_VEC (%rbx), %ARG_1
-                        call    lvt_vector
-                        jmp     ret_from_interrupt
 
 /*
  * IPI Entries
@@ -184,15 +172,14 @@ entry_lvt:              push    $0
 .rept                   NUM_IPI
 INTRGATE                IDT_MODE_DPL0
                         push    $VEC
-                        jmp     entry_ipi
+                        jmp     entry_interrupt
 .set                    VEC, VEC + 1
 .endr
 
-entry_ipi:              push    $0
+entry_interrupt:        push    $0
                         SAVE_STATE
                         mov     OFS_VEC (%rbx), %ARG_1
-                        call    ipi_vector
-                        jmp     ret_from_interrupt
+                        call    handle_interrupt
 
 /*
  * Interrupt Return
