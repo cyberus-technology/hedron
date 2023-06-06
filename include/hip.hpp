@@ -118,7 +118,7 @@ private:
     uint32 freq_tsc;
 
     uint32 freq_bus; // Deprecated and will soon be removed.
-    uint32 pci_bus_start;
+    uint32 pci_bus_start; // Deprecated and will soon be removed.
 
     uint64 mcfg_base;
     uint64 mcfg_size;

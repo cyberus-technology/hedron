@@ -96,6 +96,7 @@ void Hip::build(mword magic, mword addr)
 
     h->num_user_vectors = ~0u;
     h->freq_bus = ~0u;
+    h->pci_bus_start = ~0u;
     h->hip_base = ~0ull;
     h->bsp_lapic_svr = ~0u;
     h->bsp_lapic_lint0 = ~0u;
@@ -205,7 +206,6 @@ void Hip::finalize()
 
     h->freq_tsc = Lapic::freq_tsc;
 
-    h->pci_bus_start = Pci::bus_base;
     h->mcfg_base = Pci::cfg_base;
     h->mcfg_size = Pci::cfg_size;
 

@@ -25,20 +25,7 @@
 #include "memory.hpp"
 #include "types.hpp"
 
-class Pci
-{
-    friend class Acpi_table_mcfg;
-    friend class Hip;
-
-private:
-    static inline unsigned bus_base;
+struct Pci {
     static inline Paddr cfg_base;
     static inline size_t cfg_size;
-
-public:
-    static inline unsigned phys_to_rid(Paddr p)
-    {
-        return p - cfg_base < cfg_size ? static_cast<unsigned>((bus_base << 8) + (p - cfg_base) / PAGE_SIZE)
-                                       : ~0U;
-    }
 };
