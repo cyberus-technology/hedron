@@ -111,7 +111,7 @@ private:
     uint32 sel_exc;
     uint32 sel_vmi;
 
-    uint32 num_user_vectors;
+    uint32 num_user_vectors; // Deprecated and will soon be removed.
     uint32 cfg_page;
 
     uint32 cfg_utcb;

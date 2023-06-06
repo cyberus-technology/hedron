@@ -42,21 +42,10 @@
 #define NUM_EXC 32
 #define NUM_VMI 256
 
-// The number of interrupt vectors that are programmable by userspace.
-#define NUM_USER_VECTORS 192
+// The number of possible interrupt vectors
+#define NUM_INT_VECTORS 256
 
-#define NUM_LVT 6
-#define NUM_IPI 4
 #define NUM_PRIORITIES 128
-
-#define SPN_SCH 0
-#define SPN_HLP 1
-#define SPN_RCU 2
-#define SPN_VFI 4
-#define SPN_VFL 5
-#define SPN_LVT 7
-#define SPN_IPI (SPN_LVT + NUM_LVT)
-#define SPN_GSI (SPN_IPI + NUM_IPI + 1)
 
 // This is the maximum number of IOAPICs possible, because they only have a 4-bit ID.
 #define NUM_IOAPIC 16

@@ -26,7 +26,6 @@
 #include "io.hpp"
 #include "ioapic.hpp"
 #include "stdio.hpp"
-#include "vectors.hpp"
 
 void Acpi_table_madt::parse() const
 {

@@ -27,7 +27,6 @@
 #include "initprio.hpp"
 #include "lapic.hpp"
 #include "stdio.hpp"
-#include "vectors.hpp"
 
 mword Rcu::state = RCU_CMP;
 mword Rcu::count;

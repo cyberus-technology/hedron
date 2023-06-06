@@ -65,7 +65,6 @@ void Hip::build(mword magic, mword addr)
     h->api_flg |= FEAT_VMX;
     h->api_ver = CFG_VER;
     h->sel_num = Space_obj::caps;
-    h->num_user_vectors = NUM_USER_VECTORS;
     h->sel_exc = NUM_EXC;
     h->sel_vmi = NUM_VMI;
     h->cfg_page = PAGE_SIZE;
@@ -98,6 +97,7 @@ void Hip::build(mword magic, mword addr)
 
     h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
 
+    h->num_user_vectors = ~0u;
     h->freq_bus = ~0u;
     h->hip_base = ~0ull;
 }

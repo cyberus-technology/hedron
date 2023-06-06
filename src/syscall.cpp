@@ -38,7 +38,6 @@
 #include "suspend.hpp"
 #include "utcb.hpp"
 #include "vcpu.hpp"
-#include "vectors.hpp"
 
 void Ec::sys_finish(Sys_regs::Status status)
 {

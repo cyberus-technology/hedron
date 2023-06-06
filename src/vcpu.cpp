@@ -25,7 +25,6 @@
 #include "lapic.hpp"
 #include "space_obj.hpp"
 #include "stdio.hpp"
-#include "vectors.hpp"
 #include "vmx_preemption_timer.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)

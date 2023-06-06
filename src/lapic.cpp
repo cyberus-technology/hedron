@@ -30,7 +30,6 @@
 #include "msr.hpp"
 #include "rcu.hpp"
 #include "stdio.hpp"
-#include "vectors.hpp"
 
 unsigned Lapic::freq_tsc;
 unsigned Lapic::cpu_park_count;
@@ -123,8 +122,7 @@ void Lapic::init()
         send_ipi(0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
-    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x", apic_base & ~PAGE_MASK, id(), version(),
-          lvt_max());
+    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x", apic_base & ~PAGE_MASK, id(), version(), lvt_max());
 }
 
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)

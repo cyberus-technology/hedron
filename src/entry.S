@@ -22,10 +22,10 @@
  */
 
 #include "arch.hpp"
+#include "config.hpp"
 #include "idt_handlers.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
-#include "vectors.hpp"
 
 /*
  * handlers is an array of entry points for interrupts. We align entries
@@ -146,30 +146,11 @@ EXCEPTION               e,      IDT_MODE_DPL0
 .endr
 
 /*
- * GSI Entries
+ * We add an IDT entry for each possible interrupt vector to make sure we
+ * panic if Hedron receives an interrupt.
  */
 .set                    VEC, NUM_EXC
-.rept                   NUM_USER_VECTORS
-INTRGATE                IDT_MODE_DPL0
-                        push    $VEC
-                        jmp     entry_interrupt
-.set                    VEC, VEC + 1
-.endr
-
-/*
- * LVT Entries
- */
-.rept                   NUM_LVT
-INTRGATE                IDT_MODE_DPL0
-                        push    $VEC
-                        jmp     entry_interrupt
-.set                    VEC, VEC + 1
-.endr
-
-/*
- * IPI Entries
- */
-.rept                   NUM_IPI
+.rept                   NUM_INT_VECTORS - NUM_EXC
 INTRGATE                IDT_MODE_DPL0
                         push    $VEC
                         jmp     entry_interrupt

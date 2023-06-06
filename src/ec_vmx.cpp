@@ -21,7 +21,6 @@
 #include "ec.hpp"
 #include "lapic.hpp"
 #include "vcpu.hpp"
-#include "vectors.hpp"
 #include "vmx.hpp"
 #include "vmx_preemption_timer.hpp"
 

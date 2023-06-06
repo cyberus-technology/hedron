@@ -25,7 +25,6 @@
 #include "lapic.hpp"
 #include "stdio.hpp"
 #include "time.hpp"
-#include "vectors.hpp"
 
 INIT_PRIORITY(PRIO_SLAB)
 Slab_cache Sc::cache(sizeof(Sc), 32);
