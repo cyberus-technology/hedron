@@ -33,7 +33,6 @@
 #include "vectors.hpp"
 
 unsigned Lapic::freq_tsc;
-unsigned Lapic::freq_bus;
 unsigned Lapic::cpu_park_count;
 
 static char __start_cpu_backup[128];
@@ -108,16 +107,13 @@ void Lapic::init()
 
         write(LAPIC_TMR_ICR, ~0U);
 
-        uint32 v1 = read(LAPIC_TMR_CCR);
         uint32 t1 = static_cast<uint32>(rdtsc());
         Acpi::delay(10);
-        uint32 v2 = read(LAPIC_TMR_CCR);
         uint32 t2 = static_cast<uint32>(rdtsc());
 
         freq_tsc = (t2 - t1) / 10;
-        freq_bus = (v1 - v2) / 10;
 
-        trace(TRACE_APIC, "TSC:%u kHz BUS:%u kHz", freq_tsc, freq_bus);
+        trace(TRACE_APIC, "TSC:%u kHz", freq_tsc);
 
         // The AP boot code needs to lie at a page boundary below 1 MB.
         assert((boot_addr & PAGE_MASK) == 0 and boot_addr < (1 << 20));
@@ -127,8 +123,8 @@ void Lapic::init()
         send_ipi(0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
-    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x (%s Mode)", apic_base & ~PAGE_MASK, id(), version(),
-          lvt_max(), freq_bus ? "OS" : "DL");
+    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x", apic_base & ~PAGE_MASK, id(), version(),
+          lvt_max());
 }
 
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)

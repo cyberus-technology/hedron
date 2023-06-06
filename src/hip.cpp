@@ -98,6 +98,7 @@ void Hip::build(mword magic, mword addr)
 
     h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
 
+    h->freq_bus = ~0u;
     h->hip_base = ~0ull;
 }
 
@@ -204,7 +205,6 @@ void Hip::finalize()
     Hip* h = hip();
 
     h->freq_tsc = Lapic::freq_tsc;
-    h->freq_bus = Lapic::freq_bus;
 
     h->pci_bus_start = Pci::bus_base;
     h->mcfg_base = Pci::cfg_base;

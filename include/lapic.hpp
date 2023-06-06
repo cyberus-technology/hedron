@@ -93,7 +93,6 @@ private:
 
 public:
     static unsigned freq_tsc;
-    static unsigned freq_bus;
 
     // Number of CPUs that still need to be parked.
     //
