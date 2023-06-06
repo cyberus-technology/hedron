@@ -160,9 +160,6 @@ public:
     static inline uint8 acpi_id[NUM_CPU];
     static inline uint8 apic_id[NUM_CPU];
 
-    static inline uint32 bsp_lapic_svr;
-    static inline uint32 bsp_lapic_lint0;
-
     // The TSC value that all CPUs start with after boot or resume.
     static inline uint64 initial_tsc = 0;
 

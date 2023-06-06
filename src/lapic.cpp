@@ -41,11 +41,6 @@ void Lapic::setup()
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
 
     Pd::kern->claim_mmio_page(CPU_LOCAL_APIC, apic_base & ~PAGE_MASK, false);
-
-    // We execute this code once on the BSP before we start to program the LAPIC. Rescue the LAPIC
-    // configuration for potential use by a passthrough VMM.
-    Cpu::bsp_lapic_svr = read(LAPIC_SVR);
-    Cpu::bsp_lapic_lint0 = read(LAPIC_LVT_LINT0);
 }
 
 uint32 Lapic::prepare_cpu_boot(cpu_boot_type type)

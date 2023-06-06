@@ -133,8 +133,8 @@ private:
     Acpi_gas pm1a_cnt;
     Acpi_gas pm1b_cnt;
 
-    uint32 bsp_lapic_svr;
-    uint32 bsp_lapic_lint0;
+    uint32 bsp_lapic_svr; // Deprecated and will soon be removed.
+    uint32 bsp_lapic_lint0; // Deprecated and will soon be removed.
 
     Hip_cpu cpu_desc[NUM_CPU];
     Hip_ioapic ioapic_desc[NUM_IOAPIC];

@@ -70,9 +70,6 @@ void Hip::build(mword magic, mword addr)
     h->cfg_page = PAGE_SIZE;
     h->cfg_utcb = PAGE_SIZE;
 
-    h->bsp_lapic_svr = Cpu::bsp_lapic_svr;
-    h->bsp_lapic_lint0 = Cpu::bsp_lapic_lint0;
-
     Hip_ioapic* ioapic = h->ioapic_desc;
     Ioapic::add_to_hip(ioapic);
     if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
@@ -100,6 +97,8 @@ void Hip::build(mword magic, mword addr)
     h->num_user_vectors = ~0u;
     h->freq_bus = ~0u;
     h->hip_base = ~0ull;
+    h->bsp_lapic_svr = ~0u;
+    h->bsp_lapic_lint0 = ~0u;
 }
 
 void Hip::build_mbi1(Hip_mem*& mem, mword addr)
