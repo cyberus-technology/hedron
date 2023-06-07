@@ -46,6 +46,15 @@ public:
     }
 };
 
+// Flags for Utcb::exit_flags.
+enum Utcb_exit_flags
+{
+    // The host has received an NMI that needs to be delivered to this vCPU.
+    //
+    // This is only set for passthrough vCPUs.
+    NMI_PENDING = 1 << 0,
+};
+
 class Utcb_head
 {
 protected:
@@ -101,7 +110,7 @@ protected:
             // If this UTCB belongs to a vCPU, this field holds the reason for the last VM exit. This field is
             // 32 bits in size, because a VMX_ENTRY_FAILURE needs 32 bits.
             uint32 exit_reason;
-            uint32 reserved3;
+            uint32 exit_flags; // See Utcb_exit_flags above.
         };
 
         mword data_begin;

@@ -128,6 +128,7 @@ struct alignas(PAGE_SIZE) Per_cpu {
     uint32 cpu_features[9];
     bool cpu_bsp;
     uint8 cpu_maxphyaddr_ord;
+    bool cpu_seen_spurious_nmi;
 
     // Machine-check variables
     unsigned mca_banks;

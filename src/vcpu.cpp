@@ -243,6 +243,12 @@ void Vcpu::run()
 
     vmcs->make_current();
 
+    // When the host received an NMI we give them to the next passthrough vCPU that runs.
+    if (passthrough_vcpu and EXPECT_FALSE(Cpu::fetch_spurious_nmi())) {
+        utcb()->exit_flags |= Utcb_exit_flags::NMI_PENDING;
+        Atomic::store(poked, true);
+    }
+
     // If a vCPU is in wait for SIPI state, if will not receive NMIs. Thus the CPU will block NMIs in this
     // case to signal that e.g. the TLB shootdown protocol should not wait for this CPU.
     if (utcb()->actv_state == 3 /* wait for SIPI*/) {
@@ -505,7 +511,19 @@ void Vcpu::handle_exception()
         // We received an NMI while being in VMX non-root mode. We can safely do all NMI work here. Check
         // Ec::handle_exc_altstack to learn more about our NMI handling.
         Ec::do_early_nmi_work();
-        continue_running();
+
+        // When a guest was running and we don't see any hazards, the NMI may have been sent by the
+        // passthrough guest. We don't do this when we receive the NMI in root mode, because it generates too
+        // many false positives in practice. The only goal is to satisfy the guest's NMI watchdog and hung
+        // task detection, so this should be good enough for the time being.
+        if (EXPECT_FALSE(Atomic::load(Cpu::hazard()) == 0)) {
+            Cpu::spurious_nmi();
+
+            // We don't want to give the NMI exit reason to userspace.
+            synthesize_poked_exit();
+        } else {
+            continue_running();
+        }
     }
 
     return_to_vmm(Sys_regs::SUCCESS);

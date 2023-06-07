@@ -6,6 +6,9 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 12.1
+- **New** The vCPU state has a new flags fields where passthrough vCPUs will see spurious NMIs.
+
 ## API Version 12.0
 - **Breaking** Hedron and user space applications running in VMX root mode will no longer receive interrupts, except
   for NMIs. This includes the following changes:
