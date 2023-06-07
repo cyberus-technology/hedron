@@ -22,7 +22,6 @@
 #include "ec.hpp"
 #include "hip.hpp"
 #include "hpt.hpp"
-#include "ioapic.hpp"
 #include "lapic.hpp"
 #include "vmx.hpp"
 #include "x86.hpp"

@@ -47,9 +47,6 @@
 
 #define NUM_PRIORITIES 128
 
-// This is the maximum number of IOAPICs possible, because they only have a 4-bit ID.
-#define NUM_IOAPIC 16
-
 // We have one stack per CPU. Each stack will have this size.
 //
 // One page of this will be sacrificed as a stack guard.

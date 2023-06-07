@@ -80,13 +80,9 @@ public:
     uint32 aux;
 };
 
-class Hip_ioapic
-{
-public:
-    uint32 id;
-    uint32 version;
-    uint32 gsi_base;
-    uint32 base;
+// Deprecated and will soon be removed.
+struct Hip_ioapic {
+    uint32 deprecated[4];
 };
 
 class Hip
@@ -98,8 +94,8 @@ private:
 
     uint16 cpu_offs;
     uint16 cpu_size;
-    uint16 ioapic_offs;
-    uint16 ioapic_size;
+    uint16 ioapic_offs; // Deprecated, but user land still needs this.
+    uint16 ioapic_size; // Deprecated, but user land still needs this.
 
     uint16 mem_offs;
     uint16 mem_size;
@@ -137,7 +133,7 @@ private:
     uint32 bsp_lapic_lint0; // Deprecated and will soon be removed.
 
     Hip_cpu cpu_desc[NUM_CPU];
-    Hip_ioapic ioapic_desc[NUM_IOAPIC];
+    Hip_ioapic ioapic_desc[16]; // Deprecated and will soon be removed.
     Hip_mem mem_desc[];
 
 public:

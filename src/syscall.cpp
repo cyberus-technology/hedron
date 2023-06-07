@@ -27,7 +27,6 @@
 #include "acpi.hpp"
 #include "cpu.hpp"
 #include "hip.hpp"
-#include "ioapic.hpp"
 #include "kp.hpp"
 #include "lapic.hpp"
 #include "msr.hpp"
