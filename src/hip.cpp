@@ -54,8 +54,6 @@ void Hip::build(mword magic, mword addr)
     h->signature = 0x4e524448;
     h->cpu_offs = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
     h->cpu_size = static_cast<uint16>(sizeof(Hip_cpu));
-    h->ioapic_offs = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
-    h->ioapic_size = static_cast<uint16>(sizeof(Hip_ioapic));
     h->mem_offs = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
     h->mem_size = static_cast<uint16>(sizeof(Hip_mem));
     // Other flags may have been added already earlier in the boot process, so
@@ -86,15 +84,6 @@ void Hip::build(mword magic, mword addr)
     add_mhv(mem);
 
     h->length = static_cast<uint16>(reinterpret_cast<mword>(mem) - reinterpret_cast<mword>(h));
-
-    h->num_user_vectors = ~0u;
-    h->freq_bus = ~0u;
-    h->pci_bus_start = ~0u;
-    h->hip_base = ~0ull;
-    h->bsp_lapic_svr = ~0u;
-    h->bsp_lapic_lint0 = ~0u;
-
-    memset(&h->ioapic_desc[0].deprecated, ~0, sizeof(Hip_ioapic) * 16);
 }
 
 void Hip::build_mbi1(Hip_mem*& mem, mword addr)

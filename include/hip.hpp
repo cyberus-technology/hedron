@@ -80,11 +80,6 @@ public:
     uint32 aux;
 };
 
-// Deprecated and will soon be removed.
-struct Hip_ioapic {
-    uint32 deprecated[4];
-};
-
 class Hip
 {
 private:
@@ -94,8 +89,6 @@ private:
 
     uint16 cpu_offs;
     uint16 cpu_size;
-    uint16 ioapic_offs; // Deprecated, but user land still needs this.
-    uint16 ioapic_size; // Deprecated, but user land still needs this.
 
     uint16 mem_offs;
     uint16 mem_size;
@@ -107,20 +100,15 @@ private:
     uint32 sel_exc;
     uint32 sel_vmi;
 
-    uint32 num_user_vectors; // Deprecated and will soon be removed.
     uint32 cfg_page;
 
     uint32 cfg_utcb;
     uint32 freq_tsc;
 
-    uint32 freq_bus; // Deprecated and will soon be removed.
-    uint32 pci_bus_start; // Deprecated and will soon be removed.
-
     uint64 mcfg_base;
     uint64 mcfg_size;
 
     uint64 dmar_table;
-    uint64 hip_base; // Deprecated and will soon be removed.
 
     uint64 cap_vmx_sec_exec;
 
@@ -129,11 +117,7 @@ private:
     Acpi_gas pm1a_cnt;
     Acpi_gas pm1b_cnt;
 
-    uint32 bsp_lapic_svr; // Deprecated and will soon be removed.
-    uint32 bsp_lapic_lint0; // Deprecated and will soon be removed.
-
     Hip_cpu cpu_desc[NUM_CPU];
-    Hip_ioapic ioapic_desc[16]; // Deprecated and will soon be removed.
     Hip_mem mem_desc[];
 
 public:
