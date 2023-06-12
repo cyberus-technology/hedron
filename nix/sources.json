@@ -5,10 +5,10 @@
         "homepage": "",
         "owner": "bilke",
         "repo": "cmake-modules",
-        "rev": "03be0c7e1ad14d4e9767c72e26a4515024aec5ae",
-        "sha256": "0w0r0k56gjqqm2zz0jsy1n6542dhblmz69m7mpkjf3wn58n89s7z",
+        "rev": "877bab9dd1b17468c5d939cacaa2ad7ba99d1977",
+        "sha256": "14nbsmlhsj6c8504hdlzkkqwn07ac97ypvzwh4gyr5i2ma8bzwwf",
         "type": "tarball",
-        "url": "https://github.com/bilke/cmake-modules/archive/03be0c7e1ad14d4e9767c72e26a4515024aec5ae.tar.gz",
+        "url": "https://github.com/bilke/cmake-modules/archive/877bab9dd1b17468c5d939cacaa2ad7ba99d1977.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
