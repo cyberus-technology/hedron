@@ -45,7 +45,16 @@ let
   # There is some magic here to pass along the compiler names, so we
   # can use them in hedronBuilds to create nice attribute names.
   buildConfs = pkgs.lib.cartesianProductOfSets {
-    cc = attrsToList { inherit (pkgs) clang_15 gcc10 gcc11 gcc12; };
+    cc = attrsToList {
+      inherit (pkgs)
+        clang_15
+        # This is the current Debian stable compiler.
+        gcc10
+        # This is the next Debian stable compiler.
+        gcc12
+        # This is the most current GCC.
+        gcc13;
+    };
     buildType = [ "Debug" "Release" ];
   };
 
