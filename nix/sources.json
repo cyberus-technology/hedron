@@ -5,22 +5,22 @@
         "homepage": "",
         "owner": "bilke",
         "repo": "cmake-modules",
-        "rev": "03be0c7e1ad14d4e9767c72e26a4515024aec5ae",
-        "sha256": "0w0r0k56gjqqm2zz0jsy1n6542dhblmz69m7mpkjf3wn58n89s7z",
+        "rev": "877bab9dd1b17468c5d939cacaa2ad7ba99d1977",
+        "sha256": "14nbsmlhsj6c8504hdlzkkqwn07ac97ypvzwh4gyr5i2ma8bzwwf",
         "type": "tarball",
-        "url": "https://github.com/bilke/cmake-modules/archive/03be0c7e1ad14d4e9767c72e26a4515024aec5ae.tar.gz",
+        "url": "https://github.com/bilke/cmake-modules/archive/877bab9dd1b17468c5d939cacaa2ad7ba99d1977.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "nixos-22.11",
+        "branch": "nixos-23.05",
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "115a96e2ac1e92937cd47c30e073e16dcaaf6247",
-        "sha256": "15kgg0lsvd7cbjl6c119gscqd0rwxjf83b04m915fqy0bk71c31r",
+        "rev": "d3bb401dcfc5a46ce51cdfb5762e70cc75d082d2",
+        "sha256": "0hvln80nwzmndqqhqh1nsk89ypxdigswcv6krsv21vqg8vzm1xd0",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/115a96e2ac1e92937cd47c30e073e16dcaaf6247.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/d3bb401dcfc5a46ce51cdfb5762e70cc75d082d2.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
