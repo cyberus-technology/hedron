@@ -26,29 +26,6 @@
 #pragma pack(1)
 
 /*
- * ACPI INTI Flags (5.2.11.8)
- */
-class Acpi_inti
-{
-public:
-    uint16 pol : 2, trg : 2, : 12;
-
-    enum Polarity
-    {
-        POL_CONFORMING = 0,
-        POL_HIGH = 1,
-        POL_LOW = 3,
-    };
-
-    enum Trigger
-    {
-        TRG_CONFORMING = 0,
-        TRG_EDGE = 1,
-        TRG_LEVEL = 3
-    };
-};
-
-/*
  * APIC Structure (5.2.11.4)
  */
 class Acpi_apic
@@ -77,30 +54,6 @@ public:
 };
 
 /*
- * I/O APIC (5.2.11.6)
- */
-class Acpi_ioapic : public Acpi_apic
-{
-public:
-    uint8 id;
-    uint8 zero;
-    uint32 phys;
-    uint32 gsi;
-};
-
-/*
- * Interrupt Source Override (5.2.11.8)
- */
-class Acpi_intr : public Acpi_apic
-{
-public:
-    uint8 bus;
-    uint8 irq;
-    uint32 gsi;
-    Acpi_inti flags;
-};
-
-/*
  * Multiple APIC Description Table
  */
 class Acpi_table_madt : public Acpi_table
@@ -108,16 +61,12 @@ class Acpi_table_madt : public Acpi_table
 private:
     static void parse_lapic(Acpi_apic const*);
 
-    static void parse_ioapic(Acpi_apic const*);
-
     void parse_entry(Acpi_apic::Type, void (*)(Acpi_apic const*)) const;
 
 public:
     uint32 apic_addr;
     uint32 flags;
     Acpi_apic apic[];
-
-    static inline bool pic_present = false;
 
     void parse() const;
 };

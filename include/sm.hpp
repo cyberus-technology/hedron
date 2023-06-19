@@ -56,10 +56,10 @@ public:
     ~Sm()
     {
         while (!counter)
-            up(Ec::sys_finish<Sys_regs::BAD_CAP, true>);
+            up(Ec::sys_finish<Sys_regs::BAD_CAP>);
     }
 
-    inline void dn(bool zero, uint64 t, Ec* ec = Ec::current(), bool block = true)
+    inline void dn(bool zero, Ec* ec = Ec::current(), bool block = true)
     {
         {
             Lock_guard<Spinlock> guard(lock);
@@ -80,11 +80,7 @@ public:
         if (!block)
             Sc::schedule(false);
 
-        ec->set_timeout(t, this);
-
         ec->block_sc();
-
-        ec->clr_timeout();
     }
 
     inline void up(void (*c)() = nullptr)
@@ -107,18 +103,6 @@ public:
             ec->release(c);
 
         } while (EXPECT_FALSE(ec->del_rcu()));
-    }
-
-    inline void timeout(Ec* ec)
-    {
-        {
-            Lock_guard<Spinlock> guard(lock);
-
-            if (!dequeue(ec))
-                return;
-        }
-
-        ec->release(Ec::sys_finish<Sys_regs::COM_TIM>);
     }
 
     static inline void* operator new(size_t) { return cache.alloc(); }

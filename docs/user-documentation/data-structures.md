@@ -15,8 +15,6 @@ Check `include/hip.hpp` for its layout.
 | `length`           | Length of the HIP in bytes. This includes all CPU and memory descriptors.          |
 | `cpu_offset`       | Offset of the first CPU descriptor in bytes, relative to the HIP base.             |
 | `cpu_size`         | Size of a CPU descriptor in bytes.                                                 |
-| `ioapic_offset`    | Offset of the first IOAPIC descriptor in bytes, relative to the HIP base.          |
-| `ioapic_size`      | Size of an IOAPIC descriptor in bytes.                                             |
 | `mem_offset`       | Offset of the first memory descriptor in bytes, relative to the HIP base.          |
 | `mem_size`         | Size of a memory descriptor in bytes.                                              |
 | `api_flg`          | A bitmask of feature flags. See Features section below.                            |
@@ -24,22 +22,16 @@ Check `include/hip.hpp` for its layout.
 | `sel_num`          | Number of available capability selectors in each object space.                     |
 | `sel_exc`          | Number of selectors used for exception handling.                                   |
 | `sel_vmi`          | Number of selectors for VM exit handling.                                          |
-| `num_user_vectors` | The number of interrupt vectors usable in `irq_ctrl` system calls.                 |
 | `cfg_page`         | The system page size.                                                              |
 | `cfg_utcb`         | The size of an UTCB.                                                               |
 | `freq_tsc`         | The frequency of the x86 Timestamp Counter (TSC) in kHz.                           |
-| `freq_bus`         | The bus frequency (LAPIC timer frequency) in kHz.                                  |
-| `pci_bus_start`    | First bus number that is served by the MMCONFIG region pointed to by `mmcfg_base`. |
 | `mcfg_base`        | The physical address of the first MMCONFIG region for PCI segment 0.               |
 | `mcfg_size`        | The size of the MMCONFIG region pointed to by `mcfg_base`.                         |
 | `dmar_table`       | The physical address of the ACPI DMAR table.                                       |
-| `hpet_base`        | The physical address of the HPET MMIO registers.                                   |
 | `cap_vmx_sec_exec` | The secondary VMX execution control capabilities (or 0 if not supported).          |
 | `xsdt_rdst_table`  | The physical address of either the XSDT, or if not available, the RDST ACPI table. |
 | `pm1a_cnt`         | The location of the ACPI PM1a_CNT register block as ACPI Generic Address.          |
 | `pm1b_cnt`         | The location of the ACPI PM1b CNT register block as ACPI Generic Address.          |
-| `bsp_lapic_svr`    | The value of the LAPIC SVR register on the BSP when Hedron was booted.             |
-| `bsp_lapic_lint0`  | The value of the LAPIC LINT0 LVT entry on the BSP when Hedron was booted.          |
 
 Additional fields are not yet documented. Please consider documenting
 them.

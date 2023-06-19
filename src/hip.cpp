@@ -27,9 +27,7 @@
 #include "acpi_rsdp.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
-#include "hpet.hpp"
 #include "hpt.hpp"
-#include "ioapic.hpp"
 #include "lapic.hpp"
 #include "multiboot.hpp"
 #include "multiboot2.hpp"
@@ -56,8 +54,6 @@ void Hip::build(mword magic, mword addr)
     h->signature = 0x4e524448;
     h->cpu_offs = reinterpret_cast<mword>(h->cpu_desc) - reinterpret_cast<mword>(h);
     h->cpu_size = static_cast<uint16>(sizeof(Hip_cpu));
-    h->ioapic_offs = reinterpret_cast<mword>(h->ioapic_desc) - reinterpret_cast<mword>(h);
-    h->ioapic_size = static_cast<uint16>(sizeof(Hip_ioapic));
     h->mem_offs = reinterpret_cast<mword>(h->mem_desc) - reinterpret_cast<mword>(h);
     h->mem_size = static_cast<uint16>(sizeof(Hip_mem));
     // Other flags may have been added already earlier in the boot process, so
@@ -66,20 +62,10 @@ void Hip::build(mword magic, mword addr)
     h->api_flg |= FEAT_VMX;
     h->api_ver = CFG_VER;
     h->sel_num = Space_obj::caps;
-    h->num_user_vectors = NUM_USER_VECTORS;
     h->sel_exc = NUM_EXC;
     h->sel_vmi = NUM_VMI;
     h->cfg_page = PAGE_SIZE;
     h->cfg_utcb = PAGE_SIZE;
-
-    h->bsp_lapic_svr = Cpu::bsp_lapic_svr;
-    h->bsp_lapic_lint0 = Cpu::bsp_lapic_lint0;
-
-    Hip_ioapic* ioapic = h->ioapic_desc;
-    Ioapic::add_to_hip(ioapic);
-    if (reinterpret_cast<mword>(ioapic) > reinterpret_cast<mword>(h->mem_desc)) {
-        panic("Could not add all I/O APICs to Hip!");
-    }
 
     Hip_mem* mem = h->mem_desc;
 
@@ -203,14 +189,11 @@ void Hip::finalize()
     Hip* h = hip();
 
     h->freq_tsc = Lapic::freq_tsc;
-    h->freq_bus = Lapic::freq_bus;
 
-    h->pci_bus_start = Pci::bus_base;
     h->mcfg_base = Pci::cfg_base;
     h->mcfg_size = Pci::cfg_size;
 
     h->dmar_table = Acpi::dmar;
-    h->hpet_base = Hpet::list == nullptr ? 0 : Hpet::list->phys;
 
     // Userspace needs to read the table's signature to figure out what it got.
     h->xsdt_rdst_table = Acpi::xsdt ? Acpi::xsdt : Acpi::rsdt;

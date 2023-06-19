@@ -28,7 +28,6 @@
 #include "scope_guard.hpp"
 #include "space.hpp"
 #include "stdio.hpp"
-#include "vectors.hpp"
 
 unsigned Space_mem::did_ctr;
 

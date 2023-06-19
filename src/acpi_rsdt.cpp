@@ -23,8 +23,10 @@
 #include "hpt.hpp"
 
 struct Acpi_table_rsdt::table_map const Acpi_table_rsdt::map[] = {
-    {SIG("APIC"), &Acpi::madt}, {SIG("DMAR"), &Acpi::dmar}, {SIG("FACP"), &Acpi::fadt},
-    {SIG("HPET"), &Acpi::hpet}, {SIG("MCFG"), &Acpi::mcfg},
+    {SIG("APIC"), &Acpi::madt},
+    {SIG("DMAR"), &Acpi::dmar},
+    {SIG("FACP"), &Acpi::fadt},
+    {SIG("MCFG"), &Acpi::mcfg},
 };
 
 void Acpi_table_rsdt::parse(Paddr addr, size_t size) const

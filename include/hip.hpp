@@ -80,15 +80,6 @@ public:
     uint32 aux;
 };
 
-class Hip_ioapic
-{
-public:
-    uint32 id;
-    uint32 version;
-    uint32 gsi_base;
-    uint32 base;
-};
-
 class Hip
 {
 private:
@@ -98,8 +89,6 @@ private:
 
     uint16 cpu_offs;
     uint16 cpu_size;
-    uint16 ioapic_offs;
-    uint16 ioapic_size;
 
     uint16 mem_offs;
     uint16 mem_size;
@@ -111,20 +100,15 @@ private:
     uint32 sel_exc;
     uint32 sel_vmi;
 
-    uint32 num_user_vectors;
     uint32 cfg_page;
 
     uint32 cfg_utcb;
     uint32 freq_tsc;
 
-    uint32 freq_bus;
-    uint32 pci_bus_start;
-
     uint64 mcfg_base;
     uint64 mcfg_size;
 
     uint64 dmar_table;
-    uint64 hpet_base;
 
     uint64 cap_vmx_sec_exec;
 
@@ -133,11 +117,7 @@ private:
     Acpi_gas pm1a_cnt;
     Acpi_gas pm1b_cnt;
 
-    uint32 bsp_lapic_svr;
-    uint32 bsp_lapic_lint0;
-
     Hip_cpu cpu_desc[NUM_CPU];
-    Hip_ioapic ioapic_desc[NUM_IOAPIC];
     Hip_mem mem_desc[];
 
 public:

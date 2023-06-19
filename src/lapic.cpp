@@ -30,12 +30,8 @@
 #include "msr.hpp"
 #include "rcu.hpp"
 #include "stdio.hpp"
-#include "timeout.hpp"
-#include "vectors.hpp"
 
 unsigned Lapic::freq_tsc;
-unsigned Lapic::freq_bus;
-bool Lapic::use_tsc_timer{false};
 unsigned Lapic::cpu_park_count;
 
 static char __start_cpu_backup[128];
@@ -45,11 +41,6 @@ void Lapic::setup()
     Paddr apic_base = Msr::read(Msr::IA32_APIC_BASE);
 
     Pd::kern->claim_mmio_page(CPU_LOCAL_APIC, apic_base & ~PAGE_MASK, false);
-
-    // We execute this code once on the BSP before we start to program the LAPIC. Rescue the LAPIC
-    // configuration for potential use by a passthrough VMM.
-    Cpu::bsp_lapic_svr = read(LAPIC_SVR);
-    Cpu::bsp_lapic_lint0 = read(LAPIC_LVT_LINT0);
 }
 
 uint32 Lapic::prepare_cpu_boot(cpu_boot_type type)
@@ -103,8 +94,6 @@ void Lapic::init()
     if (!(svr & 0x100))
         write(LAPIC_SVR, svr | 0x100);
 
-    use_tsc_timer = Cpu::feature(Cpu::FEAT_TSC_DEADLINE) && !Cmdline::nodl;
-
     if ((Cpu::bsp() = apic_base & 0x100)) {
         uint32 const boot_addr = prepare_cpu_boot(cpu_boot_type::AP);
 
@@ -112,16 +101,13 @@ void Lapic::init()
 
         write(LAPIC_TMR_ICR, ~0U);
 
-        uint32 v1 = read(LAPIC_TMR_CCR);
         uint32 t1 = static_cast<uint32>(rdtsc());
         Acpi::delay(10);
-        uint32 v2 = read(LAPIC_TMR_CCR);
         uint32 t2 = static_cast<uint32>(rdtsc());
 
         freq_tsc = (t2 - t1) / 10;
-        freq_bus = (v1 - v2) / 10;
 
-        trace(TRACE_APIC, "TSC:%u kHz BUS:%u kHz", freq_tsc, freq_bus);
+        trace(TRACE_APIC, "TSC:%u kHz", freq_tsc);
 
         // The AP boot code needs to lie at a page boundary below 1 MB.
         assert((boot_addr & PAGE_MASK) == 0 and boot_addr < (1 << 20));
@@ -131,8 +117,7 @@ void Lapic::init()
         send_ipi(0, boot_addr >> PAGE_BITS, DLV_SIPI, DSH_EXC_SELF);
     }
 
-    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x (%s Mode)", apic_base & ~PAGE_MASK, id(), version(),
-          lvt_max(), freq_bus ? "OS" : "DL");
+    trace(TRACE_APIC, "APIC:%#lx ID:%#x VER:%#x LVT:%#x", apic_base & ~PAGE_MASK, id(), version(), lvt_max());
 }
 
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)
@@ -194,40 +179,6 @@ void Lapic::park_all_but_self(park_fn fn)
     park_function();
 }
 
-void Lapic::perfm_handler() {}
-
-void Lapic::error_handler()
-{
-    write(LAPIC_ESR, 0);
-    write(LAPIC_ESR, 0);
-}
-
-void Lapic::timer_handler()
-{
-    bool expired = (use_tsc_timer ? Msr::read(Msr::IA32_TSC_DEADLINE) : read(LAPIC_TMR_CCR)) == 0;
-    if (expired)
-        Timeout::check();
-
-    Rcu::update();
-}
-
-void Lapic::lvt_vector(unsigned vector)
-{
-    switch (vector) {
-    case VEC_LVT_TIMER:
-        timer_handler();
-        break;
-    case VEC_LVT_ERROR:
-        error_handler();
-        break;
-    case VEC_LVT_PERFM:
-        perfm_handler();
-        break;
-    }
-
-    eoi();
-}
-
 void Lapic::park_handler()
 {
     park_function();
@@ -236,4 +187,4 @@ void Lapic::park_handler()
     shutdown();
 }
 
-void Lapic::ipi_vector(unsigned) { panic("Handling IPIs is not supported anymore."); }
+void Lapic::handle_interrupt(unsigned vector) { panic("Hedron received interrupt vector %u.", vector); }

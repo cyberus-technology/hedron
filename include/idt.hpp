@@ -22,8 +22,8 @@
 
 #pragma once
 
+#include "config.hpp"
 #include "descriptor.hpp"
-#include "vectors.hpp"
 
 class Idt : public Descriptor
 {
@@ -33,7 +33,7 @@ private:
     void set(Type type, unsigned dpl, unsigned selector, mword offset, unsigned ist);
 
 public:
-    static Idt idt[VEC_MAX];
+    static Idt idt[NUM_INT_VECTORS];
 
     // Construct the IDT.
     static void build();

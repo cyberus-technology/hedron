@@ -21,18 +21,16 @@
 #include "acpi.hpp"
 #include "acpi_facs.hpp"
 #include "acpi_fadt.hpp"
-#include "acpi_hpet.hpp"
 #include "acpi_madt.hpp"
 #include "acpi_mcfg.hpp"
 #include "acpi_rsdp.hpp"
 #include "acpi_rsdt.hpp"
 #include "hpt.hpp"
 #include "io.hpp"
-#include "pic.hpp"
 #include "stdio.hpp"
 #include "x86.hpp"
 
-Paddr Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::hpet, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
+Paddr Acpi::dmar, Acpi::facs, Acpi::fadt, Acpi::madt, Acpi::mcfg, Acpi::rsdt, Acpi::xsdt;
 Acpi_gas Acpi::pm1a_sts, Acpi::pm1b_sts, Acpi::pm1a_ena, Acpi::pm1b_ena, Acpi::pm1a_cnt, Acpi::pm1b_cnt,
     Acpi::pm2_cnt, Acpi::pm_tmr;
 Acpi_gas Acpi::gpe0_sts, Acpi::gpe1_sts, Acpi::gpe0_ena, Acpi::gpe1_ena;
@@ -117,8 +115,6 @@ void Acpi::setup()
     if (fadt) {
         Acpi_table_fadt::init(static_cast<Acpi_table_fadt*>(Hpt::remap(fadt)));
     }
-    if (hpet)
-        static_cast<Acpi_table_hpet*>(Hpt::remap(hpet))->parse();
     if (madt)
         static_cast<Acpi_table_madt*>(Hpt::remap(madt))->parse();
     if (mcfg)
@@ -142,10 +138,6 @@ void Acpi::init()
 {
     if (fadt) {
         Acpi_table_fadt::init(static_cast<Acpi_table_fadt*>(Hpt::remap(fadt)));
-    }
-
-    if (Acpi_table_madt::pic_present) {
-        Pic::init();
     }
 
     write(PM1_ENA, 0);

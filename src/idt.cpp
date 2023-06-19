@@ -22,7 +22,7 @@
 #include "idt_handlers.hpp"
 #include "selectors.hpp"
 
-ALIGNED(8) Idt Idt::idt[VEC_MAX];
+ALIGNED(8) Idt Idt::idt[NUM_INT_VECTORS];
 
 void Idt::set(Idt::Type type, unsigned dpl, unsigned selector, mword offset, unsigned ist)
 {
@@ -34,7 +34,7 @@ void Idt::set(Idt::Type type, unsigned dpl, unsigned selector, mword offset, uns
 
 void Idt::build()
 {
-    for (unsigned vector = 0; vector < VEC_MAX; vector++) {
+    for (unsigned vector = 0; vector < NUM_INT_VECTORS; vector++) {
         const mword idt_mode{handlers[vector] & IDT_MODE_MASK};
         const mword handler{handlers[vector] & ~IDT_MODE_MASK};
 

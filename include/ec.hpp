@@ -36,7 +36,6 @@
 #include "regs.hpp"
 #include "sc.hpp"
 #include "syscall.hpp"
-#include "timeout_hypercall.hpp"
 #include "tss.hpp"
 #include "unique_ptr.hpp"
 #include "vcpu.hpp"
@@ -47,6 +46,7 @@
 // exception the first time a scheduling context is bound to them.
 #define EXC_STARTUP (NUM_EXC - 2)
 
+class Sm;
 class Utcb;
 
 class Ec : public Typed_kobject<Kobject::Type::EC>, public Refcount, public Queue<Sc>
@@ -80,7 +80,6 @@ private:
         uint32 xcpu;
     };
     unsigned const evt{0};
-    Timeout_hypercall timeout{this};
 
     // Virtual Address of the UTCB in userspace.
     mword user_utcb{0};
@@ -229,18 +228,6 @@ public:
 
     inline bool blocked() const { return next || !cont; }
 
-    inline void set_timeout(uint64 t, Sm* s)
-    {
-        if (EXPECT_FALSE(t))
-            timeout.enqueue(t, s);
-    }
-
-    inline void clr_timeout()
-    {
-        if (EXPECT_FALSE(timeout.active()))
-            timeout.dequeue();
-    }
-
     inline void save_fsgs_base()
     {
         // The kernel switched GS_BASE and KERNEL_GS_BASE on kernel entry.
@@ -374,11 +361,11 @@ public:
 
     [[noreturn]] HOT static void ret_user_iret() asm("ret_user_iret");
 
-    [[noreturn]] static void sys_finish(Sys_regs::Status status, bool clear_timeout = false);
+    [[noreturn]] static void sys_finish(Sys_regs::Status status);
     [[noreturn]] static void sys_finish(Result_void<Sys_regs::Status> result);
 
     // We need a parameter-less version of sys_finish that can be used as EC continuation.
-    template <Sys_regs::Status S, bool T = false> [[noreturn]] static void sys_finish() { sys_finish(S, T); }
+    template <Sys_regs::Status S> [[noreturn]] static void sys_finish() { sys_finish(S); }
 
     [[noreturn]] void activate();
 
@@ -445,20 +432,6 @@ public:
     [[noreturn]] static void sys_machine_ctrl_suspend();
 
     [[noreturn]] static void sys_machine_ctrl_update_microcode();
-
-    [[noreturn]] static void sys_irq_ctrl();
-
-    [[noreturn]] static void sys_irq_ctrl_configure_vector();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_ioapic_pin();
-
-    [[noreturn]] static void sys_irq_ctrl_mask_ioapic_pin();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_msi();
-
-    [[noreturn]] static void sys_irq_ctrl_assign_lvt();
-
-    [[noreturn]] static void sys_irq_ctrl_mask_lvt();
 
     [[noreturn]] static void root_invoke();
 

@@ -22,10 +22,10 @@
  */
 
 #include "arch.hpp"
+#include "config.hpp"
 #include "idt_handlers.hpp"
 #include "memory.hpp"
 #include "selectors.hpp"
-#include "vectors.hpp"
 
 /*
  * handlers is an array of entry points for interrupts. We align entries
@@ -146,53 +146,21 @@ EXCEPTION               e,      IDT_MODE_DPL0
 .endr
 
 /*
- * GSI Entries
+ * We add an IDT entry for each possible interrupt vector to make sure we
+ * panic if Hedron receives an interrupt.
  */
 .set                    VEC, NUM_EXC
-.rept                   NUM_USER_VECTORS
+.rept                   NUM_INT_VECTORS - NUM_EXC
 INTRGATE                IDT_MODE_DPL0
                         push    $VEC
-                        jmp     entry_user_vector
+                        jmp     entry_interrupt
 .set                    VEC, VEC + 1
 .endr
 
-entry_user_vector:      push    $0
+entry_interrupt:        push    $0
                         SAVE_STATE
                         mov     OFS_VEC (%rbx), %ARG_1
-                        call    handle_user_interrupt
-                        jmp     ret_from_interrupt
-
-/*
- * LVT Entries
- */
-.rept                   NUM_LVT
-INTRGATE                IDT_MODE_DPL0
-                        push    $VEC
-                        jmp     entry_lvt
-.set                    VEC, VEC + 1
-.endr
-
-entry_lvt:              push    $0
-                        SAVE_STATE
-                        mov     OFS_VEC (%rbx), %ARG_1
-                        call    lvt_vector
-                        jmp     ret_from_interrupt
-
-/*
- * IPI Entries
- */
-.rept                   NUM_IPI
-INTRGATE                IDT_MODE_DPL0
-                        push    $VEC
-                        jmp     entry_ipi
-.set                    VEC, VEC + 1
-.endr
-
-entry_ipi:              push    $0
-                        SAVE_STATE
-                        mov     OFS_VEC (%rbx), %ARG_1
-                        call    ipi_vector
-                        jmp     ret_from_interrupt
+                        call    handle_interrupt
 
 /*
  * Interrupt Return
