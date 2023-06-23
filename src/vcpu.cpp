@@ -93,6 +93,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
         // last mwait and the next mwait. See Intel SDM Vol. 3 Chap. 14.5.5 'MPERF and APERF Counters Under
         // HDC'.
         Msr::Register::IA32_APERF,
+
         Msr::Register::IA32_MPERF,
 
         Msr::Register::IA32_TSC_DEADLINE,
@@ -100,6 +101,7 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
         Msr::Register::IA32_APIC_BASE,
 
         Msr::Register::IA32_TSC,
+
         Msr::Register::IA32_TSC_ADJUST,
     };
 
