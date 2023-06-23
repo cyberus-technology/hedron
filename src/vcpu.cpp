@@ -98,6 +98,9 @@ Vcpu::Vcpu(const Vcpu_init_config& init_cfg)
         Msr::Register::IA32_TSC_DEADLINE,
 
         Msr::Register::IA32_APIC_BASE,
+
+        Msr::Register::IA32_TSC,
+        Msr::Register::IA32_TSC_ADJUST,
     };
 
     // Give access to additional MSRs to the control VM.
