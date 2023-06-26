@@ -86,8 +86,6 @@ static bool is_allowed_to_read(Msr::Register msr)
     case Msr::IA32_SYSENTER_CS:
     case Msr::IA32_SYSENTER_EIP:
     case Msr::IA32_SYSENTER_ESP:
-    case Msr::IA32_TSC:
-    case Msr::IA32_TSC_ADJUST:
     case Msr::IA32_TSC_AUX:
     case Msr::IA32_TSC_DEADLINE:
 

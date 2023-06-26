@@ -6,6 +6,11 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 13.1
+- Hedron will allow passthrough guests to access the following additional MSRs:
+    - `IA32_TIME_STAMP_COUNTER`
+    - `IA32_TSC_ADJUST`
+
 ## API Version 13.0
 - **Breaking** Hedron will no longer initialize the interrupt controllers and has changed the layout of the HIP.
   Please check the section about the HIP in the user documentation.
