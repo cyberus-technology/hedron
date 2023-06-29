@@ -255,7 +255,7 @@ void Vcpu::run()
     // If a vCPU is in wait for SIPI state, if will not receive NMIs. Thus the CPU will block NMIs in this
     // case to signal that e.g. the TLB shootdown protocol should not wait for this CPU.
     if (utcb()->actv_state == 3 /* wait for SIPI*/) {
-        Atomic::store(Cpu::might_loose_nmis(), true);
+        Atomic::store(Cpu::might_lose_nmis(), true);
 
         // Another CPU might have already sent an NMI before seeing that NMIs might not work anymore and we
         // might receive it when we already entered the geust. We promise to look at hazards before returning
@@ -396,7 +396,7 @@ void Vcpu::handle_vmx()
     assert(Atomic::load(owner) == Ec::current());
 
     // Unblock NMIs if we blocked them due to entering the vCPU in wait for SIPI state.
-    Atomic::store(Cpu::might_loose_nmis(), false);
+    Atomic::store(Cpu::might_lose_nmis(), false);
 
     // To defend against Spectre v2 other kernels would stuff the return stack buffer (RSB) here to avoid the
     // guest injecting branch targets. This is not necessary for us, because we start from a fresh stack and

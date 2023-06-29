@@ -91,6 +91,13 @@ private:
         *reinterpret_cast<uint32 volatile*>(CPU_LOCAL_APIC + (reg << 4)) = val;
     }
 
+    static inline void wait_for_idle()
+    {
+        while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12)) {
+            relax();
+        }
+    }
+
 public:
     static unsigned freq_tsc;
 
@@ -152,7 +159,7 @@ public:
     // Send an IPI with the given vector to the given CPU.
     static void send_ipi(unsigned cpu, unsigned vector, Delivery_mode = DLV_FIXED, Shorthand = DSH_NONE);
 
-    // Send an NMI to the given CPU. If the CPU has the might_loose_nmis flag set to true, this function will
+    // Send an NMI to the given CPU. If the CPU has the might_lose_nmis flag set to true, this function will
     // not send an NMI and return false. Otherwise returns true.
     static bool send_nmi(unsigned cpu);
 
