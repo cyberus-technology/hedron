@@ -122,9 +122,7 @@ void Lapic::init()
 
 void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand dsh)
 {
-    while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12)) {
-        relax();
-    }
+    wait_for_idle();
 
     if (dlv != DLV_INIT and dlv != DLV_SIPI and dlv != DLV_NMI) {
         panic("Hedron does not support sending IPIs anymore, except for delivery modes INIT, SIPI and NMI.");
@@ -142,6 +140,11 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
         write(LAPIC_ICR_HI, Cpu::apic_id[cpu] << 24);
     }
     write(LAPIC_ICR_LO, dsh | 1U << 14 | dlv | vector);
+
+    // We have to wait here until the LAPIC clears delivery_status.send_pending.
+    // Otherwise, our IPI may be sent to the wrong destination because we
+    // restore the last destination that the guest has programmed into ICR_HI.
+    wait_for_idle();
 
     write(LAPIC_ICR_HI, icr_hi_old);
 }

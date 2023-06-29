@@ -91,6 +91,13 @@ private:
         *reinterpret_cast<uint32 volatile*>(CPU_LOCAL_APIC + (reg << 4)) = val;
     }
 
+    static inline void wait_for_idle()
+    {
+        while (EXPECT_FALSE(read(LAPIC_ICR_LO) & 1U << 12)) {
+            relax();
+        }
+    }
+
 public:
     static unsigned freq_tsc;
 
