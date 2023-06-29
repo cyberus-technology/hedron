@@ -169,7 +169,7 @@ public:
     // Access the hazards on a remote core. Has to be accessed using atomic ops!
     static unsigned& hazard(unsigned cpu) { return remote_ref_hazard(cpu); }
 
-    CPULOCAL_REMOTE_ACCESSOR(cpu, might_loose_nmis);
+    CPULOCAL_REMOTE_ACCESSOR(cpu, might_lose_nmis);
 
     CPULOCAL_ACCESSOR(cpu, features);
     CPULOCAL_ACCESSOR(cpu, bsp);

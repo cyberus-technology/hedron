@@ -151,7 +151,7 @@ void Lapic::send_ipi(unsigned cpu, unsigned vector, Delivery_mode dlv, Shorthand
 
 bool Lapic::send_nmi(unsigned cpu)
 {
-    if (EXPECT_FALSE(Cpu::remote_load_might_loose_nmis(cpu))) {
+    if (EXPECT_FALSE(Cpu::remote_load_might_lose_nmis(cpu))) {
         return false;
     }
     send_ipi(cpu, 0, Delivery_mode::DLV_NMI);
