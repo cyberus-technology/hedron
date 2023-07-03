@@ -160,9 +160,6 @@ public:
     static inline uint8 acpi_id[NUM_CPU];
     static inline uint8 apic_id[NUM_CPU];
 
-    // The TSC value that all CPUs start with after boot or resume.
-    static inline uint64 initial_tsc = 0;
-
     CPULOCAL_CONST_ACCESSOR(cpu, id);
     CPULOCAL_REMOTE_ACCESSOR(cpu, hazard);
 

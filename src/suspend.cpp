@@ -47,7 +47,6 @@ void Suspend::suspend(uint8 slp_typa, uint8 slp_typb)
     // (except via DMA).
 
     saved_facs = Acpi::get_facs();
-    Cpu::initial_tsc = rdtsc();
 
     // Prepare resume code. Need restore_low_memory later!
     Acpi::set_waking_vector(Lapic::prepare_cpu_boot(Lapic::cpu_boot_type::BSP), Acpi::Wake_mode::REAL_MODE);
