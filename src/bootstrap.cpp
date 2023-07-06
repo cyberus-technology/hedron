@@ -48,17 +48,6 @@ void Bootstrap::bootstrap()
 
     wait_for_all_cpus();
 
-    // We need to set the TSC immediately after the barrier finishes to be sure
-    // that all CPUs execute this at a roughly identical time. This does not
-    // achieve perfect synchronization between TSCs, but should be good enough.
-    //
-    // By using TSC_ADJUST, we could achieve perfect TSC synchronization, but
-    // experiments in the past have uncovered CPU bugs: See the following forum
-    // post for details:
-    //
-    // https://community.intel.com/t5/Processors/Missing-TSC-deadline-interrupt-after-suspend-resume-and-using/td-p/287889
-    Msr::write(Msr::IA32_TSC, Cpu::initial_tsc);
-
     if (Cpu::bsp()) {
         // All CPUs are online. Time to restore the low memory that we've
         // clobbered for booting APs.

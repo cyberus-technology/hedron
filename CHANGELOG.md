@@ -6,6 +6,9 @@ might reflect other important internal changes, but that information may be inco
 *The changelog does not refer to Git tags or Git releases but to the API version
 specified in `config.hpp / CFG_VER`.*
 
+## API Version 13.2
+- Hedron will no longer touch the TSC via `IA32_TIME_STAMP_COUNTER` or `IA32_TSC_ADJUST`.
+
 ## API Version 13.1
 - Hedron will allow passthrough guests to access the following additional MSRs:
     - `IA32_TIME_STAMP_COUNTER`
