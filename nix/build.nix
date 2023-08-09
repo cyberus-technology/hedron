@@ -43,5 +43,6 @@ stdenv.mkDerivation {
     description = "Hedron hypervisor by Cyberus Technology";
     homepage = "https://github.com/cyberus-technology/hedron";
     license = lib.licenses.gpl2;
+    platforms = [ "x86_64-linux" ];
   };
 }
