@@ -19,18 +19,10 @@ endif()
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy analysis." OFF)
 
-# Globally enable additional goodies, if we are compiling with clang.
+# Enable clang-tidy checks if user enables it and we have a clang toolchain
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND ENABLE_CLANG_TIDY)
-
-  # Optionally enable clang-tidy for the whole project.
-  find_program(CLANG_TIDY_EXE NAMES "clang-tidy" DOC "Path to clang-tidy executable")
-
-  if(CLANG_TIDY_EXE)
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
-  else()
-    message(FATAL_ERROR "clang-tidy not found. Please install for automatic static analysis.")
-  endif()
-
+  find_program(CLANG_TIDY_EXECUTABLE clang-tidy REQUIRED)
+  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXECUTABLE} -p ${CMAKE_BINARY_DIR})
 endif()
 
 include_directories(include)
